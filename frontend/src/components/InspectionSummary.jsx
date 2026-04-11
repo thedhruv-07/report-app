@@ -1,6 +1,6 @@
 import { inputStyle, buttonStyle } from "../styles";
 
-export default function InspectionSummary({ form, handleChange, onPrev, onNext }) {
+export default function InspectionSummary({ handleChange, onPrev, onNext }) {
   return (
     <>
       <h3>Inspection Summary</h3>

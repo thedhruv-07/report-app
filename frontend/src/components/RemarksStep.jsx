@@ -1,45 +1,231 @@
-import { inputStyle, buttonStyle } from "../styles";
+import { buttonStyle, colors, sectionHeaderStyle } from "../styles";
+import { compressImage, formatFileSize } from "../utils/imageCompression";
+
+const yesNoQuestions = [
+  { key: "remarkQ1", text: "Is there any leakage on the roofs and walls (including windows and doors)?" },
+  { key: "remarkQ2", text: "Is there any special-assigned person or department to be responsible for mold control?" },
+  { key: "remarkQ3", text: "Is there any record for mold control?" },
+  { key: "remarkQ4", text: "Do all cartons put on plastic pallets with min. 12cm height away from the floor, and at least 1.5 meters away from windows?" },
+  { key: "remarkQ5", text: "Is there anyone such as factory QCs or supervisors to verify the procedure daily?" },
+  { key: "remarkQ6", text: "Are the export cartons kept dry?" },
+  { key: "remarkQ7", text: "Are there any damaged or wet cartons used?" },
+];
+
+const factoryCooperationOptions = [
+  { value: "good", label: "Good - Enough manpower to assist, and good cooperation." },
+  { value: "average", label: "Average - Enough manpower to assist." },
+  { value: "poor", label: "Poor - Manpower, equipment or document not provided timely." },
+];
+
+const workerCountOptions = [
+  { value: "lt50", label: "Less than 50 people" },
+  { value: "50to100", label: "50-100 people" },
+  { value: "100to500", label: "100-500 people" },
+  { value: "500to1000", label: "500-1000 people" },
+  { value: "gt1000", label: "More than 1000" },
+];
+
+const inspectorOpinionOptions = [
+  { value: "good", label: "Good - The factory was neat and tidy. The testing equipment was well maintained and calibrated." },
+  { value: "average", label: "Average - The factory was tidy, and the testing equipment ran normally." },
+  { value: "poor", label: "Poor - The factory was messed, the basic testing equipment was not available / not workable." },
+];
 
 export default function RemarksStep({ form, handleChange, onPrev, onNext }) {
-  const handleRemarkChange = (index, value) => {
-    const remarks = form.remarks || [];
-    remarks[index] = value;
-    handleChange({ target: { name: "remarks", value: remarks } });
+  const setField = (name, value) => {
+    handleChange({ target: { name, value } });
   };
 
-  const handleCheckboxChange = (fieldName, value) => {
-    handleChange({ target: { name: fieldName, value } });
+  const getRemarkPhotosByIndex = () => form.remarkPhotosByIndex || {};
+
+  const getPhotosForRow = (rowIndex) => getRemarkPhotosByIndex()[rowIndex] || [];
+
+  const handleRemarkPhotosUpload = async (rowIndex, files) => {
+    const selectedFiles = Array.from(files || []);
+    if (selectedFiles.length === 0) return;
+
+    const processedPhotos = await Promise.all(
+      selectedFiles.map(async (file, index) => {
+        const uniqueId = `remark_${rowIndex}_${Date.now()}_${Math.random()}_${index}`;
+
+        try {
+          const { file: compressedFile, preview, originalSize, compressedSize } = await compressImage(file);
+          return {
+            id: uniqueId,
+            label: "",
+            fileName: compressedFile.name,
+            preview,
+            originalSize,
+            compressedSize,
+          };
+        } catch {
+          const preview = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(file);
+          });
+
+          return {
+            id: uniqueId,
+            label: "",
+            fileName: file.name,
+            preview,
+            originalSize: file.size,
+            compressedSize: file.size,
+            error: true,
+          };
+        }
+      })
+    );
+
+    const byIndex = getRemarkPhotosByIndex();
+    const existingForRow = byIndex[rowIndex] || [];
+
+    setField("remarkPhotosByIndex", {
+      ...byIndex,
+      [rowIndex]: [...existingForRow, ...processedPhotos],
+    });
+  };
+
+  const updateRemarkPhotoLabel = (rowIndex, id, label) => {
+    const byIndex = getRemarkPhotosByIndex();
+    const updatedForRow = (byIndex[rowIndex] || []).map((p) =>
+      p.id === id ? { ...p, label } : p
+    );
+    setField("remarkPhotosByIndex", {
+      ...byIndex,
+      [rowIndex]: updatedForRow,
+    });
+  };
+
+  const removeRemarkPhoto = (rowIndex, id) => {
+    const byIndex = getRemarkPhotosByIndex();
+    const updatedForRow = (byIndex[rowIndex] || []).filter((p) => p.id !== id);
+    setField("remarkPhotosByIndex", {
+      ...byIndex,
+      [rowIndex]: updatedForRow,
+    });
+  };
+
+  const handleProblemRemarkChange = (index, value) => {
+    const remarks = [...(form.remarks || Array(9).fill(""))];
+    remarks[index] = value;
+    setField("remarks", remarks);
   };
 
   return (
     <>
-      <h3 style={{ marginBottom: "20px" }}>III. REMARKS</h3>
+      <h3 style={{ ...sectionHeaderStyle, color: colors.text, marginBottom: "20px" }}>III. REMARKS</h3>
 
-      {/* Problem Remarks */}
-      <div style={{ marginBottom: "25px" }}>
-        <h4 style={{ marginBottom: "10px", fontWeight: "bold", borderBottom: "2px solid #3a4a5c", paddingBottom: "8px" }}>Problem Remarks:</h4>
-        <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #3a4a5c" }}>
+      <div style={{ border: `1px solid ${colors.border}`, borderRadius: "8px", overflow: "hidden", marginBottom: "20px" }}>
+        <div style={{ padding: "8px 12px", background: colors.headerBg, borderBottom: `1px solid ${colors.border}`, fontWeight: "700", color: colors.text }}>
+          Problem Remarks
+        </div>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <tbody>
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
-              <tr key={num}>
-                <td style={{ padding: "8px 12px", fontWeight: "bold", background: "#0f172a", border: "1px solid #3a4a5c", textAlign: "center", color: "#fff", width: "40px" }}>{num}</td>
-                <td style={{ padding: "8px 12px", border: "1px solid #3a4a5c", background: "#1e293b" }}>
-                  <textarea
-                    value={(form.remarks && form.remarks[num - 1]) || ""}
-                    onChange={(e) => handleRemarkChange(num - 1, e.target.value)}
+            {Array.from({ length: 9 }, (_, i) => (
+              <tr key={i + 1}>
+                <td style={{ width: "40px", textAlign: "center", borderBottom: `1px solid ${colors.border}`, borderRight: `1px solid ${colors.border}`, background: colors.surfaceAlt, fontWeight: "600", color: colors.text }}>
+                  {i + 1}.
+                </td>
+                <td style={{ borderBottom: `1px solid ${colors.border}`, padding: "4px 8px", background: colors.surface }}>
+                  <input
+                    type="text"
+                    value={(form.remarks && form.remarks[i]) || ""}
+                    onChange={(e) => handleProblemRemarkChange(i, e.target.value)}
                     style={{
                       width: "100%",
-                      padding: "8px",
-                      background: "#2a3a4c",
-                      color: "#fff",
-                      border: "1px solid #4a5a6c",
-                      borderRadius: "4px",
+                      border: "none",
+                      outline: "none",
+                      background: "transparent",
+                      color: colors.text,
                       fontSize: "13px",
-                      fontFamily: "inherit",
-                      minHeight: "50px",
-                      boxSizing: "border-box"
+                      padding: "3px 0",
                     }}
                   />
+                  <div style={{ marginTop: "8px", borderTop: `1px dashed ${colors.border}`, paddingTop: "8px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                        <span style={{ fontSize: "12px", color: colors.textMuted }}>Upload photos for this remark (multiple allowed)</span>
+                        <label
+                          htmlFor={`remarkPhotoUpload_${i}`}
+                          style={{
+                            padding: "6px 10px",
+                            borderRadius: "4px",
+                            border: `1px solid ${colors.border}`,
+                            background: colors.surfaceAlt,
+                            color: colors.text,
+                            cursor: "pointer",
+                            fontSize: "12px",
+                            fontWeight: "600",
+                          }}
+                        >
+                          + Add Photos
+                        </label>
+                        <input
+                          id={`remarkPhotoUpload_${i}`}
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          style={{ display: "none" }}
+                          onChange={(e) => {
+                            handleRemarkPhotosUpload(i, e.target.files);
+                            e.target.value = "";
+                          }}
+                        />
+                      </div>
+
+                      {getPhotosForRow(i).length > 0 && (
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "8px" }}>
+                          {getPhotosForRow(i).map((photo) => (
+                            <div key={photo.id} style={{ border: `1px solid ${colors.border}`, borderRadius: "4px", overflow: "hidden", background: colors.surfaceAlt }}>
+                              <img
+                                src={photo.preview}
+                                alt={photo.fileName || "Remark photo"}
+                                style={{ width: "100%", height: "120px", objectFit: "cover", display: "block" }}
+                              />
+                              <div style={{ padding: "6px" }}>
+                                <input
+                                  type="text"
+                                  value={photo.label || ""}
+                                  placeholder="Photo note"
+                                  onChange={(e) => updateRemarkPhotoLabel(i, photo.id, e.target.value)}
+                                  style={{
+                                    width: "100%",
+                                    border: `1px solid ${colors.border}`,
+                                    borderRadius: "4px",
+                                    background: colors.surface,
+                                    color: colors.text,
+                                    fontSize: "11px",
+                                    padding: "5px",
+                                    boxSizing: "border-box",
+                                    marginBottom: "5px",
+                                  }}
+                                />
+                                <div style={{ fontSize: "10px", color: photo.error ? colors.danger : colors.success, marginBottom: "5px" }}>
+                                  {photo.compressedSize ? formatFileSize(photo.compressedSize) : "processing..."}
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => removeRemarkPhoto(i, photo.id)}
+                                  style={{
+                                    width: "100%",
+                                    border: "none",
+                                    borderRadius: "4px",
+                                    background: colors.danger,
+                                    color: "#fff",
+                                    fontSize: "11px",
+                                    padding: "5px",
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -47,188 +233,157 @@ export default function RemarksStep({ form, handleChange, onPrev, onNext }) {
         </table>
       </div>
 
-      {/* General Remarks */}
-      <div style={{ marginBottom: "25px" }}>
-        <h4 style={{ marginBottom: "15px", fontWeight: "bold", borderBottom: "2px solid #3a4a5c", paddingBottom: "8px" }}>General Remarks:</h4>
-        
-        {/* Checkbox items - one per row */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px", background: "#0f172a", borderRadius: "4px" }}>
-            <span style={{ color: "#fff", flex: "1" }}>We have checked mold potential about warehouse:</span>
-            <div style={{ display: "flex", gap: "20px" }}>
-              <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "#fff" }}>
-                <input
-                  type="radio"
-                  name="moldPotential"
-                  value="Yes"
-                  checked={form.moldPotential === "Yes"}
-                  onChange={(e) => handleCheckboxChange("moldPotential", e.target.value)}
-                />
-                Yes
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "#fff" }}>
-                <input
-                  type="radio"
-                  name="moldPotential"
-                  value="No"
-                  checked={form.moldPotential === "No"}
-                  onChange={(e) => handleCheckboxChange("moldPotential", e.target.value)}
-                />
-                No
-              </label>
-            </div>
-          </div>
+      <div style={{ border: `1px solid ${colors.border}`, borderRadius: "8px", overflow: "hidden", marginBottom: "20px" }}>
+        <div style={{ padding: "8px 12px", background: colors.headerBg, borderBottom: `1px solid ${colors.border}`, fontWeight: "700", color: colors.text }}>
+          General Remarks
+        </div>
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px", background: "#0f172a", borderRadius: "4px" }}>
-            <span style={{ color: "#fff", flex: "1" }}>The customer complained about the sample:</span>
-            <div style={{ display: "flex", gap: "20px" }}>
-              <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "#fff" }}>
-                <input
-                  type="radio"
-                  name="customerComplaint"
-                  value="Yes"
-                  checked={form.customerComplaint === "Yes"}
-                  onChange={(e) => handleCheckboxChange("customerComplaint", e.target.value)}
-                />
-                Yes
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "#fff" }}>
-                <input
-                  type="radio"
-                  name="customerComplaint"
-                  value="No"
-                  checked={form.customerComplaint === "No"}
-                  onChange={(e) => handleCheckboxChange("customerComplaint", e.target.value)}
-                />
-                No
-              </label>
-            </div>
+        <div style={{ padding: "10px 12px", borderBottom: `1px solid ${colors.border}`, background: colors.surface }}>
+          <div style={{ marginBottom: "8px", color: colors.text, fontSize: "13px", fontWeight: "600" }}>
+            We had checked mold potential about warehouse:
           </div>
-
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px", background: "#0f172a", borderRadius: "4px" }}>
-            <span style={{ color: "#fff", flex: "1" }}>Is there any special assigned person or department to be responsible for mold control?</span>
-            <div style={{ display: "flex", gap: "20px" }}>
-              <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "#fff" }}>
-                <input
-                  type="radio"
-                  name="moldResponsible"
-                  value="Yes"
-                  checked={form.moldResponsible === "Yes"}
-                  onChange={(e) => handleCheckboxChange("moldResponsible", e.target.value)}
-                />
-                Yes
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "#fff" }}>
-                <input
-                  type="radio"
-                  name="moldResponsible"
-                  value="No"
-                  checked={form.moldResponsible === "No"}
-                  onChange={(e) => handleCheckboxChange("moldResponsible", e.target.value)}
-                />
-                No
-              </label>
+          {yesNoQuestions.map((q) => (
+            <div key={q.key} style={{ display: "flex", justifyContent: "space-between", gap: "10px", padding: "4px 0", borderBottom: `1px dashed ${colors.border}` }}>
+              <span style={{ color: colors.text, fontSize: "13px", flex: 1 }}>{q.text}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "14px", minWidth: "110px", justifyContent: "flex-end" }}>
+                <label style={{ fontSize: "12px", color: colors.text, display: "flex", alignItems: "center", gap: "4px" }}>
+                  <input
+                    type="radio"
+                    name={q.key}
+                    value="Yes"
+                    checked={form[q.key] === "Yes"}
+                    onChange={(e) => setField(q.key, e.target.value)}
+                  />
+                  Yes
+                </label>
+                <label style={{ fontSize: "12px", color: colors.text, display: "flex", alignItems: "center", gap: "4px" }}>
+                  <input
+                    type="radio"
+                    name={q.key}
+                    value="No"
+                    checked={form[q.key] === "No"}
+                    onChange={(e) => setField(q.key, e.target.value)}
+                  />
+                  No
+                </label>
+              </div>
             </div>
-          </div>
+          ))}
+        </div>
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px", background: "#0f172a", borderRadius: "4px" }}>
-            <span style={{ color: "#fff", flex: "1" }}>Is there any record for mold incident?</span>
-            <div style={{ display: "flex", gap: "20px" }}>
-              <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "#fff" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "40px 1fr", borderBottom: `1px solid ${colors.border}` }}>
+          <div style={{ borderRight: `1px solid ${colors.border}`, background: colors.surfaceAlt, textAlign: "center", padding: "10px 0", color: colors.text, fontWeight: "600" }}>11.</div>
+          <div style={{ padding: "10px 12px", background: colors.surface }}>
+            <div style={{ fontSize: "13px", color: colors.text, marginBottom: "6px" }}>
+              Based on our finding of material/accessories/semi-finished/finished products and the observation of product line, we recommend the manufacturer to make improvement or pay attention on follow up mass production:
+            </div>
+            <textarea
+              value={form.recommendationText || ""}
+              onChange={(e) => setField("recommendationText", e.target.value)}
+              placeholder="Write recommendation notes..."
+              style={{
+                width: "100%",
+                minHeight: "130px",
+                border: `1px solid ${colors.border}`,
+                borderRadius: "6px",
+                background: colors.surface,
+                color: colors.text,
+                fontSize: "13px",
+                padding: "8px",
+                boxSizing: "border-box",
+                fontFamily: "inherit",
+              }}
+            />
+          </div>
+        </div>
+
+        <div style={{ padding: "8px 12px", background: colors.headerBg, borderBottom: `1px solid ${colors.border}`, fontWeight: "700", color: colors.text }}>
+          Factory Information
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "40px 1fr", borderBottom: `1px solid ${colors.border}` }}>
+          <div style={{ borderRight: `1px solid ${colors.border}`, background: colors.surfaceAlt, textAlign: "center", padding: "10px 0", color: colors.text, fontWeight: "600" }}>12.</div>
+          <div style={{ padding: "10px 12px", background: colors.surface }}>
+            <div style={{ marginBottom: "6px", fontSize: "13px", color: colors.text, fontWeight: "600" }}>Factory cooperation:</div>
+            {factoryCooperationOptions.map((opt) => (
+              <label key={opt.value} style={{ display: "block", color: colors.text, fontSize: "13px", marginBottom: "5px" }}>
                 <input
                   type="radio"
-                  name="moldIncident"
-                  value="Yes"
-                  checked={form.moldIncident === "Yes"}
-                  onChange={(e) => handleCheckboxChange("moldIncident", e.target.value)}
+                  name="factoryCooperation"
+                  value={opt.value}
+                  checked={form.factoryCooperation === opt.value}
+                  onChange={(e) => setField("factoryCooperation", e.target.value)}
+                  style={{ marginRight: "6px" }}
                 />
-                Yes
+                {opt.label}
               </label>
-              <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "#fff" }}>
-                <input
-                  type="radio"
-                  name="moldIncident"
-                  value="No"
-                  checked={form.moldIncident === "No"}
-                  onChange={(e) => handleCheckboxChange("moldIncident", e.target.value)}
-                />
-                No
-              </label>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "40px 1fr", borderBottom: `1px solid ${colors.border}` }}>
+          <div style={{ borderRight: `1px solid ${colors.border}`, background: colors.surfaceAlt, textAlign: "center", padding: "10px 0", color: colors.text, fontWeight: "600" }}>13.</div>
+          <div style={{ padding: "10px 12px", background: colors.surface }}>
+            <div style={{ marginBottom: "6px", fontSize: "13px", color: colors.text, fontWeight: "600" }}>Number of workers in factory:</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
+              {workerCountOptions.map((opt) => (
+                <label key={opt.value} style={{ color: colors.text, fontSize: "13px" }}>
+                  <input
+                    type="radio"
+                    name="workerCount"
+                    value={opt.value}
+                    checked={form.workerCount === opt.value}
+                    onChange={(e) => setField("workerCount", e.target.value)}
+                    style={{ marginRight: "5px" }}
+                  />
+                  {opt.label}
+                </label>
+              ))}
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Numbered Items 9-15 */}
-      <div style={{ marginBottom: "25px" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #3a4a5c" }}>
-          <tbody>
-            {[
-              { num: 9, text: "Do all cartons put on plastic pallets with min. 10cm height away from the floor, and at least 1 Meters away from windows? Are the cartons covered with plastic sealing dust?" },
-              { num: 10, text: "Is the warehouse ventilation system adequate and is there adequate air circulation?" },
-              { num: 11, text: "Are the export cartons kept dry?" },
-              { num: 12, text: "Are there any damaged or wet cartons used?" },
-              { num: 13, text: "Inspector's opinion on the factory:" },
-              { num: 14, text: "" },
-              { num: 15, text: "Sample Collection Record:" }
-            ].map((item) => (
-              <tr key={item.num}>
-                <td style={{ padding: "8px 12px", fontWeight: "bold", background: "#0f172a", border: "1px solid #3a4a5c", textAlign: "center", color: "#fff", width: "40px" }}>{item.num}</td>
-                <td style={{ padding: "8px 12px", border: "1px solid #3a4a5c", background: "#1e293b" }}>
-                  <div style={{ marginBottom: "8px", color: "#fff", fontSize: "13px" }}>{item.text}</div>
-                  <div style={{ display: "flex", gap: "20px", marginBottom: "8px" }}>
-                    <label style={{ display: "flex", alignItems: "center", gap: "5px", cursor: "pointer" }}>
-                      <input
-                        type="radio"
-                        name={`item${item.num}`}
-                        value="Yes"
-                        checked={form[`item${item.num}`] === "Yes"}
-                        onChange={(e) => handleCheckboxChange(`item${item.num}`, e.target.value)}
-                      />
-                      <span style={{ color: "#fff" }}>Yes</span>
-                    </label>
-                    <label style={{ display: "flex", alignItems: "center", gap: "5px", cursor: "pointer" }}>
-                      <input
-                        type="radio"
-                        name={`item${item.num}`}
-                        value="No"
-                        checked={form[`item${item.num}`] === "No"}
-                        onChange={(e) => handleCheckboxChange(`item${item.num}`, e.target.value)}
-                      />
-                      <span style={{ color: "#fff" }}>No</span>
-                    </label>
-                  </div>
-                  <textarea
-                    value={form[`item${item.num}Text`] || ""}
-                    onChange={(e) => handleChange({ target: { name: `item${item.num}Text`, value: e.target.value } })}
-                    placeholder="Enter details..."
-                    style={{
-                      width: "100%",
-                      padding: "8px",
-                      background: "#2a3a4c",
-                      color: "#fff",
-                      border: "1px solid #4a5a6c",
-                      borderRadius: "4px",
-                      fontSize: "13px",
-                      minHeight: "50px",
-                      boxSizing: "border-box"
-                    }}
-                  />
-                </td>
-              </tr>
+        <div style={{ display: "grid", gridTemplateColumns: "40px 1fr", borderBottom: `1px solid ${colors.border}` }}>
+          <div style={{ borderRight: `1px solid ${colors.border}`, background: colors.surfaceAlt, textAlign: "center", padding: "10px 0", color: colors.text, fontWeight: "600" }}>14.</div>
+          <div style={{ padding: "10px 12px", background: colors.surface }}>
+            <div style={{ marginBottom: "6px", fontSize: "13px", color: colors.text, fontWeight: "600" }}>Inspector's opinion on the factory:</div>
+            {inspectorOpinionOptions.map((opt) => (
+              <label key={opt.value} style={{ display: "block", color: colors.text, fontSize: "13px", marginBottom: "5px" }}>
+                <input
+                  type="radio"
+                  name="inspectorOpinion"
+                  value={opt.value}
+                  checked={form.inspectorOpinion === opt.value}
+                  onChange={(e) => setField("inspectorOpinion", e.target.value)}
+                  style={{ marginRight: "6px" }}
+                />
+                {opt.label}
+              </label>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </div>
+        </div>
 
-      {/* Photos */}
-      <div style={{ marginBottom: "20px" }}>
-        <label style={{ fontWeight: "bold", display: "block", marginBottom: "10px" }}>Photos:</label>
-        <div style={{ padding: "20px", background: "#0f172a", border: "2px dashed #3a4a5c", borderRadius: "8px", textAlign: "center", cursor: "pointer" }}>
-          <input type="file" multiple accept="image/*" style={{ display: "none" }} id="photoInput" />
-          <label htmlFor="photoInput" style={{ cursor: "pointer", color: "#60a5fa" }}>
-            Click here to upload photos
-          </label>
+        <div style={{ display: "grid", gridTemplateColumns: "40px 1fr" }}>
+          <div style={{ borderRight: `1px solid ${colors.border}`, background: colors.surfaceAlt, textAlign: "center", padding: "10px 0", color: colors.text, fontWeight: "600" }}>15.</div>
+          <div style={{ padding: "10px 12px", background: colors.surface }}>
+            <div style={{ marginBottom: "6px", fontSize: "13px", color: colors.text, fontWeight: "600" }}>Sample Collection Record:</div>
+            <input
+              type="text"
+              value={form.sampleCollectionRecord || ""}
+              onChange={(e) => setField("sampleCollectionRecord", e.target.value)}
+              placeholder="e.g., production sample(s) & defective sample"
+              style={{
+                width: "100%",
+                border: `1px solid ${colors.border}`,
+                borderRadius: "6px",
+                background: colors.surface,
+                color: colors.text,
+                fontSize: "13px",
+                padding: "8px",
+                boxSizing: "border-box",
+              }}
+            />
+          </div>
         </div>
       </div>
 

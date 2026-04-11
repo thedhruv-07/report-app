@@ -1,103 +1,144 @@
-import { inputStyle, buttonStyle } from "../styles";
+import { inputStyle, buttonStyle, colors, sectionHeaderStyle } from "../styles";
 
 export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext }) {
+  const toNum = (v) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  const resolveResult = (manual, found, accepted) => {
+    if (manual) return manual;
+    return toNum(found) <= toNum(accepted) ? "Pass" : "Fail";
+  };
+
+  const setField = (name, value) => {
+    handleChange({ target: { name, value } });
+  };
+
+  const handleDefectPhotoUpload = (num, file) => {
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setField(`defectPhotoPreview${num}`, reader.result);
+      setField(`defectPhoto${num}`, file.name);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearDefectPhoto = (num) => {
+    setField(`defectPhoto${num}`, "");
+    setField(`defectPhotoPreview${num}`, "");
+    setField(`defectPhotoDescription${num}`, form[`defectPhotoDescription${num}`] || "");
+  };
+
   return (
     <>
-      <h3 style={{ marginBottom: "0px", padding: "10px", background: "#0f172a", color: "#fff", fontWeight: "bold", fontSize: "14px" }}>B. WORKMANSHIP</h3>
+      <h3 style={{ ...sectionHeaderStyle, marginBottom: "0px", padding: "10px", background: colors.headerBg, color: colors.text, fontWeight: "bold", fontSize: "14px" }}>B. WORKMANSHIP</h3>
 
       {/* Workmanship Summary Table */}
       <div style={{ marginBottom: "25px" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #3a4a5c", fontSize: "12px" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", border: `1px solid ${colors.border}`, fontSize: "12px" }}>
           <tbody>
-            {/* Header Row */}
             <tr>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1a2332", fontWeight: "bold", color: "#fff", width: "18%" }}>Inspection Standard:</td>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1a2332", width: "18%" }}></td>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1a2332", fontWeight: "bold", color: "#fff", width: "16%" }}>AQL</td>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1a2332", fontWeight: "bold", color: "#fff", width: "16%" }}>Accepted</td>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1a2332", fontWeight: "bold", color: "#fff", width: "16%" }}>Total Found</td>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1a2332", fontWeight: "bold", color: "#fff", width: "16%" }}>Result</td>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, fontWeight: "bold", color: colors.text, width: "18%" }}>
+                Inspection Standard:
+              </td>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, width: "26%" }}>
+                <input
+                  type="text"
+                  name="inspectionStandardWM"
+                  value={form.inspectionStandardWM || "ANSI/ASQ Z1.4 (ISO 2859-1)"}
+                  onChange={handleChange}
+                  style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none" }}
+                />
+              </td>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, fontWeight: "bold", color: colors.text, textAlign: "center", width: "20%" }}>AQL</td>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, fontWeight: "bold", color: colors.text, textAlign: "center", width: "10%" }}>Accepted</td>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, fontWeight: "bold", color: colors.text, textAlign: "center", width: "11%" }}>Total Found</td>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, fontWeight: "bold", color: colors.text, textAlign: "center", width: "15%" }}>Result</td>
             </tr>
 
-            {/* Row 1 - Inspection Standard Value */}
             <tr>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1e293b" }}>
-                <input type="text" name="inspectionStandardWM" value={form.inspectionStandardWM || ""} onChange={handleChange} placeholder="" style={{ width: "100%", border: "none", background: "transparent", color: "#fff", fontSize: "12px", outline: "none" }} />
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, color: colors.text, fontWeight: "bold" }}>Sampling Plan:</td>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface }}>
+                <input type="text" name="samplingPlanWM" value={form.samplingPlanWM || "Fixed Sample Size"} onChange={handleChange} style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none" }} />
               </td>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1e293b" }}></td>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1e293b" }}></td>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1e293b" }}></td>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1e293b" }}></td>
-            </tr>
-
-            {/* Row 2 - Sampling Plan with Critical */}
-            <tr>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1e293b", color: "#fff", fontWeight: "bold" }}>Sampling Plan:</td>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1e293b" }}>
-                <input type="text" name="samplingPlanWM" value={form.samplingPlanWM || ""} onChange={handleChange} placeholder="" style={{ width: "100%", border: "none", background: "transparent", color: "#fff", fontSize: "12px" }} />
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, color: colors.text }}>
+                <strong>Critical:</strong>&nbsp;
+                <input type="text" name="aqlCriticalWM" value={form.aqlCriticalWM || "Not Allowed"} onChange={handleChange} style={{ width: "55%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none" }} />
               </td>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1e293b", fontWeight: "bold", color: "#fff" }}>Critical:</td>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1e293b" }}>
-                <input type="text" name="aqlCriticalWM" value={form.aqlCriticalWM || ""} onChange={handleChange} placeholder="" style={{ width: "100%", border: "none", background: "transparent", color: "#fff", fontSize: "12px" }} />
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center", color: colors.text }}>
+                {form.acceptedCritical || "0"}
               </td>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1e293b", textAlign: "center", color: "#fff" }}>0</td>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1e293b" }}>
-                <input type="text" name="result1WM" value={form.result1WM || ""} onChange={handleChange} placeholder="" style={{ width: "100%", border: "none", background: "transparent", color: "#fff", fontSize: "12px" }} />
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center", color: colors.text }}>
+                {form.totalFoundCritical || "0"}
               </td>
-            </tr>
-
-            {/* Row 3 - Inspection Level with Major */}
-            <tr>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1e293b", color: "#fff", fontWeight: "bold" }}>Inspection Level:</td>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1e293b" }}>
-                <input type="text" name="inspectionLevelWM" value={form.inspectionLevelWM || ""} onChange={handleChange} placeholder="" style={{ width: "100%", border: "none", background: "transparent", color: "#fff", fontSize: "12px" }} />
-              </td>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1e293b", fontWeight: "bold", color: "#fff" }}>Major:</td>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1e293b" }}>
-                <input type="text" name="aqlMajorWM" value={form.aqlMajorWM || ""} onChange={handleChange} placeholder="" style={{ width: "100%", border: "none", background: "transparent", color: "#fff", fontSize: "12px" }} />
-              </td>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1e293b", textAlign: "center", color: "#fff" }}>0</td>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1e293b" }}>
-                <input type="text" name="result2WM" value={form.result2WM || ""} onChange={handleChange} placeholder="" style={{ width: "100%", border: "none", background: "transparent", color: "#fff", fontSize: "12px" }} />
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center", color: colors.text }}>
+                {resolveResult(form.result1WM, form.totalFoundCritical, form.acceptedCritical)}
               </td>
             </tr>
 
-            {/* Row 4 - Sample Size with Minor */}
             <tr>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1e293b", color: "#fff", fontWeight: "bold" }}>Sample Size:</td>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1e293b" }}>
-                <input type="text" name="sampleSizeWM" value={form.sampleSizeWM || ""} onChange={handleChange} placeholder="" style={{ width: "100%", border: "none", background: "transparent", color: "#fff", fontSize: "12px" }} />
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, color: colors.text, fontWeight: "bold" }}>Inspection Level:</td>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface }}>
+                <input type="text" name="inspectionLevelWM" value={form.inspectionLevelWM || "Level II"} onChange={handleChange} style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none" }} />
               </td>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1e293b", fontWeight: "bold", color: "#fff" }}>Minor:</td>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1e293b" }}>
-                <input type="text" name="aqlMinorWM" value={form.aqlMinorWM || ""} onChange={handleChange} placeholder="" style={{ width: "100%", border: "none", background: "transparent", color: "#fff", fontSize: "12px" }} />
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, color: colors.text }}>
+                <strong>Major:</strong>&nbsp;
+                <input type="text" name="aqlMajorWM" value={form.aqlMajorWM || "2.5"} onChange={handleChange} style={{ width: "55%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none" }} />
               </td>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1e293b", textAlign: "center", color: "#fff" }}>0</td>
-              <td style={{ padding: "10px", border: "1px solid #3a4a5c", background: "#1e293b" }}>
-                <input type="text" name="result3WM" value={form.result3WM || ""} onChange={handleChange} placeholder="" style={{ width: "100%", border: "none", background: "transparent", color: "#fff", fontSize: "12px" }} />
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center", color: colors.text }}>
+                {form.acceptedMajor || "0"}
+              </td>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center", color: colors.text }}>
+                {form.totalFoundMajor || "0"}
+              </td>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center", color: colors.text }}>
+                {resolveResult(form.result2WM, form.totalFoundMajor, form.acceptedMajor)}
+              </td>
+            </tr>
+
+            <tr>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, color: colors.text, fontWeight: "bold" }}>Sample Size:</td>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface }}>
+                <input type="text" name="sampleSizeWM" value={form.sampleSizeWM || "5 Sets"} onChange={handleChange} style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none" }} />
+              </td>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, color: colors.text }}>
+                <strong>Minor:</strong>&nbsp;
+                <input type="text" name="aqlMinorWM" value={form.aqlMinorWM || "4.0"} onChange={handleChange} style={{ width: "55%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none" }} />
+              </td>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center", color: colors.text }}>
+                {form.acceptedMinor || "0"}
+              </td>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center", color: colors.text }}>
+                {form.totalFoundMinor || "0"}
+              </td>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center", color: colors.text }}>
+                {resolveResult(form.result3WM, form.totalFoundMinor, form.acceptedMinor)}
               </td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <h3 style={{ marginBottom: "20px" }}>VI. WORKMANSHIP DEFECTS / INSPECTION FINDINGS</h3>
+      <h3 style={{ marginBottom: "20px", ...sectionHeaderStyle, padding: "10px", background: colors.headerBg, color: colors.text, fontWeight: "bold", fontSize: "14px" }}>VI. WORKMANSHIP DEFECTS / INSPECTION FINDINGS</h3>
 
       {/* Workmanship Defects Table */}
       <div style={{ marginBottom: "25px", overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #3a4a5c", fontSize: "12px" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", border: `1px solid ${colors.border}`, fontSize: "12px" }}>
           <thead>
             <tr>
-              <th style={{ padding: "8px", background: "#1a2332", border: "1px solid #3a4a5c", color: "#fff", textAlign: "left", minWidth: "250px" }}>Description</th>
-              <th style={{ padding: "8px", background: "#1a2332", border: "1px solid #3a4a5c", color: "#fff", textAlign: "center", minWidth: "80px" }}>Critical</th>
-              <th style={{ padding: "8px", background: "#1a2332", border: "1px solid #3a4a5c", color: "#fff", textAlign: "center", minWidth: "80px" }}>Major</th>
-              <th style={{ padding: "8px", background: "#1a2332", border: "1px solid #3a4a5c", color: "#fff", textAlign: "center", minWidth: "80px" }}>Minor</th>
+              <th style={{ padding: "8px", background: colors.headerBg, border: `1px solid ${colors.border}`, color: colors.text, textAlign: "left", minWidth: "250px" }}>Description</th>
+              <th style={{ padding: "8px", background: colors.headerBg, border: `1px solid ${colors.border}`, color: colors.text, textAlign: "center", minWidth: "80px" }}>Critical</th>
+              <th style={{ padding: "8px", background: colors.headerBg, border: `1px solid ${colors.border}`, color: colors.text, textAlign: "center", minWidth: "80px" }}>Major</th>
+              <th style={{ padding: "8px", background: colors.headerBg, border: `1px solid ${colors.border}`, color: colors.text, textAlign: "center", minWidth: "80px" }}>Minor</th>
             </tr>
           </thead>
           <tbody>
             {[1, 2, 3, 4, 5, 6, 7].map((num) => (
               <tr key={num}>
-                <td style={{ padding: "8px", border: "1px solid #3a4a5c", background: "#1e293b" }}>
+                <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface }}>
                   <textarea
                     name={`defectDescription${num}`}
                     value={form[`defectDescription${num}`] || ""}
@@ -106,9 +147,9 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext 
                     style={{
                       width: "100%",
                       padding: "4px",
-                      background: "#2a3a4c",
-                      color: "#fff",
-                      border: "none",
+                      background: colors.surface,
+                      color: colors.text,
+                      border: `1px solid ${colors.border}`,
                       borderRadius: "2px",
                       minHeight: "40px",
                       fontFamily: "inherit",
@@ -116,31 +157,31 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext 
                     }}
                   />
                 </td>
-                <td style={{ padding: "8px", border: "1px solid #3a4a5c", background: "#1e293b", textAlign: "center" }}>
+                <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                   <input
                     type="text"
                     name={`defectCritical${num}`}
                     value={form[`defectCritical${num}`] || ""}
                     onChange={handleChange}
-                    style={{ width: "70px", padding: "4px", background: "#2a3a4c", color: "#fff", border: "none", borderRadius: "2px", textAlign: "center" }}
+                    style={{ width: "70px", padding: "4px", background: colors.surface, color: colors.text, border: `1px solid ${colors.border}`, borderRadius: "2px", textAlign: "center" }}
                   />
                 </td>
-                <td style={{ padding: "8px", border: "1px solid #3a4a5c", background: "#1e293b", textAlign: "center" }}>
+                <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                   <input
                     type="text"
                     name={`defectMajor${num}`}
                     value={form[`defectMajor${num}`] || ""}
                     onChange={handleChange}
-                    style={{ width: "70px", padding: "4px", background: "#2a3a4c", color: "#fff", border: "none", borderRadius: "2px", textAlign: "center" }}
+                    style={{ width: "70px", padding: "4px", background: colors.surface, color: colors.text, border: `1px solid ${colors.border}`, borderRadius: "2px", textAlign: "center" }}
                   />
                 </td>
-                <td style={{ padding: "8px", border: "1px solid #3a4a5c", background: "#1e293b", textAlign: "center" }}>
+                <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                   <input
                     type="text"
                     name={`defectMinor${num}`}
                     value={form[`defectMinor${num}`] || ""}
                     onChange={handleChange}
-                    style={{ width: "70px", padding: "4px", background: "#2a3a4c", color: "#fff", border: "none", borderRadius: "2px", textAlign: "center" }}
+                    style={{ width: "70px", padding: "4px", background: colors.surface, color: colors.text, border: `1px solid ${colors.border}`, borderRadius: "2px", textAlign: "center" }}
                   />
                 </td>
               </tr>
@@ -148,102 +189,102 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext 
 
             {/* Total Found Row */}
             <tr>
-              <td style={{ padding: "8px", border: "1px solid #3a4a5c", background: "#0f172a", fontWeight: "bold", color: "#fff" }}>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.headerBg, fontWeight: "bold", color: colors.text }}>
                 Total Found:
               </td>
-              <td style={{ padding: "8px", border: "1px solid #3a4a5c", background: "#0f172a", textAlign: "center", fontWeight: "bold", color: "#fff" }}>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.headerBg, textAlign: "center", fontWeight: "bold", color: colors.text }}>
                 <input
                   type="text"
                   name="totalFoundCritical"
                   value={form.totalFoundCritical || ""}
                   onChange={handleChange}
-                  style={{ width: "70px", padding: "4px", background: "#1a2a3c", color: "#fff", border: "none", borderRadius: "2px", textAlign: "center" }}
+                  style={{ width: "70px", padding: "4px", background: colors.surface, color: colors.text, border: `1px solid ${colors.border}`, borderRadius: "2px", textAlign: "center" }}
                 />
               </td>
-              <td style={{ padding: "8px", border: "1px solid #3a4a5c", background: "#0f172a", textAlign: "center", fontWeight: "bold", color: "#fff" }}>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.headerBg, textAlign: "center", fontWeight: "bold", color: colors.text }}>
                 <input
                   type="text"
                   name="totalFoundMajor"
                   value={form.totalFoundMajor || ""}
                   onChange={handleChange}
-                  style={{ width: "70px", padding: "4px", background: "#1a2a3c", color: "#fff", border: "none", borderRadius: "2px", textAlign: "center" }}
+                  style={{ width: "70px", padding: "4px", background: colors.surface, color: colors.text, border: `1px solid ${colors.border}`, borderRadius: "2px", textAlign: "center" }}
                 />
               </td>
-              <td style={{ padding: "8px", border: "1px solid #3a4a5c", background: "#0f172a", textAlign: "center", fontWeight: "bold", color: "#fff" }}>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.headerBg, textAlign: "center", fontWeight: "bold", color: colors.text }}>
                 <input
                   type="text"
                   name="totalFoundMinor"
                   value={form.totalFoundMinor || ""}
                   onChange={handleChange}
-                  style={{ width: "70px", padding: "4px", background: "#1a2a3c", color: "#fff", border: "none", borderRadius: "2px", textAlign: "center" }}
+                  style={{ width: "70px", padding: "4px", background: colors.surface, color: colors.text, border: `1px solid ${colors.border}`, borderRadius: "2px", textAlign: "center" }}
                 />
               </td>
             </tr>
 
             {/* Accepted Row */}
             <tr>
-              <td style={{ padding: "8px", border: "1px solid #3a4a5c", background: "#0f172a", fontWeight: "bold", color: "#fff" }}>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.headerBg, fontWeight: "bold", color: colors.text }}>
                 Accepted:
               </td>
-              <td style={{ padding: "8px", border: "1px solid #3a4a5c", background: "#0f172a", textAlign: "center", fontWeight: "bold", color: "#fff" }}>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.headerBg, textAlign: "center", fontWeight: "bold", color: colors.text }}>
                 <input
                   type="text"
                   name="acceptedCritical"
                   value={form.acceptedCritical || ""}
                   onChange={handleChange}
-                  style={{ width: "70px", padding: "4px", background: "#1a2a3c", color: "#fff", border: "none", borderRadius: "2px", textAlign: "center" }}
+                  style={{ width: "70px", padding: "4px", background: colors.surface, color: colors.text, border: `1px solid ${colors.border}`, borderRadius: "2px", textAlign: "center" }}
                 />
               </td>
-              <td style={{ padding: "8px", border: "1px solid #3a4a5c", background: "#0f172a", textAlign: "center", fontWeight: "bold", color: "#fff" }}>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.headerBg, textAlign: "center", fontWeight: "bold", color: colors.text }}>
                 <input
                   type="text"
                   name="acceptedMajor"
                   value={form.acceptedMajor || ""}
                   onChange={handleChange}
-                  style={{ width: "70px", padding: "4px", background: "#1a2a3c", color: "#fff", border: "none", borderRadius: "2px", textAlign: "center" }}
+                  style={{ width: "70px", padding: "4px", background: colors.surface, color: colors.text, border: `1px solid ${colors.border}`, borderRadius: "2px", textAlign: "center" }}
                 />
               </td>
-              <td style={{ padding: "8px", border: "1px solid #3a4a5c", background: "#0f172a", textAlign: "center", fontWeight: "bold", color: "#fff" }}>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.headerBg, textAlign: "center", fontWeight: "bold", color: colors.text }}>
                 <input
                   type="text"
                   name="acceptedMinor"
                   value={form.acceptedMinor || ""}
                   onChange={handleChange}
-                  style={{ width: "70px", padding: "4px", background: "#1a2a3c", color: "#fff", border: "none", borderRadius: "2px", textAlign: "center" }}
+                  style={{ width: "70px", padding: "4px", background: colors.surface, color: colors.text, border: `1px solid ${colors.border}`, borderRadius: "2px", textAlign: "center" }}
                 />
               </td>
             </tr>
 
             {/* Sample Size Row */}
             <tr>
-              <td style={{ padding: "8px", border: "1px solid #3a4a5c", background: "#0f172a", fontWeight: "bold", color: "#fff" }}>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.headerBg, fontWeight: "bold", color: colors.text }}>
                 Sample Size:
               </td>
-              <td style={{ padding: "8px", border: "1px solid #3a4a5c", background: "#0f172a", textAlign: "center", fontWeight: "bold", color: "#fff" }}>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.headerBg, textAlign: "center", fontWeight: "bold", color: colors.text }}>
                 <input
                   type="text"
                   name="sampleSizeCritical"
                   value={form.sampleSizeCritical || ""}
                   onChange={handleChange}
-                  style={{ width: "70px", padding: "4px", background: "#1a2a3c", color: "#fff", border: "none", borderRadius: "2px", textAlign: "center" }}
+                  style={{ width: "70px", padding: "4px", background: colors.surface, color: colors.text, border: `1px solid ${colors.border}`, borderRadius: "2px", textAlign: "center" }}
                 />
               </td>
-              <td style={{ padding: "8px", border: "1px solid #3a4a5c", background: "#0f172a", textAlign: "center", fontWeight: "bold", color: "#fff" }}>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.headerBg, textAlign: "center", fontWeight: "bold", color: colors.text }}>
                 <input
                   type="text"
                   name="sampleSizeMajor"
                   value={form.sampleSizeMajor || ""}
                   onChange={handleChange}
-                  style={{ width: "70px", padding: "4px", background: "#1a2a3c", color: "#fff", border: "none", borderRadius: "2px", textAlign: "center" }}
+                  style={{ width: "70px", padding: "4px", background: colors.surface, color: colors.text, border: `1px solid ${colors.border}`, borderRadius: "2px", textAlign: "center" }}
                 />
               </td>
-              <td style={{ padding: "8px", border: "1px solid #3a4a5c", background: "#0f172a", textAlign: "center", fontWeight: "bold", color: "#fff" }}>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.headerBg, textAlign: "center", fontWeight: "bold", color: colors.text }}>
                 <input
                   type="text"
                   name="sampleSizeMinor"
                   value={form.sampleSizeMinor || ""}
                   onChange={handleChange}
-                  style={{ width: "70px", padding: "4px", background: "#1a2a3c", color: "#fff", border: "none", borderRadius: "2px", textAlign: "center" }}
+                  style={{ width: "70px", padding: "4px", background: colors.surface, color: colors.text, border: `1px solid ${colors.border}`, borderRadius: "2px", textAlign: "center" }}
                 />
               </td>
             </tr>
@@ -252,56 +293,128 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext 
       </div>
 
       {/* Notes Section */}
-      <div style={{ marginBottom: "20px", padding: "15px", background: "#0f172a", border: "1px solid #3a4a5c", borderRadius: "8px" }}>
-        <p style={{ color: "#8a9aaa", fontSize: "12px", marginBottom: "10px" }}>
-          <strong>Notes:</strong> Class 1 | Class 2 | Blemishes
+      <div style={{ marginBottom: "20px", padding: "15px", background: colors.surfaceAlt, border: `1px solid ${colors.border}`, borderRadius: "8px" }}>
+        <p style={{ color: colors.textMuted, fontSize: "12px", marginBottom: "10px" }}>
+          <strong>Notes:</strong> A Defective is defined as a unit of product that contains one or more defects. A Defect is defined as any non-conformance of the inspected unit of product with specified requirement. A single defect is taken into account per each defective unit; only one most critical classification per defective unit.
         </p>
+      </div>
+
+      {/* Result and Remark */}
+      <div style={{ marginBottom: "20px", display: "grid", gridTemplateColumns: "1fr 2fr", gap: "15px" }}>
+        <div>
+          <label style={{ fontWeight: "bold", display: "block", marginBottom: "10px", color: colors.text }}>Result:</label>
+          <select
+            name="workmanshipResult"
+            value={form.workmanshipResult || ""}
+            onChange={handleChange}
+            style={{
+              ...inputStyle,
+              color: form.workmanshipResult === "Failed" ? colors.danger : form.workmanshipResult === "Passed" ? colors.success : form.workmanshipResult === "Pending" ? colors.warning : colors.text,
+              fontWeight: "bold"
+            }}
+          >
+            <option value="">Select Result</option>
+            <option value="Passed">Passed</option>
+            <option value="Failed">Failed</option>
+            <option value="Pending">Pending</option>
+          </select>
+        </div>
+        <div>
+          <label style={{ fontWeight: "bold", display: "block", marginBottom: "10px", color: colors.text }}>Remark:</label>
+          <input
+            type="text"
+            name="workmanshipRemark"
+            value={form.workmanshipRemark || ""}
+            onChange={handleChange}
+            placeholder="Enter remarks..."
+            style={{ ...inputStyle }}
+          />
+        </div>
       </div>
 
       {/* Defect Photos Section */}
       <div style={{ marginBottom: "20px" }}>
-        <h4 style={{ marginBottom: "15px", fontWeight: "bold", color: "#fff" }}>Defect Photos:</h4>
+        <h4 style={{ marginBottom: "15px", fontWeight: "bold", color: colors.text }}>Defect Photos:</h4>
         
         {[1, 2, 3, 4].map((num) => (
-          <div key={num} style={{ marginBottom: "20px", padding: "15px", background: "#0f172a", border: "1px solid #3a4a5c", borderRadius: "8px" }}>
+          <div key={num} style={{ marginBottom: "20px", padding: "15px", background: colors.surfaceAlt, border: `1px solid ${colors.border}`, borderRadius: "8px" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "15px", alignItems: "start" }}>
               {/* Photo Upload Area */}
-              <div
-                style={{
-                  height: "150px",
-                  border: "2px dashed #3a4a5c",
-                  borderRadius: "8px",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  background: "#1e293b",
-                  transition: "all 0.3s"
-                }}
-              >
+              <div style={{ position: "relative" }}>
                 <input
                   type="file"
                   accept="image/*"
-                  name={`defectPhoto${num}`}
+                  id={`defectPhotoInput${num}`}
                   onChange={(e) => {
-                    const fileName = e.target.files?.[0]?.name || "";
-                    handleChange({ target: { name: `defectPhoto${num}`, value: fileName } });
+                    const file = e.target.files?.[0];
+                    handleDefectPhotoUpload(num, file);
                   }}
                   style={{ display: "none" }}
                 />
-                <div style={{ textAlign: "center", color: "#8a9aaa" }}>
-                  <div style={{ fontSize: "24px", marginBottom: "8px" }}>📷</div>
-                  <div style={{ fontSize: "12px" }}>Click to upload photo</div>
-                  <div style={{ fontSize: "11px", marginTop: "5px", color: "#5a6a7a" }}>
-                    {form[`defectPhoto${num}`] || "No photo selected"}
+                <label
+                  htmlFor={`defectPhotoInput${num}`}
+                  style={{
+                    height: "150px",
+                    border: `2px dashed ${colors.border}`,
+                    borderRadius: "8px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    background: colors.surface,
+                    transition: "all 0.3s",
+                    color: colors.textMuted
+                  }}
+                >
+                  <div style={{ textAlign: "center", color: colors.textMuted }}>
+                    <div style={{ fontSize: "24px", marginBottom: "8px" }}>📷</div>
+                    <div style={{ fontSize: "12px" }}>Click to upload</div>
+                    <div style={{ fontSize: "11px", marginTop: "5px", color: colors.textMuted }}>
+                      {form[`defectPhoto${num}`] || "No photo"}
+                    </div>
                   </div>
-                </div>
+                </label>
+
+                {typeof form[`defectPhotoPreview${num}`] === "string" &&
+                  form[`defectPhotoPreview${num}`].startsWith("data:image") && (
+                    <div style={{ marginTop: "8px" }}>
+                      <img
+                        src={form[`defectPhotoPreview${num}`]}
+                        alt={`Defect ${num} preview`}
+                        style={{
+                          width: "100%",
+                          height: "120px",
+                          objectFit: "cover",
+                          borderRadius: "8px",
+                          border: `1px solid ${colors.border}`,
+                          display: "block",
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => clearDefectPhoto(num)}
+                        style={{
+                          marginTop: "6px",
+                          width: "100%",
+                          border: "none",
+                          borderRadius: "6px",
+                          background: colors.danger,
+                          color: "#fff",
+                          fontSize: "11px",
+                          padding: "6px 8px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Remove Photo
+                      </button>
+                    </div>
+                  )}
               </div>
 
               {/* Description Area */}
               <div>
-                <label style={{ fontWeight: "bold", display: "block", marginBottom: "8px", color: "#fff" }}>
+                <label style={{ fontWeight: "bold", display: "block", marginBottom: "8px", color: colors.text }}>
                   Defect Photo {num} Description:
                 </label>
                 <textarea

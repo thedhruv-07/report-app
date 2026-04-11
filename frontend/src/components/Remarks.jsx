@@ -1,6 +1,6 @@
 import { inputStyle, buttonStyle } from "../styles";
 
-export default function Remarks({ form, handleChange, onPrev, onNext }) {
+export default function Remarks({ handleChange, onPrev, onNext }) {
   return (
     <>
       <h3>Remarks</h3>

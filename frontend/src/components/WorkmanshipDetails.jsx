@@ -1,6 +1,6 @@
 import { inputStyle, buttonStyle } from "../styles";
 
-export default function WorkmanshipDetails({ form, handleChange, onPrev, onNext }) {
+export default function WorkmanshipDetails({ handleChange, onPrev, onNext }) {
   return (
     <>
       <h3>Workmanship Details</h3>
