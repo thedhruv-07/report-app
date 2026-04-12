@@ -11,9 +11,7 @@ const {
   Table,
   TableRow,
   TableCell,
-  SectionProperties,
   Header,
-  PageBreak,
   WidthType,
   BorderStyle,
   ImageRun,
@@ -26,7 +24,7 @@ app.use(cors());
 const upload = multer({ dest: "uploads/" });
 
 app.post("/generate", upload.array("images"), async (req, res) => {
-  const data = normalizePayload(req.body);
+  const data = enrichReportHeaderData(normalizePayload(req.body));
 
   try {
     const doc = new Document({
@@ -37,10 +35,24 @@ app.post("/generate", upload.array("images"), async (req, res) => {
       revision: 1,
       sections: [
         {
-          properties: {},
+          headers: {
+            default: new Header({
+              children: [createHeaderTable(data)],
+            }),
+          },
+          properties: {
+            page: {
+              margin: {
+                top: convertInchesToTwip(1.6),
+                right: convertInchesToTwip(0.6),
+                bottom: convertInchesToTwip(0.6),
+                left: convertInchesToTwip(0.6),
+                header: convertInchesToTwip(0.3),
+                footer: convertInchesToTwip(0.3),
+              },
+            },
+          },
           children: [
-            createHeaderTable(data),
-            new Paragraph(""),
             ...createReportContent(data, req.files || []),
           ],
         },
@@ -74,6 +86,8 @@ app.post("/generate", upload.array("images"), async (req, res) => {
 });
 
 function createHeaderTable(data) {
+  const header = data.reportHeader || {};
+
   return new Table({
     width: { size: 100, type: "pct" },
     rows: [
@@ -113,25 +127,25 @@ function createHeaderTable(data) {
               new Paragraph({
                 children: [
                   new TextRun({ text: "Client Name (abbr.): ", bold: true, size: 20 }),
-                  new TextRun({ text: sanitizeDocxText(data.client || "-"), size: 20 }),
+                  new TextRun({ text: sanitizeDocxText(header.client || "-"), size: 20 }),
                 ],
               }),
               new Paragraph({
                 children: [
                   new TextRun({ text: "FRIN: ", bold: true, size: 20 }),
-                  new TextRun({ text: sanitizeDocxText(data.po || "-"), size: 20 }),
+                  new TextRun({ text: sanitizeDocxText(header.po || "-"), size: 20 }),
                 ],
               }),
               new Paragraph({
                 children: [
                   new TextRun({ text: "Inspection Number: ", bold: true, size: 20 }),
-                  new TextRun({ text: sanitizeDocxText(data.inspectionNumber || "-"), size: 20 }),
+                  new TextRun({ text: sanitizeDocxText(header.inspectionNumber || "-"), size: 20 }),
                 ],
               }),
               new Paragraph({
                 children: [
                   new TextRun({ text: "Report Date: ", bold: true, size: 20 }),
-                  new TextRun({ text: sanitizeDocxText(data.inspectionDate || "-"), size: 20 }),
+                  new TextRun({ text: sanitizeDocxText(header.reportDate || "-"), size: 20 }),
                 ],
               }),
               new Paragraph({
@@ -142,13 +156,13 @@ function createHeaderTable(data) {
                     size: 20,
                   }),
                   new TextRun({
-                    text: sanitizeDocxText(data.conclusion ? data.conclusion.toUpperCase() : "-"),
+                    text: sanitizeDocxText(header.conclusion || "-"),
                     bold: true,
                     size: 24,
                     color:
-                      data.conclusion === "FAILED"
+                      header.conclusion === "FAILED"
                         ? "FF0000"
-                        : data.conclusion === "PASSED"
+                        : header.conclusion === "PASSED"
                         ? "00AA00"
                         : "FFA500",
                   }),
@@ -988,14 +1002,29 @@ function createReportContent(data, uploadedFiles) {
   const remarks = Array.isArray(data.remarks) ? data.remarks : [];
   const remarkRows = [];
   for (let i = 0; i < 9; i += 1) {
+    const remarkText = blankIfEmpty(remarks[i]);
     remarkRows.push(
       new TableRow({
         children: [
           createQtyCell(`${i + 1}.`, { shaded: true }),
-          createQtyCell(blankIfEmpty(remarks[i]), { align: "left" }),
+          createQtyCell(remarkText, { align: "left" }),
         ],
       })
     );
+
+    const photosForRemark = getRemarkPhotosForRow(data.remarkPhotosByIndex, i);
+    if (photosForRemark.length > 0) {
+      remarkRows.push(
+        new TableRow({
+          children: [
+            createQtyCell("Photos", { bold: true, shaded: true, align: "left" }),
+            new TableCell({
+              children: getPhotoParagraphsForRemarkRow(photosForRemark),
+            }),
+          ],
+        })
+      );
+    }
   }
   remarkRows.push(
     new TableRow({
@@ -1031,59 +1060,6 @@ function createReportContent(data, uploadedFiles) {
   );
   children.push(new Table({ rows: remarkRows, width: { size: 100, type: "pct" } }));
   children.push(new Paragraph(""));
-
-  // Attach remark photos directly with their related remark lines.
-  if (data.remarkPhotosByIndex && typeof data.remarkPhotosByIndex === "object") {
-    const remarkKeys = Object.keys(data.remarkPhotosByIndex)
-      .filter((k) => Array.isArray(data.remarkPhotosByIndex[k]) && data.remarkPhotosByIndex[k].length > 0)
-      .sort((a, b) => Number(a) - Number(b));
-
-    remarkKeys.forEach((key) => {
-      const remarkIndex = Number(key);
-      const relatedRemark =
-        Array.isArray(data.remarks) && remarkIndex >= 0 && remarkIndex < data.remarks.length
-          ? data.remarks[remarkIndex]
-          : "";
-
-      children.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: sanitizeDocxText(`Remark ${remarkIndex + 1}: ${blankIfEmpty(relatedRemark)}`),
-              bold: true,
-              size: 20,
-            }),
-          ],
-          spacing: { before: 120, after: 80 },
-        })
-      );
-
-      const photoParagraphs = getPhotoGridParagraphs(data.remarkPhotosByIndex[key]);
-      if (photoParagraphs.length > 0) {
-        children.push(...photoParagraphs);
-      }
-      children.push(new Paragraph(""));
-    });
-  } else if (Array.isArray(data.remarkPhotos) && data.remarkPhotos.length > 0) {
-    children.push(
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: "Remark Photos",
-            bold: true,
-            size: 20,
-          }),
-        ],
-        spacing: { before: 120, after: 80 },
-      })
-    );
-
-    const photoParagraphs = getPhotoGridParagraphs(data.remarkPhotos);
-    if (photoParagraphs.length > 0) {
-      children.push(...photoParagraphs);
-    }
-    children.push(new Paragraph(""));
-  }
 
   // IV. CONCLUSION
   children.push(
@@ -1340,6 +1316,83 @@ function getPhotoGridParagraphs(photoItems) {
   return paragraphs;
 }
 
+function getRemarkPhotosForRow(remarkPhotosByIndex, rowIndex) {
+  if (!remarkPhotosByIndex || typeof remarkPhotosByIndex !== "object") return [];
+
+  const direct = remarkPhotosByIndex[rowIndex];
+  if (Array.isArray(direct)) return direct;
+
+  const asStringKey = remarkPhotosByIndex[String(rowIndex)];
+  if (Array.isArray(asStringKey)) return asStringKey;
+
+  return [];
+}
+
+function getPhotoParagraphsForRemarkRow(photoItems) {
+  const paragraphs = [];
+
+  photoItems.forEach((item, index) => {
+    if (!item || !item.preview || typeof item.preview !== "string") {
+      return;
+    }
+
+    try {
+      const imageTypeFromDataUrl = getImageTypeFromDataUrl(item.preview);
+      const base64Data = item.preview.replace(/^data:image\/\w+;base64,/, "");
+      const imageBuffer = Buffer.from(base64Data, "base64");
+      const imageType = imageTypeFromDataUrl || detectImageTypeFromBuffer(imageBuffer);
+
+      if (!isSupportedImageBuffer(imageBuffer) || !imageType) {
+        paragraphs.push(
+          new Paragraph({
+            children: [new TextRun({ text: sanitizeDocxText(`Photo ${index + 1} is invalid or unsupported`), italics: true, size: 18 })],
+            spacing: { after: 60 },
+          })
+        );
+        return;
+      }
+
+      paragraphs.push(
+        new Paragraph({
+          children: [
+            new ImageRun({
+              data: imageBuffer,
+              type: imageType,
+              transformation: {
+                width: 170,
+                height: 120,
+              },
+            }),
+          ],
+          spacing: { after: 50 },
+        })
+      );
+
+      if (item.label) {
+        paragraphs.push(
+          new Paragraph({
+            children: [new TextRun({ text: sanitizeDocxText(`Photo ${index + 1}: ${item.label}`), size: 16 })],
+            spacing: { after: 70 },
+          })
+        );
+      }
+    } catch (e) {
+      paragraphs.push(
+        new Paragraph({
+          children: [new TextRun({ text: sanitizeDocxText(`Photo ${index + 1} could not be rendered`), italics: true, size: 18 })],
+          spacing: { after: 60 },
+        })
+      );
+    }
+  });
+
+  if (paragraphs.length === 0) {
+    return [new Paragraph({ text: "-" })];
+  }
+
+  return paragraphs;
+}
+
 function tableBorders() {
   return {
     top: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
@@ -1466,6 +1519,110 @@ function normalizePayload(body) {
   });
 
   return parsed;
+}
+
+function enrichReportHeaderData(rawData) {
+  const data = rawData || {};
+
+  const client = pickFirstValue(data, ["client", "clientName", "clientAbbr", "buyer"], "-");
+  const po = pickFirstValue(data, ["po", "frin", "poNo", "poNumber", "purchaseOrder"], "-");
+
+  const inspectionNumber = pickFirstValue(
+    data,
+    [
+      "inspectionNumber",
+      "inspectionNo",
+      "inspectionId",
+      "inspectionID",
+      "reportNumber",
+      "reportNo",
+      "frin",
+      "po",
+    ],
+    "-"
+  );
+
+  const reportDateInput = pickFirstValue(data, ["reportDate", "inspectionDate", "date"], "");
+  const reportDate = normalizeReportDate(reportDateInput);
+
+  const conclusionInput = pickFirstValue(
+    data,
+    ["conclusionStatus", "conclusion", "overallResult", "finalResult"],
+    ""
+  );
+  const inferredConclusion = inferConclusionFromSummary(data);
+  const normalizedConclusion = normalizeConclusionValue(conclusionInput) || inferredConclusion || "-";
+
+  return {
+    ...data,
+    reportHeader: {
+      client,
+      po,
+      inspectionNumber,
+      reportDate,
+      conclusion: normalizedConclusion,
+    },
+  };
+}
+
+function pickFirstValue(data, keys, fallback = "") {
+  for (const key of keys) {
+    if (!Object.prototype.hasOwnProperty.call(data, key)) continue;
+
+    const value = data[key];
+    if (typeof value === "string" && value.trim().length > 0) return value.trim();
+    if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  }
+  return fallback;
+}
+
+function normalizeReportDate(value) {
+  if (typeof value === "string" && value.trim().length > 0) {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString().slice(0, 10);
+    }
+    return value.trim();
+  }
+
+  return new Date().toISOString().slice(0, 10);
+}
+
+function normalizeConclusionValue(value) {
+  if (typeof value !== "string") return "";
+  const normalized = value.trim().toUpperCase();
+
+  if (normalized === "PASS") return "PASSED";
+  if (normalized === "FAIL") return "FAILED";
+  if (normalized === "PASSED" || normalized === "FAILED" || normalized === "PENDING") {
+    return normalized;
+  }
+
+  return "";
+}
+
+function inferConclusionFromSummary(data) {
+  const summaryStatuses = [
+    data.quantity,
+    data.workmanship,
+    data.onSiteTests,
+    data.dimensions,
+    data.packingResult,
+    data.packing_result,
+    data.marking_result_final,
+    data.client_requirement_result,
+    data.quantityResult,
+    data.workmanshipResult,
+    data.onSiteTestResult,
+    data.productResult,
+  ]
+    .map((value) => normalizeConclusionValue(String(value || "")))
+    .filter(Boolean);
+
+  if (summaryStatuses.includes("FAILED")) return "FAILED";
+  if (summaryStatuses.includes("PENDING")) return "PENDING";
+  if (summaryStatuses.includes("PASSED")) return "PASSED";
+  return "";
 }
 
 function createHeaderCell(text) {
