@@ -37,7 +37,21 @@ app.post("/generate", upload.array("images"), async (req, res) => {
         {
           headers: {
             default: new Header({
-              children: [createHeaderTable(data)],
+              children: [
+                createHeaderTable(data),
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: "Page 1 of 33",
+                      bold: true,
+                      size: 18,
+                      color: "333333",
+                    }),
+                  ],
+                  alignment: "right",
+                  spacing: { before: 100, after: 0 },
+                }),
+              ],
             }),
           },
           properties: {
@@ -115,12 +129,12 @@ function createHeaderTable(data) {
           new TableCell({
             width: { size: 15, type: "pct" },
             borders: {
-              top: { style: BorderStyle.SINGLE, size: 12, color: "000000" },
-              bottom: { style: BorderStyle.SINGLE, size: 12, color: "000000" },
-              left: { style: BorderStyle.SINGLE, size: 12, color: "000000" },
-              right: { style: BorderStyle.SINGLE, size: 12, color: "000000" },
+              top: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
+              bottom: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
+              left: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
+              right: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
             },
-            margins: { top: 60, bottom: 60, left: 40, right: 40 },
+            margins: { top: 60, bottom: 0, left: 40, right: 40 },
             children: [
               ...(logoRun
                 ? [
@@ -142,29 +156,28 @@ function createHeaderTable(data) {
           new TableCell({
             width: { size: 60, type: "pct" },
             borders: {
-              top: { style: BorderStyle.SINGLE, size: 12, color: "000000" },
-              bottom: { style: BorderStyle.SINGLE, size: 12, color: "000000" },
-              left: { style: BorderStyle.SINGLE, size: 12, color: "000000" },
-              right: { style: BorderStyle.SINGLE, size: 12, color: "000000" },
+              top: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
+              bottom: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
+              left: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
+              right: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
             },
             margins: { top: 0, bottom: 0, left: 0, right: 0 },
             children: [
               new Table({
                 width: { size: 100, type: "pct" },
                 rows: [
-                  // Header row
+                  // Row 1: Client Name & FRIN
                   new TableRow({
                     children: [
                       new TableCell({
-                        width: { size: 50, type: "pct" },
+                        width: { size: 40, type: "pct" },
                         borders: {
-                          top: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
-                          bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
-                          left: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
-                          right: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                          top: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+                          bottom: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+                          left: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+                          right: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
                         },
                         margins: { top: 40, bottom: 40, left: 40, right: 40 },
-                        shading: { fill: "E8E8E8" },
                         children: [
                           new Paragraph({
                             children: [
@@ -172,7 +185,7 @@ function createHeaderTable(data) {
                                 text: "Client Name (abbr.):",
                                 bold: true,
                                 size: 18,
-                                color: "333333",
+                                color: "1F1F1F",
                               }),
                             ],
                             spacing: { after: 0 },
@@ -180,15 +193,14 @@ function createHeaderTable(data) {
                         ],
                       }),
                       new TableCell({
-                        width: { size: 50, type: "pct" },
+                        width: { size: 60, type: "pct" },
                         borders: {
-                          top: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
-                          bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
-                          left: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
-                          right: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                          top: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+                          bottom: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+                          left: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+                          right: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
                         },
                         margins: { top: 40, bottom: 40, left: 40, right: 40 },
-                        shading: { fill: "E8E8E8" },
                         children: [
                           new Paragraph({
                             children: [
@@ -196,7 +208,7 @@ function createHeaderTable(data) {
                                 text: "FRIN",
                                 bold: true,
                                 size: 18,
-                                color: "333333",
+                                color: "1F1F1F",
                               }),
                             ],
                             spacing: { after: 0 },
@@ -210,15 +222,14 @@ function createHeaderTable(data) {
                   new TableRow({
                     children: [
                       new TableCell({
-                        width: { size: 50, type: "pct" },
+                        width: { size: 40, type: "pct" },
                         borders: {
-                          top: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
-                          bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
-                          left: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
-                          right: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                          top: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+                          bottom: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+                          left: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+                          right: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
                         },
                         margins: { top: 40, bottom: 40, left: 40, right: 40 },
-                        shading: { fill: "F5F5F5" },
                         children: [
                           new Paragraph({
                             children: [
@@ -226,7 +237,7 @@ function createHeaderTable(data) {
                                 text: "Inspection Number:",
                                 bold: true,
                                 size: 18,
-                                color: "333333",
+                                color: "1F1F1F",
                               }),
                             ],
                             spacing: { after: 0 },
@@ -234,7 +245,7 @@ function createHeaderTable(data) {
                         ],
                       }),
                       new TableCell({
-                        width: { size: 50, type: "pct" },
+                        width: { size: 60, type: "pct" },
                         borders: {
                           top: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
                           bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
@@ -247,8 +258,9 @@ function createHeaderTable(data) {
                             children: [
                               new TextRun({
                                 text: sanitizeDocxText(header.inspectionNumber || "-"),
+                                bold: true,
                                 size: 18,
-                                color: "000000",
+                                color: "1F1F1F",
                               }),
                             ],
                             spacing: { after: 0 },
@@ -262,15 +274,14 @@ function createHeaderTable(data) {
                   new TableRow({
                     children: [
                       new TableCell({
-                        width: { size: 50, type: "pct" },
+                        width: { size: 40, type: "pct" },
                         borders: {
-                          top: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
-                          bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
-                          left: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
-                          right: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                          top: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+                          bottom: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+                          left: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+                          right: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
                         },
                         margins: { top: 40, bottom: 40, left: 40, right: 40 },
-                        shading: { fill: "F5F5F5" },
                         children: [
                           new Paragraph({
                             children: [
@@ -278,7 +289,7 @@ function createHeaderTable(data) {
                                 text: "Report Date:",
                                 bold: true,
                                 size: 18,
-                                color: "333333",
+                                color: "1F1F1F",
                               }),
                             ],
                             spacing: { after: 0 },
@@ -286,7 +297,7 @@ function createHeaderTable(data) {
                         ],
                       }),
                       new TableCell({
-                        width: { size: 50, type: "pct" },
+                        width: { size: 60, type: "pct" },
                         borders: {
                           top: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
                           bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
@@ -299,8 +310,9 @@ function createHeaderTable(data) {
                             children: [
                               new TextRun({
                                 text: sanitizeDocxText(header.reportDate || "-"),
+                                bold: true,
                                 size: 18,
-                                color: "000000",
+                                color: "1F1F1F",
                               }),
                             ],
                             spacing: { after: 0 },
@@ -318,21 +330,25 @@ function createHeaderTable(data) {
           new TableCell({
             width: { size: 25, type: "pct" },
             borders: {
-              top: { style: BorderStyle.SINGLE, size: 12, color: "000000" },
-              bottom: { style: BorderStyle.SINGLE, size: 12, color: "000000" },
-              left: { style: BorderStyle.SINGLE, size: 12, color: "000000" },
-              right: { style: BorderStyle.SINGLE, size: 12, color: "000000" },
+              top: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
+              bottom: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
+              left: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
+              right: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
             },
-            margins: { top: 50, bottom: 50, left: 50, right: 50 },
-            shading: {
-              fill:
-                header.conclusion === "FAILED"
-                  ? "FFFFFF"
-                  : header.conclusion === "PASSED"
-                  ? "D9F0D9"
-                  : "FFFFF0",
-            },
+            margins: { top: 40, bottom: 40, left: 50, right: 50 },
             children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "Conclusion",
+                    bold: true,
+                    size: 18,
+                    color: "1F1F1F",
+                  }),
+                ],
+                alignment: "center",
+                spacing: { after: 100 },
+              }),
               new Paragraph({
                 children: [
                   new TextRun({
@@ -341,44 +357,13 @@ function createHeaderTable(data) {
                     size: 32,
                     color:
                       header.conclusion === "FAILED"
-                        ? "FF0000"
+                        ? "CC0000"
                         : header.conclusion === "PASSED"
-                        ? "006400"
-                        : "000000",
+                        ? "004400"
+                        : "1F1F1F",
                   }),
                 ],
                 alignment: "center",
-                spacing: { after: 0 },
-              }),
-            ],
-          }),
-        ],
-      }),
-
-      // Page indicator row
-      new TableRow({
-        height: { value: 200, rule: "atLeast" },
-        children: [
-          new TableCell({
-            columnSpan: 3,
-            borders: {
-              top: { style: BorderStyle.NONE },
-              bottom: { style: BorderStyle.NONE },
-              left: { style: BorderStyle.NONE },
-              right: { style: BorderStyle.NONE },
-            },
-            margins: { top: 30, bottom: 30, left: 0, right: 50 },
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Page 1 of 33",
-                    size: 16,
-                    color: "999999",
-                    italics: true,
-                  }),
-                ],
-                alignment: "right",
                 spacing: { after: 0 },
               }),
             ],
@@ -392,84 +377,132 @@ function createHeaderTable(data) {
 function createReportContent(data, uploadedFiles) {
   const children = [];
 
-  // Title
-  children.push(
-    new Paragraph({
-      alignment: "center",
-      children: [
-        new TextRun({
-          text: "Pre-Shipment Inspection Report",
-          bold: true,
-          size: 44,
-        }),
-      ],
-    })
-  );
+  // I. GENERAL INFORMATION - Table with title header and section header
+  const generalInfoData = [
+    ["Service Performed:", data.servicePerformed || "-"],
+    ["Client:", data.client || "-"],
+    ["Supplier:", data.supplier || "-"],
+    ["Factory:", data.factory || "-"],
+    ["Product Name:", data.productName || "-"],
+    ["P.O. No.:", data.po || "-"],
+    ["Item No.:", data.itemNo || "-"],
+    ["Destination Country:", data.country || "-"],
+    ["Inspection Date:", data.inspectionDate || "-"],
+    ["Inspection Location:", data.inspectionLocation || "-"],
+    ["Reference Sample:", data.referenceSample || "-"],
+  ];
 
-  children.push(new Paragraph(""));
-
-  // I. GENERAL INFORMATION
-  children.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: "I. GENERAL INFORMATION",
-          bold: true,
-          size: 28,
-          color: "1F4E79",
-        }),
-      ],
-      spacing: { before: 200, after: 200 },
-    })
-  );
-
-  // General Info as label/value rows with a dedicated right-side photo panel.
   const generalInfoRows = [
-    ["Service Performed", data.servicePerformed || "-"],
-    ["Client", data.client || "-"],
-    ["Supplier", data.supplier || "-"],
-    ["Factory", data.factory || "-"],
-    ["Product Name", data.productName || "-"],
-    ["P.O. No.", data.po || "-"],
-    ["Item No.", data.itemNo || "-"],
-    ["Destination Country", data.country || "-"],
-    ["Inspection Date", data.inspectionDate || "-"],
-    ["Inspection Location", data.inspectionLocation || "-"],
-    ["Reference Sample", data.referenceSample || "-"],
+    // Title row (no background shading)
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 3,
+          width: { size: 100, type: WidthType.PERCENTAGE },
+          borders: tableBorders(),
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "Pre-Shipment Inspection Report",
+                  bold: true,
+                  size: 24,
+                  color: "2C5AA0",
+                }),
+              ],
+              alignment: "center",
+              spacing: { before: 60, after: 60 },
+            }),
+          ],
+        }),
+      ],
+    }),
+    // Section header row (no background shading)
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 3,
+          width: { size: 100, type: WidthType.PERCENTAGE },
+          borders: tableBorders(),
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "I. GENERAL INFORMATION",
+                  bold: true,
+                  size: 20,
+                  color: "2C5AA0",
+                }),
+              ],
+              alignment: "left",
+              spacing: { before: 60, after: 60 },
+            }),
+          ],
+        }),
+      ],
+    }),
+    // First data row with row span for photo column
+    new TableRow({
+      children: [
+        new TableCell({
+          width: { size: 26, type: WidthType.PERCENTAGE },
+          borders: tableBorders(),
+          shading: { fill: "E8E8E8" },
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: sanitizeDocxText(generalInfoData[0][0]), bold: true, size: 18, color: "1F1F1F" })],
+            }),
+          ],
+        }),
+        new TableCell({
+          width: { size: 44, type: WidthType.PERCENTAGE },
+          borders: tableBorders(),
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: sanitizeDocxText(generalInfoData[0][1]), size: 18, color: "1F1F1F" })],
+            }),
+          ],
+        }),
+        new TableCell({
+          width: { size: 30, type: WidthType.PERCENTAGE },
+          rowSpan: generalInfoData.length,
+          borders: tableBorders(),
+          children: getPhotoContent(data.generalPhoto, uploadedFiles),
+        }),
+      ],
+    }),
+    // Remaining data rows (without photo column due to rowSpan)
+    ...generalInfoData.slice(1).map(([label, value]) =>
+      new TableRow({
+        children: [
+          new TableCell({
+            width: { size: 26, type: WidthType.PERCENTAGE },
+            borders: tableBorders(),
+            shading: { fill: "E8E8E8" },
+            children: [
+              new Paragraph({
+                children: [new TextRun({ text: sanitizeDocxText(label), bold: true, size: 18, color: "1F1F1F" })],
+              }),
+            ],
+          }),
+          new TableCell({
+            width: { size: 44, type: WidthType.PERCENTAGE },
+            borders: tableBorders(),
+            children: [
+              new Paragraph({
+                children: [new TextRun({ text: sanitizeDocxText(value), size: 18, color: "1F1F1F" })],
+              }),
+            ],
+          }),
+        ],
+      })
+    ),
   ];
 
   children.push(
     new Table({
       width: { size: 100, type: WidthType.PERCENTAGE },
-      rows: generalInfoRows.map(([label, value], index) =>
-        new TableRow({
-          children: [
-            new TableCell({
-              width: { size: 26, type: WidthType.PERCENTAGE },
-              borders: tableBorders(),
-              children: [
-                new Paragraph({
-                  children: [new TextRun({ text: sanitizeDocxText(label), bold: true, size: 20 })],
-                }),
-              ],
-            }),
-            new TableCell({
-              width: { size: 44, type: WidthType.PERCENTAGE },
-              borders: tableBorders(),
-              children: [
-                new Paragraph({
-                  children: [new TextRun({ text: sanitizeDocxText(value), size: 20 })],
-                }),
-              ],
-            }),
-            new TableCell({
-              width: { size: 30, type: WidthType.PERCENTAGE },
-              borders: tableBorders(),
-              children: index === 0 ? getPhotoContent(data.generalPhoto, uploadedFiles) : [new Paragraph("")],
-            }),
-          ],
-        })
-      ),
+      rows: generalInfoRows,
     })
   );
 
@@ -1608,10 +1641,10 @@ function getPhotoParagraphsForRemarkRow(photoItems) {
 
 function tableBorders() {
   return {
-    top: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
-    bottom: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
-    left: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
-    right: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+    top: { style: BorderStyle.SINGLE, size: 1, color: "1F1F1F" },
+    bottom: { style: BorderStyle.SINGLE, size: 1, color: "1F1F1F" },
+    left: { style: BorderStyle.SINGLE, size: 1, color: "1F1F1F" },
+    right: { style: BorderStyle.SINGLE, size: 1, color: "1F1F1F" },
   };
 }
 
