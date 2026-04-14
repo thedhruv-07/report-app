@@ -1,4 +1,4 @@
-const express = require("express");
+﻿const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
 const fs = require("fs");
@@ -87,86 +87,299 @@ app.post("/generate", upload.array("images"), async (req, res) => {
 
 function createHeaderTable(data) {
   const header = data.reportHeader || {};
+  const logoPath = path.join(__dirname, "frontend", "public", "company-logo.png");
+
+  let logoRun = null;
+  try {
+    if (fs.existsSync(logoPath)) {
+      const logoBuffer = fs.readFileSync(logoPath);
+      logoRun = new ImageRun({
+        data: logoBuffer,
+        type: "png",
+        transformation: {
+          width: 150,
+          height: 75,
+        },
+      });
+    }
+  } catch (e) {
+    console.warn("Could not load logo image:", e.message);
+  }
 
   return new Table({
     width: { size: 100, type: "pct" },
     rows: [
       new TableRow({
         children: [
+          // Left cell - Logo
           new TableCell({
-            width: { size: 30, type: "pct" },
+            width: { size: 15, type: "pct" },
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 12, color: "000000" },
+              bottom: { style: BorderStyle.SINGLE, size: 12, color: "000000" },
+              left: { style: BorderStyle.SINGLE, size: 12, color: "000000" },
+              right: { style: BorderStyle.SINGLE, size: 12, color: "000000" },
+            },
+            margins: { top: 60, bottom: 60, left: 40, right: 40 },
             children: [
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Absolute Veritas",
-                    bold: true,
-                    size: 28,
-                    color: "FF8C00",
+              ...(logoRun
+                ? [
+                    new Paragraph({
+                      children: [logoRun],
+                      alignment: "center",
+                      spacing: { after: 0 },
+                    }),
+                  ]
+                : [
+                    new Paragraph({
+                      children: [new TextRun({ text: "" })],
+                    }),
+                  ]),
+            ],
+          }),
+
+          // Middle cell - Information table
+          new TableCell({
+            width: { size: 60, type: "pct" },
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 12, color: "000000" },
+              bottom: { style: BorderStyle.SINGLE, size: 12, color: "000000" },
+              left: { style: BorderStyle.SINGLE, size: 12, color: "000000" },
+              right: { style: BorderStyle.SINGLE, size: 12, color: "000000" },
+            },
+            margins: { top: 0, bottom: 0, left: 0, right: 0 },
+            children: [
+              new Table({
+                width: { size: 100, type: "pct" },
+                rows: [
+                  // Header row
+                  new TableRow({
+                    children: [
+                      new TableCell({
+                        width: { size: 50, type: "pct" },
+                        borders: {
+                          top: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                          bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                          left: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                          right: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                        },
+                        margins: { top: 40, bottom: 40, left: 40, right: 40 },
+                        shading: { fill: "E8E8E8" },
+                        children: [
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: "Client Name (abbr.):",
+                                bold: true,
+                                size: 18,
+                                color: "333333",
+                              }),
+                            ],
+                            spacing: { after: 0 },
+                          }),
+                        ],
+                      }),
+                      new TableCell({
+                        width: { size: 50, type: "pct" },
+                        borders: {
+                          top: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                          bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                          left: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                          right: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                        },
+                        margins: { top: 40, bottom: 40, left: 40, right: 40 },
+                        shading: { fill: "E8E8E8" },
+                        children: [
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: "FRIN",
+                                bold: true,
+                                size: 18,
+                                color: "333333",
+                              }),
+                            ],
+                            spacing: { after: 0 },
+                          }),
+                        ],
+                      }),
+                    ],
                   }),
-                ],
-              }),
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Inspection, Testing and Certifications",
-                    size: 18,
-                    italics: true,
+
+                  // Row 2: Inspection Number
+                  new TableRow({
+                    children: [
+                      new TableCell({
+                        width: { size: 50, type: "pct" },
+                        borders: {
+                          top: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                          bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                          left: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                          right: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                        },
+                        margins: { top: 40, bottom: 40, left: 40, right: 40 },
+                        shading: { fill: "F5F5F5" },
+                        children: [
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: "Inspection Number:",
+                                bold: true,
+                                size: 18,
+                                color: "333333",
+                              }),
+                            ],
+                            spacing: { after: 0 },
+                          }),
+                        ],
+                      }),
+                      new TableCell({
+                        width: { size: 50, type: "pct" },
+                        borders: {
+                          top: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                          bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                          left: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                          right: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                        },
+                        margins: { top: 40, bottom: 40, left: 40, right: 40 },
+                        children: [
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: sanitizeDocxText(header.inspectionNumber || "-"),
+                                size: 18,
+                                color: "000000",
+                              }),
+                            ],
+                            spacing: { after: 0 },
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+
+                  // Row 3: Report Date
+                  new TableRow({
+                    children: [
+                      new TableCell({
+                        width: { size: 50, type: "pct" },
+                        borders: {
+                          top: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                          bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                          left: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                          right: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                        },
+                        margins: { top: 40, bottom: 40, left: 40, right: 40 },
+                        shading: { fill: "F5F5F5" },
+                        children: [
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: "Report Date:",
+                                bold: true,
+                                size: 18,
+                                color: "333333",
+                              }),
+                            ],
+                            spacing: { after: 0 },
+                          }),
+                        ],
+                      }),
+                      new TableCell({
+                        width: { size: 50, type: "pct" },
+                        borders: {
+                          top: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                          bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                          left: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                          right: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                        },
+                        margins: { top: 40, bottom: 40, left: 40, right: 40 },
+                        children: [
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: sanitizeDocxText(header.reportDate || "-"),
+                                size: 18,
+                                color: "000000",
+                              }),
+                            ],
+                            spacing: { after: 0 },
+                          }),
+                        ],
+                      }),
+                    ],
                   }),
                 ],
               }),
             ],
           }),
+
+          // Right cell - Conclusion (spans all rows)
           new TableCell({
-            width: { size: 40, type: "pct" },
-            children: [new Paragraph("")],
-          }),
-          new TableCell({
-            width: { size: 30, type: "pct" },
+            width: { size: 25, type: "pct" },
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 12, color: "000000" },
+              bottom: { style: BorderStyle.SINGLE, size: 12, color: "000000" },
+              left: { style: BorderStyle.SINGLE, size: 12, color: "000000" },
+              right: { style: BorderStyle.SINGLE, size: 12, color: "000000" },
+            },
+            margins: { top: 50, bottom: 50, left: 50, right: 50 },
+            shading: {
+              fill:
+                header.conclusion === "FAILED"
+                  ? "FFFFFF"
+                  : header.conclusion === "PASSED"
+                  ? "D9F0D9"
+                  : "FFFFF0",
+            },
             children: [
               new Paragraph({
                 children: [
-                  new TextRun({ text: "Client Name (abbr.): ", bold: true, size: 20 }),
-                  new TextRun({ text: sanitizeDocxText(header.client || "-"), size: 20 }),
-                ],
-              }),
-              new Paragraph({
-                children: [
-                  new TextRun({ text: "FRIN: ", bold: true, size: 20 }),
-                  new TextRun({ text: sanitizeDocxText(header.po || "-"), size: 20 }),
-                ],
-              }),
-              new Paragraph({
-                children: [
-                  new TextRun({ text: "Inspection Number: ", bold: true, size: 20 }),
-                  new TextRun({ text: sanitizeDocxText(header.inspectionNumber || "-"), size: 20 }),
-                ],
-              }),
-              new Paragraph({
-                children: [
-                  new TextRun({ text: "Report Date: ", bold: true, size: 20 }),
-                  new TextRun({ text: sanitizeDocxText(header.reportDate || "-"), size: 20 }),
-                ],
-              }),
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Conclusion: ",
-                    bold: true,
-                    size: 20,
-                  }),
                   new TextRun({
                     text: sanitizeDocxText(header.conclusion || "-"),
                     bold: true,
-                    size: 24,
+                    size: 32,
                     color:
                       header.conclusion === "FAILED"
                         ? "FF0000"
                         : header.conclusion === "PASSED"
-                        ? "00AA00"
-                        : "FFA500",
+                        ? "006400"
+                        : "000000",
                   }),
                 ],
+                alignment: "center",
+                spacing: { after: 0 },
+              }),
+            ],
+          }),
+        ],
+      }),
+
+      // Page indicator row
+      new TableRow({
+        height: { value: 200, rule: "atLeast" },
+        children: [
+          new TableCell({
+            columnSpan: 3,
+            borders: {
+              top: { style: BorderStyle.NONE },
+              bottom: { style: BorderStyle.NONE },
+              left: { style: BorderStyle.NONE },
+              right: { style: BorderStyle.NONE },
+            },
+            margins: { top: 30, bottom: 30, left: 0, right: 50 },
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "Page 1 of 33",
+                    size: 16,
+                    color: "999999",
+                    italics: true,
+                  }),
+                ],
+                alignment: "right",
+                spacing: { after: 0 },
               }),
             ],
           }),
@@ -1524,9 +1737,11 @@ function normalizePayload(body) {
 function enrichReportHeaderData(rawData) {
   const data = rawData || {};
 
+  // Extract from General Information section
   const client = pickFirstValue(data, ["client", "clientName", "clientAbbr", "buyer"], "-");
   const po = pickFirstValue(data, ["po", "frin", "poNo", "poNumber", "purchaseOrder"], "-");
 
+  // Extract Inspection Number (can come from multiple fields)
   const inspectionNumber = pickFirstValue(
     data,
     [
@@ -1536,18 +1751,18 @@ function enrichReportHeaderData(rawData) {
       "inspectionID",
       "reportNumber",
       "reportNo",
-      "frin",
-      "po",
     ],
-    "-"
+    po // Fallback to PO if not set
   );
 
+  // Extract Report Date from General Information
   const reportDateInput = pickFirstValue(data, ["reportDate", "inspectionDate", "date"], "");
   const reportDate = normalizeReportDate(reportDateInput);
 
+  // Extract Conclusion from Conclusion section
   const conclusionInput = pickFirstValue(
     data,
-    ["conclusionStatus", "conclusion", "overallResult", "finalResult"],
+    ["conclusionStatus", "conclusion", "conclusionStep", "overallResult", "finalResult"],
     ""
   );
   const inferredConclusion = inferConclusionFromSummary(data);
