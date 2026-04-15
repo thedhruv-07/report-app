@@ -16,6 +16,8 @@ const {
   BorderStyle,
   ImageRun,
   PageBreak,
+  PageNumber,
+  Footer,
   convertInchesToTwip,
 } = require("docx");
 
@@ -42,15 +44,34 @@ app.post("/generate", upload.array("images"), async (req, res) => {
                 createHeaderTable(data),
                 new Paragraph({
                   children: [
-                    new TextRun({
-                      text: "Page 1 of 33",
-                      bold: true,
-                      size: 18,
-                      color: "333333",
-                    }),
+                    new TextRun({ text: "Page ", bold: true, size: 18, color: "333333" }),
+                    new TextRun({ children: [PageNumber.CURRENT], bold: true, size: 18, color: "333333" }),
+                    new TextRun({ text: " of ", bold: true, size: 18, color: "333333" }),
+                    new TextRun({ children: [PageNumber.TOTAL_PAGES], bold: true, size: 18, color: "333333" }),
                   ],
                   alignment: "right",
                   spacing: { before: 100, after: 0 },
+                }),
+              ],
+            }),
+          },
+          footers: {
+            default: new Footer({
+              children: [
+                new Paragraph({
+                  children: [new TextRun({ text: "India | China | Bangladesh |", size: 20, color: "333333" })],
+                  alignment: "left",
+                  spacing: { before: 0, after: 120 },
+                }),
+                new Paragraph({
+                  children: [new TextRun({ text: "www.absoluteveritas.com", size: 18, color: "333333" })],
+                  alignment: "right",
+                  spacing: { before: 0, after: 40 },
+                }),
+                new Paragraph({
+                  children: [new TextRun({ text: "Absolute Veritas Copyright © All Rights Reserved", size: 20, color: "333333" })],
+                  alignment: "right",
+                  spacing: { before: 0, after: 0 },
                 }),
               ],
             }),
@@ -782,7 +803,7 @@ function createReportContent(data, uploadedFiles) {
     children.push(
       new Paragraph({
         children: [new TextRun({ text: line, size: 16 })],
-        spacing: { after: 30 },
+        spacing: { before: 80, after: 160 },
       })
     );
   });
@@ -2304,7 +2325,7 @@ function createReportContent(data, uploadedFiles) {
     // Columns
     new TableRow({
       children: [
-        createQtyCell("India | China | Bangladesh |   Name", { align: "center", shaded: false }),
+        createQtyCell("Name", { align: "center", shaded: false }),
         createQtyCell("Location", { align: "center", shaded: false }),
         createQtyCell("Result", { align: "center", shaded: false }),
       ],
@@ -2500,8 +2521,10 @@ function createReportContent(data, uploadedFiles) {
 
   children.push(new Paragraph(""));
 
-  // Additional sections can be added here
-  // III. QUANTITY DETAILS, IV. REMARKS, V. PHOTOS, etc.
+
+
+  // Start H. PHOTOS on a new page
+  children.push(new Paragraph({ children: [new PageBreak()] }));
 
   if (Array.isArray(data.reportPhotos) && data.reportPhotos.length > 0) {
     const reportPhotoParagraphs = getPhotoGridParagraphs(data.reportPhotos);

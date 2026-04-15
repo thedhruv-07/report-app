@@ -64,7 +64,7 @@ const MarkingLabeling = ({ form, handleChange, onPrev, onNext }) => {
             {/* Columns */}
             <tr>
               <td style={{ padding: "8px", background: colors.surface, border: cellBorder, color: colors.text, textAlign: "center", width: "50%" }}>
-                India | China | Bangladesh | &nbsp; Name
+                Name
               </td>
               <td style={{ padding: "8px", background: colors.surface, border: cellBorder, color: colors.text, textAlign: "center", width: "25%" }}>Location</td>
               <td style={{ padding: "8px", background: colors.surface, border: cellBorder, color: colors.text, textAlign: "center", width: "25%" }}>Result</td>
