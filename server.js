@@ -1860,21 +1860,7 @@ function createReportContent(data, uploadedFiles) {
 
   children.push(new Paragraph(""));
 
-  // C. ON-SITE TESTS
-  children.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: "C. ON-SITE TESTS",
-          bold: true,
-          size: 28,
-          color: "1F4E79",
-        }),
-      ],
-      spacing: { before: 160, after: 100 },
-    })
-  );
-
+  // C. ON-SITE TESTS — single unified table with embedded header
   const testRowIds = Array.from(
     new Set(
       Object.keys(data || {})
@@ -1887,25 +1873,44 @@ function createReportContent(data, uploadedFiles) {
   ).sort((a, b) => a - b);
 
   const onSiteRows = testRowIds.length > 0 ? testRowIds : [1];
+
+  // Resolve result color
+  const onSiteResultText = sanitizeDocxText(data.onSiteTestResult || "Pending");
+  const onSiteResultLower = onSiteResultText.toLowerCase();
+  const onSiteResultColor = onSiteResultLower.includes("fail")
+    ? "CC0000"
+    : onSiteResultLower.includes("pass")
+    ? "228B22"
+    : "E36C09"; // orange for Pending
+
   const onSiteTableRows = [
+    // Section header row (dark navy background, white text)
     new TableRow({
       children: [
-        createQtyCell("#", { bold: true, shaded: true }),
+        new TableCell({
+          columnSpan: 5,
+          borders: tableBorders(),
+          shading: { fill: "E8E8E8" },
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: "C.  ON-SITE TESTS", bold: true, size: 22, color: "1F4E79" })],
+              spacing: { before: 60, after: 60 },
+            }),
+          ],
+        }),
+      ],
+    }),
+    // Column headers
+    new TableRow({
+      children: [
+        createQtyCell("", { bold: true, shaded: true }),
         createQtyCell("Description", { bold: true, shaded: true, align: "left" }),
         createQtyCell("Method", { bold: true, shaded: true, align: "left" }),
         createQtyCell("Sample Size", { bold: true, shaded: true }),
-        createQtyCell("Result / Reading", { bold: true, shaded: true, align: "left" }),
+        createQtyCell("Result / Reading", { bold: true, shaded: true }),
       ],
     }),
-    new TableRow({
-      children: [
-        createQtyCell("0"),
-        createQtyCell("Overall On-Site Test Status", { align: "left" }),
-        createQtyCell("-", { align: "left" }),
-        createQtyCell("-"),
-        createQtyCell(blankIfEmpty(data.onSiteTests), { align: "left" }),
-      ],
-    }),
+    // Data rows
     ...onSiteRows.map((id, idx) =>
       new TableRow({
         children: [
@@ -1913,19 +1918,37 @@ function createReportContent(data, uploadedFiles) {
           createQtyCell(blankIfEmpty(data[`testDesc${id}`]), { align: "left" }),
           createQtyCell(blankIfEmpty(data[`testMethod${id}`]), { align: "left" }),
           createQtyCell(blankIfEmpty(data[`testSample${id}`])),
-          createQtyCell(blankIfEmpty(data[`testResult${id}`]), { align: "left" }),
+          createQtyCell(blankIfEmpty(data[`testResult${id}`]), { color: onSiteResultColor }),
         ],
       })
     ),
+    // Result row
     new TableRow({
       children: [
         createQtyCell("Result:", { bold: true, shaded: true, align: "left" }),
-        createQtyCell(blankIfEmpty(data.onSiteTestResult), { align: "left", colSpan: 4 }),
+        new TableCell({
+          columnSpan: 4,
+          borders: tableBorders(),
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: onSiteResultText,
+                  bold: true,
+                  size: 18,
+                  color: onSiteResultColor,
+                }),
+              ],
+              spacing: { before: 40, after: 40 },
+            }),
+          ],
+        }),
       ],
     }),
+    // Remark row
     new TableRow({
       children: [
-        createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }),
+        createQtyCell("Remark:", { bold: true, align: "left" }),
         createQtyCell(blankIfEmpty(data.onSiteTestRemark), { align: "left", colSpan: 4 }),
       ],
     }),
@@ -1934,21 +1957,7 @@ function createReportContent(data, uploadedFiles) {
   children.push(new Table({ rows: onSiteTableRows, width: { size: 100, type: "pct" } }));
   children.push(new Paragraph(""));
 
-  // D. PRODUCT SPECIFICATION
-  children.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: "D. PRODUCT SPECIFICATION",
-          bold: true,
-          size: 28,
-          color: "1F4E79",
-        }),
-      ],
-      spacing: { before: 160, after: 100 },
-    })
-  );
-
+  // D. PRODUCT SPECIFICATION — single unified table with embedded header
   const productItemIds = Array.from(
     new Set(
       Object.keys(data || {})
@@ -1962,22 +1971,51 @@ function createReportContent(data, uploadedFiles) {
 
   const productRows = productItemIds.length > 0 ? productItemIds : [1];
   const productTableRows = [
+    // Section header row (grey background, blue text)
     new TableRow({
       children: [
-        createQtyCell("Item", { bold: true, shaded: true, align: "left" }),
-        createQtyCell("Client's Spec.", { bold: true, shaded: true, align: "left" }),
+        new TableCell({
+          columnSpan: 6,
+          borders: tableBorders(),
+          shading: { fill: "E8E8E8" },
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: "D.  PRODUCT SPECIFICATION", bold: true, size: 22, color: "1F4E79" })],
+              spacing: { before: 60, after: 60 },
+            }),
+          ],
+        }),
+      ],
+    }),
+    // Column headers
+    new TableRow({
+      children: [
+        createQtyCell("", { bold: true, shaded: true }),
+        createQtyCell("Client's Spec.", { bold: true, shaded: true }),
         createQtyCell("Ref. Sample", { bold: true, shaded: true }),
         createQtyCell("1# Sample", { bold: true, shaded: true }),
         createQtyCell("2# Sample", { bold: true, shaded: true }),
         createQtyCell("3# Sample", { bold: true, shaded: true }),
       ],
     }),
+    // Item No. header row
     new TableRow({
       children: [
-        createQtyCell("Item No.", { bold: true, shaded: true, align: "left" }),
-        createQtyCell(blankIfEmpty(data.productDescription), { align: "left", colSpan: 5 }),
+        createQtyCell("Item No.:", { bold: true, shaded: true, align: "left" }),
+        new TableCell({
+          columnSpan: 5,
+          borders: tableBorders(),
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: sanitizeDocxText(data.productDescription || "-"), bold: true, size: 18 })],
+              alignment: "center",
+              spacing: { before: 40, after: 40 },
+            }),
+          ],
+        }),
       ],
     }),
+    // Blank editable row
     new TableRow({
       children: [
         createQtyCell(blankIfEmpty(data.blank_row_0), { align: "left" }),
@@ -1988,27 +2026,46 @@ function createReportContent(data, uploadedFiles) {
         createQtyCell(blankIfEmpty(data.blank_row_c4)),
       ],
     }),
-    ...productRows.map((id) =>
+    // Dynamic product item rows (Item No. header + data row pairs)
+    ...productRows.flatMap((id) => [
+      new TableRow({
+        children: [
+          createQtyCell("Item No.:", { bold: true, shaded: true, align: "left" }),
+          new TableCell({
+            columnSpan: 5,
+            borders: tableBorders(),
+            children: [
+              new Paragraph({
+                children: [new TextRun({ text: sanitizeDocxText(data[`item_${id}_desc`] || "-"), bold: true, size: 18 })],
+                alignment: "center",
+                spacing: { before: 40, after: 40 },
+              }),
+            ],
+          }),
+        ],
+      }),
       new TableRow({
         children: [
           createQtyCell(blankIfEmpty(data[`item_${id}_name`]), { align: "left" }),
-          createQtyCell(blankIfEmpty(data[`item_${id}_desc`]), { align: "left" }),
           createQtyCell(blankIfEmpty(data[`item_${id}_c0`])),
           createQtyCell(blankIfEmpty(data[`item_${id}_c1`])),
           createQtyCell(blankIfEmpty(data[`item_${id}_c2`])),
-          createQtyCell(blankIfEmpty(data[`item_${id}_c3`] || data[`item_${id}_c4`])),
+          createQtyCell(blankIfEmpty(data[`item_${id}_c3`])),
+          createQtyCell(blankIfEmpty(data[`item_${id}_c4`])),
         ],
-      })
-    ),
+      }),
+    ]),
+    // Result row
     new TableRow({
       children: [
         createQtyCell("Result:", { bold: true, shaded: true, align: "left" }),
         createQtyCell(blankIfEmpty(data.productResult), { align: "left", colSpan: 5 }),
       ],
     }),
+    // Remark row
     new TableRow({
       children: [
-        createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }),
+        createQtyCell("Remark:", { bold: true, align: "left" }),
         createQtyCell(blankIfEmpty(data.productRemark), { align: "left", colSpan: 5 }),
       ],
     }),
@@ -2017,97 +2074,194 @@ function createReportContent(data, uploadedFiles) {
   children.push(new Table({ rows: productTableRows, width: { size: 100, type: "pct" } }));
   children.push(new Paragraph(""));
 
-  // E. PACKING
-  children.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: "E. PACKING",
-          bold: true,
-          size: 28,
-          color: "1F4E79",
-        }),
-      ],
-      spacing: { before: 160, after: 100 },
-    })
-  );
+  // E. PACKING — single unified table with embedded header
+  const packageIconPath = path.join(__dirname, "frontend", "public", "package.png");
+  let packageIconRun = null;
+  try {
+    if (fs.existsSync(packageIconPath)) {
+      const iconBuffer = fs.readFileSync(packageIconPath);
+      packageIconRun = new ImageRun({
+        data: iconBuffer,
+        type: "png",
+        transformation: {
+          width: 50,
+          height: 44,
+        },
+      });
+    }
+  } catch (e) {}
 
   const packingItemIds = [1, 2];
+
+  // Resolve packing result color
+  const packingResultText = sanitizeDocxText(data.packing_result || "Pending");
+  const packingResultLower = packingResultText.toLowerCase();
+  const packingResultColor = packingResultLower.includes("fail")
+    ? "CC0000"
+    : packingResultLower.includes("pass")
+    ? "228B22"
+    : "E36C09"; // orange for Pending
+
   const packingRows = [
+    // Section header row
     new TableRow({
       children: [
-        createQtyCell("Item No.", { bold: true, shaded: true, align: "left" }),
-        createQtyCell("Qty/Carton M/A", { bold: true, shaded: true }),
-        createQtyCell("Carton Size M/A", { bold: true, shaded: true }),
-        createQtyCell("Gross Weight M/A", { bold: true, shaded: true }),
-        createQtyCell("Qty/Inner M/A", { bold: true, shaded: true }),
+        new TableCell({
+          columnSpan: 9,
+          borders: tableBorders(),
+          shading: { fill: "E8E8E8" },
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: "E.  PACKING", bold: true, size: 22, color: "1F4E79" })],
+              spacing: { before: 60, after: 60 },
+            }),
+          ],
+        }),
       ],
     }),
+    // Package Details header row
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 6,
+          borders: { ...tableBorders(), right: { style: BorderStyle.NONE, size: 0, color: "E8E8E8" } },
+          shading: { fill: "E8E8E8" },
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: "Package Details:", bold: true, size: 18 })],
+              spacing: { before: 40, after: 40 },
+            }),
+          ],
+        }),
+        new TableCell({
+          columnSpan: 3,
+          borders: { ...tableBorders(), left: { style: BorderStyle.NONE, size: 0, color: "E8E8E8" } },
+          shading: { fill: "E8E8E8" },
+          children: [
+            new Paragraph({
+              alignment: "right",
+              children: packageIconRun ? [packageIconRun] : [new TextRun("")],
+            }),
+          ],
+        }),
+      ],
+    }),
+    // Sub-headers Row 1
+    new TableRow({
+      children: [
+        createQtyCell("Item No.", { bold: true, rowSpan: 2, shaded: false }),
+        createQtyCell("Qty / Carton", { bold: true, colSpan: 2, shaded: false }),
+        createQtyCell("Carton Size L×W×H (cm)", { bold: true, colSpan: 2, shaded: false }),
+        createQtyCell("Gross Weight (KG)", { bold: true, colSpan: 2, shaded: false }),
+        createQtyCell("Qty / Inner box", { bold: true, colSpan: 2, shaded: false }),
+      ],
+    }),
+    // Sub-headers Row 2
+    new TableRow({
+      children: [
+        createQtyCell("Marking", { shaded: false }),
+        createQtyCell("Actual", { shaded: false }),
+        createQtyCell("Marking", { shaded: false }),
+        createQtyCell("Actual", { shaded: false }),
+        createQtyCell("Marking", { shaded: false }),
+        createQtyCell("Actual", { shaded: false }),
+        createQtyCell("Marking", { shaded: false }),
+        createQtyCell("Actual", { shaded: false }),
+      ],
+    }),
+    // Data Rows
     ...packingItemIds.map((id) =>
       new TableRow({
         children: [
           createQtyCell(blankIfEmpty(data[`packing_item_${id}`]), { align: "left" }),
-          createQtyCell(
-            `${blankIfEmpty(data[`packing_qty_carton_marking_${id}`])} / ${blankIfEmpty(data[`packing_qty_carton_actual_${id}`])}`
-          ),
-          createQtyCell(
-            `${blankIfEmpty(data[`packing_carton_size_marking_${id}`])} / ${blankIfEmpty(data[`packing_carton_size_actual_${id}`])}`
-          ),
-          createQtyCell(
-            `${blankIfEmpty(data[`packing_weight_marking_${id}`])} / ${blankIfEmpty(data[`packing_weight_actual_${id}`])}`
-          ),
-          createQtyCell(
-            `${blankIfEmpty(data[`packing_qty_inner_marking_${id}`])} / ${blankIfEmpty(data[`packing_qty_inner_actual_${id}`])}`
-          ),
+          createQtyCell(blankIfEmpty(data[`packing_qty_carton_marking_${id}`])),
+          createQtyCell(blankIfEmpty(data[`packing_qty_carton_actual_${id}`])),
+          createQtyCell(blankIfEmpty(data[`packing_carton_size_marking_${id}`])),
+          createQtyCell(blankIfEmpty(data[`packing_carton_size_actual_${id}`])),
+          createQtyCell(blankIfEmpty(data[`packing_weight_marking_${id}`])),
+          createQtyCell(blankIfEmpty(data[`packing_weight_actual_${id}`])),
+          createQtyCell(blankIfEmpty(data[`packing_qty_inner_marking_${id}`])),
+          createQtyCell(blankIfEmpty(data[`packing_qty_inner_actual_${id}`])),
         ],
       })
     ),
+    // Export Carton Details header
     new TableRow({
       children: [
-        createQtyCell("Fastening Metal Staples", { bold: true, shaded: true, align: "left" }),
-        createQtyCell(blankIfEmpty(data.fastening_metal_staples), { align: "left", colSpan: 4 }),
+        createQtyCell("Export Carton Details", { bold: true, shaded: true, align: "left", colSpan: 9 }),
       ],
     }),
+    // Staples / Band row
     new TableRow({
       children: [
-        createQtyCell("Nylon Band", { bold: true, shaded: true, align: "left" }),
-        createQtyCell(blankIfEmpty(data.nylon_band), { align: "left", colSpan: 4 }),
+        createQtyCell("Fastening Metal Staples", { align: "right", colSpan: 3 }),
+        createQtyCell(blankIfEmpty(data.fastening_metal_staples), { align: "left", colSpan: 2 }),
+        createQtyCell("Nylon Band", { align: "right", colSpan: 2 }),
+        createQtyCell(blankIfEmpty(data.nylon_band), { align: "left", colSpan: 2 }),
       ],
     }),
+    // Material / Corrugated row
     new TableRow({
       children: [
-        createQtyCell("Material", { bold: true, shaded: true, align: "left" }),
-        createQtyCell(blankIfEmpty(data.material), { align: "left", colSpan: 4 }),
+        createQtyCell("Material", { align: "right", colSpan: 3 }),
+        createQtyCell(blankIfEmpty(data.material), { align: "left", colSpan: 2 }),
+        createQtyCell("Corrugated Paper Plies", { align: "right", colSpan: 2 }),
+        createQtyCell(data.corrugated_paper_plies ? `${data.corrugated_paper_plies}-ply` : "-ply", { align: "left", colSpan: 2 }),
       ],
     }),
+    // Packing Method Header
     new TableRow({
       children: [
-        createQtyCell("Corrugated Paper Plies", { bold: true, shaded: true, align: "left" }),
-        createQtyCell(blankIfEmpty(data.corrugated_paper_plies), { align: "left", colSpan: 4 }),
+        createQtyCell("Packing Method", { bold: true, shaded: true, align: "left", colSpan: 9 }),
       ],
     }),
+    // Packing Method Value
     new TableRow({
       children: [
-        createQtyCell("Packing Method", { bold: true, shaded: true, align: "left" }),
-        createQtyCell(blankIfEmpty(data.packing_method), { align: "left", colSpan: 4 }),
+        createQtyCell(blankIfEmpty(data.packing_method), { align: "left", colSpan: 9 }),
       ],
     }),
+    // Assortment Method Header
     new TableRow({
       children: [
-        createQtyCell("Assortment Method", { bold: true, shaded: true, align: "left" }),
-        createQtyCell(blankIfEmpty(data.assortment_method), { align: "left", colSpan: 4 }),
+        createQtyCell("Assortment Method", { bold: true, shaded: true, align: "left", colSpan: 9 }),
       ],
     }),
+    // Assortment Method Value
     new TableRow({
       children: [
-        createQtyCell("Result", { bold: true, shaded: true, align: "left" }),
-        createQtyCell(blankIfEmpty(data.packing_result), { align: "left", colSpan: 4 }),
+        createQtyCell(blankIfEmpty(data.assortment_method), { align: "left", colSpan: 9 }),
       ],
     }),
+    // Result
     new TableRow({
       children: [
-        createQtyCell("Remark", { bold: true, shaded: true, align: "left" }),
-        createQtyCell(blankIfEmpty(data.packing_remark), { align: "left", colSpan: 4 }),
+        createQtyCell("Result:", { bold: true, align: "left", colSpan: 2 }),
+        new TableCell({
+          columnSpan: 7,
+          borders: tableBorders(),
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: packingResultText,
+                  bold: true,
+                  size: 18,
+                  color: packingResultColor,
+                }),
+              ],
+              alignment: "left",
+              spacing: { before: 40, after: 40 },
+            }),
+          ],
+        }),
+      ],
+    }),
+    // Remark
+    new TableRow({
+      children: [
+        createQtyCell("Remark:", { bold: true, align: "left", colSpan: 2 }),
+        createQtyCell(blankIfEmpty(data.packing_remark), { align: "left", colSpan: 7 }),
       ],
     }),
   ];
