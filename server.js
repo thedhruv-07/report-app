@@ -26,6 +26,14 @@ app.use(cors());
 
 const upload = multer({ dest: "uploads/" });
 
+const safeJsonParse = (val, fallback = []) => {
+  try {
+    return val ? JSON.parse(val) : fallback;
+  } catch (e) {
+    return fallback;
+  }
+};
+
 app.post("/generate", upload.array("images"), async (req, res) => {
   const data = enrichReportHeaderData(normalizePayload(req.body));
 
@@ -427,6 +435,7 @@ function createReportContent(data, uploadedFiles) {
           columnSpan: 3,
           width: { size: 100, type: WidthType.PERCENTAGE },
           borders: tableBorders(),
+          shading: { fill: "E8E8E8" },
           children: [
             new Paragraph({
               children: [
@@ -434,7 +443,7 @@ function createReportContent(data, uploadedFiles) {
                   text: "Pre-Shipment Inspection Report",
                   bold: true,
                   size: 24,
-                  color: "2C5AA0",
+                  color: "1F4E79",
                 }),
               ],
               alignment: "center",
@@ -451,6 +460,7 @@ function createReportContent(data, uploadedFiles) {
           columnSpan: 3,
           width: { size: 100, type: WidthType.PERCENTAGE },
           borders: tableBorders(),
+          shading: { fill: "E8E8E8" },
           children: [
             new Paragraph({
               children: [
@@ -458,7 +468,7 @@ function createReportContent(data, uploadedFiles) {
                   text: "I. GENERAL INFORMATION",
                   bold: true,
                   size: 20,
-                  color: "2C5AA0",
+                  color: "1F4E79",
                 }),
               ],
               alignment: "left",
@@ -667,9 +677,13 @@ function createReportContent(data, uploadedFiles) {
           new TableCell({
             columnSpan: 6,
             borders: tableBorders(),
+            shading: { fill: "E8E8E8" },
             children: [
               new Paragraph({
-                children: [new TextRun({ text: "Workmanship Summary (based on the finished products)", bold: true, size: 18 })],
+                children: [
+                  new TextRun({ text: "Workmanship Summary (based on the finished products)", bold: true, size: 18, color: "1F4E79" })
+                ],
+                spacing: { before: 40, after: 40 },
               }),
             ],
           }),
@@ -1735,26 +1749,39 @@ function createReportContent(data, uploadedFiles) {
       ],
     }),
     // Defect item rows
-    ...wmItems.flatMap((it, idx) => [
-      new TableRow({
-        children: [
-          createQtyCell(`For Item ${sanitizeDocxText(it.itemName || it.name || `Item ${idx + 1}`)}`, { align: "left", colSpan: 2 }),
-          createQtyCell(`Sample size: ${sanitizeDocxText(it.sampleSizePacked || "0")} Set`, { align: "left", colSpan: 2 }),
-          createQtyCell("", {}),
-          createQtyCell("", {}),
-          createQtyCell("", {}),
-        ],
-      }),
-      new TableRow({
-        children: [
-          createQtyCell(`${idx + 1}.`, { align: "left" }),
-          createQtyCell(blankIfEmpty(data[`defectDescription${idx + 1}`] || "-"), { align: "left", colSpan: 3 }),
-          createQtyCell(blankIfEmpty(data[`defectCritical${idx + 1}`] || "0")),
-          createQtyCell(blankIfEmpty(data[`defectMajor${idx + 1}`] || "0")),
-          createQtyCell(blankIfEmpty(data[`defectMinor${idx + 1}`] || "0")),
-        ],
-      }),
-    ]),
+    ...(Array.isArray(safeJsonParse(data.workmanshipDefects)) && safeJsonParse(data.workmanshipDefects).length > 0
+      ? safeJsonParse(data.workmanshipDefects).map((d, idx) => 
+          new TableRow({
+            children: [
+              createQtyCell(`${idx + 1}.`, { align: "left" }),
+              createQtyCell(blankIfEmpty(d.itemName), { align: "left", colSpan: 1 }),
+              createQtyCell(blankIfEmpty(d.description), { align: "left", colSpan: 2 }),
+              createQtyCell(blankIfEmpty(d.critical || "0")),
+              createQtyCell(blankIfEmpty(d.major || "0")),
+              createQtyCell(blankIfEmpty(d.minor || "0")),
+            ],
+          })
+        )
+      : wmItems.flatMap((it, idx) => [
+          new TableRow({
+            children: [
+              createQtyCell(`For Item ${sanitizeDocxText(it.itemName || it.name || `Item ${idx + 1}`)}`, { align: "left", colSpan: 2 }),
+              createQtyCell(`Sample size: ${sanitizeDocxText(it.sampleSizePacked || "0")} Set`, { align: "left", colSpan: 2 }),
+              createQtyCell("", {}),
+              createQtyCell("", {}),
+              createQtyCell("", {}),
+            ],
+          }),
+          new TableRow({
+            children: [
+              createQtyCell(`${idx + 1}.`, { align: "left" }),
+              createQtyCell(blankIfEmpty(data[`defectDescription${idx + 1}`] || "-"), { align: "left", colSpan: 3 }),
+              createQtyCell(blankIfEmpty(data[`defectCritical${idx + 1}`] || "0")),
+              createQtyCell(blankIfEmpty(data[`defectMajor${idx + 1}`] || "0")),
+              createQtyCell(blankIfEmpty(data[`defectMinor${idx + 1}`] || "0")),
+            ],
+          }),
+        ])),
     // Total found row
     new TableRow({
       children: [
@@ -1846,38 +1873,54 @@ function createReportContent(data, uploadedFiles) {
 
   // Defect photos section (from Workmanship step uploads)
   const defectPhotoRows = [];
-  const defectPhotoItems = [1, 2, 3, 4].map((n) => ({
-    index: n,
-    title: blankIfEmpty(data[`defectPhotoDescription${n}`] || data[`defectDescription${n}`] || `Defect photo ${n}`),
-    preview: data[`defectPhotoPreview${n}`],
-  }));
+  const rawWorkmanshipPhotos = safeJsonParse(data.workmanshipPhotos);
+  const defectPhotoItems = (Array.isArray(rawWorkmanshipPhotos) && rawWorkmanshipPhotos.length > 0)
+    ? rawWorkmanshipPhotos.map((p, idx) => ({
+        index: idx + 1,
+        title: blankIfEmpty(p.description || `Defect photo ${idx + 1}`),
+        preview: p.preview,
+      }))
+    : [1, 2, 3, 4].map((n) => ({
+        index: n,
+        title: blankIfEmpty(data[`defectPhotoDescription${n}`] || data[`defectDescription${n}`] || `Defect photo ${n}`),
+        preview: data[`defectPhotoPreview${n}`],
+      }));
 
   defectPhotoItems.forEach((item) => {
-    defectPhotoRows.push(
-      new TableRow({
-        children: [
-          createQtyCell(String(item.index), { bold: true }),
-          createQtyCell(item.title, { align: "left", bold: true, colSpan: 2 }),
-        ],
-      }),
-      new TableRow({
-        children: [
-          createQtyCell("", {}),
-          typeof item.preview === "string" && item.preview.startsWith("data:image")
-            ? createPhotoCellFromDataUrl(item.preview, { width: 220, height: 150, label: "" })
-            : createQtyCell("-", {}),
-          createQtyCell("-", {}),
-        ],
-      })
-    );
+    // Only push if there's actually a photo OR a custom description was provided
+    // (We ignore default placeholders like "Defect photo 1" if no photo exists)
+    const hasPhoto = typeof item.preview === "string" && item.preview.startsWith("data:image");
+    const hasDescription = item.title && !item.title.startsWith("Defect photo") && !item.title.startsWith("For Item");
+
+    if (hasPhoto || hasDescription) {
+      defectPhotoRows.push(
+        new TableRow({
+          children: [
+            createQtyCell(String(item.index), { bold: true }),
+            createQtyCell(item.title, { align: "left", bold: true, colSpan: 2 }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            createQtyCell("", {}),
+            typeof item.preview === "string" && item.preview.startsWith("data:image")
+              ? createPhotoCellFromDataUrl(item.preview, { width: 220, height: 150, label: "" })
+              : createQtyCell("-", {}),
+            createQtyCell("-", {}),
+          ],
+        })
+      );
+    }
   });
 
-  children.push(
-    new Table({
-      width: { size: 100, type: "pct" },
-      rows: defectPhotoRows,
-    })
-  );
+  if (defectPhotoRows.length > 0) {
+    children.push(
+      new Table({
+        width: { size: 100, type: "pct" },
+        rows: defectPhotoRows,
+      })
+    );
+  }
 
   children.push(new Paragraph(""));
 

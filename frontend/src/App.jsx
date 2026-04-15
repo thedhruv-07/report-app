@@ -362,6 +362,20 @@ function App() {
     }));
   };
 
+  const handleWorkmanshipDefectsChange = (defects) => {
+    setForm((prev) => ({
+      ...prev,
+      workmanshipDefects: Array.isArray(defects) ? defects : [],
+    }));
+  };
+
+  const handleWorkmanshipPhotosChange = (photos) => {
+    setForm((prev) => ({
+      ...prev,
+      workmanshipPhotos: Array.isArray(photos) ? photos : [],
+    }));
+  };
+
   const handlePhotoFileChange = (files) => {
     // Process each file with compression (non-blocking)
     Array.from(files).forEach((file, index) => {
@@ -868,6 +882,9 @@ function App() {
             handleChange={handleChange}
             onPrev={prev} 
             onNext={next} 
+            onWorkmanshipDefectsChange={handleWorkmanshipDefectsChange}
+            onWorkmanshipPhotosChange={handleWorkmanshipPhotosChange}
+            items={items}
           />
         )}
 
