@@ -182,6 +182,18 @@ function App() {
   const [savedSuggestionDismissed, setSavedSuggestionDismissed] = useState(false);
   const [reportDownloaded, setReportDownloaded] = useState(false);
 
+  // Responsiveness Support
+  const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const isMobile = windowWidth < 768;
+
   // Save to localStorage whenever step, form, or items change
   useEffect(() => {
     localStorage.setItem("inspectionStep", step.toString());
@@ -608,83 +620,190 @@ function App() {
   const goToStep = (targetStep) => {
     if (targetStep < 1 || targetStep > 13) return;
     setStep(targetStep);
+    setMobileSidebarOpen(false);
   };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: colors.background,
-      color: colors.text,
+    <div style={{ 
       display: "flex",
-      justifyContent: "stretch",
-      alignItems: "flex-start",
-      padding: "0",
-      overflowX: "hidden",
-      fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+      height: "100vh",
+      width: "100%",
+      overflow: "hidden",
+      background: "#f8fafc",
+      fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+      boxSizing: "border-box",
+      position: "relative"
     }}>
-      <div style={{
-        width: "100%",
-        maxWidth: "none",
-        display: "flex",
-        gap: "12px",
-        minHeight: "100vh"
-      }}>
+      {/* Mobile Sidebar Overlay */}
+      {isMobile && mobileSidebarOpen && (
+        <div 
+          onClick={() => setMobileSidebarOpen(false)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.5)",
+            zIndex: 998,
+            backdropFilter: "blur(2px)"
+          }}
+        />
+      )}
 
-        <div style={{
-          width: "clamp(200px, 22vw, 250px)",
-          background: colors.surface,
-          borderRadius: "0",
-          boxShadow: "none",
-          borderRight: `1px solid ${colors.border}`,
-          padding: "12px",
-          minHeight: "100vh",
-          position: "sticky",
-          top: "0"
+      {/* Sidebar - Fixed on Desktop, Drawer on Mobile */}
+      <div style={{
+        width: "260px",
+        background: colors.surface,
+        borderRight: `1px solid ${colors.border}`,
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        boxShadow: isMobile ? "10px 0 30px rgba(0,0,0,0.1)" : "4px 0 15px rgba(0,0,0,0.03)",
+        zIndex: 999,
+        position: isMobile ? "fixed" : "static",
+        transform: isMobile && !mobileSidebarOpen ? "translateX(-100%)" : "translateX(0)",
+        transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        left: 0,
+        top: 0
+      }}>
+        <div style={{ 
+          padding: "24px", 
+          borderBottom: `1px solid ${colors.border}`, 
+          background: colors.headerBg,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center"
         }}>
-          <div style={{ fontSize: "14px", fontWeight: "800", color: colors.header, marginBottom: "12px" }}>
-            Jump To Step
+          <div>
+            <div style={{ fontSize: "16px", fontWeight: "800", color: colors.primary, letterSpacing: "-0.02em" }}>
+              VERITAS REPORT
+            </div>
+            <div style={{ fontSize: "11px", fontWeight: "600", color: colors.textMuted, marginTop: "4px", textTransform: "uppercase" }}>
+              Inspection Portal v2.0
+            </div>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            {stepNavItems.map((item) => {
-              const isActive = step === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => goToStep(item.id)}
-                  style={{
-                    border: `1px solid ${isActive ? colors.primary : colors.border}`,
-                    background: isActive ? colors.primary : colors.surface,
-                    color: isActive ? "#fff" : colors.text,
-                    borderRadius: "8px",
-                    padding: "10px 12px",
-                    textAlign: "left",
-                    cursor: "pointer",
-                    fontSize: "12px",
-                    fontWeight: isActive ? "700" : "600",
-                    transition: "all 0.2s ease",
-                  }}
-                >
-                  {item.id}. {item.label}
-                </button>
-              );
-            })}
-          </div>
+          {isMobile && (
+            <button 
+              onClick={() => setMobileSidebarOpen(false)}
+              style={{ background: "transparent", border: "none", fontSize: "20px", color: colors.text, cursor: "pointer" }}
+            >
+              ✕
+            </button>
+          )}
         </div>
 
+        <div style={{ 
+          flex: 1, 
+          overflowY: "auto", 
+          padding: "16px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "4px"
+        }}>
+          <div style={{ fontSize: "11px", fontWeight: "700", color: colors.textMuted, marginBottom: "8px", paddingLeft: "8px", textTransform: "uppercase" }}>
+            Jump To Step
+          </div>
+          {stepNavItems.map((item) => {
+            const isActive = step === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => goToStep(item.id)}
+                style={{
+                  border: "none",
+                  background: isActive ? colors.primaryLight : "transparent",
+                  color: isActive ? colors.primary : colors.text,
+                  borderRadius: "10px",
+                  padding: "12px 14px",
+                  textAlign: "left",
+                  cursor: "pointer",
+                  fontSize: "13px",
+                  fontWeight: isActive ? "700" : "500",
+                  transition: "all 0.2s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px"
+                }}
+              >
+                <span style={{ 
+                  width: "24px", 
+                  height: "24px", 
+                  borderRadius: "6px", 
+                  background: isActive ? colors.primary : colors.surfaceAlt, 
+                  color: isActive ? "#fff" : colors.textMuted,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "11px",
+                  fontWeight: "bold"
+                }}>{item.id}</span>
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Main Content Area - Scrollable */}
+      <div style={{
+        flex: 1,
+        height: "100%",
+        overflowY: "auto",
+        background: "#f8fafc",
+        padding: isMobile ? "16px" : "40px",
+        scrollBehavior: "smooth"
+      }}>
+        {/* Mobile Header with Hamburger */}
+        {isMobile && (
+          <div style={{ 
+            display: "flex", 
+            alignItems: "center", 
+            justifyContent: "space-between", 
+            marginBottom: "20px",
+            background: colors.surface,
+            padding: "12px 16px",
+            borderRadius: "12px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+            border: `1px solid ${colors.border}`
+          }}>
+            <button 
+              onClick={() => setMobileSidebarOpen(true)}
+              style={{
+                background: "transparent",
+                border: "none",
+                fontSize: "24px",
+                cursor: "pointer",
+                padding: "4px",
+                display: "flex",
+                alignItems: "center",
+                color: colors.primary
+              }}
+            >
+              ☰
+            </button>
+            <div style={{ fontWeight: "800", color: colors.header, fontSize: "14px" }}>
+              VERITAS PORTAL
+            </div>
+            <div style={{ width: "24px" }}></div> {/* Spacer */}
+          </div>
+        )}
+
         <div style={{
-          flex: 1,
+          maxWidth: "1000px",
+          margin: "0 auto",
           background: colors.surface,
-          padding: "24px",
-          borderRadius: "0",
-          boxShadow: "none",
-          minWidth: 0,
-          minHeight: "100vh",
+          padding: isMobile ? "20px" : "40px",
+          borderRadius: isMobile ? "12px" : "16px",
+          boxShadow: "0 4px 25px rgba(0,0,0,0.05)",
+          border: `1px solid ${colors.border}`,
+          minHeight: "fit-content"
         }}>
 
         {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: "40px" }}>
+        <div style={{ textAlign: "center", marginBottom: isMobile ? "20px" : "40px" }}>
           <h1 style={{ 
-            fontSize: "clamp(24px, 2.4vw, 30px)", 
+            fontSize: isMobile ? "20px" : "clamp(24px, 2.4vw, 30px)", 
             fontWeight: "800", 
             color: colors.header,
             margin: "0 0 10px 0"
@@ -692,7 +811,7 @@ function App() {
             Pre-Shipment Inspection Report
           </h1>
           <p style={{ 
-            fontSize: "14px", 
+            fontSize: "13px", 
             color: colors.textMuted,
             margin: "0"
           }}>
@@ -703,7 +822,7 @@ function App() {
             height: "4px",
             background: colors.border,
             borderRadius: "2px",
-            marginTop: "15px",
+            marginTop: "12px",
             overflow: "hidden"
           }}>
             <div style={{
@@ -715,28 +834,26 @@ function App() {
         </div>
 
         {/* Clear Form Button */}
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginBottom: "30px" }}>
+        <div style={{ 
+          display: "flex", 
+          justifyContent: isMobile ? "center" : "flex-end", 
+          gap: "10px", 
+          marginBottom: isMobile ? "20px" : "30px",
+          flexWrap: "wrap"
+        }}>
           <button
             onClick={quickFillForm}
             style={{
-              padding: "10px 18px",
+              padding: isMobile ? "8px 14px" : "10px 18px",
               background: colors.success,
               color: "#fff",
               border: "none",
               borderRadius: "8px",
               cursor: "pointer",
-              fontSize: "13px",
+              fontSize: isMobile ? "11px" : "13px",
               fontWeight: "600",
               transition: "all 0.3s ease",
               boxShadow: "0 2px 8px rgba(16, 185, 129, 0.2)"
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = "translateY(-2px)";
-              e.target.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.28)";
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = "translateY(0)";
-              e.target.style.boxShadow = "0 2px 8px rgba(16, 185, 129, 0.2)";
             }}
           >
             ⚡ Quick Fill Template
@@ -744,29 +861,19 @@ function App() {
           <button
             onClick={clearForm}
             style={{
-              padding: "10px 18px",
+              padding: isMobile ? "8px 14px" : "10px 18px",
               background: colors.danger,
               color: "#fff",
               border: "none",
               borderRadius: "8px",
               cursor: "pointer",
-              fontSize: "13px",
+              fontSize: isMobile ? "11px" : "13px",
               fontWeight: "600",
               transition: "all 0.3s ease",
               boxShadow: "0 2px 8px rgba(239, 68, 68, 0.15)"
             }}
-            onMouseEnter={(e) => {
-              e.target.style.background = colors.dangerHover;
-              e.target.style.transform = "translateY(-2px)";
-              e.target.style.boxShadow = "0 4px 12px rgba(239, 68, 68, 0.25)";
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = colors.danger;
-              e.target.style.transform = "translateY(0)";
-              e.target.style.boxShadow = "0 2px 8px rgba(239, 68, 68, 0.15)";
-            }}
           >
-            ⟲ Clear Form & Start Over
+            ⟲ Clear Form & Restart
           </button>
         </div>
 
@@ -785,174 +892,29 @@ function App() {
               flexWrap: "wrap",
             }}
           >
-            <div style={{ fontSize: "13px", color: colors.text }}>
-              Found previous report details from {new Date(savedSuggestion.savedAt).toLocaleString()}. Apply them?
+            <div style={{ fontSize: "12px", color: colors.text }}>
+              Apply previous report from {new Date(savedSuggestion.savedAt).toLocaleDateString()}?
             </div>
             <div style={{ display: "flex", gap: "8px" }}>
-              <button
-                type="button"
-                onClick={applySavedSuggestion}
-                style={{
-                  border: "none",
-                  borderRadius: "8px",
-                  padding: "8px 12px",
-                  background: colors.primary,
-                  color: "#fff",
-                  cursor: "pointer",
-                  fontSize: "12px",
-                  fontWeight: "600",
-                }}
-              >
-                Apply Last Report
-              </button>
-              <button
-                type="button"
-                onClick={() => setSavedSuggestionDismissed(true)}
-                style={{
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: "8px",
-                  padding: "8px 12px",
-                  background: colors.surface,
-                  color: colors.text,
-                  cursor: "pointer",
-                  fontSize: "12px",
-                  fontWeight: "600",
-                }}
-              >
-                Dismiss
-              </button>
+              <button onClick={applySavedSuggestion} style={{ border: "none", borderRadius: "8px", padding: "6px 10px", background: colors.primary, color: "#fff", cursor: "pointer", fontSize: "11px", fontWeight: "600" }}>Apply</button>
+              <button onClick={() => setSavedSuggestionDismissed(true)} style={{ border: `1px solid ${colors.border}`, borderRadius: "8px", padding: "6px 10px", background: colors.surface, color: colors.text, cursor: "pointer", fontSize: "11px", fontWeight: "600" }}>Dismiss</button>
             </div>
           </div>
         )}
 
-        {step === 1 && (
-          <GeneralInfo
-            form={form}
-            handleChange={handleChange}
-            onNext={next}
-            generalPhoto={generalPhoto}
-            generalPhotoData={generalPhotoData}
-            onGeneralPhotoChange={handleGeneralPhotoChange}
-          />
-        )}
-
-        {step === 2 && (
-          <InspectionSummaryTable 
-            form={form}
-            handleChange={handleChange}
-            onPrev={prev} 
-            onNext={next} 
-          />
-        )}
-
-        {step === 3 && (
-          <RemarksStep 
-            form={form}
-            handleChange={handleChange}
-            onPrev={prev} 
-            onNext={next} 
-          />
-        )}
-
-        {step === 4 && (
-          <ConclusionStep 
-            form={form}
-            handleChange={handleChange}
-            onPrev={prev} 
-            onNext={next} 
-          />
-        )}
-
-        {step === 5 && (
-          <QuantityDetails 
-            items={items} 
-            onItemChange={handleItemChange} 
-            onAddItem={addItem} 
-            onRemoveItem={removeItem}
-            form={form}
-            handleChange={handleChange}
-            onPrev={prev} 
-            onNext={next} 
-          />
-        )}
-
-        {step === 6 && (
-          <WorkmanshipDefects 
-            form={form}
-            handleChange={handleChange}
-            onPrev={prev} 
-            onNext={next} 
-            onWorkmanshipDefectsChange={handleWorkmanshipDefectsChange}
-            onWorkmanshipPhotosChange={handleWorkmanshipPhotosChange}
-            items={items}
-          />
-        )}
-
-        {step === 7 && (
-          <OnSiteTests 
-            form={form}
-            handleChange={handleChange}
-            onPrev={prev} 
-            onNext={next} 
-          />
-        )}
-
-        {step === 8 && (
-          <ProductSpecification
-            form={form}
-            handleChange={handleChange}
-            onPrev={prev}
-            onNext={next}
-          />
-        )}
-
-        {step === 9 && (
-          <Packing 
-            form={form} 
-            handleChange={handleChange}
-            onPrev={prev} 
-            onNext={next} 
-          />
-        )}
-
-        {step === 10 && (
-          <MarkingLabeling 
-            form={form} 
-            handleChange={handleChange}
-            onPrev={prev} 
-            onNext={next} 
-          />
-        )}
-
-        {step === 11 && (
-          <ClientSpecialRequirement
-            form={form}
-            handleChange={handleChange}
-            onPrev={prev}
-            onNext={next}
-            onRequirementsChange={handleClientRequirementsChange}
-          />
-        )}
-
-        {step === 12 && (
-          <Photos
-            photos={photos}
-            onPhotoLabelChange={handlePhotoLabelChange}
-            onPhotoFileChange={handlePhotoFileChange}
-            onRemovePhoto={removePhoto}
-            onPrev={prev}
-            onNext={next}
-          />
-        )}
-
-        {step === 13 && (
-          <FinalStep
-            onPrev={prev}
-            onSubmit={submit}
-            onClearAfterDownload={clearFormAfterDownload}
-            hasDownloaded={reportDownloaded}
-          />
-        )}
+        {step === 1 && <GeneralInfo form={form} handleChange={handleChange} onNext={next} generalPhoto={generalPhoto} generalPhotoData={generalPhotoData} onGeneralPhotoChange={handleGeneralPhotoChange} />}
+        {step === 2 && <InspectionSummaryTable form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
+        {step === 3 && <RemarksStep form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
+        {step === 4 && <ConclusionStep form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
+        {step === 5 && <QuantityDetails items={items} onItemChange={handleItemChange} onAddItem={addItem} onRemoveItem={removeItem} form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
+        {step === 6 && <WorkmanshipDefects form={form} handleChange={handleChange} onPrev={prev} onNext={next} onWorkmanshipDefectsChange={handleWorkmanshipDefectsChange} onWorkmanshipPhotosChange={handleWorkmanshipPhotosChange} items={items} />}
+        {step === 7 && <OnSiteTests form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
+        {step === 8 && <ProductSpecification form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
+        {step === 9 && <Packing form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
+        {step === 10 && <MarkingLabeling form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
+        {step === 11 && <ClientSpecialRequirement form={form} handleChange={handleChange} onPrev={prev} onNext={next} onRequirementsChange={handleClientRequirementsChange} />}
+        {step === 12 && <Photos photos={photos} onPhotoLabelChange={handlePhotoLabelChange} onPhotoFileChange={handlePhotoFileChange} onRemovePhoto={removePhoto} onPrev={prev} onNext={next} />}
+        {step === 13 && <FinalStep onPrev={prev} onSubmit={submit} onClearAfterDownload={clearFormAfterDownload} hasDownloaded={reportDownloaded} />}
         
         </div>
       </div>
