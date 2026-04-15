@@ -2269,85 +2269,133 @@ function createReportContent(data, uploadedFiles) {
   children.push(new Table({ rows: packingRows, width: { size: 100, type: "pct" } }));
   children.push(new Paragraph(""));
 
-  // F. MARKING & LABELING
-  children.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: "F. MARKING & LABELING",
-          bold: true,
-          size: 28,
-          color: "1F4E79",
-        }),
-      ],
-      spacing: { before: 160, after: 100 },
-    })
-  );
+  // F. MARKING & LABELING — single unified table with embedded header
+  const markingResultText = sanitizeDocxText(data.marking_result_final || "Pending");
+  const markingResultLower = markingResultText.toLowerCase();
+  const markingResultColor = markingResultLower.includes("fail")
+    ? "CC0000"
+    : markingResultLower.includes("pass")
+    ? "228B22"
+    : "E36C09";
 
   const markingRows = [
+    // Section header row
     new TableRow({
       children: [
-        createQtyCell("Name", { bold: true, shaded: true, align: "left" }),
-        createQtyCell("Location", { bold: true, shaded: true, align: "left" }),
-        createQtyCell("Result", { bold: true, shaded: true, align: "left" }),
+        new TableCell({
+          columnSpan: 3,
+          borders: tableBorders(),
+          shading: { fill: "E8E8E8" },
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: "F.  MARKING & LABELING", bold: true, size: 22, color: "1F4E79" })],
+              spacing: { before: 60, after: 60 },
+            }),
+          ],
+        }),
       ],
     }),
+    // Barcode/Labeling/Printing
     new TableRow({
       children: [
-        createQtyCell(blankIfEmpty(data.barcode_name), { align: "left" }),
-        createQtyCell(blankIfEmpty(data.barcode_location), { align: "left" }),
-        createQtyCell(blankIfEmpty(data.barcode_result), { align: "left" }),
+        createQtyCell("Barcode/Labeling/Printing", { bold: true, shaded: true, align: "left", colSpan: 3 }),
       ],
     }),
+    // Columns
     new TableRow({
       children: [
-        createQtyCell("Instruction manual check", { bold: true, shaded: true, align: "left" }),
-        createQtyCell(blankIfEmpty(data.instruction_provided_by_label), { align: "left" }),
-        createQtyCell(blankIfEmpty(data.instruction_provided_by), { align: "left" }),
+        createQtyCell("India | China | Bangladesh |   Name", { align: "center", shaded: false }),
+        createQtyCell("Location", { align: "center", shaded: false }),
+        createQtyCell("Result", { align: "center", shaded: false }),
       ],
     }),
+    // Barcode data
+    new TableRow({
+      children: [
+        createQtyCell(blankIfEmpty(data.barcode_name), { align: "center" }),
+        createQtyCell(blankIfEmpty(data.barcode_location), { align: "center" }),
+        createQtyCell(blankIfEmpty(data.barcode_result), { align: "center" }),
+      ],
+    }),
+    // Instruction manual check
+    new TableRow({
+      children: [
+        createQtyCell("Instruction manual and documentation check", { align: "left" }),
+        createQtyCell(blankIfEmpty(data.instruction_provided_by_label), { align: "center" }),
+        createQtyCell(blankIfEmpty(data.instruction_provided_by), { align: "center" }),
+      ],
+    }),
+    // No instruction manual
     new TableRow({
       children: [
         createQtyCell("No instruction manual included", { align: "left" }),
-        createQtyCell("-"),
-        createQtyCell(blankIfEmpty(data.no_instruction_result), { align: "left" }),
+        createQtyCell(""),
+        createQtyCell(blankIfEmpty(data.no_instruction_result), { align: "center" }),
       ],
     }),
+    // No CDF
     new TableRow({
       children: [
-        createQtyCell("No CDF provided", { align: "left" }),
-        createQtyCell("-"),
-        createQtyCell(blankIfEmpty(data.no_cdf_result), { align: "left" }),
+        createQtyCell("No CDF was provided for comparison during inspection.", { align: "left" }),
+        createQtyCell(""),
+        createQtyCell(blankIfEmpty(data.no_cdf_result), { align: "center" }),
       ],
     }),
+    // Shipping Marks Header
     new TableRow({
       children: [
-        createQtyCell("Shipping Marks", { bold: true, shaded: true, align: "left" }),
-        createQtyCell(blankIfEmpty(data.shipping_marks), { align: "left", colSpan: 2 }),
+        createQtyCell("Shipping Marks", { bold: true, shaded: true, align: "left", colSpan: 3 }),
       ],
     }),
+    // Shipping Marks data
     new TableRow({
       children: [
-        createQtyCell("Side Marks", { bold: true, shaded: true, align: "left" }),
-        createQtyCell(blankIfEmpty(data.side_marks), { align: "left", colSpan: 2 }),
+        createQtyCell("Shipping Marks (on _ side)", { align: "left", colSpan: 2 }),
+        createQtyCell(blankIfEmpty(data.shipping_marks), { align: "center" }),
       ],
     }),
+    // Side Marks
     new TableRow({
       children: [
-        createQtyCell("Inner Box Marks", { bold: true, shaded: true, align: "left" }),
-        createQtyCell(blankIfEmpty(data.inner_box_marks), { align: "left", colSpan: 2 }),
+        createQtyCell("Side Marks (on _ side)", { align: "left", colSpan: 2 }),
+        createQtyCell(blankIfEmpty(data.side_marks), { align: "center" }),
       ],
     }),
+    // Inner Box
     new TableRow({
       children: [
-        createQtyCell("Result", { bold: true, shaded: true, align: "left" }),
-        createQtyCell(blankIfEmpty(data.marking_result_final), { align: "left", colSpan: 2 }),
+        createQtyCell("Inner Box Marks (on _ side)", { align: "left", colSpan: 2 }),
+        createQtyCell(blankIfEmpty(data.inner_box_marks), { align: "center" }),
       ],
     }),
+    // Result
     new TableRow({
       children: [
-        createQtyCell("Remark", { bold: true, shaded: true, align: "left" }),
-        createQtyCell(blankIfEmpty(data.marking_remark), { align: "left", colSpan: 2 }),
+        createQtyCell("Result:", { bold: true, align: "left", colSpan: 2 }),
+        new TableCell({
+          borders: tableBorders(),
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: markingResultText,
+                  bold: true,
+                  size: 18,
+                  color: markingResultColor,
+                }),
+              ],
+              alignment: "left",
+              spacing: { before: 40, after: 40 },
+            }),
+          ],
+        }),
+      ],
+    }),
+    // Remark
+    new TableRow({
+      children: [
+        createQtyCell("Remark:", { bold: true, align: "left", colSpan: 2 }),
+        createQtyCell(blankIfEmpty(data.marking_remark), { align: "left" }),
       ],
     }),
   ];
@@ -2355,20 +2403,14 @@ function createReportContent(data, uploadedFiles) {
   children.push(new Table({ rows: markingRows, width: { size: 100, type: "pct" } }));
   children.push(new Paragraph(""));
 
-  // G. CLIENT SPECIAL REQUIREMENT
-  children.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: "G. CLIENT SPECIAL REQUIREMENT",
-          bold: true,
-          size: 28,
-          color: "1F4E79",
-        }),
-      ],
-      spacing: { before: 160, after: 100 },
-    })
-  );
+  // G. CLIENT SPECIAL REQUIREMENT — single unified table with embedded header
+  const clientReqResultText = sanitizeDocxText(data.client_requirement_result || "Pending");
+  const clientReqResultLower = clientReqResultText.toLowerCase();
+  const clientReqResultColor = clientReqResultLower.includes("fail")
+    ? "CC0000"
+    : clientReqResultLower.includes("pass")
+    ? "228B22"
+    : "E36C09";
 
   const clientRequirements = Array.isArray(data.clientRequirements)
     ? data.clientRequirements.map((req, idx) => ({
@@ -2378,36 +2420,77 @@ function createReportContent(data, uploadedFiles) {
       }))
     : [];
 
-  const requirementRows = clientRequirements.length > 0
-    ? clientRequirements
-    : [{ index: 1, requirement: "-", result: "-" }];
+  const requirementRows = clientRequirements.length > 0 ? clientRequirements : [{ index: 1, requirement: "-", result: "-" }];
 
   const clientRequirementRows = [
+    // Section Header
     new TableRow({
       children: [
-        createQtyCell("No.", { bold: true, shaded: true }),
-        createQtyCell("Client Requirements", { bold: true, shaded: true, align: "left" }),
-        createQtyCell("Result", { bold: true, shaded: true }),
+        new TableCell({
+          columnSpan: 3,
+          borders: tableBorders(),
+          shading: { fill: "E8E8E8" },
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: "G.  CLIENT SPECIAL REQUIREMENT", bold: true, size: 22, color: "1F4E79" })],
+              spacing: { before: 60, after: 60 },
+            }),
+          ],
+        }),
       ],
     }),
+    // Sub-header
+    new TableRow({
+      children: [
+        createQtyCell("Client Requirements:", { bold: true, shaded: true, align: "left", colSpan: 3 }),
+      ],
+    }),
+    // Columns
+    new TableRow({
+      children: [
+        createQtyCell("", { align: "center", shaded: false }),
+        createQtyCell("Client Requirements", { align: "center", shaded: false }),
+        createQtyCell("Result", { align: "center", shaded: false }),
+      ],
+    }),
+    // Dynamic Rows
     ...requirementRows.map((req) =>
       new TableRow({
         children: [
-          createQtyCell(`${req.index}.`),
+          createQtyCell(`${req.index}.`, { align: "left" }),
           createQtyCell(req.requirement, { align: "left" }),
-          createQtyCell(req.result, { align: "left" }),
+          createQtyCell(req.result, { align: "center" }),
         ],
       })
     ),
+    // Result
     new TableRow({
       children: [
-        createQtyCell("Result:", { bold: true, align: "left", shaded: true }),
-        createQtyCell(blankIfEmpty(data.client_requirement_result), { align: "left", colSpan: 2 }),
+        createQtyCell("Result:", { bold: true, align: "left" }),
+        new TableCell({
+          columnSpan: 2,
+          borders: tableBorders(),
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: clientReqResultText,
+                  bold: true,
+                  size: 18,
+                  color: clientReqResultColor,
+                }),
+              ],
+              alignment: "left",
+              spacing: { before: 40, after: 40 },
+            }),
+          ],
+        }),
       ],
     }),
+    // Remark
     new TableRow({
       children: [
-        createQtyCell("Remark:", { bold: true, align: "left", shaded: true }),
+        createQtyCell("Remark:", { align: "left" }),
         createQtyCell(blankIfEmpty(data.client_requirement_remark), { align: "left", colSpan: 2 }),
       ],
     }),
@@ -2421,44 +2504,38 @@ function createReportContent(data, uploadedFiles) {
   // III. QUANTITY DETAILS, IV. REMARKS, V. PHOTOS, etc.
 
   if (Array.isArray(data.reportPhotos) && data.reportPhotos.length > 0) {
-    children.push(
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: "Inspection Photos",
-            bold: true,
-            size: 24,
-            color: "1F4E79",
-          }),
-        ],
-        spacing: { before: 200, after: 100 },
-        shading: { type: "clear", color: "E8E8E8", fill: "E8E8E8" },
-      })
-    );
-
     const reportPhotoParagraphs = getPhotoGridParagraphs(data.reportPhotos);
     if (reportPhotoParagraphs.length > 0) {
       children.push(...reportPhotoParagraphs);
     }
     children.push(new Paragraph(""));
   } else {
+    // Empty photos table (H. PHOTOS)
     children.push(
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: "Inspection Photos",
-            bold: true,
-            size: 24,
-            color: "1F4E79",
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+          new TableRow({
+            children: [
+              new TableCell({
+                columnSpan: 3,
+                borders: tableBorders(),
+                shading: { fill: "E8E8E8" },
+                children: [
+                  new Paragraph({
+                    children: [new TextRun({ text: "H.  PHOTOS", bold: true, size: 22, color: "1F4E79" })],
+                    spacing: { before: 60, after: 60 },
+                  }),
+                ],
+              }),
+            ],
           }),
+          new TableRow({
+            children: [
+              createQtyCell("No photos provided.", { colSpan: 3, align: "center" }),
+            ],
+          })
         ],
-        spacing: { before: 200, after: 100 },
-        shading: { type: "clear", color: "E8E8E8", fill: "E8E8E8" },
-      })
-    );
-    children.push(
-      new Paragraph({
-        children: [new TextRun({ text: "-", size: 20 })],
       })
     );
     children.push(new Paragraph(""));
@@ -2533,40 +2610,93 @@ function getPhotoContent(photoData, uploadedFiles) {
 
 function getPhotoGridParagraphs(photoItems) {
   if (!Array.isArray(photoItems) || photoItems.length === 0) return [];
-
   const valid = photoItems.filter((item) => item && typeof item.preview === "string" && item.preview.startsWith("data:image"));
   if (valid.length === 0) return [];
 
+  // Group by label
+  const groups = [];
+  let currentLabel = valid[0].label || "-";
+  let currentGroup = [];
+  
+  valid.forEach((photo) => {
+    const label = photo.label || "-";
+    if (label !== currentLabel) {
+      groups.push({ label: currentLabel, photos: currentGroup });
+      currentLabel = label;
+      currentGroup = [photo];
+    } else {
+      currentGroup.push(photo);
+    }
+  });
+  if (currentGroup.length > 0) {
+    groups.push({ label: currentLabel, photos: currentGroup });
+  }
+
   const rows = [];
-  for (let i = 0; i < valid.length; i += 2) {
-    const left = valid[i];
-    const right = valid[i + 1] || null;
+  
+  // H. PHOTOS Header Row
+  rows.push(
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 3,
+          borders: tableBorders(),
+          shading: { fill: "E8E8E8" },
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: "H.  PHOTOS", bold: true, size: 22, color: "1F4E79" })],
+              spacing: { before: 60, after: 60 },
+            }),
+          ],
+        }),
+      ],
+    })
+  );
+
+  groups.forEach((group, groupIdx) => {
+    // Label Row
     rows.push(
       new TableRow({
         children: [
-          createPhotoCellFromDataUrl(left.preview, { width: 260, height: 180 }),
-          right ? createPhotoCellFromDataUrl(right.preview, { width: 260, height: 180 }) : createEmptyPhotoCell(),
+          createQtyCell(`${groupIdx + 1}`, { bold: true, align: "center", shaded: false }),
+          createQtyCell(group.label, { align: "center", colSpan: 2, shaded: false }),
         ],
       })
     );
-  }
+
+    // Photos for this label in rows of 2
+    for (let i = 0; i < group.photos.length; i += 2) {
+      const left = group.photos[i];
+      const right = group.photos[i + 1] || null;
+      rows.push(
+        new TableRow({
+          children: [
+            createPhotoCellFromDataUrl(left.preview, { width: 330, height: 250 }, { columnSpan: 2 }),
+            right ? createPhotoCellFromDataUrl(right.preview, { width: 330, height: 250 }) : createEmptyPhotoCell(),
+          ],
+        })
+      );
+    }
+  });
 
   return [
     new Table({
       width: { size: 100, type: WidthType.PERCENTAGE },
+      columnWidths: [400, 4500, 4500], // roughly 4%, 48%, 48% grids for docs width ~9400
       rows,
     }),
   ];
 }
 
-function createEmptyPhotoCell() {
+function createEmptyPhotoCell(cellOptions = {}) {
   return new TableCell({
     borders: tableBorders(),
+    ...cellOptions,
     children: [new Paragraph({ children: [new TextRun({ text: "", size: 18 })] })],
   });
 }
 
-function createPhotoCellFromDataUrl(dataUrl, { width, height, label = "" }) {
+function createPhotoCellFromDataUrl(dataUrl, { width, height, label = "" }, cellOptions = {}) {
   try {
     const imageTypeFromDataUrl = getImageTypeFromDataUrl(dataUrl);
     const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, "");
@@ -2575,12 +2705,14 @@ function createPhotoCellFromDataUrl(dataUrl, { width, height, label = "" }) {
 
     if (!isSupportedImageBuffer(imageBuffer) || !imageType) {
       return new TableCell({
+        ...cellOptions,
         borders: tableBorders(),
         children: [new Paragraph({ children: [new TextRun({ text: "Photo not available", italics: true, size: 18 })] })],
       });
     }
 
     return new TableCell({
+      ...cellOptions,
       borders: tableBorders(),
       margins: { top: 80, bottom: 80, left: 80, right: 80 },
       children: [
