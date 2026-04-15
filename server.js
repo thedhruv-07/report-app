@@ -19,6 +19,7 @@ const {
   PageNumber,
   Footer,
   convertInchesToTwip,
+  CheckBox,
 } = require("docx");
 
 const app = express();
@@ -1026,8 +1027,8 @@ function createReportContent(data, uploadedFiles) {
               children: [
                 new Paragraph({
                   children: [
-                    new TextRun({ text: isYes ? CB_CHECKED : CB_UNCHECKED, size: 18, font: CB_FONT }),
-                    new TextRun({ text: "Yes", size: 18 }),
+                    new CheckBox({ checked: isYes }),
+                    new TextRun({ text: " Yes", size: 18 }),
                   ],
                   alignment: "center",
                 }),
@@ -1038,8 +1039,8 @@ function createReportContent(data, uploadedFiles) {
               children: [
                 new Paragraph({
                   children: [
-                    new TextRun({ text: isNo ? CB_CHECKED : CB_UNCHECKED, size: 18, font: CB_FONT }),
-                    new TextRun({ text: "No", size: 18 }),
+                    new CheckBox({ checked: isNo }),
+                    new TextRun({ text: " No", size: 18 }),
                   ],
                   alignment: "center",
                 }),
@@ -1060,7 +1061,7 @@ function createReportContent(data, uploadedFiles) {
     remarksTableRows.push(
       new TableRow({
         children: [
-          createQtyCell(`${recommendationIndex}.`, { shaded: true }),
+          createQtyCell(`${recommendationIndex}.`, { shaded: true, bold: true }),
           new TableCell({
             columnSpan: 3,
             borders: tableBorders(),
@@ -1108,7 +1109,7 @@ function createReportContent(data, uploadedFiles) {
     remarksTableRows.push(
       new TableRow({
         children: [
-          createQtyCell(`${factoryCooperationIndex}.`, { shaded: true }),
+          createQtyCell(`${factoryCooperationIndex}.`, { shaded: true, bold: true }),
           new TableCell({
             columnSpan: 3,
             borders: tableBorders(),
@@ -1119,24 +1120,24 @@ function createReportContent(data, uploadedFiles) {
               }),
               new Paragraph({
                 children: [
-                  new TextRun({ text: fcGood ? CB_CHECKED + " " : CB_UNCHECKED + " ", size: 18, font: CB_FONT }),
-                  new TextRun({ text: "Good - Enough manpower to assist, and good cooperation.", size: 18 }),
+                  new CheckBox({ checked: fcGood }),
+                  new TextRun({ text: " Good - Enough manpower to assist, and good cooperation.", size: 18 }),
                 ],
                 spacing: { after: 10 },
                 indent: { left: 280 },
               }),
               new Paragraph({
                 children: [
-                  new TextRun({ text: fcAvg ? "   " + CB_TICK + "   " : CB_UNCHECKED + " ", size: 18, font: CB_FONT }),
-                  new TextRun({ text: "AVERAGE - Enough manpower to assist.", size: 18 }),
+                  new CheckBox({ checked: fcAvg }),
+                  new TextRun({ text: " AVERAGE - Enough manpower to assist.", size: 18 }),
                 ],
                 spacing: { after: 10 },
                 indent: { left: 280 },
               }),
               new Paragraph({
                 children: [
-                  new TextRun({ text: fcPoor ? CB_CHECKED + " " : CB_UNCHECKED + " ", size: 18, font: CB_FONT }),
-                  new TextRun({ text: "Poor - Manpower, equipment or document not provided timely.", size: 18 }),
+                  new CheckBox({ checked: fcPoor }),
+                  new TextRun({ text: " Poor - Manpower, equipment or document not provided timely.", size: 18 }),
                 ],
                 spacing: { after: 40 },
                 indent: { left: 280 },
@@ -1156,7 +1157,7 @@ function createReportContent(data, uploadedFiles) {
     remarksTableRows.push(
       new TableRow({
         children: [
-          createQtyCell(`${workerCountIndex}.`, { shaded: true }),
+          createQtyCell(`${workerCountIndex}.`, { shaded: true, bold: true }),
           new TableCell({
             columnSpan: 3,
             borders: tableBorders(),
@@ -1167,11 +1168,11 @@ function createReportContent(data, uploadedFiles) {
               }),
               new Paragraph({
                 children: [
-                  new TextRun({ text: (wLt50 ? CB_CHECKED : CB_UNCHECKED) + " Less than 50 people, ", size: 16, font: CB_FONT }),
-                  new TextRun({ text: (w50100 ? CB_CHECKED : CB_UNCHECKED) + " 50-100 people, ", size: 16, font: CB_FONT }),
-                  new TextRun({ text: (w100500 ? CB_CHECKED : CB_UNCHECKED) + " 100-500 people, ", size: 16, font: CB_FONT }),
-                  new TextRun({ text: (w5001000 ? CB_CHECKED : CB_UNCHECKED) + " 500-1000 people, ", size: 16, font: CB_FONT }),
-                  new TextRun({ text: (wGt1000 ? CB_CHECKED : CB_UNCHECKED) + " More than 1000 people.", size: 16, font: CB_FONT }),
+                  new CheckBox({ checked: wLt50 }), new TextRun({ text: " Less than 50 people,  ", size: 16 }),
+                  new CheckBox({ checked: w50100 }), new TextRun({ text: " 50-100 people,  ", size: 16 }),
+                  new CheckBox({ checked: w100500 }), new TextRun({ text: " 100-500 people,  ", size: 16 }),
+                  new CheckBox({ checked: w5001000 }), new TextRun({ text: " 500-1000 people,  ", size: 16 }),
+                  new CheckBox({ checked: wGt1000 }), new TextRun({ text: " More than 1000 people.", size: 16 }),
                 ],
                 spacing: { after: 40 },
                 indent: { left: 280 },
@@ -1189,7 +1190,7 @@ function createReportContent(data, uploadedFiles) {
     remarksTableRows.push(
       new TableRow({
         children: [
-          createQtyCell(`${inspectorOpinionIndex}.`, { shaded: true }),
+          createQtyCell(`${inspectorOpinionIndex}.`, { shaded: true, bold: true }),
           new TableCell({
             columnSpan: 3,
             borders: tableBorders(),
@@ -1200,24 +1201,24 @@ function createReportContent(data, uploadedFiles) {
               }),
               new Paragraph({
                 children: [
-                  new TextRun({ text: ioGood ? CB_CHECKED + " " : CB_UNCHECKED + " ", size: 18, font: CB_FONT }),
-                  new TextRun({ text: "Good - The factory was neat and tidy. The testing equipment was well maintained and calibrated.", size: 18 }),
+                  new CheckBox({ checked: ioGood }),
+                  new TextRun({ text: " Good - The factory was neat and tidy. The testing equipment was well maintained and calibrated.", size: 18 }),
                 ],
                 spacing: { after: 10 },
                 indent: { left: 280 },
               }),
               new Paragraph({
                 children: [
-                  new TextRun({ text: ioAvg ? "   " + CB_TICK + "   " : CB_UNCHECKED + " ", size: 18, font: CB_FONT }),
-                  new TextRun({ text: "AVERAGE - The factory was tidy, and the testing equipment ran normally.", size: 18 }),
+                  new CheckBox({ checked: ioAvg }),
+                  new TextRun({ text: " AVERAGE - The factory was tidy, and the testing equipment ran normally.", size: 18 }),
                 ],
                 spacing: { after: 10 },
                 indent: { left: 280 },
               }),
               new Paragraph({
                 children: [
-                  new TextRun({ text: ioPoor ? CB_CHECKED + " " : CB_UNCHECKED + " ", size: 18, font: CB_FONT }),
-                  new TextRun({ text: "Poor - The factory was messed, the basic testing equipment was not available / not workable.", size: 18 }),
+                  new CheckBox({ checked: ioPoor }),
+                  new TextRun({ text: " Poor - The factory was messed, the basic testing equipment was not available / not workable.", size: 18 }),
                 ],
                 spacing: { after: 40 },
                 indent: { left: 280 },
@@ -1232,7 +1233,7 @@ function createReportContent(data, uploadedFiles) {
     remarksTableRows.push(
       new TableRow({
         children: [
-          createQtyCell(`${sampleCollectionIndex}.`, { shaded: true }),
+          createQtyCell(`${sampleCollectionIndex}.`, { shaded: true, bold: true }),
           new TableCell({
             columnSpan: 3,
             borders: tableBorders(),
