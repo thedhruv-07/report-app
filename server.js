@@ -868,7 +868,11 @@ function createReportContent(data, uploadedFiles) {
     const workerCountChoice = String(data.workerCount || "").trim().toLowerCase();
     const inspectorOpinionChoice = String(data.inspectorOpinion || "").trim().toLowerCase();
     const normalizeChoice = (v) => String(v || "").trim().toLowerCase();
-    const checkboxMark = (isChecked) => (isChecked ? "☑" : "☐");
+    const CB_CHECKED = "\u2611";
+    const CB_UNCHECKED = "\u2610";
+    const CB_TICK = "\u2713";
+    const CB_FONT = { ascii: "MS Gothic", hAnsi: "MS Gothic", eastAsia: "MS Gothic", cs: "MS Gothic" };
+    const checkboxMark = (isChecked) => (isChecked ? CB_CHECKED : CB_UNCHECKED);
     const yesNoChecked = (value, target) => {
       const n = normalizeChoice(value);
       if (target === "yes") return n === "yes" || n === "y" || n === "true" || n === "1";
@@ -975,13 +979,37 @@ function createReportContent(data, uploadedFiles) {
 
     yesNoRemarkQuestions.forEach((q) => {
       const answer = data[q.key];
+      const isYes = yesNoChecked(answer, "yes");
+      const isNo = yesNoChecked(answer, "no");
       remarksTableRows.push(
         new TableRow({
           children: [
             createQtyCell(`${q.index}.`, { shaded: true }),
             createQtyCell(q.text, { align: "left" }),
-            createQtyCell(yesNoChecked(answer, "yes") ? "☑ Yes" : "☐ Yes", { color: "1F1F1F" }),
-            createQtyCell(yesNoChecked(answer, "no") ? "☑ No" : "☐ No", { color: "1F1F1F" }),
+            new TableCell({
+              borders: tableBorders(),
+              children: [
+                new Paragraph({
+                  children: [
+                    new TextRun({ text: isYes ? CB_CHECKED : CB_UNCHECKED, size: 18, font: CB_FONT }),
+                    new TextRun({ text: "Yes", size: 18 }),
+                  ],
+                  alignment: "center",
+                }),
+              ],
+            }),
+            new TableCell({
+              borders: tableBorders(),
+              children: [
+                new Paragraph({
+                  children: [
+                    new TextRun({ text: isNo ? CB_CHECKED : CB_UNCHECKED, size: 18, font: CB_FONT }),
+                    new TextRun({ text: "No", size: 18 }),
+                  ],
+                  alignment: "center",
+                }),
+              ],
+            }),
           ],
         })
       );
@@ -1056,7 +1084,7 @@ function createReportContent(data, uploadedFiles) {
               }),
               new Paragraph({
                 children: [
-                  new TextRun({ text: fcGood ? "\u2610 " : "\u2610 ", size: 18, font: "Segoe UI Symbol" }),
+                  new TextRun({ text: fcGood ? CB_CHECKED + " " : CB_UNCHECKED + " ", size: 18, font: CB_FONT }),
                   new TextRun({ text: "Good - Enough manpower to assist, and good cooperation.", size: 18 }),
                 ],
                 spacing: { after: 10 },
@@ -1064,7 +1092,7 @@ function createReportContent(data, uploadedFiles) {
               }),
               new Paragraph({
                 children: [
-                  new TextRun({ text: fcAvg ? "   \u2713   " : "\u2610 ", size: 18, font: "Segoe UI Symbol" }),
+                  new TextRun({ text: fcAvg ? "   " + CB_TICK + "   " : CB_UNCHECKED + " ", size: 18, font: CB_FONT }),
                   new TextRun({ text: "AVERAGE - Enough manpower to assist.", size: 18 }),
                 ],
                 spacing: { after: 10 },
@@ -1072,7 +1100,7 @@ function createReportContent(data, uploadedFiles) {
               }),
               new Paragraph({
                 children: [
-                  new TextRun({ text: fcPoor ? "\u2610 " : "\u2610 ", size: 18, font: "Segoe UI Symbol" }),
+                  new TextRun({ text: fcPoor ? CB_CHECKED + " " : CB_UNCHECKED + " ", size: 18, font: CB_FONT }),
                   new TextRun({ text: "Poor - Manpower, equipment or document not provided timely.", size: 18 }),
                 ],
                 spacing: { after: 40 },
@@ -1104,67 +1132,14 @@ function createReportContent(data, uploadedFiles) {
               }),
               new Paragraph({
                 children: [
-                  new TextRun({ text: `${wLt50 ? "\u2713" : "\u2610"} Less than 50 people, `, size: 16, font: "Segoe UI Symbol" }),
-                  new TextRun({ text: `${w50100 ? "\u2713" : "\u2610"} 50-100 people, `, size: 16, font: "Segoe UI Symbol" }),
-                  new TextRun({ text: `${w100500 ? "\u2713" : "\u2610"} 100-500 people, `, size: 16, font: "Segoe UI Symbol" }),
-                  new TextRun({ text: `${w5001000 ? "\u2713" : "\u2610"} 500-1000 people, `, size: 16, font: "Segoe UI Symbol" }),
-                  new TextRun({ text: `${wGt1000 ? "\u2713" : "\u2610"} More than 1000 people.`, size: 16, font: "Segoe UI Symbol" }),
+                  new TextRun({ text: (wLt50 ? CB_CHECKED : CB_UNCHECKED) + " Less than 50 people, ", size: 16, font: CB_FONT }),
+                  new TextRun({ text: (w50100 ? CB_CHECKED : CB_UNCHECKED) + " 50-100 people, ", size: 16, font: CB_FONT }),
+                  new TextRun({ text: (w100500 ? CB_CHECKED : CB_UNCHECKED) + " 100-500 people, ", size: 16, font: CB_FONT }),
+                  new TextRun({ text: (w5001000 ? CB_CHECKED : CB_UNCHECKED) + " 500-1000 people, ", size: 16, font: CB_FONT }),
+                  new TextRun({ text: (wGt1000 ? CB_CHECKED : CB_UNCHECKED) + " More than 1000 people.", size: 16, font: CB_FONT }),
                 ],
                 spacing: { after: 40 },
                 indent: { left: 280 },
-              }),
-            ],
-          }),
-        ],
-      })
-    );
-
-    // Country row: India | China | Bangladesh
-    remarksTableRows.push(
-      new TableRow({
-        children: [
-          new TableCell({
-            columnSpan: 4,
-            borders: tableBorders(),
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({ text: "India", bold: true, size: 18 }),
-                  new TextRun({ text: " | ", size: 18 }),
-                  new TextRun({ text: "China", bold: true, size: 18 }),
-                  new TextRun({ text: " | ", size: 18 }),
-                  new TextRun({ text: "Bangladesh", bold: true, size: 18 }),
-                  new TextRun({ text: " |", size: 18 }),
-                ],
-                spacing: { before: 40, after: 40 },
-              }),
-            ],
-          }),
-        ],
-      })
-    );
-
-    // Copyright row
-    remarksTableRows.push(
-      new TableRow({
-        children: [
-          new TableCell({
-            columnSpan: 4,
-            borders: tableBorders(),
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({ text: "www.absoluteveritas.com", size: 16, color: "555555" }),
-                ],
-                alignment: "right",
-                spacing: { before: 20, after: 10 },
-              }),
-              new Paragraph({
-                children: [
-                  new TextRun({ text: "Absolute Veritas Copyright  \u00A9 All Rights Reserved", size: 16, color: "555555" }),
-                ],
-                alignment: "right",
-                spacing: { before: 0, after: 20 },
               }),
             ],
           }),
@@ -1190,7 +1165,7 @@ function createReportContent(data, uploadedFiles) {
               }),
               new Paragraph({
                 children: [
-                  new TextRun({ text: ioGood ? "\u2610 " : "\u2610 ", size: 18, font: "Segoe UI Symbol" }),
+                  new TextRun({ text: ioGood ? CB_CHECKED + " " : CB_UNCHECKED + " ", size: 18, font: CB_FONT }),
                   new TextRun({ text: "Good - The factory was neat and tidy. The testing equipment was well maintained and calibrated.", size: 18 }),
                 ],
                 spacing: { after: 10 },
@@ -1198,7 +1173,7 @@ function createReportContent(data, uploadedFiles) {
               }),
               new Paragraph({
                 children: [
-                  new TextRun({ text: ioAvg ? "   \u2713   " : "\u2610 ", size: 18, font: "Segoe UI Symbol" }),
+                  new TextRun({ text: ioAvg ? "   " + CB_TICK + "   " : CB_UNCHECKED + " ", size: 18, font: CB_FONT }),
                   new TextRun({ text: "AVERAGE - The factory was tidy, and the testing equipment ran normally.", size: 18 }),
                 ],
                 spacing: { after: 10 },
@@ -1206,7 +1181,7 @@ function createReportContent(data, uploadedFiles) {
               }),
               new Paragraph({
                 children: [
-                  new TextRun({ text: ioPoor ? "\u2610 " : "\u2610 ", size: 18, font: "Segoe UI Symbol" }),
+                  new TextRun({ text: ioPoor ? CB_CHECKED + " " : CB_UNCHECKED + " ", size: 18, font: CB_FONT }),
                   new TextRun({ text: "Poor - The factory was messed, the basic testing equipment was not available / not workable.", size: 18 }),
                 ],
                 spacing: { after: 40 },
@@ -1646,24 +1621,202 @@ function createReportContent(data, uploadedFiles) {
   };
 
   const wmItems = (Array.isArray(items) && items.length > 0 ? items : [{ itemName: "Item", sampleSizePacked: "0" }]).slice(0, 7);
+
+  // B. WORKMANSHIP - 7 columns to match reference: Label | Value | AQL Label | AQL Value | Accepted | Total Found | Result
   const workmanshipSummaryRows = [
-    new TableRow({ children: [new TableCell({ columnSpan: 6, borders: tableBorders(), shading: { fill: "E8E8E8" }, children: [new Paragraph({ children: [new TextRun({ text: "B. WORKMANSHIP", bold: true, size: 22, color: "1F4E79" })] })] })] }),
-    new TableRow({ children: [createQtyCell("Inspection Standard:", { bold: true, align: "left", shaded: true }), createQtyCell(data.inspectionStandardWM || "ANSI/ASQ Z1.4 (ISO 2859-1)", { align: "left" }), createQtyCell("AQL", { bold: true, shaded: true }), createQtyCell("Accepted", { bold: true, shaded: true }), createQtyCell("Total Found", { bold: true, shaded: true }), createQtyCell("Result", { bold: true, shaded: true })] }),
-    new TableRow({ children: [createQtyCell("Sampling Plan:", { bold: true, align: "left", shaded: true }), createQtyCell(data.samplingPlanWM || "Fixed Sample Size", { align: "left" }), createQtyCell(`Critical: ${data.aqlCriticalWM || "Not Allowed"}`, { align: "left" }), createQtyCell(data.acceptedCritical || "0"), createQtyCell(data.totalFoundCritical || "0"), createQtyCell(resolveWorkmanshipResult(data.result1WM, data.totalFoundCritical, data.acceptedCritical))] }),
-    new TableRow({ children: [createQtyCell("Inspection Level:", { bold: true, align: "left", shaded: true }), createQtyCell(data.inspectionLevelWM || "Level II", { align: "left" }), createQtyCell(`Major: ${data.aqlMajorWM || "2.5"}`, { align: "left" }), createQtyCell(data.acceptedMajor || "0"), createQtyCell(data.totalFoundMajor || "0"), createQtyCell(resolveWorkmanshipResult(data.result2WM, data.totalFoundMajor, data.acceptedMajor))] }),
-    new TableRow({ children: [createQtyCell("Sample Size:", { bold: true, align: "left", shaded: true }), createQtyCell(data.sampleSizeWM || "5 Sets", { align: "left" }), createQtyCell(`Minor: ${data.aqlMinorWM || "4.0"}`, { align: "left" }), createQtyCell(data.acceptedMinor || "0"), createQtyCell(data.totalFoundMinor || "0"), createQtyCell(resolveWorkmanshipResult(data.result3WM, data.totalFoundMinor, data.acceptedMinor))] }),
-    new TableRow({ children: [new TableCell({ columnSpan: 6, borders: tableBorders(), shading: { fill: "E8E8E8" }, children: [new Paragraph({ children: [new TextRun({ text: "Workmanship Defectives / Function Inspection Findings", bold: true, size: 18 })] })] })] }),
-    new TableRow({ children: [createQtyCell("", { shaded: true }), createQtyCell("Description", { bold: true, shaded: true, align: "left", colSpan: 2 }), createQtyCell("Critical", { bold: true, shaded: true }), createQtyCell("Major", { bold: true, shaded: true }), createQtyCell("Minor", { bold: true, shaded: true })] }),
+    // Section header
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 7,
+          borders: tableBorders(),
+          shading: { fill: "E8E8E8" },
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: "B.  WORKMANSHIP", bold: true, size: 22, color: "1F4E79" })],
+              spacing: { before: 60, after: 60 },
+            }),
+          ],
+        }),
+      ],
+    }),
+    // Column headers row
+    new TableRow({
+      children: [
+        createQtyCell("Inspection Standard:", { bold: true, align: "left", shaded: true }),
+        createQtyCell(data.inspectionStandardWM || "ANSI/ASQ Z1.4 (ISO 2859-1)", { align: "left" }),
+        createQtyCell("AQL", { bold: true, shaded: true, colSpan: 2 }),
+        createQtyCell("Accepted", { bold: true, shaded: true }),
+        createQtyCell("Total\nFound", { bold: true, shaded: true }),
+        createQtyCell("Result", { bold: true, shaded: true }),
+      ],
+    }),
+    // Critical row
+    new TableRow({
+      children: [
+        createQtyCell("Sampling Plan:", { bold: true, align: "left", shaded: true }),
+        createQtyCell(data.samplingPlanWM || "Fixed Sample Size", { align: "left" }),
+        createQtyCell("Critical:", { bold: true, shaded: true, align: "left" }),
+        createQtyCell(data.aqlCriticalWM || "Not Allowed"),
+        createQtyCell(data.acceptedCritical || "0"),
+        createQtyCell(data.totalFoundCritical || "0"),
+        createQtyCell(resolveWorkmanshipResult(data.result1WM, data.totalFoundCritical, data.acceptedCritical)),
+      ],
+    }),
+    // Major row
+    new TableRow({
+      children: [
+        createQtyCell("Inspection Level:", { bold: true, align: "left", shaded: true }),
+        createQtyCell(data.inspectionLevelWM || "Level II", { align: "left" }),
+        createQtyCell("Major:", { bold: true, shaded: true, align: "left" }),
+        createQtyCell(data.aqlMajorWM || "2.5"),
+        createQtyCell(data.acceptedMajor || "0"),
+        createQtyCell(data.totalFoundMajor || "0"),
+        createQtyCell(resolveWorkmanshipResult(data.result2WM, data.totalFoundMajor, data.acceptedMajor)),
+      ],
+    }),
+    // Minor row
+    new TableRow({
+      children: [
+        createQtyCell("Sample Size:", { bold: true, align: "left", shaded: true }),
+        createQtyCell(data.sampleSizeWM || "5 Sets", { align: "left" }),
+        createQtyCell("Minor:", { bold: true, shaded: true, align: "left" }),
+        createQtyCell(data.aqlMinorWM || "4.0"),
+        createQtyCell(data.acceptedMinor || "0"),
+        createQtyCell(data.totalFoundMinor || "0"),
+        createQtyCell(resolveWorkmanshipResult(data.result3WM, data.totalFoundMinor, data.acceptedMinor)),
+      ],
+    }),
+    // Defect findings header
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 7,
+          borders: tableBorders(),
+          shading: { fill: "E8E8E8" },
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: "Workmanship Defectives / Function Inspection Findings", bold: true, size: 18 })],
+              spacing: { before: 40, after: 40 },
+            }),
+          ],
+        }),
+      ],
+    }),
+    // Defect column headers
+    new TableRow({
+      children: [
+        createQtyCell("", { shaded: true }),
+        createQtyCell("Description", { bold: true, shaded: true, align: "left", colSpan: 3 }),
+        createQtyCell("Critical", { bold: true, shaded: true }),
+        createQtyCell("Major", { bold: true, shaded: true }),
+        createQtyCell("Minor", { bold: true, shaded: true }),
+      ],
+    }),
+    // Defect item rows
     ...wmItems.flatMap((it, idx) => [
-      new TableRow({ children: [createQtyCell(`For Item ${sanitizeDocxText(it.itemName || it.name || `Item ${idx + 1}`)}`, { align: "left", colSpan: 2 }), createQtyCell(`Sample size : ${sanitizeDocxText(it.sampleSizePacked || "0")} Set`, { align: "left", colSpan: 2 }), createQtyCell("", {}), createQtyCell("", {})] }),
-      new TableRow({ children: [createQtyCell(`${idx + 1}.`, { align: "left" }), createQtyCell(blankIfEmpty(data[`defectDescription${idx + 1}`] || "-"), { align: "left", colSpan: 2 }), createQtyCell(blankIfEmpty(data[`defectCritical${idx + 1}`] || "0")), createQtyCell(blankIfEmpty(data[`defectMajor${idx + 1}`] || "0")), createQtyCell(blankIfEmpty(data[`defectMinor${idx + 1}`] || "0"))] }),
+      new TableRow({
+        children: [
+          createQtyCell(`For Item ${sanitizeDocxText(it.itemName || it.name || `Item ${idx + 1}`)}`, { align: "left", colSpan: 2 }),
+          createQtyCell(`Sample size: ${sanitizeDocxText(it.sampleSizePacked || "0")} Set`, { align: "left", colSpan: 2 }),
+          createQtyCell("", {}),
+          createQtyCell("", {}),
+          createQtyCell("", {}),
+        ],
+      }),
+      new TableRow({
+        children: [
+          createQtyCell(`${idx + 1}.`, { align: "left" }),
+          createQtyCell(blankIfEmpty(data[`defectDescription${idx + 1}`] || "-"), { align: "left", colSpan: 3 }),
+          createQtyCell(blankIfEmpty(data[`defectCritical${idx + 1}`] || "0")),
+          createQtyCell(blankIfEmpty(data[`defectMajor${idx + 1}`] || "0")),
+          createQtyCell(blankIfEmpty(data[`defectMinor${idx + 1}`] || "0")),
+        ],
+      }),
     ]),
-    new TableRow({ children: [createQtyCell("", { colSpan: 2 }), createQtyCell("Total found:", { bold: true, align: "right", colSpan: 2 }), createQtyCell(data.totalFoundCritical || "00"), createQtyCell(data.totalFoundMajor || "00"), createQtyCell(data.totalFoundMinor || "00")] }),
-    new TableRow({ children: [createQtyCell("", { colSpan: 2 }), createQtyCell("Accepted:", { bold: true, align: "right", colSpan: 2 }), createQtyCell(data.acceptedCritical || "00"), createQtyCell(data.acceptedMajor || "00"), createQtyCell(data.acceptedMinor || "00")] }),
-    new TableRow({ children: [createQtyCell("", { colSpan: 2 }), createQtyCell("Sample size:", { bold: true, align: "right", colSpan: 2 }), createQtyCell(data.sampleSizeCritical || "2"), createQtyCell(data.sampleSizeMajor || "2"), createQtyCell(data.sampleSizeMinor || "2")] }),
-    new TableRow({ children: [createQtyCell("Result:", { bold: true, align: "left", shaded: true }), createQtyCell(data.workmanshipResult || "Failed", { align: "left", bold: true, color: (String(data.workmanshipResult || "").toLowerCase().includes("fail") ? "CC0000" : undefined), colSpan: 5 })] }),
-    new TableRow({ children: [createQtyCell("Remark:", { bold: true, align: "left", shaded: true }), createQtyCell(blankIfEmpty(data.workmanshipRemark), { align: "left", colSpan: 5 })] }),
-    new TableRow({ children: [createQtyCell("Note:", { bold: true, align: "left", shaded: true }), createQtyCell("A Defective is defined as a unit of product that contains one or more defects. A Defect is defined as any non-conformance of the inspected unit of product with specified requirement.", { align: "left", colSpan: 5, fontSize: 14 })] }),
+    // Total found row
+    new TableRow({
+      children: [
+        createQtyCell("", { colSpan: 3 }),
+        createQtyCell("Total found:", { bold: true, align: "right" }),
+        createQtyCell(data.totalFoundCritical || "00", { bold: true }),
+        createQtyCell(data.totalFoundMajor || "00", { bold: true }),
+        createQtyCell(data.totalFoundMinor || "00", { bold: true }),
+      ],
+    }),
+    // Accepted row
+    new TableRow({
+      children: [
+        createQtyCell("", { colSpan: 3 }),
+        createQtyCell("Accepted:", { bold: true, align: "right" }),
+        createQtyCell(data.acceptedCritical || "00", { bold: true }),
+        createQtyCell(data.acceptedMajor || "00", { bold: true }),
+        createQtyCell(data.acceptedMinor || "00", { bold: true }),
+      ],
+    }),
+    // Sample size row
+    new TableRow({
+      children: [
+        createQtyCell("", { colSpan: 3 }),
+        createQtyCell("Sample size:", { bold: true, align: "right" }),
+        createQtyCell(data.sampleSizeCritical || "2", { bold: true }),
+        createQtyCell(data.sampleSizeMajor || "2", { bold: true }),
+        createQtyCell(data.sampleSizeMinor || "2", { bold: true }),
+      ],
+    }),
+    // Result row
+    new TableRow({
+      children: [
+        createQtyCell("Result:", { bold: true, align: "left", shaded: true }),
+        new TableCell({
+          columnSpan: 6,
+          borders: tableBorders(),
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: sanitizeDocxText(data.workmanshipResult || "Failed"),
+                  bold: true,
+                  size: 18,
+                  color: String(data.workmanshipResult || "").toLowerCase().includes("fail") ? "CC0000" : "228B22",
+                  italics: true,
+                }),
+              ],
+              spacing: { before: 40, after: 40 },
+            }),
+          ],
+        }),
+      ],
+    }),
+    // Remark row
+    new TableRow({
+      children: [
+        createQtyCell("Remark:", { bold: true, align: "left", shaded: true }),
+        createQtyCell(blankIfEmpty(data.workmanshipRemark), { align: "left", colSpan: 6 }),
+      ],
+    }),
+    // Note row
+    new TableRow({
+      children: [
+        createQtyCell("Note:", { bold: true, align: "left", shaded: true }),
+        new TableCell({
+          columnSpan: 6,
+          borders: tableBorders(),
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({ text: "A ", bold: true, size: 14 }),
+                new TextRun({ text: "Defective", bold: true, underline: {}, size: 14 }),
+                new TextRun({ text: " is defined as a unit of product that contains one or more defects. A ", size: 14 }),
+                new TextRun({ text: "Defect", bold: true, underline: {}, size: 14 }),
+                new TextRun({ text: " is defined as any non-conformance of the inspected unit of product with specified requirements. A single defect is taken into account per each defective unit; only one most serious defect is taken into account per each defective unit.", size: 14 }),
+              ],
+              spacing: { before: 40, after: 40 },
+            }),
+          ],
+        }),
+      ],
+    }),
   ];
 
   children.push(new Table({ rows: workmanshipSummaryRows, width: { size: 100, type: "pct" } }));
@@ -2721,6 +2874,7 @@ function createQtyCell(text, options = {}) {
     shaded = false,
     color,
     fontSize = 18,
+    width,
   } = options;
 
   const textRunOptions = {
@@ -2739,6 +2893,7 @@ function createQtyCell(text, options = {}) {
 
   const cellOptions = {
     children: [new Paragraph(paragraphOptions)],
+    width,
   };
   if (shaded) {
     cellOptions.shading = { fill: "E9ECEF" };
