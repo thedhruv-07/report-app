@@ -17,12 +17,17 @@ export default function QuantityDetails({ items, onItemChange, onAddItem, onRemo
 
   return (
     <>
-      <h3 style={{ ...sectionHeaderStyle, color: colors.text, marginBottom: "20px" }}>V. QUANTITY</h3>
+      <h3 style={{ ...sectionHeaderStyle, color: colors.text, marginBottom: "20px" }}>A. QUANTITY</h3>
 
       {/* Quantity Table */}
       <div style={{ marginBottom: "25px", overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", border: `1px solid ${colors.border}`, fontSize: "12px" }}>
           <thead>
+            <tr>
+              <th colSpan="11" style={{ padding: "8px", background: colors.surfaceAlt, border: `1px solid ${colors.border}`, color: colors.primary, textAlign: "left", fontWeight: "700", fontSize: "16px" }}>
+                A. QUANTITY
+              </th>
+            </tr>
             <tr>
               <th style={{ padding: "8px", background: colors.headerBg, border: `1px solid ${colors.border}`, color: colors.text, textAlign: "left" }}>P.O.</th>
               <th style={{ padding: "8px", background: colors.headerBg, border: `1px solid ${colors.border}`, color: colors.text, textAlign: "left" }}>Item</th>
@@ -194,11 +199,19 @@ export default function QuantityDetails({ items, onItemChange, onAddItem, onRemo
       {/* Selected Cartons */}
       <div style={{ marginBottom: "20px", padding: "15px", background: colors.surfaceAlt, border: `1px solid ${colors.border}`, borderRadius: "8px" }}>
         <h4 style={{ marginBottom: "10px", fontWeight: "600", color: colors.text }}>Selected Cartons:</h4>
+        <input
+          type="text"
+          name="selectedCartonsCount"
+          value={form.selectedCartonsCount || ""}
+          onChange={handleChange}
+          placeholder="0"
+          style={{ ...inputStyle, marginBottom: "10px", maxWidth: "120px", textAlign: "center", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, borderRadius: "8px" }}
+        />
         <p style={{ color: colors.textMuted, fontSize: "13px", marginBottom: "10px" }}>
           Cartons were selected randomly on site No. carton number in shipping mark.
         </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "10px" }}>
-          {[1, 2, 3, 4, 5].map((num) => (
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
             <input
               key={num}
               type="text"

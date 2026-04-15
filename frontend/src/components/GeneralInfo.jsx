@@ -81,7 +81,7 @@ export default function GeneralInfo({ form, handleChange, onNext, generalPhoto, 
     <div style={{ display: "flex", gap: "30px" }}>
       {/* Left side - Information Table */}
       <div style={{ flex: 1 }}>
-        <h3 style={{ fontSize: "18px", fontWeight: "700", color: colors.header, marginBottom: "20px", borderBottom: `3px solid ${colors.primary}`, paddingBottom: "10px" }}>I. GENERAL INFORMATION</h3>
+        <h3 style={{ fontSize: "18px", fontWeight: "700", color: colors.header, marginBottom: "20px", borderBottom: `3px solid ${colors.primary}`, padding: "12px", backgroundColor: colors.surfaceAlt }}>I. GENERAL INFORMATION</h3>
         
         <table style={{ width: "100%", borderCollapse: "collapse", border: `1px solid ${colors.border}` }}>
           <tbody>

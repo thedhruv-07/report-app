@@ -1,6 +1,86 @@
 import { inputStyle, buttonStyle, colors, sectionHeaderStyle } from "../styles";
+import { compressImage, formatFileSize } from "../utils/imageCompression";
 
 export default function ConclusionStep({ form, handleChange, onPrev, onNext }) {
+  const setField = (name, value) => handleChange({ target: { name, value } });
+  const conclusionPhotos = Array.isArray(form.conclusionPhotos) ? form.conclusionPhotos : [];
+  const conclusionReviewerPhotos = Array.isArray(form.conclusionReviewerPhotos) ? form.conclusionReviewerPhotos : [];
+
+  const handlePhotoUpload = async (files, fieldName, prefix, currentPhotos) => {
+    const selectedFiles = Array.from(files || []);
+    if (selectedFiles.length === 0) return;
+
+    const processedPhotos = await Promise.all(
+      selectedFiles.map(async (file, index) => {
+        const id = `${prefix}_${Date.now()}_${Math.random()}_${index}`;
+        try {
+          const { file: compressedFile, preview, originalSize, compressedSize } = await compressImage(file);
+          return {
+            id,
+            label: "",
+            fileName: compressedFile.name,
+            preview,
+            originalSize,
+            compressedSize,
+          };
+        } catch {
+          const preview = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(file);
+          });
+          return {
+            id,
+            label: "",
+            fileName: file.name,
+            preview,
+            originalSize: file.size,
+            compressedSize: file.size,
+            error: true,
+          };
+        }
+      })
+    );
+
+    setField(fieldName, [...currentPhotos, ...processedPhotos]);
+  };
+
+  const handleConclusionPhotoUpload = async (files) => {
+    await handlePhotoUpload(files, "conclusionPhotos", "conclusion", conclusionPhotos);
+  };
+
+  const handleReviewerPhotoUpload = async (files) => {
+    await handlePhotoUpload(files, "conclusionReviewerPhotos", "reviewer", conclusionReviewerPhotos);
+  };
+
+  const updateConclusionPhotoLabel = (id, label) => {
+    setField(
+      "conclusionPhotos",
+      conclusionPhotos.map((p) => (p.id === id ? { ...p, label } : p))
+    );
+  };
+
+  const removeConclusionPhoto = (id) => {
+    setField(
+      "conclusionPhotos",
+      conclusionPhotos.filter((p) => p.id !== id)
+    );
+  };
+
+  const updateReviewerPhotoLabel = (id, label) => {
+    setField(
+      "conclusionReviewerPhotos",
+      conclusionReviewerPhotos.map((p) => (p.id === id ? { ...p, label } : p))
+    );
+  };
+
+  const removeReviewerPhoto = (id) => {
+    setField(
+      "conclusionReviewerPhotos",
+      conclusionReviewerPhotos.filter((p) => p.id !== id)
+    );
+  };
+
   return (
     <>
       <h3 style={{ ...sectionHeaderStyle, color: colors.text, marginBottom: "20px" }}>IV. CONCLUSION</h3>
@@ -42,6 +122,87 @@ export default function ConclusionStep({ form, handleChange, onPrev, onNext }) {
             <span style={{ color: colors.danger, fontWeight: "600" }}>✗ FAILED - Does Not Conform to Client's Requirement</span>
           </label>
         </div>
+      </div>
+
+      {/* Report Reviewer Photos Upload */}
+      <div style={{ marginBottom: "25px", padding: "20px", background: colors.surfaceAlt, border: `2px solid ${colors.border}`, borderRadius: "8px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+          <h4 style={{ margin: 0, fontWeight: "600", color: colors.text }}>Report Reviewer Photos Upload</h4>
+          <label
+            htmlFor="reviewerPhotoUpload"
+            style={{
+              padding: "7px 12px",
+              borderRadius: "6px",
+              border: `1px solid ${colors.border}`,
+              background: colors.surface,
+              color: colors.text,
+              cursor: "pointer",
+              fontSize: "12px",
+              fontWeight: "600",
+            }}
+          >
+            + Upload Photos
+          </label>
+          <input
+            id="reviewerPhotoUpload"
+            type="file"
+            accept="image/*"
+            multiple
+            style={{ display: "none" }}
+            onChange={(e) => {
+              handleReviewerPhotoUpload(e.target.files);
+              e.target.value = "";
+            }}
+          />
+        </div>
+
+        {conclusionReviewerPhotos.length > 0 && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "10px" }}>
+            {conclusionReviewerPhotos.map((photo) => (
+              <div key={photo.id} style={{ border: `1px solid ${colors.border}`, borderRadius: "6px", overflow: "hidden", background: colors.surface }}>
+                <img src={photo.preview} alt={photo.fileName || "Reviewer photo"} style={{ width: "100%", height: "120px", objectFit: "cover", display: "block" }} />
+                <div style={{ padding: "8px" }}>
+                  <input
+                    type="text"
+                    value={photo.label || ""}
+                    placeholder="Photo description"
+                    onChange={(e) => updateReviewerPhotoLabel(photo.id, e.target.value)}
+                    style={{
+                      width: "100%",
+                      border: `1px solid ${colors.border}`,
+                      borderRadius: "4px",
+                      background: colors.surface,
+                      color: colors.text,
+                      fontSize: "11px",
+                      padding: "6px",
+                      boxSizing: "border-box",
+                      marginBottom: "6px",
+                    }}
+                  />
+                  <div style={{ fontSize: "10px", color: photo.error ? colors.danger : colors.success, marginBottom: "6px" }}>
+                    {photo.compressedSize ? formatFileSize(photo.compressedSize) : "processing..."}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeReviewerPhoto(photo.id)}
+                    style={{
+                      width: "100%",
+                      border: "none",
+                      borderRadius: "4px",
+                      background: colors.danger,
+                      color: "#fff",
+                      fontSize: "11px",
+                      padding: "6px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Approval Section */}
@@ -92,6 +253,87 @@ export default function ConclusionStep({ form, handleChange, onPrev, onNext }) {
             />
           </div>
         </div>
+      </div>
+
+      {/* Conclusion Photos Upload */}
+      <div style={{ marginBottom: "25px", padding: "20px", background: colors.surfaceAlt, border: `2px solid ${colors.border}`, borderRadius: "8px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+          <h4 style={{ margin: 0, fontWeight: "600", color: colors.text }}>Conclusion Photos (Inspector Upload)</h4>
+          <label
+            htmlFor="conclusionPhotoUpload"
+            style={{
+              padding: "7px 12px",
+              borderRadius: "6px",
+              border: `1px solid ${colors.border}`,
+              background: colors.surface,
+              color: colors.text,
+              cursor: "pointer",
+              fontSize: "12px",
+              fontWeight: "600",
+            }}
+          >
+            + Upload Photos
+          </label>
+          <input
+            id="conclusionPhotoUpload"
+            type="file"
+            accept="image/*"
+            multiple
+            style={{ display: "none" }}
+            onChange={(e) => {
+              handleConclusionPhotoUpload(e.target.files);
+              e.target.value = "";
+            }}
+          />
+        </div>
+
+        {conclusionPhotos.length > 0 && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "10px" }}>
+            {conclusionPhotos.map((photo) => (
+              <div key={photo.id} style={{ border: `1px solid ${colors.border}`, borderRadius: "6px", overflow: "hidden", background: colors.surface }}>
+                <img src={photo.preview} alt={photo.fileName || "Conclusion photo"} style={{ width: "100%", height: "120px", objectFit: "cover", display: "block" }} />
+                <div style={{ padding: "8px" }}>
+                  <input
+                    type="text"
+                    value={photo.label || ""}
+                    placeholder="Photo description"
+                    onChange={(e) => updateConclusionPhotoLabel(photo.id, e.target.value)}
+                    style={{
+                      width: "100%",
+                      border: `1px solid ${colors.border}`,
+                      borderRadius: "4px",
+                      background: colors.surface,
+                      color: colors.text,
+                      fontSize: "11px",
+                      padding: "6px",
+                      boxSizing: "border-box",
+                      marginBottom: "6px",
+                    }}
+                  />
+                  <div style={{ fontSize: "10px", color: photo.error ? colors.danger : colors.success, marginBottom: "6px" }}>
+                    {photo.compressedSize ? formatFileSize(photo.compressedSize) : "processing..."}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeConclusionPhoto(photo.id)}
+                    style={{
+                      width: "100%",
+                      border: "none",
+                      borderRadius: "4px",
+                      background: colors.danger,
+                      color: "#fff",
+                      fontSize: "11px",
+                      padding: "6px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Notes */}

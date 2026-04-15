@@ -32,6 +32,7 @@ const inspectorOpinionOptions = [
 ];
 
 export default function RemarksStep({ form, handleChange, onPrev, onNext }) {
+  const SECTION_PHOTO_KEY = "__section_photos__";
   const setField = (name, value) => {
     handleChange({ target: { name, value } });
   };
@@ -39,6 +40,7 @@ export default function RemarksStep({ form, handleChange, onPrev, onNext }) {
   const getRemarkPhotosByIndex = () => form.remarkPhotosByIndex || {};
 
   const getPhotosForRow = (rowIndex) => getRemarkPhotosByIndex()[rowIndex] || [];
+  const getSectionPhotos = () => Array.isArray(form.remarkSectionPhotos) ? form.remarkSectionPhotos : [];
 
   const handleRemarkPhotosUpload = async (rowIndex, files) => {
     const selectedFiles = Array.from(files || []);
@@ -87,6 +89,45 @@ export default function RemarksStep({ form, handleChange, onPrev, onNext }) {
     });
   };
 
+  const handleSectionPhotosUpload = async (files) => {
+    const selectedFiles = Array.from(files || []);
+    if (selectedFiles.length === 0) return;
+
+    const processedPhotos = await Promise.all(
+      selectedFiles.map(async (file, index) => {
+        const uniqueId = `${SECTION_PHOTO_KEY}_${Date.now()}_${Math.random()}_${index}`;
+        try {
+          const { file: compressedFile, preview, originalSize, compressedSize } = await compressImage(file);
+          return {
+            id: uniqueId,
+            label: "",
+            fileName: compressedFile.name,
+            preview,
+            originalSize,
+            compressedSize,
+          };
+        } catch {
+          const preview = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(file);
+          });
+          return {
+            id: uniqueId,
+            label: "",
+            fileName: file.name,
+            preview,
+            originalSize: file.size,
+            compressedSize: file.size,
+            error: true,
+          };
+        }
+      })
+    );
+
+    setField("remarkSectionPhotos", [...getSectionPhotos(), ...processedPhotos]);
+  };
+
   const updateRemarkPhotoLabel = (rowIndex, id, label) => {
     const byIndex = getRemarkPhotosByIndex();
     const updatedForRow = (byIndex[rowIndex] || []).map((p) =>
@@ -107,10 +148,41 @@ export default function RemarksStep({ form, handleChange, onPrev, onNext }) {
     });
   };
 
+  const updateSectionPhotoLabel = (id, label) => {
+    const updated = getSectionPhotos().map((p) => (p.id === id ? { ...p, label } : p));
+    setField("remarkSectionPhotos", updated);
+  };
+
+  const removeSectionPhoto = (id) => {
+    const updated = getSectionPhotos().filter((p) => p.id !== id);
+    setField("remarkSectionPhotos", updated);
+  };
+
   const handleProblemRemarkChange = (index, value) => {
-    const remarks = [...(form.remarks || Array(9).fill(""))];
+    const remarks = [...(Array.isArray(form.remarks) && form.remarks.length > 0 ? form.remarks : Array(5).fill(""))];
     remarks[index] = value;
     setField("remarks", remarks);
+  };
+
+  const remarkRows = Array.isArray(form.remarks) && form.remarks.length > 0 ? form.remarks : Array(5).fill("");
+
+  const addRemarkRow = () => {
+    setField("remarks", [...remarkRows, ""]);
+  };
+
+  const removeRemarkRow = (removeIndex) => {
+    if (remarkRows.length <= 1) return;
+    const nextRemarks = remarkRows.filter((_, idx) => idx !== removeIndex);
+    const byIndex = getRemarkPhotosByIndex();
+    const reindexedPhotos = {};
+    Object.keys(byIndex).forEach((key) => {
+      const idx = Number(key);
+      if (!Number.isFinite(idx) || idx === removeIndex) return;
+      const newIdx = idx > removeIndex ? idx - 1 : idx;
+      reindexedPhotos[newIdx] = byIndex[key];
+    });
+    setField("remarks", nextRemarks);
+    setField("remarkPhotosByIndex", reindexedPhotos);
   };
 
   return (
@@ -123,7 +195,7 @@ export default function RemarksStep({ form, handleChange, onPrev, onNext }) {
         </div>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <tbody>
-            {Array.from({ length: 9 }, (_, i) => (
+            {remarkRows.map((_, i) => (
               <tr key={i + 1}>
                 <td style={{ width: "40px", textAlign: "center", borderBottom: `1px solid ${colors.border}`, borderRight: `1px solid ${colors.border}`, background: colors.surfaceAlt, fontWeight: "600", color: colors.text }}>
                   {i + 1}.
@@ -131,7 +203,7 @@ export default function RemarksStep({ form, handleChange, onPrev, onNext }) {
                 <td style={{ borderBottom: `1px solid ${colors.border}`, padding: "4px 8px", background: colors.surface }}>
                   <input
                     type="text"
-                    value={(form.remarks && form.remarks[i]) || ""}
+                    value={remarkRows[i] || ""}
                     onChange={(e) => handleProblemRemarkChange(i, e.target.value)}
                     style={{
                       width: "100%",
@@ -225,12 +297,48 @@ export default function RemarksStep({ form, handleChange, onPrev, onNext }) {
                           ))}
                         </div>
                       )}
+                      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "6px" }}>
+                        <button
+                          type="button"
+                          onClick={() => removeRemarkRow(i)}
+                          disabled={remarkRows.length <= 1}
+                          style={{
+                            border: "none",
+                            borderRadius: "4px",
+                            background: remarkRows.length <= 1 ? colors.textMuted : colors.danger,
+                            color: "#fff",
+                            fontSize: "11px",
+                            padding: "4px 8px",
+                            cursor: remarkRows.length <= 1 ? "not-allowed" : "pointer",
+                          }}
+                        >
+                          Delete Remark
+                        </button>
+                      </div>
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        <div style={{ padding: "8px 12px", borderTop: `1px solid ${colors.border}`, background: colors.surfaceAlt }}>
+          <button
+            type="button"
+            onClick={addRemarkRow}
+            style={{
+              border: "none",
+              borderRadius: "6px",
+              background: colors.primary,
+              color: "#fff",
+              fontSize: "12px",
+              fontWeight: "600",
+              padding: "7px 12px",
+              cursor: "pointer",
+            }}
+          >
+            + Add Remark Row
+          </button>
+        </div>
       </div>
 
       <div style={{ border: `1px solid ${colors.border}`, borderRadius: "8px", overflow: "hidden", marginBottom: "20px" }}>
@@ -384,6 +492,88 @@ export default function RemarksStep({ form, handleChange, onPrev, onNext }) {
               }}
             />
           </div>
+        </div>
+
+        <div style={{ padding: "10px 12px", borderTop: `1px solid ${colors.border}`, background: colors.surfaceAlt }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+            <span style={{ fontSize: "12px", color: colors.textMuted }}>
+              Additional photos for Remarks section (will be shown with description in Word)
+            </span>
+            <label
+              htmlFor="remarkSectionPhotoUpload"
+              style={{
+                padding: "6px 10px",
+                borderRadius: "4px",
+                border: `1px solid ${colors.border}`,
+                background: colors.surface,
+                color: colors.text,
+                cursor: "pointer",
+                fontSize: "12px",
+                fontWeight: "600",
+              }}
+            >
+              + Add More Photos
+            </label>
+            <input
+              id="remarkSectionPhotoUpload"
+              type="file"
+              accept="image/*"
+              multiple
+              style={{ display: "none" }}
+              onChange={(e) => {
+                handleSectionPhotosUpload(e.target.files);
+                e.target.value = "";
+              }}
+            />
+          </div>
+          {getSectionPhotos().length > 0 && (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "8px" }}>
+              {getSectionPhotos().map((photo) => (
+                <div key={photo.id} style={{ border: `1px solid ${colors.border}`, borderRadius: "4px", overflow: "hidden", background: colors.surface }}>
+                  <img
+                    src={photo.preview}
+                    alt={photo.fileName || "Remark section photo"}
+                    style={{ width: "100%", height: "110px", objectFit: "cover", display: "block" }}
+                  />
+                  <div style={{ padding: "6px" }}>
+                    <input
+                      type="text"
+                      value={photo.label || ""}
+                      placeholder="Photo description"
+                      onChange={(e) => updateSectionPhotoLabel(photo.id, e.target.value)}
+                      style={{
+                        width: "100%",
+                        border: `1px solid ${colors.border}`,
+                        borderRadius: "4px",
+                        background: colors.surface,
+                        color: colors.text,
+                        fontSize: "11px",
+                        padding: "5px",
+                        boxSizing: "border-box",
+                        marginBottom: "5px",
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeSectionPhoto(photo.id)}
+                      style={{
+                        width: "100%",
+                        border: "none",
+                        borderRadius: "4px",
+                        background: colors.danger,
+                        color: "#fff",
+                        fontSize: "11px",
+                        padding: "5px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

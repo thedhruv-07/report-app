@@ -148,6 +148,16 @@ export default function InspectionSummaryTable({ form, handleChange, onPrev, onN
         placeholder="Enter inspector name and signature details"
       />
 
+      {/* Editable Chinese Factory Notes */}
+      <label style={{ fontWeight: "600", display: "block", marginBottom: "8px", marginTop: "20px", color: colors.text, fontSize: "14px" }}>Factory Notes (Chinese)</label>
+      <textarea
+        placeholder="输入中文备注..."
+        name="factoryNotesChinese"
+        value={form.factoryNotesChinese || ""}
+        onChange={handleChange}
+        style={{ ...inputStyle, height: "100px", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, borderRadius: "8px" }}
+      />
+
       <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
         <button 
           onClick={onPrev} 
@@ -157,7 +167,7 @@ export default function InspectionSummaryTable({ form, handleChange, onPrev, onN
         >
           Back
         </button>
-        <button 
+        <button
           onClick={onNext} 
           style={buttonStyle}
           onMouseEnter={(e) => { e.target.style.transform = "translateY(-2px)"; e.target.style.boxShadow = "0 8px 16px rgba(59, 130, 246, 0.4)"; }}
