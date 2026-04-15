@@ -20,6 +20,7 @@ const {
   Footer,
   convertInchesToTwip,
   CheckBox,
+  VerticalMergeType,
 } = require("docx");
 
 const app = express();
@@ -151,253 +152,164 @@ function createHeaderTable(data) {
     console.warn("Could not load logo image:", e.message);
   }
 
-  return new Table({
+   return new Table({
     width: { size: 100, type: "pct" },
     rows: [
+      // ROW 1
       new TableRow({
         children: [
-          // Left cell - Logo
+          // Logo Cell (Full Height)
           new TableCell({
-            width: { size: 15, type: "pct" },
+            width: { size: 30, type: "pct" },
+            verticalMerge: VerticalMergeType.RESTART,
             borders: {
               top: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
               bottom: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
               left: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
               right: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
             },
-            margins: { top: 60, bottom: 0, left: 40, right: 40 },
+            margins: { top: 60, bottom: 60, left: 40, right: 40 },
             children: [
               ...(logoRun
-                ? [
-                    new Paragraph({
-                      children: [logoRun],
-                      alignment: "center",
-                      spacing: { after: 0 },
-                    }),
-                  ]
-                : [
-                    new Paragraph({
-                      children: [new TextRun({ text: "" })],
-                    }),
-                  ]),
+                ? [new Paragraph({ children: [logoRun], alignment: "center" })]
+                : [new Paragraph({ children: [new TextRun("")] })]),
             ],
+            verticalAlign: "center",
           }),
-
-          // Middle cell - Information table
-          new TableCell({
-            width: { size: 60, type: "pct" },
-            borders: {
-              top: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
-              bottom: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
-              left: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
-              right: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
-            },
-            margins: { top: 0, bottom: 0, left: 0, right: 0 },
-            children: [
-              new Table({
-                width: { size: 100, type: "pct" },
-                rows: [
-                  // Row 1: Client Name & FRIN
-                  new TableRow({
-                    children: [
-                      new TableCell({
-                        width: { size: 40, type: "pct" },
-                        borders: {
-                          top: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
-                          bottom: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
-                          left: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
-                          right: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
-                        },
-                        margins: { top: 40, bottom: 40, left: 40, right: 40 },
-                        children: [
-                          new Paragraph({
-                            children: [
-                              new TextRun({
-                                text: "Client Name (abbr.):",
-                                bold: true,
-                                size: 18,
-                                color: "1F1F1F",
-                              }),
-                            ],
-                            spacing: { after: 0 },
-                          }),
-                        ],
-                      }),
-                      new TableCell({
-                        width: { size: 60, type: "pct" },
-                        borders: {
-                          top: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
-                          bottom: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
-                          left: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
-                          right: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
-                        },
-                        margins: { top: 40, bottom: 40, left: 40, right: 40 },
-                        children: [
-                          new Paragraph({
-                            children: [
-                              new TextRun({
-                                text: "FRIN",
-                                bold: true,
-                                size: 18,
-                                color: "1F1F1F",
-                              }),
-                            ],
-                            spacing: { after: 0 },
-                          }),
-                        ],
-                      }),
-                    ],
-                  }),
-
-                  // Row 2: Inspection Number
-                  new TableRow({
-                    children: [
-                      new TableCell({
-                        width: { size: 40, type: "pct" },
-                        borders: {
-                          top: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
-                          bottom: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
-                          left: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
-                          right: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
-                        },
-                        margins: { top: 40, bottom: 40, left: 40, right: 40 },
-                        children: [
-                          new Paragraph({
-                            children: [
-                              new TextRun({
-                                text: "Inspection Number:",
-                                bold: true,
-                                size: 18,
-                                color: "1F1F1F",
-                              }),
-                            ],
-                            spacing: { after: 0 },
-                          }),
-                        ],
-                      }),
-                      new TableCell({
-                        width: { size: 60, type: "pct" },
-                        borders: {
-                          top: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
-                          bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
-                          left: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
-                          right: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
-                        },
-                        margins: { top: 40, bottom: 40, left: 40, right: 40 },
-                        children: [
-                          new Paragraph({
-                            children: [
-                              new TextRun({
-                                text: sanitizeDocxText(header.inspectionNumber || "-"),
-                                bold: true,
-                                size: 18,
-                                color: "1F1F1F",
-                              }),
-                            ],
-                            spacing: { after: 0 },
-                          }),
-                        ],
-                      }),
-                    ],
-                  }),
-
-                  // Row 3: Report Date
-                  new TableRow({
-                    children: [
-                      new TableCell({
-                        width: { size: 40, type: "pct" },
-                        borders: {
-                          top: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
-                          bottom: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
-                          left: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
-                          right: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
-                        },
-                        margins: { top: 40, bottom: 40, left: 40, right: 40 },
-                        children: [
-                          new Paragraph({
-                            children: [
-                              new TextRun({
-                                text: "Report Date:",
-                                bold: true,
-                                size: 18,
-                                color: "1F1F1F",
-                              }),
-                            ],
-                            spacing: { after: 0 },
-                          }),
-                        ],
-                      }),
-                      new TableCell({
-                        width: { size: 60, type: "pct" },
-                        borders: {
-                          top: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
-                          bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
-                          left: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
-                          right: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
-                        },
-                        margins: { top: 40, bottom: 40, left: 40, right: 40 },
-                        children: [
-                          new Paragraph({
-                            children: [
-                              new TextRun({
-                                text: sanitizeDocxText(header.reportDate || "-"),
-                                bold: true,
-                                size: 18,
-                                color: "1F1F1F",
-                              }),
-                            ],
-                            spacing: { after: 0 },
-                          }),
-                        ],
-                      }),
-                    ],
-                  }),
-                ],
-              }),
-            ],
-          }),
-
-          // Right cell - Conclusion (spans all rows)
+          // Label 1
           new TableCell({
             width: { size: 25, type: "pct" },
             borders: {
               top: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
+              bottom: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+              left: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
+              right: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+            },
+            margins: { top: 20, bottom: 20, left: 40, right: 40 },
+            children: [new Paragraph({ children: [new TextRun({ text: "Client Name (abbr.):", bold: true, size: 18 })] })],
+          }),
+          // Value 1
+          new TableCell({
+            width: { size: 25, type: "pct" },
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
+              bottom: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+              left: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+              right: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
+            },
+            margins: { top: 20, bottom: 20, left: 40, right: 40 },
+            children: [new Paragraph({ children: [new TextRun({ text: sanitizeDocxText(header.client || "-"), bold: true, size: 18 })] })],
+          }),
+          // Conclusion Header
+          new TableCell({
+            width: { size: 20, type: "pct" },
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
+              bottom: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+              left: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
+              right: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
+            },
+            margins: { top: 40, bottom: 40, left: 40, right: 40 },
+            children: [new Paragraph({ children: [new TextRun({ text: "Conclusion", bold: true, size: 18 })], alignment: "center" })],
+          }),
+        ],
+      }),
+      // ROW 2
+      new TableRow({
+        children: [
+          // Logo Cell (Continue)
+          new TableCell({
+            verticalMerge: VerticalMergeType.CONTINUE,
+            children: [],
+          }),
+          // Label 2
+          new TableCell({
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+              bottom: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+              left: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
+              right: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+            },
+            margins: { top: 20, bottom: 20, left: 40, right: 40 },
+            children: [new Paragraph({ children: [new TextRun({ text: "Inspection Number:", bold: true, size: 18 })] })],
+          }),
+          // Value 2
+          new TableCell({
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+              bottom: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+              left: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+              right: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
+            },
+            margins: { top: 20, bottom: 20, left: 40, right: 40 },
+            children: [new Paragraph({ children: [new TextRun({ text: sanitizeDocxText(header.inspectionNumber || "-"), bold: true, size: 18 })] })],
+          }),
+          // Conclusion Status (Restart)
+          new TableCell({
+            verticalMerge: VerticalMergeType.RESTART,
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
               bottom: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
               left: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
               right: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
             },
-            margins: { top: 40, bottom: 40, left: 50, right: 50 },
+            margins: { top: 180, bottom: 0, left: 40, right: 40 },
             children: [
               new Paragraph({
                 children: [
                   new TextRun({
-                    text: "Conclusion",
+                    text: sanitizeDocxText(header.conclusion || "Pending"),
                     bold: true,
-                    size: 18,
-                    color: "1F1F1F",
-                  }),
-                ],
-                alignment: "center",
-                spacing: { after: 100 },
-              }),
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: sanitizeDocxText(header.conclusion || "-"),
-                    bold: true,
-                    size: 32,
+                    size: 40,
                     color:
-                      header.conclusion === "FAILED"
-                        ? "CC0000"
+                      header.conclusion === "FAILED" || header.conclusion === "Pending" || !header.conclusion
+                        ? "FF0000"
                         : header.conclusion === "PASSED"
-                        ? "004400"
-                        : "1F1F1F",
+                        ? "008000"
+                        : "FF0000",
                   }),
                 ],
                 alignment: "center",
-                spacing: { after: 0 },
               }),
             ],
+            verticalAlign: "center",
+          }),
+        ],
+      }),
+      // ROW 3
+      new TableRow({
+        children: [
+          // Logo Cell (Continue)
+          new TableCell({
+            verticalMerge: VerticalMergeType.CONTINUE,
+            children: [],
+          }),
+          // Label 3
+          new TableCell({
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+              bottom: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
+              left: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
+              right: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+            },
+            margins: { top: 20, bottom: 20, left: 40, right: 40 },
+            children: [new Paragraph({ children: [new TextRun({ text: "Report Date:", bold: true, size: 18 })] })],
+          }),
+          // Value 3
+          new TableCell({
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+              bottom: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
+              left: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
+              right: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
+            },
+            margins: { top: 20, bottom: 20, left: 40, right: 40 },
+            children: [new Paragraph({ children: [new TextRun({ text: sanitizeDocxText(header.reportDate || "-"), bold: true, size: 18 })] })],
+          }),
+          // Conclusion Status (Continue)
+          new TableCell({
+            verticalMerge: VerticalMergeType.CONTINUE,
+            children: [],
           }),
         ],
       }),
@@ -2884,71 +2796,6 @@ function getRemarkPhotosForRow(remarkPhotosByIndex, rowIndex) {
   return [];
 }
 
-function getPhotoParagraphsForRemarkRow(photoItems) {
-  const paragraphs = [];
-
-  photoItems.forEach((item, index) => {
-    if (!item || !item.preview || typeof item.preview !== "string") {
-      return;
-    }
-
-    try {
-      const imageTypeFromDataUrl = getImageTypeFromDataUrl(item.preview);
-      const base64Data = item.preview.replace(/^data:image\/\w+;base64,/, "");
-      const imageBuffer = Buffer.from(base64Data, "base64");
-      const imageType = imageTypeFromDataUrl || detectImageTypeFromBuffer(imageBuffer);
-
-      if (!isSupportedImageBuffer(imageBuffer) || !imageType) {
-        paragraphs.push(
-          new Paragraph({
-            children: [new TextRun({ text: sanitizeDocxText(`Photo ${index + 1} is invalid or unsupported`), italics: true, size: 18 })],
-            spacing: { after: 60 },
-          })
-        );
-        return;
-      }
-
-      paragraphs.push(
-        new Paragraph({
-          children: [
-            new ImageRun({
-              data: imageBuffer,
-              type: imageType,
-              transformation: {
-                width: 170,
-                height: 120,
-              },
-            }),
-          ],
-          spacing: { after: 50 },
-        })
-      );
-
-      if (item.label) {
-        paragraphs.push(
-          new Paragraph({
-            children: [new TextRun({ text: sanitizeDocxText(`Photo ${index + 1}: ${item.label}`), size: 16 })],
-            spacing: { after: 70 },
-          })
-        );
-      }
-    } catch (e) {
-      paragraphs.push(
-        new Paragraph({
-          children: [new TextRun({ text: sanitizeDocxText(`Photo ${index + 1} could not be rendered`), italics: true, size: 18 })],
-          spacing: { after: 60 },
-        })
-      );
-    }
-  });
-
-  if (paragraphs.length === 0) {
-    return [new Paragraph({ text: "-" })];
-  }
-
-  return paragraphs;
-}
-
 function tableBorders() {
   return {
     top: { style: BorderStyle.SINGLE, size: 1, color: "1F1F1F" },
@@ -3183,41 +3030,6 @@ function inferConclusionFromSummary(data) {
   return "";
 }
 
-function createHeaderCell(text) {
-  return new TableCell({
-    children: [
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: sanitizeDocxText(text),
-            bold: true,
-            size: 18,
-            color: "FFFFFF",
-          }),
-        ],
-        alignment: "center",
-      }),
-    ],
-    shading: { fill: "1F4E79" },
-  });
-}
-
-function createDataCell(text) {
-  return new TableCell({
-    children: [
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: sanitizeDocxText(text),
-            size: 18,
-          }),
-        ],
-        alignment: "center",
-      }),
-    ],
-  });
-}
-
 function createQtyCell(text, options = {}) {
   const {
     bold = false,
@@ -3256,73 +3068,11 @@ function createQtyCell(text, options = {}) {
     cellOptions.columnSpan = colSpan;
   }
 
-  // Avoid rowSpan in generated report tables because some DOCX consumers
-  // are strict and may mark the file as corrupted with unsupported merges.
   if (typeof rowSpan === "number" && rowSpan > 1) {
     cellOptions.rowSpan = rowSpan;
   }
 
   return new TableCell(cellOptions);
-}
-
-function createInspectionRow(label, result) {
-  return new TableRow({
-    children: [
-      createDataCell(label),
-      new TableCell({
-        children: [
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: result === "Passed" ? "✓" : "",
-                size: 22,
-              }),
-            ],
-            alignment: "center",
-          }),
-        ],
-      }),
-      new TableCell({
-        children: [
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: result === "Failed" ? "✓" : "",
-                size: 22,
-              }),
-            ],
-            alignment: "center",
-          }),
-        ],
-      }),
-      new TableCell({
-        children: [
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: result === "Pending" ? "✓" : "",
-                size: 22,
-              }),
-            ],
-            alignment: "center",
-          }),
-        ],
-      }),
-      new TableCell({
-        children: [
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: result === "N/A" ? "✓" : "",
-                size: 22,
-              }),
-            ],
-            alignment: "center",
-          }),
-        ],
-      }),
-    ],
-  });
 }
 
 function sanitizeDocxText(value) {
