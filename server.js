@@ -2482,7 +2482,6 @@ function createReportContent(data, uploadedFiles) {
   // Start H. PHOTOS on a new page
   children.push(new Paragraph({ children: [new PageBreak()] }));
 
-<<<<<<< HEAD
   // Prefer grouped photos structure if available
   const hasGroupedPhotos = Array.isArray(data.reportPhotoGroups) && data.reportPhotoGroups.length > 0;
   const hasFlatPhotos = Array.isArray(data.reportPhotos) && data.reportPhotos.length > 0;
@@ -2494,9 +2493,6 @@ function createReportContent(data, uploadedFiles) {
     }
     children.push(new Paragraph(""));
   } else if (hasFlatPhotos) {
-=======
-  if (Array.isArray(data.reportPhotos) && data.reportPhotos.length > 0) {
->>>>>>> 8cfa71b6e153655bb4d3668bfe0d78484eb9fd42
     const reportPhotoParagraphs = getPhotoGridParagraphs(data.reportPhotos);
     if (reportPhotoParagraphs.length > 0) {
       children.push(...reportPhotoParagraphs);
@@ -2681,7 +2677,6 @@ function getPhotoGridParagraphs(photoItems) {
   ];
 }
 
-<<<<<<< HEAD
 function getGroupedPhotoGridParagraphs(photoGroups) {
   if (!Array.isArray(photoGroups) || photoGroups.length === 0) return [];
 
@@ -2771,8 +2766,6 @@ function getGroupedPhotoGridParagraphs(photoGroups) {
   ];
 }
 
-=======
->>>>>>> 8cfa71b6e153655bb4d3668bfe0d78484eb9fd42
 function createEmptyPhotoCell(cellOptions = {}) {
   return new TableCell({
     borders: tableBorders(),

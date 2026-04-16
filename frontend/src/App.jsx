@@ -176,14 +176,11 @@ function App() {
     return sanitizeSavedPhotos(parsed);
   });
 
-<<<<<<< HEAD
   const [photoGroups, setPhotoGroups] = useState(() => {
     const savedGroups = localStorage.getItem("inspectionPhotoGroups");
     return safeJsonParse(savedGroups, []);
   });
 
-=======
->>>>>>> 8cfa71b6e153655bb4d3668bfe0d78484eb9fd42
   const [savedSuggestion, setSavedSuggestion] = useState(() =>
     safeJsonParse(localStorage.getItem("inspectionLastSubmittedTemplate"), null)
   );
@@ -258,13 +255,10 @@ function App() {
     localStorage.setItem("inspectionPhotos", JSON.stringify(photos));
   }, [photos]);
 
-<<<<<<< HEAD
   useEffect(() => {
     localStorage.setItem("inspectionPhotoGroups", JSON.stringify(photoGroups));
   }, [photoGroups]);
 
-=======
->>>>>>> 8cfa71b6e153655bb4d3668bfe0d78484eb9fd42
   // Add global styles
   useEffect(() => {
     const styleTag = document.createElement("style");
@@ -382,13 +376,10 @@ function App() {
     setPhotos(newPhotos);
   };
 
-<<<<<<< HEAD
   const handlePhotoGroupsChange = (updatedGroups) => {
     setPhotoGroups(Array.isArray(updatedGroups) ? updatedGroups : []);
   };
 
-=======
->>>>>>> 8cfa71b6e153655bb4d3668bfe0d78484eb9fd42
   const handleClientRequirementsChange = (requirements) => {
     setForm((prev) => ({
       ...prev,
@@ -410,7 +401,6 @@ function App() {
     }));
   };
 
-<<<<<<< HEAD
   const handlePhotoFileChange = (files, description = "") => {
     // Generate group entry for the batch
     const groupId = `group_${Date.now()}_${Math.random()}`;
@@ -422,13 +412,6 @@ function App() {
       // Generate truly unique ID for each file
       const uniqueId = `${Date.now()}_${Math.random()}_${index}`;
       photoIds.push(uniqueId);
-=======
-  const handlePhotoFileChange = (files) => {
-    // Process each file with compression (non-blocking)
-    Array.from(files).forEach((file, index) => {
-      // Generate truly unique ID for each file
-      const uniqueId = `${Date.now()}_${Math.random()}_${index}`;
->>>>>>> 8cfa71b6e153655bb4d3668bfe0d78484eb9fd42
       
       compressImage(file).then(({ file: compressedFile, preview, originalSize, compressedSize }) => {
         console.log(
@@ -441,11 +424,7 @@ function App() {
           ...prevPhotos,
           { 
             id: uniqueId, 
-<<<<<<< HEAD
             label: description, 
-=======
-            label: "", 
->>>>>>> 8cfa71b6e153655bb4d3668bfe0d78484eb9fd42
             file: compressedFile, 
             preview: preview,
             originalSize: originalSize,
@@ -461,11 +440,7 @@ function App() {
             ...prevPhotos,
             { 
               id: uniqueId, 
-<<<<<<< HEAD
               label: description, 
-=======
-              label: "", 
->>>>>>> 8cfa71b6e153655bb4d3668bfe0d78484eb9fd42
               file: file, 
               preview: reader.result,
               originalSize: file.size,
@@ -477,7 +452,6 @@ function App() {
         reader.readAsDataURL(file);
       });
     });
-<<<<<<< HEAD
 
     // Create the group entry
     setPhotoGroups(prevGroups => [
@@ -488,8 +462,6 @@ function App() {
         photoIds: photoIds,
       }
     ]);
-=======
->>>>>>> 8cfa71b6e153655bb4d3668bfe0d78484eb9fd42
   };
 
   const removePhoto = (id) => {
@@ -503,10 +475,7 @@ function App() {
       localStorage.removeItem("inspectionForm");
       localStorage.removeItem("inspectionItems");
       localStorage.removeItem("inspectionPhotos");
-<<<<<<< HEAD
       localStorage.removeItem("inspectionPhotoGroups");
-=======
->>>>>>> 8cfa71b6e153655bb4d3668bfe0d78484eb9fd42
       localStorage.removeItem("inspectionGeneralPhoto");
       localStorage.removeItem("inspectionGeneralPhotoData");
       setStep(1);
@@ -515,10 +484,7 @@ function App() {
       setGeneralPhotoData(null);
       setItems([{ name: "", orderQty: "", availableQty: "" }]);
       setPhotos([]);
-<<<<<<< HEAD
       setPhotoGroups([]);
-=======
->>>>>>> 8cfa71b6e153655bb4d3668bfe0d78484eb9fd42
       setSavedSuggestionDismissed(false);
       setReportDownloaded(false);
     }
@@ -531,10 +497,7 @@ function App() {
     localStorage.removeItem("inspectionForm");
     localStorage.removeItem("inspectionItems");
     localStorage.removeItem("inspectionPhotos");
-<<<<<<< HEAD
     localStorage.removeItem("inspectionPhotoGroups");
-=======
->>>>>>> 8cfa71b6e153655bb4d3668bfe0d78484eb9fd42
     localStorage.removeItem("inspectionGeneralPhoto");
     localStorage.removeItem("inspectionGeneralPhotoData");
 
@@ -544,10 +507,7 @@ function App() {
     setGeneralPhotoData(null);
     setItems([{ name: "", orderQty: "", availableQty: "" }]);
     setPhotos([]);
-<<<<<<< HEAD
     setPhotoGroups([]);
-=======
->>>>>>> 8cfa71b6e153655bb4d3668bfe0d78484eb9fd42
     setSavedSuggestionDismissed(false);
     setReportDownloaded(false);
   };
@@ -623,7 +583,6 @@ function App() {
     formData.append("items", JSON.stringify(items));
 
     // Include Step 12 photos (preview + label) for report rendering.
-<<<<<<< HEAD
     // Build grouped photo data: photos are organized by their group descriptions
     const validPhotos = photos
       .filter((p) => p && typeof p.preview === "string" && p.preview.startsWith("data:image"));
@@ -665,16 +624,6 @@ function App() {
     });
     formData.append("reportPhotos", JSON.stringify(reportPhotos));
     formData.append("reportPhotoGroups", JSON.stringify(reportPhotoGroups));
-=======
-    const reportPhotos = photos
-      .filter((p) => p && typeof p.preview === "string" && p.preview.startsWith("data:image"))
-      .map((p) => ({
-        id: String(p.id || ""),
-        label: p.label || "",
-        preview: p.preview,
-      }));
-    formData.append("reportPhotos", JSON.stringify(reportPhotos));
->>>>>>> 8cfa71b6e153655bb4d3668bfe0d78484eb9fd42
 
     const res = await fetch("http://localhost:5000/generate", {
       method: "POST",
@@ -1030,11 +979,7 @@ function App() {
         {step === 9 && <Packing form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
         {step === 10 && <MarkingLabeling form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
         {step === 11 && <ClientSpecialRequirement form={form} handleChange={handleChange} onPrev={prev} onNext={next} onRequirementsChange={handleClientRequirementsChange} />}
-<<<<<<< HEAD
         {step === 12 && <Photos photos={photos} photoGroups={photoGroups} onPhotoGroupsChange={handlePhotoGroupsChange} onPhotoFileChange={handlePhotoFileChange} onRemovePhoto={removePhoto} onPrev={prev} onNext={next} />}
-=======
-        {step === 12 && <Photos photos={photos} onPhotoLabelChange={handlePhotoLabelChange} onPhotoFileChange={handlePhotoFileChange} onRemovePhoto={removePhoto} onPrev={prev} onNext={next} />}
->>>>>>> 8cfa71b6e153655bb4d3668bfe0d78484eb9fd42
         {step === 13 && <FinalStep onPrev={prev} onSubmit={submit} onClearAfterDownload={clearFormAfterDownload} hasDownloaded={reportDownloaded} />}
         
         </div>
