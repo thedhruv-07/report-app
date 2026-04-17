@@ -11,6 +11,7 @@ if (!fs.existsSync(MEMORY_PATH)) {
 
 module.exports = {
   PORT: process.env.PORT || 5000,
+  MONGO_URI: process.env.MONGO_URI || "mongodb://127.0.0.1:27017/report-app",
   MEMORY_PATH,
   GROQ_API_KEY: process.env.GROQ_API_KEY,
   LOGO_PATH: path.join(__dirname, "..", "..", "frontend", "public", "company-logo.png"),

@@ -1,135 +1,133 @@
-const fs = require("fs");
-const path = require("path");
+const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 
-const USERS_PATH = path.join(__dirname, "..", "data", "users.json");
+const userSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
+  },
+  password: {
+    type: String,
+    required: function() {
+      return this.provider === 'local';
+    },
+  },
+  provider: {
+    type: String,
+    default: "local",
+    enum: ["local", "google"],
+  },
+  googleId: {
+    type: String,
+  },
+  resetToken: {
+    type: String,
+    default: null,
+  },
+  resetTokenExpiry: {
+    type: Number,
+    default: null,
+  },
+}, { timestamps: true });
 
-// Ensure data directory and users file exist
-const dataDir = path.dirname(USERS_PATH);
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
-}
-if (!fs.existsSync(USERS_PATH)) {
-  fs.writeFileSync(USERS_PATH, JSON.stringify([]));
-}
-
-const readUsers = () => {
-  try {
-    return JSON.parse(fs.readFileSync(USERS_PATH, "utf8"));
-  } catch {
-    return [];
-  }
+// Check password
+userSchema.methods.verifyPassword = async function(plainPassword) {
+  if (!this.password) return false;
+  return bcrypt.compare(plainPassword, this.password);
 };
 
-const writeUsers = (users) => {
-  fs.writeFileSync(USERS_PATH, JSON.stringify(users, null, 2));
+const User = mongoose.model("User", userSchema);
+
+// ─── Legacy Wrapper Methods for Compatibility ──────────────────────────────
+
+const findByEmail = async (email) => {
+  return typeof email === "string" ? User.findOne({ email: email.toLowerCase() }) : null;
 };
 
-const findByEmail = (email) => {
-  const users = readUsers();
-  return users.find((u) => u.email.toLowerCase() === email.toLowerCase()) || null;
-};
-
-const findById = (id) => {
-  const users = readUsers();
-  return users.find((u) => u.id === id) || null;
+const findById = async (id) => {
+  return User.findById(id);
 };
 
 const createUser = async ({ name, email, password, provider = "local" }) => {
-  const users = readUsers();
-
-  if (findByEmail(email)) {
+  const existingUser = await findByEmail(email);
+  if (existingUser) {
     throw new Error("User with this email already exists");
   }
 
   const hashedPassword = password ? await bcrypt.hash(password, 12) : null;
-
-  const user = {
-    id: crypto.randomUUID(),
-    name: name.trim(),
-    email: email.toLowerCase().trim(),
+  const user = new User({
+    name,
+    email,
     password: hashedPassword,
     provider,
-    createdAt: new Date().toISOString(),
-    resetToken: null,
-    resetTokenExpiry: null,
-  };
+  });
 
-  users.push(user);
-  writeUsers(users);
-
-  return { id: user.id, name: user.name, email: user.email, provider: user.provider };
+  await user.save();
+  return { id: user._id.toString(), name: user.name, email: user.email, provider: user.provider };
 };
 
 const verifyPassword = async (plainPassword, hashedPassword) => {
   return bcrypt.compare(plainPassword, hashedPassword);
 };
 
-const setResetToken = (email) => {
-  const users = readUsers();
-  const idx = users.findIndex((u) => u.email.toLowerCase() === email.toLowerCase());
-  if (idx === -1) return null;
+const setResetToken = async (email) => {
+  const user = await findByEmail(email);
+  if (!user) return null;
 
   const token = crypto.randomBytes(32).toString("hex");
   const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
-  users[idx].resetToken = hashedToken;
-  users[idx].resetTokenExpiry = Date.now() + 3600000; // 1 hour
-  writeUsers(users);
+  user.resetToken = hashedToken;
+  user.resetTokenExpiry = Date.now() + 3600000; // 1 hour
+  await user.save();
 
-  return token; // Return unhashed token for the email link
+  return token;
 };
 
-const findByResetToken = (token) => {
+const findByResetToken = async (token) => {
   const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
-  const users = readUsers();
-  return users.find(
-    (u) => u.resetToken === hashedToken && u.resetTokenExpiry > Date.now()
-  ) || null;
+  return User.findOne({
+    resetToken: hashedToken,
+    resetTokenExpiry: { $gt: Date.now() }
+  });
 };
 
 const resetPassword = async (token, newPassword) => {
-  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
-  const users = readUsers();
-  const idx = users.findIndex(
-    (u) => u.resetToken === hashedToken && u.resetTokenExpiry > Date.now()
-  );
+  const user = await findByResetToken(token);
+  if (!user) throw new Error("Invalid or expired reset token");
 
-  if (idx === -1) throw new Error("Invalid or expired reset token");
+  user.password = await bcrypt.hash(newPassword, 12);
+  user.resetToken = null;
+  user.resetTokenExpiry = null;
+  await user.save();
 
-  users[idx].password = await bcrypt.hash(newPassword, 12);
-  users[idx].resetToken = null;
-  users[idx].resetTokenExpiry = null;
-  writeUsers(users);
-
-  return { id: users[idx].id, name: users[idx].name, email: users[idx].email };
+  return { id: user._id.toString(), name: user.name, email: user.email };
 };
 
 const findOrCreateGoogleUser = async ({ name, email, googleId }) => {
-  let user = findByEmail(email);
-
+  let user = await findByEmail(email);
   if (user) {
-    return { id: user.id, name: user.name, email: user.email, provider: user.provider };
+    return { id: user._id.toString(), name: user.name, email: user.email, provider: user.provider };
   }
 
-  const users = readUsers();
-  const newUser = {
-    id: crypto.randomUUID(),
-    name: name.trim(),
-    email: email.toLowerCase().trim(),
-    password: null,
+  const newUser = new User({
+    name,
+    email,
     provider: "google",
     googleId,
-    createdAt: new Date().toISOString(),
-    resetToken: null,
-    resetTokenExpiry: null,
-  };
+  });
 
-  users.push(newUser);
-  writeUsers(users);
-
-  return { id: newUser.id, name: newUser.name, email: newUser.email, provider: newUser.provider };
+  await newUser.save();
+  return { id: newUser._id.toString(), name: newUser.name, email: newUser.email, provider: newUser.provider };
 };
 
 module.exports = {

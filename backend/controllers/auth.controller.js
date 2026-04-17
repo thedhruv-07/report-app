@@ -57,7 +57,7 @@ const login = async (req, res) => {
       return res.status(400).json({ error: "Email and password are required" });
     }
 
-    const user = UserModel.findByEmail(email);
+    const user = await UserModel.findByEmail(email);
     if (!user) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
@@ -95,7 +95,7 @@ const forgotPassword = async (req, res) => {
       return res.status(400).json({ error: "Email is required" });
     }
 
-    const user = UserModel.findByEmail(email);
+    const user = await UserModel.findByEmail(email);
 
     // Always return success to prevent email enumeration
     if (!user) {
@@ -104,7 +104,7 @@ const forgotPassword = async (req, res) => {
       });
     }
 
-    const token = UserModel.setResetToken(email);
+    const token = await UserModel.setResetToken(email);
     if (token) {
       const result = await sendResetEmail(email, token);
       if (result.previewUrl) {
@@ -188,14 +188,19 @@ const googleAuth = async (req, res) => {
 };
 
 // ─── Get Current User (protected) ──────────────────────────────────────────────
-const getMe = (req, res) => {
-  const user = UserModel.findById(req.user.id);
-  if (!user) {
-    return res.status(404).json({ error: "User not found" });
+const getMe = async (req, res) => {
+  try {
+    const user = await UserModel.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.json({
+      user: { id: user._id.toString(), name: user.name, email: user.email, provider: user.provider },
+    });
+  } catch (error) {
+    console.error("GetMe error:", error);
+    res.status(500).json({ error: "Failed to fetch user profile." });
   }
-  res.json({
-    user: { id: user.id, name: user.name, email: user.email, provider: user.provider },
-  });
 };
 
 module.exports = {
