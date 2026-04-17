@@ -692,6 +692,7 @@ function App() {
   return (
     <div style={{ 
       display: "flex",
+      flexDirection: "column",
       height: "100vh",
       width: "100%",
       overflow: "hidden",
@@ -700,46 +701,28 @@ function App() {
       boxSizing: "border-box",
       position: "relative"
     }}>
-      {/* Mobile Sidebar Overlay */}
-      {isMobile && mobileSidebarOpen && (
-        <div 
-          onClick={() => setMobileSidebarOpen(false)}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.5)",
-            zIndex: 998,
-            backdropFilter: "blur(2px)"
-          }}
-        />
-      )}
-
-      {/* Sidebar - Fixed on Desktop, Drawer on Mobile */}
+      {/* Top Navigation Header */}
       <div style={{
-        width: "260px",
-        background: colors.surface,
-        borderRight: `1px solid ${colors.border}`,
+        width: "100%",
+        background: colors.headerBg,
+        borderBottom: `1px solid ${colors.border}`,
         display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        boxShadow: isMobile ? "10px 0 30px rgba(0,0,0,0.1)" : "4px 0 15px rgba(0,0,0,0.03)",
+        flexDirection: isMobile ? "column" : "row",
+        alignItems: "stretch",
+        boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
         zIndex: 999,
-        position: isMobile ? "fixed" : "static",
-        transform: isMobile && !mobileSidebarOpen ? "translateX(-100%)" : "translateX(0)",
-        transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        left: 0,
-        top: 0
+        flexShrink: 0
       }}>
+        {/* Brand Area */}
         <div style={{ 
-          padding: "24px", 
-          borderBottom: `1px solid ${colors.border}`, 
-          background: colors.headerBg,
+          padding: "16px 24px", 
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center"
+          alignItems: "center",
+          borderRight: isMobile ? "none" : `1px solid ${colors.border}`,
+          borderBottom: isMobile ? `1px solid ${colors.border}` : "none",
+          minWidth: "max-content",
+          background: colors.headerBg
         }}>
           <div>
             <div style={{ fontSize: "16px", fontWeight: "800", color: colors.primary, letterSpacing: "-0.02em" }}>
@@ -749,27 +732,20 @@ function App() {
               Inspection Portal v2.0
             </div>
           </div>
-          {isMobile && (
-            <button 
-              onClick={() => setMobileSidebarOpen(false)}
-              style={{ background: "transparent", border: "none", fontSize: "20px", color: colors.text, cursor: "pointer" }}
-            >
-              ✕
-            </button>
-          )}
         </div>
 
+        {/* Horizontal Navigation Area */}
         <div style={{ 
           flex: 1, 
-          overflowY: "auto", 
+          overflowX: "auto", 
           padding: "16px",
           display: "flex",
-          flexDirection: "column",
-          gap: "4px"
-        }}>
-          <div style={{ fontSize: "11px", fontWeight: "700", color: colors.textMuted, marginBottom: "8px", paddingLeft: "8px", textTransform: "uppercase" }}>
-            Jump To Step
-          </div>
+          gap: "8px",
+          alignItems: "center",
+          scrollbarWidth: "none", 
+          background: colors.surface
+        }}
+        >
           {stepNavItems.map((item) => {
             const isActive = step === item.id;
             return (
@@ -780,28 +756,28 @@ function App() {
                   border: "none",
                   background: isActive ? colors.primaryLight : "transparent",
                   color: isActive ? colors.primary : colors.text,
-                  borderRadius: "10px",
-                  padding: "12px 14px",
-                  textAlign: "left",
+                  borderRadius: "8px",
+                  padding: "10px 16px",
                   cursor: "pointer",
                   fontSize: "13px",
                   fontWeight: isActive ? "700" : "500",
                   transition: "all 0.2s ease",
                   display: "flex",
                   alignItems: "center",
-                  gap: "10px"
+                  gap: "8px",
+                  whiteSpace: "nowrap"
                 }}
               >
                 <span style={{ 
-                  width: "24px", 
-                  height: "24px", 
-                  borderRadius: "6px", 
+                  width: "20px", 
+                  height: "20px", 
+                  borderRadius: "5px", 
                   background: isActive ? colors.primary : colors.surfaceAlt, 
                   color: isActive ? "#fff" : colors.textMuted,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: "11px",
+                  fontSize: "10px",
                   fontWeight: "bold"
                 }}>{item.id}</span>
                 {item.label}
@@ -814,55 +790,16 @@ function App() {
       {/* Main Content Area - Scrollable */}
       <div style={{
         flex: 1,
-        height: "100%",
         overflowY: "auto",
-        background: "#f8fafc",
-        padding: isMobile ? "16px" : "40px",
+        background: colors.surface,
         scrollBehavior: "smooth"
       }}>
-        {/* Mobile Header with Hamburger */}
-        {isMobile && (
-          <div style={{ 
-            display: "flex", 
-            alignItems: "center", 
-            justifyContent: "space-between", 
-            marginBottom: "20px",
-            background: colors.surface,
-            padding: "12px 16px",
-            borderRadius: "12px",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-            border: `1px solid ${colors.border}`
-          }}>
-            <button 
-              onClick={() => setMobileSidebarOpen(true)}
-              style={{
-                background: "transparent",
-                border: "none",
-                fontSize: "24px",
-                cursor: "pointer",
-                padding: "4px",
-                display: "flex",
-                alignItems: "center",
-                color: colors.primary
-              }}
-            >
-              ☰
-            </button>
-            <div style={{ fontWeight: "800", color: colors.header, fontSize: "14px" }}>
-              VERITAS PORTAL
-            </div>
-            <div style={{ width: "24px" }}></div> {/* Spacer */}
-          </div>
-        )}
 
         <div style={{
-          maxWidth: "1000px",
-          margin: "0 auto",
+          width: "100%",
+          margin: "0",
           background: colors.surface,
-          padding: isMobile ? "20px" : "40px",
-          borderRadius: isMobile ? "12px" : "16px",
-          boxShadow: "0 4px 25px rgba(0,0,0,0.05)",
-          border: `1px solid ${colors.border}`,
+          padding: isMobile ? "20px 16px" : "40px",
           minHeight: "fit-content"
         }}>
 

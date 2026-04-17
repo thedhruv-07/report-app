@@ -1,5 +1,6 @@
 import { buttonStyle, colors, sectionHeaderStyle } from "../styles";
 import { compressImage, formatFileSize } from "../utils/imageCompression";
+import SmartTextarea from "./SmartTextarea";
 
 const yesNoQuestions = [
   { key: "remarkQ1", text: "Is there any leakage on the roofs and walls (including windows and doors)?" },
@@ -201,10 +202,13 @@ export default function RemarksStep({ form, handleChange, onPrev, onNext }) {
                   {i + 1}.
                 </td>
                 <td style={{ borderBottom: `1px solid ${colors.border}`, padding: "4px 8px", background: colors.surface }}>
-                  <input
-                    type="text"
+                  <SmartTextarea
+                    name="remark"
                     value={remarkRows[i] || ""}
                     onChange={(e) => handleProblemRemarkChange(i, e.target.value)}
+                    placeholder="Enter remark..."
+                    context="factory inspection defect finding or observation"
+                    minHeight={48}
                     style={{
                       width: "100%",
                       border: "none",
@@ -385,10 +389,12 @@ export default function RemarksStep({ form, handleChange, onPrev, onNext }) {
             <div style={{ fontSize: "13px", color: colors.text, marginBottom: "6px" }}>
               Based on our finding of material/accessories/semi-finished/finished products and the observation of product line, we recommend the manufacturer to make improvement or pay attention on follow up mass production:
             </div>
-            <textarea
+            <SmartTextarea
+              name="recommendationText"
               value={form.recommendationText || ""}
               onChange={(e) => setField("recommendationText", e.target.value)}
               placeholder="Write recommendation notes..."
+              context="quality control recommendation for mass production"
               style={{
                 width: "100%",
                 minHeight: "130px",
