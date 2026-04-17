@@ -9,7 +9,8 @@ const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 // ─── Signup ────────────────────────────────────────────────────────────────────
 const signup = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email: rawEmail, password } = req.body;
+    const email = rawEmail ? rawEmail.trim().toLowerCase() : "";
 
     // Validation
     if (!name || !email || !password) {
@@ -49,7 +50,8 @@ const signup = async (req, res) => {
 // ─── Login ─────────────────────────────────────────────────────────────────────
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email: rawEmail, password } = req.body;
+    const email = rawEmail ? rawEmail.trim().toLowerCase() : "";
 
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });

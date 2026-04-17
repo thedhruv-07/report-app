@@ -71,7 +71,7 @@ export default function SmartTextarea({
 
     const timer = setTimeout(async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("token") || localStorage.getItem("reportToken");
         const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}/api/suggest`, {
           method: "POST",
           headers: { 

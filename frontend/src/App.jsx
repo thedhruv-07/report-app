@@ -448,20 +448,32 @@ function App() {
     const groupId = `group_${Date.now()}_${Math.random()}`;
     const photoIds = [];
 
-    // Process each file with compression (non-blocking)
-    const fileArray = Array.from(files);
-    fileArray.forEach((file, index) => {
-      // Generate truly unique ID for each file
+    // Process each item (could be a File or a restored Metadata object)
+    const itemsArray = Array.from(files);
+    itemsArray.forEach((item, index) => {
+      // If it's already a processed object (restored from localStorage)
+      if (item && item.preview && !item.file) {
+        setPhotos(prevPhotos => [
+          ...prevPhotos,
+          {
+            id: item.id,
+            label: description,
+            file: null,
+            preview: item.preview,
+            originalSize: item.size || 0,
+            compressedSize: item.size || 0
+          }
+        ]);
+        photoIds.push(item.id);
+        return;
+      }
+
+      // Otherwise it's a new File object
+      const file = item;
       const uniqueId = `${Date.now()}_${Math.random()}_${index}`;
       photoIds.push(uniqueId);
       
       compressImage(file).then(({ file: compressedFile, preview, originalSize, compressedSize }) => {
-        console.log(
-          `Image compressed: ${file.name}`,
-          `Original: ${formatFileSize(originalSize)}, Compressed: ${formatFileSize(compressedSize)}`
-        );
-        
-        // Add compressed photo to state
         setPhotos(prevPhotos => [
           ...prevPhotos,
           { 
@@ -475,7 +487,6 @@ function App() {
         ]);
       }).catch(error => {
         console.error(`Failed to compress image: ${file.name}`, error);
-        // Fallback: add uncompressed
         const reader = new FileReader();
         reader.onloadend = () => {
           setPhotos(prevPhotos => [
