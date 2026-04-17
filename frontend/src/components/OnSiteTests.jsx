@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { colors, buttonStyle, sectionHeaderStyle } from "../styles";
+import SmartTextarea from "./SmartTextarea";
 
 const OnSiteTests = ({ form, handleChange, onPrev, onNext }) => {
+  const setField = (name, value) => handleChange({ target: { name, value } });
   const [testRows, setTestRows] = useState([{ id: 1 }]);
   const [nextId, setNextId] = useState(2);
 
@@ -77,7 +79,14 @@ const OnSiteTests = ({ form, handleChange, onPrev, onNext }) => {
                     <input type="text" name={`testDesc${row.id}`} value={form[`testDesc${row.id}`] || ""} onChange={handleChange} placeholder="Enter description" style={{ width: "100%", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", fontSize: "12px" }} />
                   </td>
                   <td style={{ padding: "8px", border: cellBorder, background: colors.surface, color: colors.text }}>
-                    <textarea name={`testMethod${row.id}`} value={form[`testMethod${row.id}`] || ""} onChange={handleChange} placeholder="Enter method" style={{ width: "100%", minHeight: "60px", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", fontFamily: "inherit", fontSize: "11px", boxSizing: "border-box" }} />
+                    <SmartTextarea 
+                      name={`testMethod${row.id}`} 
+                      value={form[`testMethod${row.id}`] || ""} 
+                      onChange={(e) => setField(`testMethod${row.id}`, e.target.value)} 
+                      placeholder="Enter method" 
+                      context="quality control test method and procedure"
+                      style={{ width: "100%", minHeight: "60px", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", fontFamily: "inherit", fontSize: "11px", boxSizing: "border-box" }} 
+                    />
                   </td>
                   <td style={{ padding: "8px", border: cellBorder, background: colors.surface, color: colors.text }}>
                     <input type="text" name={`testSample${row.id}`} value={form[`testSample${row.id}`] || ""} onChange={handleChange} placeholder="Sample size" style={{ width: "100%", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", textAlign: "center", fontSize: "12px" }} />
@@ -117,11 +126,12 @@ const OnSiteTests = ({ form, handleChange, onPrev, onNext }) => {
             <tr>
               <td style={{ padding: "8px", border: cellBorder, background: colors.surface, fontWeight: "bold", textAlign: "left", color: colors.text }}>Remark:</td>
               <td colSpan={5} style={{ padding: "8px", border: cellBorder, background: colors.surface }}>
-                <textarea
+                <SmartTextarea
                   name="onSiteTestRemark"
                   value={form.onSiteTestRemark || ""}
-                  onChange={handleChange}
+                  onChange={(e) => setField("onSiteTestRemark", e.target.value)}
                   placeholder="Enter remark"
+                  context="on-site testing results and observations remark"
                   style={{ width: "100%", minHeight: "40px", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", fontFamily: "inherit", fontSize: "12px", boxSizing: "border-box" }}
                 />
               </td>

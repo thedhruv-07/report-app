@@ -1,7 +1,9 @@
 import React from "react";
 import { colors, buttonStyle } from "../styles";
+import SmartTextarea from "./SmartTextarea";
 
 const MarkingLabeling = ({ form, handleChange, onPrev, onNext }) => {
+  const setField = (name, value) => handleChange({ target: { name, value } });
   const borderColor = "#1F1F1F";
   const cellBorder = `1px solid ${borderColor}`;
   const sectionHeaderBg = "#E8E8E8";
@@ -166,11 +168,11 @@ const MarkingLabeling = ({ form, handleChange, onPrev, onNext }) => {
                 Remark:
               </td>
               <td style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
-                <input
-                  type="text"
+                <SmartTextarea
                   name="marking_remark"
                   value={form.marking_remark || "No shipping mark, only rated label"}
-                  onChange={handleChange}
+                  onChange={(e) => setField("marking_remark", e.target.value)}
+                  context="marking and labeling inspection observations"
                   style={{ ...inputBase, textAlign: "center" }}
                 />
               </td>

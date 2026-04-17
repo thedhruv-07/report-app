@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { inputStyle, buttonStyle, colors, sectionHeaderStyle } from "../styles";
+import SmartTextarea from "./SmartTextarea";
 
 export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext, onWorkmanshipDefectsChange, onWorkmanshipPhotosChange, items }) {
+  const setField = (name, value) => handleChange({ target: { name, value } });
   // Initialize defects from form
   const [defects, setDefects] = useState(() => {
     if (form.workmanshipDefects && Array.isArray(form.workmanshipDefects) && form.workmanshipDefects.length > 0) {
@@ -133,14 +135,32 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
                 <strong>Critical:</strong>&nbsp;
                 <input type="text" name="aqlCriticalWM" value={form.aqlCriticalWM || "Not Allowed"} onChange={handleChange} style={{ width: "55%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none" }} />
               </td>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center", color: colors.text }}>
-                {form.acceptedCritical || "0"}
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
+                <input
+                  type="text"
+                  name="acceptedCritical"
+                  value={form.acceptedCritical || "0"}
+                  onChange={handleChange}
+                  style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none", textAlign: "center" }}
+                />
               </td>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center", color: colors.text }}>
-                {form.totalFoundCritical || "0"}
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
+                <input
+                  type="text"
+                  name="totalFoundCritical"
+                  value={form.totalFoundCritical || "0"}
+                  onChange={handleChange}
+                  style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none", textAlign: "center" }}
+                />
               </td>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center", color: colors.text }}>
-                {resolveResult(form.result1WM, form.totalFoundCritical, form.acceptedCritical)}
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
+                 <input
+                  type="text"
+                  name="result1WM"
+                  value={form.result1WM || resolveResult(form.result1WM, form.totalFoundCritical, form.acceptedCritical)}
+                  onChange={handleChange}
+                  style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none", textAlign: "center" }}
+                />
               </td>
             </tr>
 
@@ -153,14 +173,32 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
                 <strong>Major:</strong>&nbsp;
                 <input type="text" name="aqlMajorWM" value={form.aqlMajorWM || "2.5"} onChange={handleChange} style={{ width: "55%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none" }} />
               </td>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center", color: colors.text }}>
-                {form.acceptedMajor || "0"}
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
+                <input
+                  type="text"
+                  name="acceptedMajor"
+                  value={form.acceptedMajor || "0"}
+                  onChange={handleChange}
+                  style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none", textAlign: "center" }}
+                />
               </td>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center", color: colors.text }}>
-                {form.totalFoundMajor || "0"}
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
+                <input
+                  type="text"
+                  name="totalFoundMajor"
+                  value={form.totalFoundMajor || "0"}
+                  onChange={handleChange}
+                  style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none", textAlign: "center" }}
+                />
               </td>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center", color: colors.text }}>
-                {resolveResult(form.result2WM, form.totalFoundMajor, form.acceptedMajor)}
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
+                <input
+                  type="text"
+                  name="result2WM"
+                  value={form.result2WM || resolveResult(form.result2WM, form.totalFoundMajor, form.acceptedMajor)}
+                  onChange={handleChange}
+                  style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none", textAlign: "center" }}
+                />
               </td>
             </tr>
 
@@ -173,14 +211,32 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
                 <strong>Minor:</strong>&nbsp;
                 <input type="text" name="aqlMinorWM" value={form.aqlMinorWM || "4.0"} onChange={handleChange} style={{ width: "55%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none" }} />
               </td>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center", color: colors.text }}>
-                {form.acceptedMinor || "0"}
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
+                <input
+                  type="text"
+                  name="acceptedMinor"
+                  value={form.acceptedMinor || "0"}
+                  onChange={handleChange}
+                  style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none", textAlign: "center" }}
+                />
               </td>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center", color: colors.text }}>
-                {form.totalFoundMinor || "0"}
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
+                <input
+                  type="text"
+                  name="totalFoundMinor"
+                  value={form.totalFoundMinor || "0"}
+                  onChange={handleChange}
+                  style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none", textAlign: "center" }}
+                />
               </td>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center", color: colors.text }}>
-                {resolveResult(form.result3WM, form.totalFoundMinor, form.acceptedMinor)}
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
+                <input
+                  type="text"
+                  name="result3WM"
+                  value={form.result3WM || resolveResult(form.result3WM, form.totalFoundMinor, form.acceptedMinor)}
+                  onChange={handleChange}
+                  style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none", textAlign: "center" }}
+                />
               </td>
             </tr>
           </tbody>
@@ -215,10 +271,11 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
                   />
                 </td>
                 <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface }}>
-                  <textarea
+                  <SmartTextarea
                     value={defect.description}
                     onChange={(e) => updateDefect(defect.id, "description", e.target.value)}
                     placeholder="Defect description..."
+                    context="workmanship quality defect description"
                     style={{
                       width: "100%",
                       padding: "4px",
@@ -228,7 +285,6 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
                       fontSize: "12px",
                       outline: "none",
                       fontFamily: "inherit",
-                      resize: "none",
                       minHeight: "30px"
                     }}
                   />
@@ -392,12 +448,12 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
         </div>
         <div>
           <label style={{ fontWeight: "bold", display: "block", marginBottom: "10px", color: colors.text }}>Remark:</label>
-          <input
-            type="text"
+          <SmartTextarea
             name="workmanshipRemark"
             value={form.workmanshipRemark || ""}
-            onChange={handleChange}
+            onChange={(e) => setField("workmanshipRemark", e.target.value)}
             placeholder="Enter remarks..."
+            context="overall workmanship inspection summary and findings"
             style={{ ...inputStyle }}
           />
         </div>
@@ -493,14 +549,14 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
                 <label style={{ fontWeight: "bold", display: "block", marginBottom: "8px", color: colors.text }}>
                   Defect Photo {index + 1} Description:
                 </label>
-                <textarea
+                <SmartTextarea
                   value={photo.description}
                   onChange={(e) => updateDefectPhoto(photo.id, { description: e.target.value })}
                   placeholder={`Describe defect photo ${index + 1}...`}
+                  context="specific defect photo description and location"
                   style={{
                     ...inputStyle,
                     minHeight: "120px",
-                    resize: "vertical"
                   }}
                 />
               </div>

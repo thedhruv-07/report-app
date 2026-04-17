@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { colors, buttonStyle } from "../styles";
+import SmartTextarea from "./SmartTextarea";
 
 const Packing = ({ form, handleChange, onPrev, onNext }) => {
+  const setField = (name, value) => handleChange({ target: { name, value } });
   const [items] = useState([
     { id: 1, name: "30B nut forming machine (Model: 30B-6S-40)" },
     { id: 2, name: "Mould M10" },
@@ -253,11 +255,11 @@ const Packing = ({ form, handleChange, onPrev, onNext }) => {
                 Remark:
               </td>
               <td colSpan={7} style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
-                <input
-                  type="text"
+                <SmartTextarea
                   name="packing_remark"
                   value={form.packing_remark || "No packing"}
-                  onChange={handleChange}
+                  onChange={(e) => setField("packing_remark", e.target.value)}
+                  context="packing inspection observations and discrepancies"
                   style={inputBase}
                 />
               </td>

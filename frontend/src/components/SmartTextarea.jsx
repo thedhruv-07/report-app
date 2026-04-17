@@ -71,9 +71,13 @@ export default function SmartTextarea({
 
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/suggest", {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}/api/suggest`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": token ? `Bearer ${token}` : ""
+          },
           body: JSON.stringify({ context, partialText: value }),
         });
         const data = await res.json();

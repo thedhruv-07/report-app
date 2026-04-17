@@ -15,4 +15,5 @@ module.exports = {
   GROQ_API_KEY: process.env.GROQ_API_KEY,
   LOGO_PATH: path.join(__dirname, "..", "..", "frontend", "public", "company-logo.png"),
   PACKAGE_ICON_PATH: path.join(__dirname, "..", "..", "frontend", "public", "package.png"),
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
 };

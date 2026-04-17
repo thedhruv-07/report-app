@@ -15,6 +15,12 @@ import FinalStep from "./components/FinalStep";
 import { colors } from "./styles";
 import { compressImage, formatFileSize } from "./utils/imageCompression";
 
+// Auth Pages
+import Login from "./pages/auth/Login";
+import Signup from "./pages/auth/Signup";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
+
 const safeJsonParse = (value, fallback) => {
   try {
     return value ? JSON.parse(value) : fallback;
@@ -186,6 +192,42 @@ function App() {
   );
   const [savedSuggestionDismissed, setSavedSuggestionDismissed] = useState(false);
   const [reportDownloaded, setReportDownloaded] = useState(false);
+
+  // ─── AUTH STATE ─────────────────────────────────────────────────────────────
+  const [user, setUser] = useState(() => safeJsonParse(localStorage.getItem("reportUser"), null));
+  const [token, setToken] = useState(() => localStorage.getItem("reportToken") || "");
+  const [authPage, setAuthPage] = useState("login"); // login | signup | forgot | reset
+
+  // Check for reset token in URL on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("page") === "reset-password") {
+      setAuthPage("reset");
+    }
+  }, []);
+
+  const handleAuthSuccess = (user, token) => {
+    setUser(user);
+    setToken(token);
+    localStorage.setItem("reportUser", JSON.stringify(user));
+    localStorage.setItem("reportToken", token);
+    // Remove reset token from URL if present
+    const url = new URL(window.location);
+    url.searchParams.delete("page");
+    url.searchParams.delete("token");
+    window.history.replaceState({}, "", url);
+  };
+
+  const handleLogout = () => {
+    if (window.confirm("Are you sure you want to log out?")) {
+      setUser(null);
+      setToken("");
+      localStorage.removeItem("reportUser");
+      localStorage.removeItem("reportToken");
+      setAuthPage("login");
+    }
+  };
+  // ────────────────────────────────────────────────────────────────────────────
 
   // Responsiveness Support
   const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
@@ -625,8 +667,11 @@ function App() {
     formData.append("reportPhotos", JSON.stringify(reportPhotos));
     formData.append("reportPhotoGroups", JSON.stringify(reportPhotoGroups));
 
-    const res = await fetch("http://localhost:5000/generate", {
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}/generate`, {
       method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`
+      },
       body: formData,
     });
 
@@ -689,6 +734,13 @@ function App() {
     setMobileSidebarOpen(false);
   };
 
+  if (!user) {
+    if (authPage === "signup") return <Signup onSignup={handleAuthSuccess} onSwitch={() => setAuthPage("login")} />;
+    if (authPage === "forgot") return <ForgotPassword onBack={() => setAuthPage("login")} />;
+    if (authPage === "reset") return <ResetPassword onReset={handleAuthSuccess} />;
+    return <Login onLogin={handleAuthSuccess} onSwitch={() => setAuthPage("signup")} onForgot={() => setAuthPage("forgot")} />;
+  }
+
   return (
     <div style={{ 
       display: "flex",
@@ -714,25 +766,30 @@ function App() {
         flexShrink: 0
       }}>
         {/* Brand Area */}
-        <div style={{ 
-          padding: "16px 24px", 
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          borderRight: isMobile ? "none" : `1px solid ${colors.border}`,
-          borderBottom: isMobile ? `1px solid ${colors.border}` : "none",
-          minWidth: "max-content",
-          background: colors.headerBg
-        }}>
-          <div>
-            <div style={{ fontSize: "16px", fontWeight: "800", color: colors.primary, letterSpacing: "-0.02em" }}>
-              VERITAS REPORT
+          <div style={{ 
+            padding: "16px 24px", 
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            borderRight: isMobile ? "none" : `1px solid ${colors.border}`,
+            borderBottom: isMobile ? `1px solid ${colors.border}` : "none",
+            minWidth: "max-content",
+            background: colors.headerBg
+          }}>
+            <div>
+              <div style={{ fontSize: "16px", fontWeight: "800", color: colors.primary, letterSpacing: "-0.02em" }}>
+                VERITAS REPORT
+              </div>
+              <div style={{ fontSize: "11px", fontWeight: "600", color: colors.textMuted, marginTop: "4px", textTransform: "uppercase" }}>
+                Inspection Portal v2.0
+              </div>
             </div>
-            <div style={{ fontSize: "11px", fontWeight: "600", color: colors.textMuted, marginTop: "4px", textTransform: "uppercase" }}>
-              Inspection Portal v2.0
-            </div>
+            {user && isMobile && (
+              <button onClick={handleLogout} style={{ border: `1px solid ${colors.danger}`, color: colors.danger, background: "transparent", borderRadius: "6px", padding: "4px 8px", fontSize: "11px", fontWeight: "600" }}>
+                Logout
+              </button>
+            )}
           </div>
-        </div>
 
         {/* Horizontal Navigation Area */}
         <div style={{ 
@@ -785,6 +842,30 @@ function App() {
             );
           })}
         </div>
+
+        {user && !isMobile && (
+          <div style={{ padding: "0 24px", display: "flex", alignItems: "center", gap: "12px", borderLeft: `1px solid ${colors.border}` }}>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: "13px", fontWeight: "700", color: colors.text }}>{user.name}</div>
+              <div style={{ fontSize: "11px", color: colors.textMuted }}>{user.email}</div>
+            </div>
+            <button
+              onClick={handleLogout}
+              style={{
+                padding: "8px 14px",
+                border: `1px solid ${colors.danger}`,
+                borderRadius: "8px",
+                background: "transparent",
+                color: colors.danger,
+                fontSize: "12px",
+                fontWeight: "600",
+                cursor: "pointer"
+              }}
+            >
+              Logout
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Main Content Area - Scrollable */}

@@ -1,6 +1,8 @@
 import { inputStyle, buttonStyle, colors, sectionHeaderStyle } from "../styles";
+import SmartTextarea from "./SmartTextarea";
 
 export default function InspectionSummaryTable({ form, handleChange, onPrev, onNext }) {
+  const setField = (name, value) => handleChange({ target: { name, value } });
   const criteriaOptions = ["Passed", "Failed", "Pending", "N/A"];
 
   // Define light theme styles
@@ -129,12 +131,13 @@ export default function InspectionSummaryTable({ form, handleChange, onPrev, onN
 
       {/* Factory Comments */}
       <label style={{ fontWeight: "600", display: "block", marginBottom: "8px", color: colors.text, fontSize: "14px" }}>Factory Comments & Signature</label>
-      <textarea
+      <SmartTextarea
         placeholder="Enter factory comments and signature"
         name="factoryComments"
         value={form.factoryComments || ""}
-        onChange={handleChange}
-        style={{ ...inputStyle, height: "100px", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, borderRadius: "8px" }}
+        onChange={(e) => setField("factoryComments", e.target.value)}
+        context="factory representative comments after inspection"
+        style={{ ...inputStyle, minHeight: "100px", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, borderRadius: "8px" }}
       />
 
       {/* Inspector Signature */}
@@ -150,11 +153,12 @@ export default function InspectionSummaryTable({ form, handleChange, onPrev, onN
 
       {/* Editable Chinese Factory Notes */}
       <label style={{ fontWeight: "600", display: "block", marginBottom: "8px", marginTop: "20px", color: colors.text, fontSize: "14px" }}>Factory Notes (Chinese)</label>
-      <textarea
+      <SmartTextarea
         placeholder="输入中文备注..."
         name="factoryNotesChinese"
         value={form.factoryNotesChinese || ""}
-        onChange={handleChange}
+        onChange={(e) => setField("factoryNotesChinese", e.target.value)}
+        context="factory notes or observations in Chinese"
         style={{ ...inputStyle, height: "100px", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, borderRadius: "8px" }}
       />
 

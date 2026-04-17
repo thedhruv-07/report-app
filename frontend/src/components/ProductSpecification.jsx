@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { colors, buttonStyle } from "../styles";
+import SmartTextarea from "./SmartTextarea";
 
 const ProductSpecification = ({ form, handleChange, onPrev, onNext }) => {
+  const setField = (name, value) => handleChange({ target: { name, value } });
   const [items, setItems] = useState([{ id: 1 }, { id: 2 }]);
   const [nextId, setNextId] = useState(3);
 
@@ -190,12 +192,12 @@ const ProductSpecification = ({ form, handleChange, onPrev, onNext }) => {
             <tr>
               <td style={{ padding: "8px", background: colors.surface, border: cellBorder, color: colors.text, fontWeight: "bold", textAlign: "left" }}>Remark:</td>
               <td colSpan={6} style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
-                <input
-                  type="text"
+                <SmartTextarea
                   name="productRemark"
                   value={form.productRemark || ""}
-                  onChange={handleChange}
+                  onChange={(e) => setField("productRemark", e.target.value)}
                   placeholder="e.g. N/A"
+                  context="product specification comparison remark"
                   style={inputBase}
                 />
               </td>

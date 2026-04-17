@@ -16,7 +16,7 @@ const generateReport = async (req, res) => {
     const reportContent = createReportContent(data, req.files || []);
     
     const doc = new Document({
-      features: { updateFields: true },
+      features: { updateFields: false },
       sections: [
         {
           headers: {
@@ -105,7 +105,23 @@ const suggestText = async (req, res) => {
   }
 };
 
+const analyzePhoto = async (req, res) => {
+  try {
+    const { images } = req.body;
+    if (!images || !Array.isArray(images) || images.length === 0) {
+      return res.status(400).json({ error: "No images provided" });
+    }
+    const { analyzeVision } = require("../services/ai.service");
+    const description = await analyzeVision(images);
+    res.json({ description });
+  } catch (error) {
+    console.error("Vision Controller Error:", error);
+    res.status(500).json({ error: "Analysis Failed" });
+  }
+};
+
 module.exports = {
   generateReport,
   suggestText,
+  analyzePhoto,
 };

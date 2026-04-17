@@ -52,7 +52,41 @@ const getAISuggestion = async (context, partialText) => {
   }
 };
 
+const analyzeVision = async (images) => {
+  try {
+    if (!groq || !images || !Array.isArray(images) || images.length === 0) return "";
+
+    const messages = [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: "Look at these files/images from an inspection report. Provide one common, professional description for all of them. Keep it concise (1-2 sentences). Focus on what is shown (e.g. 'Overview of the factory line', 'Close up of the product label', 'Defects found in the batch')." },
+          ...images.map(img => ({
+            type: "image_url",
+            image_url: {
+              url: img.startsWith("data:") ? img : `data:image/jpeg;base64,${img}`,
+            },
+          }))
+        ],
+      },
+    ];
+
+    const completion = await groq.chat.completions.create({
+      messages,
+      model: "meta-llama/llama-4-scout-17b-16e-instruct",
+      temperature: 0.5,
+      max_tokens: 150,
+    });
+
+    return completion.choices[0]?.message?.content?.trim() || "";
+  } catch (error) {
+    console.error("Vision AI Error:", error);
+    return "";
+  }
+};
+
 module.exports = {
   learnFromReport,
   getAISuggestion,
+  analyzeVision,
 };

@@ -20,6 +20,8 @@ A professional, full-stack application designed to streamline the creation of hi
   - Comprehensive Photo Gallery
 - **Status-Driven Styling**: Automatically colors results (PASS/FAIL/PENDING) in the generated Word document.
 - **Smart Data Enrichment**: Backend automatically infers missing data and calculates totals (e.g., defect counts, quantity breakdowns).
+- **AI-Powered Photo Analysis**: Utilizes Meta Llama 4 Scout Vision API to automatically generate professional descriptions for inspection photos. Photos are automatically compressed to drastically reduce token usage.
+- **Persistent Staging Area**: Uploaded staging photos are automatically saved to the browser's local storage, surviving page refreshes to prevent data loss.
 - **Responsive Dashboard**: A sleek, modern UI built with React for fast data entry.
 
 ## 🛠 Tech Stack

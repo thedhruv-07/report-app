@@ -1,5 +1,7 @@
 import { inputStyle, buttonStyle, colors, sectionHeaderStyle } from "../styles";
 import { compressImage, formatFileSize } from "../utils/imageCompression";
+import SmartTextarea from "./SmartTextarea";
+import { useState } from "react";
 
 export default function ConclusionStep({ form, handleChange, onPrev, onNext }) {
   const setField = (name, value) => handleChange({ target: { name, value } });
@@ -211,12 +213,12 @@ export default function ConclusionStep({ form, handleChange, onPrev, onNext }) {
           <div>
             <label style={{ fontWeight: "600", display: "block", marginBottom: "15px", color: colors.text, fontSize: "14px" }}>Approved by:</label>
             <div style={{ minHeight: "80px", border: `2px dashed ${colors.border}`, borderRadius: "8px", marginBottom: "10px", background: colors.surface }}></div>
-            <input
-              type="text"
+            <SmartTextarea
               name="approvedBy"
               value={form.approvedBy || ""}
-              onChange={handleChange}
+              onChange={(e) => setField("approvedBy", e.target.value)}
               placeholder="e.g., Amvt, Manager of Report Reviewing"
+              context="formal report approval name and title"
               style={{ ...inputStyle, background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, borderRadius: "8px" }}
             />
           </div>
@@ -230,12 +232,12 @@ export default function ConclusionStep({ form, handleChange, onPrev, onNext }) {
           <div>
             <label style={{ fontWeight: "600", display: "block", marginBottom: "10px", color: colors.text, fontSize: "14px" }}>Inspector:</label>
             <div style={{ minHeight: "60px", border: `2px solid ${colors.border}`, borderRadius: "8px", marginBottom: "10px", background: colors.surface }}></div>
-            <input
-              type="text"
+            <SmartTextarea
               name="inspector"
               value={form.inspector || ""}
-              onChange={handleChange}
+              onChange={(e) => setField("inspector", e.target.value)}
               placeholder="Inspector name/signature"
+              context="inspector name and professional title"
               style={{ ...inputStyle, background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, borderRadius: "8px" }}
             />
           </div>
@@ -243,12 +245,12 @@ export default function ConclusionStep({ form, handleChange, onPrev, onNext }) {
           <div>
             <label style={{ fontWeight: "600", display: "block", marginBottom: "10px", color: colors.text, fontSize: "14px" }}>Report Reviewer:</label>
             <div style={{ minHeight: "60px", border: `2px solid ${colors.border}`, borderRadius: "8px", marginBottom: "10px", background: colors.surface }}></div>
-            <input
-              type="text"
+            <SmartTextarea
               name="reportReviewer"
               value={form.reportReviewer || ""}
-              onChange={handleChange}
+              onChange={(e) => setField("reportReviewer", e.target.value)}
               placeholder="Reviewer name/signature"
+              context="report reviewer name and professional title"
               style={{ ...inputStyle, background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, borderRadius: "8px" }}
             />
           </div>

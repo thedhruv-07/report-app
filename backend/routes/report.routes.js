@@ -2,8 +2,10 @@ const express = require("express");
 const router = express.Router();
 const reportController = require("../controllers/report.controller");
 const upload = require("../middleware/upload.middleware");
+const { authMiddleware } = require("../middleware/auth.middleware");
 
-router.post("/generate", upload.array("images"), reportController.generateReport);
-router.post("/api/suggest", reportController.suggestText);
+router.post("/generate", authMiddleware, upload.array("images"), reportController.generateReport);
+router.post("/api/suggest", authMiddleware, reportController.suggestText);
+router.post("/api/ai-describe", authMiddleware, reportController.analyzePhoto);
 
 module.exports = router;

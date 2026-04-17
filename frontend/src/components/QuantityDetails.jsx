@@ -1,6 +1,8 @@
 import { inputStyle, buttonStyle, colors, sectionHeaderStyle } from "../styles";
+import SmartTextarea from "./SmartTextarea";
 
 export default function QuantityDetails({ items, onItemChange, onAddItem, onRemoveItem, form, handleChange, onPrev, onNext }) {
+  const setField = (name, value) => handleChange({ target: { name, value } });
   const toNum = (value) => {
     const n = Number(value);
     return Number.isFinite(n) ? n : 0;
@@ -251,11 +253,12 @@ export default function QuantityDetails({ items, onItemChange, onAddItem, onRemo
       {/* Remark */}
       <div style={{ marginBottom: "20px" }}>
         <label style={{ fontWeight: "600", display: "block", marginBottom: "10px", color: colors.text, fontSize: "14px" }}>Remark:</label>
-        <textarea
+        <SmartTextarea
           name="quantityRemark"
           value={form.quantityRemark || ""}
-          onChange={handleChange}
+          onChange={(e) => setField("quantityRemark", e.target.value)}
           placeholder="Enter remarks..."
+          context="quantity inspection findings and packing observations"
           style={{ ...inputStyle, minHeight: "80px", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, borderRadius: "8px" }}
         />
       </div>

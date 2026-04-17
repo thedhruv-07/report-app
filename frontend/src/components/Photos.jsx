@@ -1,13 +1,48 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { colors, buttonStyle } from "../styles";
-import { formatFileSize } from "../utils/imageCompression";
+import { formatFileSize, compressImage } from "../utils/imageCompression";
+import SmartTextarea from "./SmartTextarea";
 
 const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, onRemovePhoto, onPrev, onNext }) => {
   const [dragActive, setDragActive] = useState(false);
   const [pendingFiles, setPendingFiles] = useState([]); // files staged for grouping
   const [pendingPreviews, setPendingPreviews] = useState([]); // previews of staged files
   const [selectedPending, setSelectedPending] = useState(new Set()); // toggled for selection
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [groupDescription, setGroupDescription] = useState("");
+
+  // ─── LOCAL STORAGE PERSISTENCE ──────────────────────────────────────────────
+  useEffect(() => {
+    const saved = localStorage.getItem("stagedPhotos");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setPendingFiles(parsed);
+          setPendingPreviews(parsed);
+          // Auto-select them
+          setSelectedPending(new Set(parsed.map(p => p.id)));
+        }
+      } catch (e) {
+        console.error("Failed to load staged photos", e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (pendingFiles.length > 0) {
+      // Just save metadata and previews (Files can't be serialized)
+      const toSave = pendingFiles.map(p => ({
+        id: p.id,
+        preview: p.preview,
+        fileName: p.fileName,
+        size: p.size
+      }));
+      localStorage.setItem("stagedPhotos", JSON.stringify(toSave));
+    } else {
+      localStorage.removeItem("stagedPhotos");
+    }
+  }, [pendingFiles]);
   const [editingGroupId, setEditingGroupId] = useState(null);
   const [editingDescription, setEditingDescription] = useState("");
   const [selectedUngrouped, setSelectedUngrouped] = useState(new Set());
@@ -96,6 +131,54 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
   // Deselect all pending
   const deselectAllPending = () => {
     setSelectedPending(new Set());
+  };
+
+  const handleAutoDescribe = async () => {
+    const selected = pendingFiles.filter((p) => selectedPending.has(p.id));
+    if (selected.length === 0) return;
+
+    setIsAnalyzing(true);
+    setGroupDescription("AI is analyzing photos...");
+
+    try {
+      // "Use less tokens": Compress to small size (~20KB) for AI analysis
+      // Handle cases where p.file is missing (restored from localStorage)
+      const images = await Promise.all(
+        selected.slice(0, 5).map(async p => {
+          if (p.file) {
+            const res = await compressImage(p.file, 20000);
+            return res.preview;
+          }
+          return p.preview; // Use existing preview for restored photos
+        })
+      );
+
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}/api/ai-describe`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token") || localStorage.getItem("reportToken")}`
+        },
+        body: JSON.stringify({ images })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.description) {
+        setGroupDescription(data.description);
+      } else {
+        setGroupDescription("AI couldn't generate a description. Please type manually.");
+        setTimeout(() => setGroupDescription(""), 3000);
+      }
+    } catch (error) {
+      console.error("AI Analysis Failed:", error);
+      setGroupDescription("");
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   // Add selected pending photos as a group with description
@@ -504,14 +587,14 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
             }}
           >
             <div style={{ flex: 1, minWidth: "200px" }}>
-              <input
-                type="text"
+              <SmartTextarea
                 placeholder="Enter description for selected photos..."
                 value={groupDescription}
                 onChange={(e) => setGroupDescription(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && selectedPending.size > 0) addSelectedAsGroup();
                 }}
+                context="visual inspection photo content description"
                 style={{
                   width: "100%",
                   padding: "10px 14px",
@@ -525,8 +608,6 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
                   outline: "none",
                   transition: "border-color 0.2s ease",
                 }}
-                onFocus={(e) => (e.target.style.borderColor = colors.primary)}
-                onBlur={(e) => (e.target.style.borderColor = colors.border)}
               />
             </div>
             <button
@@ -547,6 +628,28 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
               }}
             >
               ✓ Add {selectedPending.size > 0 ? `${selectedPending.size} Photo${selectedPending.size > 1 ? "s" : ""}` : "Photos"} to Report
+            </button>
+            
+            <button
+              onClick={handleAutoDescribe}
+              disabled={selectedPending.size === 0 || isAnalyzing}
+              title="Auto-describe with AI"
+              style={{
+                padding: "10px 14px",
+                background: selectedPending.size > 0 && !isAnalyzing ? `linear-gradient(135deg, #6366f1, #8b5cf6)` : colors.surfaceAlt,
+                color: selectedPending.size > 0 && !isAnalyzing ? "#fff" : colors.textMuted,
+                border: "none",
+                borderRadius: "8px",
+                cursor: selectedPending.size > 0 && !isAnalyzing ? "pointer" : "not-allowed",
+                fontSize: "16px",
+                transition: "all 0.3s ease",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minWidth: "44px"
+              }}
+            >
+              {isAnalyzing ? "..." : "✨"}
             </button>
           </div>
         </div>
@@ -611,8 +714,7 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
 
                     {isEditing ? (
                       <div style={{ display: "flex", gap: "6px", flex: 1 }}>
-                        <input
-                          type="text"
+                        <SmartTextarea
                           value={editingDescription}
                           onChange={(e) => setEditingDescription(e.target.value)}
                           onKeyDown={(e) => {
@@ -620,6 +722,7 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
                             if (e.key === "Escape") setEditingGroupId(null);
                           }}
                           autoFocus
+                          context="photo group description refinement"
                           style={{
                             flex: 1,
                             padding: "6px 10px",
@@ -1017,14 +1120,14 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
             }}
           >
             <div style={{ flex: 1, minWidth: "200px" }}>
-              <input
-                type="text"
+              <SmartTextarea
                 placeholder="Enter description for selected photos..."
                 value={ungroupedDescription}
                 onChange={(e) => setUngroupedDescription(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && selectedUngrouped.size > 0) groupUngroupedPhotos();
                 }}
+                context="untagged inspection photo description"
                 style={{
                   width: "100%",
                   padding: "10px 14px",
@@ -1038,8 +1141,6 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
                   outline: "none",
                   transition: "border-color 0.2s ease",
                 }}
-                onFocus={(e) => (e.target.style.borderColor = "#f59e0b")}
-                onBlur={(e) => (e.target.style.borderColor = colors.border)}
               />
             </div>
             <button

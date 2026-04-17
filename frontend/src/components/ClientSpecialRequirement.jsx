@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { colors, buttonStyle } from "../styles";
+import SmartTextarea from "./SmartTextarea";
 
 const normalizeRequirements = (value) => {
   if (!Array.isArray(value) || value.length === 0) {
@@ -14,6 +15,7 @@ const normalizeRequirements = (value) => {
 };
 
 const ClientSpecialRequirement = ({ form, handleChange, onPrev, onNext, onRequirementsChange }) => {
+  const setField = (name, value) => handleChange({ target: { name, value } });
   const [requirements, setRequirements] = useState(() => normalizeRequirements(form.clientRequirements));
 
   const persistRequirements = (newRequirements) => {
@@ -179,12 +181,12 @@ const ClientSpecialRequirement = ({ form, handleChange, onPrev, onNext, onRequir
                 Remark:
               </td>
               <td colSpan={2} style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
-                <input
-                  type="text"
+                <SmartTextarea
                   name="client_requirement_remark"
                   value={form.client_requirement_remark || "NA"}
-                  onChange={handleChange}
+                  onChange={(e) => handleChange({ target: { name: "client_requirement_remark", value: e.target.value } })}
                   style={inputBase}
+                  context="client special requirement verification remark"
                 />
               </td>
             </tr>
