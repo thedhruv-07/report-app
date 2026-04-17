@@ -35,11 +35,12 @@ const reportSchema = new mongoose.Schema({
   generalInfo: { type: mongoose.Schema.Types.ObjectId, ref: "GeneralInfo" },
   quantityDetails: { type: mongoose.Schema.Types.ObjectId, ref: "Quantity" },
   workmanship: { type: mongoose.Schema.Types.ObjectId, ref: "Workmanship" },
-  
-  onSiteTests: { type: embeddedOnSiteTestSchema, default: () => ({}) },
-  packing: { type: embeddedPackingSchema, default: () => ({}) },
-  conclusionDetails: { type: embeddedConclusionSchema, default: () => ({}) },
-
+  inspection: { type: mongoose.Schema.Types.ObjectId, ref: "Inspection" },
+  materials: { type: mongoose.Schema.Types.ObjectId, ref: "Materials" },
+  safety: { type: mongoose.Schema.Types.ObjectId, ref: "Safety" },
+  comments: { type: mongoose.Schema.Types.ObjectId, ref: "Comments" },
+  media: [{ type: mongoose.Schema.Types.ObjectId, ref: "Media" }],
+  sectionStatuses: [{ type: mongoose.Schema.Types.ObjectId, ref: "SectionStatus" }],
 }, { timestamps: true });
 
 const Report = mongoose.model("Report", reportSchema);

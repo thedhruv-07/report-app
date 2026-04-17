@@ -10,9 +10,15 @@ const { Report } = require("../models/report.model");
 const { GeneralInfo } = require("../models/sections/generalInfo.model");
 const { Quantity } = require("../models/sections/quantity.model");
 const { Workmanship } = require("../models/sections/workmanship.model");
+const { Inspection } = require("../models/sections/inspection.model");
+const { Materials } = require("../models/sections/materials.model");
+const { Safety } = require("../models/sections/safety.model");
+const { Comments } = require("../models/sections/comments.model");
+const { Media } = require("../models/sections/media.model");
+const { SectionStatus } = require("../models/sections/sectionStatus.model");
 
 const generateReport = async (req, res) => {
-  console.log("📥 Generating full report and saving to database...");
+  console.log("📥 Generating full report and saving to granular modular database...");
   
   try {
     const rawData = normalizePayload(req.body);
@@ -67,40 +73,88 @@ const generateReport = async (req, res) => {
         workmanshipRemark: data.workmanshipRemark || "",
       });
 
+      const inspectionDoc = new Inspection({
+        reportId: reportId,
+        quantityResult: data.quantity || "",
+        workmanshipResult: data.workmanship || "",
+        onSiteTestsResult: data.onSiteTests || "",
+        dimensionsResult: data.dimensions || "",
+        packingResult: data.packingResult || "",
+        markingResult: data.marking_result_final || "",
+        clientRequirementResult: data.client_requirement_result || "",
+      });
+
+      const materialsDoc = new Materials({
+        reportId: reportId,
+        productSpec: data.productSpec || "",
+        dimensionsData: data.dimensionsData || {},
+        materialsUsed: data.materialsUsed || "",
+        referenceSampleMatch: data.referenceSample || "",
+      });
+
+      const safetyDoc = new Safety({
+        reportId: reportId,
+        onSiteTestResult: data.onSiteTestResult || "",
+        onSiteTestRemark: data.onSiteTestRemark || "",
+        safetyChecks: Array.isArray(data.safetyChecks) ? data.safetyChecks : [],
+      });
+
+      const commentsDoc = new Comments({
+        reportId: reportId,
+        remarks: Array.isArray(data.remarks) ? data.remarks : [],
+        recommendations: data.recommendationText || "",
+        factoryComments: data.factoryComments || "",
+        inspectorOpinion: data.inspectorOpinion || "",
+      });
+
+      // Track photo metadata for each section
+      const mediaDocs = [];
+      if (data.generalPhoto) {
+        mediaDocs.push(new Media({ reportId, sectionName: "General", description: "General Info Photo" }));
+      }
+      (data.reportPhotos || []).forEach(p => {
+        mediaDocs.push(new Media({ reportId, sectionName: "Photos", description: p.label || "" }));
+      });
+
+      // Track status for each major section
+      const sectionStatuses = [
+        new SectionStatus({ reportId, sectionName: "GeneralInfo", status: "completed" }),
+        new SectionStatus({ reportId, sectionName: "Quantity", status: "completed" }),
+        new SectionStatus({ reportId, sectionName: "Workmanship", status: "completed" }),
+        new SectionStatus({ reportId, sectionName: "Inspection", status: "completed" }),
+      ];
+
       const report = new Report({
         _id: reportId,
         userId: userId,
         title: data.productName ? `Inspection Report - ${data.productName}` : "Inspection Report",
         reportNumber: data.reportHeader?.inspectionNumber || data.po || `REP-${Date.now()}`,
         status: "completed",
-        onSiteTests: {
-          onSiteTestResult: data.onSiteTestResult || "",
-          onSiteTestRemark: data.onSiteTestRemark || "",
-        },
-        packing: {
-          packingResult: data.packingResult || data.packing_result || "",
-          marking_result_final: data.marking_result_final || "",
-          client_requirement_result: data.client_requirement_result || "",
-        },
-        conclusionDetails: {
-          conclusion: data.conclusion || "",
-          factoryComments: data.factoryComments || "",
-          recommendationText: data.recommendationText || "",
-          remarks: Array.isArray(data.remarks) ? data.remarks : [],
-        },
         generalInfo: generalInfo._id,
         quantityDetails: quantityDoc._id,
-        workmanship: workmanshipDoc._id
+        workmanship: workmanshipDoc._id,
+        inspection: inspectionDoc._id,
+        materials: materialsDoc._id,
+        safety: safetyDoc._id,
+        comments: commentsDoc._id,
+        media: mediaDocs.map(m => m._id),
+        sectionStatuses: sectionStatuses.map(s => s._id),
       });
 
       await Promise.all([
         generalInfo.save(),
         quantityDoc.save(),
-        workmanshipDoc.save()
+        workmanshipDoc.save(),
+        inspectionDoc.save(),
+        materialsDoc.save(),
+        safetyDoc.save(),
+        commentsDoc.save(),
+        ...mediaDocs.map(m => m.save()),
+        ...sectionStatuses.map(s => s.save()),
+        report.save()
       ]);
-      await report.save();
 
-      console.log(`✅ Saved Report to MongoDB with ID: ${report._id}`);
+      console.log(`✅ Saved Granular Modular Report to MongoDB with ID: ${report._id}`);
       
     } catch (dbError) {
       console.error("❌ DATABASE SAVE ERROR:", dbError.message);

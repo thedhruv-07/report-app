@@ -128,10 +128,10 @@ const Packing = ({ form, handleChange, onPrev, onNext }) => {
                   />
                 </td>
                 <td style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
-                  <input type="text" name={`packing_qty_carton_marking_${item.id}`} value={form[`packing_qty_carton_marking_${item.id}`] || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "center" }} placeholder="-" />
+                  <input type="number" name={`packing_qty_carton_marking_${item.id}`} value={form[`packing_qty_carton_marking_${item.id}`] || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "center" }} placeholder="-" />
                 </td>
                 <td style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
-                  <input type="text" name={`packing_qty_carton_actual_${item.id}`} value={form[`packing_qty_carton_actual_${item.id}`] || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "center" }} placeholder="-" />
+                  <input type="number" name={`packing_qty_carton_actual_${item.id}`} value={form[`packing_qty_carton_actual_${item.id}`] || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "center" }} placeholder="-" />
                 </td>
                 <td style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
                   <input type="text" name={`packing_carton_size_marking_${item.id}`} value={form[`packing_carton_size_marking_${item.id}`] || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "center" }} placeholder="-" />
@@ -140,16 +140,16 @@ const Packing = ({ form, handleChange, onPrev, onNext }) => {
                   <input type="text" name={`packing_carton_size_actual_${item.id}`} value={form[`packing_carton_size_actual_${item.id}`] || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "center" }} placeholder="-" />
                 </td>
                 <td style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
-                  <input type="text" name={`packing_weight_marking_${item.id}`} value={form[`packing_weight_marking_${item.id}`] || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "center" }} placeholder="-" />
+                  <input type="number" name={`packing_weight_marking_${item.id}`} value={form[`packing_weight_marking_${item.id}`] || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "center" }} placeholder="-" />
                 </td>
                 <td style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
-                  <input type="text" name={`packing_weight_actual_${item.id}`} value={form[`packing_weight_actual_${item.id}`] || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "center" }} placeholder="-" />
+                  <input type="number" name={`packing_weight_actual_${item.id}`} value={form[`packing_weight_actual_${item.id}`] || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "center" }} placeholder="-" />
                 </td>
                 <td style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
-                  <input type="text" name={`packing_qty_inner_marking_${item.id}`} value={form[`packing_qty_inner_marking_${item.id}`] || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "center" }} placeholder="-" />
+                  <input type="number" name={`packing_qty_inner_marking_${item.id}`} value={form[`packing_qty_inner_marking_${item.id}`] || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "center" }} placeholder="-" />
                 </td>
                 <td style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
-                  <input type="text" name={`packing_qty_inner_actual_${item.id}`} value={form[`packing_qty_inner_actual_${item.id}`] || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "center" }} placeholder="-" />
+                  <input type="number" name={`packing_qty_inner_actual_${item.id}`} value={form[`packing_qty_inner_actual_${item.id}`] || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "center" }} placeholder="-" />
                 </td>
               </tr>
             ))}
@@ -189,7 +189,7 @@ const Packing = ({ form, handleChange, onPrev, onNext }) => {
                 Corrugated Paper Plies
               </td>
               <td colSpan={2} style={{ padding: "8px", background: colors.surface, border: cellBorder, display: "flex", alignItems: "center" }}>
-                <input type="text" name="corrugated_paper_plies" value={form.corrugated_paper_plies || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "right", width: "40px" }} />
+                <input type="number" name="corrugated_paper_plies" value={form.corrugated_paper_plies || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "right", width: "40px" }} />
                 <span>-ply</span>
               </td>
             </tr>

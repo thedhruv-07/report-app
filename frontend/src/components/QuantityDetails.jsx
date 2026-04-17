@@ -70,7 +70,7 @@ export default function QuantityDetails({ items, onItemChange, onAddItem, onRemo
                 </td>
                 <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                   <input
-                    type="text"
+                    type="number"
                     value={item.orderQty || ""}
                     onChange={(e) => onItemChange(idx, "orderQty", e.target.value)}
                     style={{ width: "100%", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", textAlign: "center", fontSize: "12px" }}
@@ -78,7 +78,7 @@ export default function QuantityDetails({ items, onItemChange, onAddItem, onRemo
                 </td>
                 <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                   <input
-                    type="text"
+                    type="number"
                     value={item.qtyPerCarton || ""}
                     onChange={(e) => onItemChange(idx, "qtyPerCarton", e.target.value)}
                     style={{ width: "100%", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", textAlign: "center", fontSize: "12px" }}
@@ -86,7 +86,7 @@ export default function QuantityDetails({ items, onItemChange, onAddItem, onRemo
                 </td>
                 <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                   <input
-                    type="text"
+                    type="number"
                     value={item.cartons || ""}
                     onChange={(e) => onItemChange(idx, "cartons", e.target.value)}
                     style={{ width: "100%", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", textAlign: "center", fontSize: "12px" }}
@@ -94,7 +94,7 @@ export default function QuantityDetails({ items, onItemChange, onAddItem, onRemo
                 </td>
                 <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                   <input
-                    type="text"
+                    type="number"
                     value={item.packedBreakdown || ""}
                     onChange={(e) => onItemChange(idx, "packedBreakdown", e.target.value)}
                     style={{ width: "100%", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", textAlign: "center", fontSize: "12px" }}
@@ -102,7 +102,7 @@ export default function QuantityDetails({ items, onItemChange, onAddItem, onRemo
                 </td>
                 <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                   <input
-                    type="text"
+                    type="number"
                     value={item.unpackedBreakdown || ""}
                     onChange={(e) => onItemChange(idx, "unpackedBreakdown", e.target.value)}
                     style={{ width: "100%", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", textAlign: "center", fontSize: "12px" }}
@@ -110,7 +110,7 @@ export default function QuantityDetails({ items, onItemChange, onAddItem, onRemo
                 </td>
                 <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                   <input
-                    type="text"
+                    type="number"
                     value={item.unfinishedBreakdown || ""}
                     onChange={(e) => onItemChange(idx, "unfinishedBreakdown", e.target.value)}
                     style={{ width: "100%", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", textAlign: "center", fontSize: "12px" }}
@@ -118,7 +118,7 @@ export default function QuantityDetails({ items, onItemChange, onAddItem, onRemo
                 </td>
                 <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                   <input
-                    type="text"
+                    type="number"
                     value={item.sampleSizePacked || ""}
                     onChange={(e) => onItemChange(idx, "sampleSizePacked", e.target.value)}
                     style={{ width: "100%", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", textAlign: "center", fontSize: "12px" }}
@@ -126,7 +126,7 @@ export default function QuantityDetails({ items, onItemChange, onAddItem, onRemo
                 </td>
                 <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                   <input
-                    type="text"
+                    type="number"
                     value={item.sampleSizeUnpacked || ""}
                     onChange={(e) => onItemChange(idx, "sampleSizeUnpacked", e.target.value)}
                     style={{ width: "100%", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", textAlign: "center", fontSize: "12px" }}
@@ -202,7 +202,7 @@ export default function QuantityDetails({ items, onItemChange, onAddItem, onRemo
       <div style={{ marginBottom: "20px", padding: "15px", background: colors.surfaceAlt, border: `1px solid ${colors.border}`, borderRadius: "8px" }}>
         <h4 style={{ marginBottom: "10px", fontWeight: "600", color: colors.text }}>Selected Cartons:</h4>
         <input
-          type="text"
+          type="number"
           name="selectedCartonsCount"
           value={form.selectedCartonsCount || ""}
           onChange={handleChange}
