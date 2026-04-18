@@ -15,19 +15,18 @@ app.use(cors({
 app.use(express.json({ limit: "500mb" }));
 app.use(express.urlencoded({ limit: "500mb", extended: true }));
 
-// Serve static files from the frontend/dist folder
-app.use(express.static(path.join(__dirname, "../frontend/dist")));
+// API Health Check / Welcome
+app.get("/", (req, res) => {
+  res.json({ status: "success", message: "Veritas Report API is live!" });
+});
 
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/", reportRoutes);
 
-// Catch-all middleware to serve the frontend for any non-API request
-app.use((req, res, next) => {
-  if (req.path.startsWith("/api")) {
-    return next();
-  }
-  res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
+// 404 handler for API
+app.use((req, res) => {
+  res.status(404).json({ error: "Endpoint not found" });
 });
 
 module.exports = app;
