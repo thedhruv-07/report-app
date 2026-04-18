@@ -83,8 +83,12 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
 
   // Stage files for preview & grouping (don't add to report yet)
   const stageFiles = async (fileList) => {
-    const newFiles = Array.from(fileList);
-    const newPreviews = [];
+    // Filter to only include valid images (skip directories or hidden files)
+    const newFiles = Array.from(fileList).filter(file => 
+      file.type.startsWith('image/') && file.size > 0
+    );
+
+    if (newFiles.length === 0) return;
 
     for (const file of newFiles) {
       const reader = new FileReader();
@@ -97,12 +101,15 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
             fileName: file.name,
             size: file.size,
           };
-          newPreviews.push(item);
-          // Update incrementaly for better feedback
+          // Update incrementally for better feedback
           setPendingFiles((prev) => [...prev, item]);
           setPendingPreviews((prev) => [...prev, item]);
           setSelectedPending((prev) => new Set(prev).add(item.id));
           resolve();
+        };
+        reader.onerror = () => {
+          console.warn(`Skipping unreadable file: ${file.name}`);
+          resolve(); // Resolve anyway to continue with next files
         };
         reader.readAsDataURL(file);
       });

@@ -448,7 +448,7 @@ function App() {
     // Generate group entry for the batch
     const groupId = `group_${Date.now()}_${Math.random()}`;
     const photoIds = [];
-    const itemsArray = Array.from(files);
+    const itemsArray = Array.from(files).filter(item => item !== null && item !== undefined);
 
     // Sequential processing to avoid browser lag with large batches
     for (let index = 0; index < itemsArray.length; index++) {
