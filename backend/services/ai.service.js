@@ -19,27 +19,33 @@ const learnFromReport = (data) => {
   } catch (e) { console.error("Local Learning Error:", e); }
 };
 
-const getAISuggestion = async (context, partialText) => {
+const getAISuggestion = async (context, partialText = "") => {
   try {
-    if (!partialText) return "";
-    
-    // 1. Local Memory Match
-    const memory = JSON.parse(fs.readFileSync(MEMORY_PATH, "utf8"));
-    const localMatch = memory.find(m => m.toLowerCase().startsWith(partialText.toLowerCase()));
-    if (localMatch && typeof localMatch === "string") return localMatch.slice(partialText.length);
+    // 1. Local Memory Match (only if partialText exists)
+    if (partialText) {
+      const memory = JSON.parse(fs.readFileSync(MEMORY_PATH, "utf8"));
+      const localMatch = memory.find(m => m.toLowerCase().startsWith(partialText.toLowerCase()));
+      if (localMatch && typeof localMatch === "string") return localMatch.slice(partialText.length);
+    }
 
     // 2. Groq AI Match
     if (groq) {
       try {
+        const prompt = partialText 
+          ? `The user is typing a remark about "${context}". They have typed: "${partialText}". Complete their sentence professionally.`
+          : `Generate a professional, concise initial sentence for a factory inspection report remark regarding "${context}". Focus on standard findings or observations.`;
+
         const completion = await groq.chat.completions.create({
           messages: [
-            { role: "system", content: "Professional completion assistant. Context: " + context }, 
-            { role: "user", content: "Type: " + partialText }
+            { role: "system", content: "You are a professional quality control inspector assistant. Provide concise, factual, and industry-standard completions or suggestions." }, 
+            { role: "user", content: prompt }
           ],
           model: "llama-3.3-70b-versatile",
+          max_tokens: 100,
         });
-        const suggestion = completion.choices[0]?.message?.content?.trim();
-        if (suggestion) return suggestion;
+        const suggestion = completion.choices[0]?.message?.content?.trim() || "";
+        // Remove quotes if the AI wraps the suggestion
+        return suggestion.replace(/^["']|["']$/g, '');
       } catch (e) {
         console.error("Groq Error:", e);
       }

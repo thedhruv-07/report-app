@@ -71,6 +71,7 @@ export default function QuantityDetails({ items, onItemChange, onAddItem, onRemo
                 <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                   <input
                     type="number"
+                    min="0"
                     value={item.orderQty || ""}
                     onChange={(e) => onItemChange(idx, "orderQty", e.target.value)}
                     style={{ width: "100%", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", textAlign: "center", fontSize: "12px" }}
@@ -79,6 +80,7 @@ export default function QuantityDetails({ items, onItemChange, onAddItem, onRemo
                 <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                   <input
                     type="number"
+                    min="0"
                     value={item.qtyPerCarton || ""}
                     onChange={(e) => onItemChange(idx, "qtyPerCarton", e.target.value)}
                     style={{ width: "100%", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", textAlign: "center", fontSize: "12px" }}
@@ -87,6 +89,7 @@ export default function QuantityDetails({ items, onItemChange, onAddItem, onRemo
                 <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                   <input
                     type="number"
+                    min="0"
                     value={item.cartons || ""}
                     onChange={(e) => onItemChange(idx, "cartons", e.target.value)}
                     style={{ width: "100%", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", textAlign: "center", fontSize: "12px" }}
@@ -95,6 +98,7 @@ export default function QuantityDetails({ items, onItemChange, onAddItem, onRemo
                 <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                   <input
                     type="number"
+                    min="0"
                     value={item.packedBreakdown || ""}
                     onChange={(e) => onItemChange(idx, "packedBreakdown", e.target.value)}
                     style={{ width: "100%", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", textAlign: "center", fontSize: "12px" }}
@@ -103,6 +107,7 @@ export default function QuantityDetails({ items, onItemChange, onAddItem, onRemo
                 <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                   <input
                     type="number"
+                    min="0"
                     value={item.unpackedBreakdown || ""}
                     onChange={(e) => onItemChange(idx, "unpackedBreakdown", e.target.value)}
                     style={{ width: "100%", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", textAlign: "center", fontSize: "12px" }}
@@ -111,6 +116,7 @@ export default function QuantityDetails({ items, onItemChange, onAddItem, onRemo
                 <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                   <input
                     type="number"
+                    min="0"
                     value={item.unfinishedBreakdown || ""}
                     onChange={(e) => onItemChange(idx, "unfinishedBreakdown", e.target.value)}
                     style={{ width: "100%", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", textAlign: "center", fontSize: "12px" }}
@@ -119,6 +125,7 @@ export default function QuantityDetails({ items, onItemChange, onAddItem, onRemo
                 <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                   <input
                     type="number"
+                    min="0"
                     value={item.sampleSizePacked || ""}
                     onChange={(e) => onItemChange(idx, "sampleSizePacked", e.target.value)}
                     style={{ width: "100%", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", textAlign: "center", fontSize: "12px" }}
@@ -127,6 +134,7 @@ export default function QuantityDetails({ items, onItemChange, onAddItem, onRemo
                 <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                   <input
                     type="number"
+                    min="0"
                     value={item.sampleSizeUnpacked || ""}
                     onChange={(e) => onItemChange(idx, "sampleSizeUnpacked", e.target.value)}
                     style={{ width: "100%", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", textAlign: "center", fontSize: "12px" }}

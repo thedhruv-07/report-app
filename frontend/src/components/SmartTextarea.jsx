@@ -70,25 +70,34 @@ export default function SmartTextarea({
     if (!value || value.trim() === "" || /[.\n]$/.test(value)) return;
 
     const timer = setTimeout(async () => {
-      try {
-        const token = localStorage.getItem("token") || localStorage.getItem("reportToken");
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}/api/suggest`, {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "Authorization": token ? `Bearer ${token}` : ""
-          },
-          body: JSON.stringify({ context, partialText: value }),
-        });
-        const data = await res.json();
-        if (data.suggestion) setSuggestion(data.suggestion);
-      } catch {
-        // fail silently
-      }
+      fetchSuggestion(value);
     }, 600);
 
     return () => clearTimeout(timer);
   }, [value, context]);
+
+  const fetchSuggestion = async (partialText = "") => {
+    try {
+      const token = localStorage.getItem("token") || localStorage.getItem("reportToken");
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}/api/suggest`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": token ? `Bearer ${token}` : ""
+        },
+        body: JSON.stringify({ context, partialText }),
+      });
+      const data = await res.json();
+      if (data.suggestion) setSuggestion(data.suggestion);
+    } catch {
+      // fail silently
+    }
+  };
+
+  const handleSuggestClick = () => {
+    setSuggestion("Generating...");
+    fetchSuggestion("");
+  };
 
   // ─── Tab / Right Arrow to accept suggestion ────────────────────────────────
   const handleKeyDown = (e) => {
@@ -177,26 +186,58 @@ export default function SmartTextarea({
       >
         {/* Accept Suggestion button */}
         {suggestion ? (
-          <button
-            type="button"
-            onClick={acceptSuggestion}
-            style={{
-              background: colors.primary,
-              color: "#fff",
-              border: "none",
-              borderRadius: "4px",
-              fontSize: "10px",
-              fontWeight: "bold",
-              padding: "2px 10px",
-              cursor: "pointer",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
-              letterSpacing: "0.3px",
-            }}
-          >
-            ✓ Accept Suggestion  (Tab)
-          </button>
+          suggestion === "Generating..." ? (
+            <span style={{ fontSize: "10px", color: colors.textMuted, fontStyle: "italic", marginLeft: "4px" }}>
+              ✨ Thinking...
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={acceptSuggestion}
+              style={{
+                background: colors.primary,
+                color: "#fff",
+                border: "none",
+                borderRadius: "4px",
+                fontSize: "10px",
+                fontWeight: "bold",
+                padding: "2px 10px",
+                cursor: "pointer",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+                letterSpacing: "0.3px",
+              }}
+            >
+              ✓ Accept Suggestion (Tab)
+            </button>
+          )
         ) : (
-          <div />
+          !value && (
+            <button
+              type="button"
+              onClick={handleSuggestClick}
+              style={{
+                background: "transparent",
+                color: colors.primary,
+                border: `1px solid ${colors.primary}`,
+                borderRadius: "4px",
+                fontSize: "10px",
+                fontWeight: "bold",
+                padding: "1px 8px",
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = colors.primary;
+                e.currentTarget.style.color = "#fff";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.color = colors.primary;
+              }}
+            >
+              ✨ Suggest Remark
+            </button>
+          )
         )}
 
         {/* Drag-to-resize grip */}

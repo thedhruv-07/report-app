@@ -3,14 +3,14 @@ const mongoose = require("mongoose");
 const quantityItemSchema = new mongoose.Schema({
   po: { type: String, default: "" },
   itemName: { type: String, default: "" },
-  orderQty: { type: String, default: "" },
-  qtyPerCarton: { type: String, default: "" },
-  cartons: { type: String, default: "" },
-  packedBreakdown: { type: String, default: "" },
-  unpackedBreakdown: { type: String, default: "" },
-  unfinishedBreakdown: { type: String, default: "" },
-  sampleSizePacked: { type: String, default: "" },
-  sampleSizeUnpacked: { type: String, default: "" },
+  orderQty: { type: Number, default: 0 },
+  qtyPerCarton: { type: Number, default: 0 },
+  cartons: { type: Number, default: 0 },
+  packedBreakdown: { type: Number, default: 0 },
+  unpackedBreakdown: { type: Number, default: 0 },
+  unfinishedBreakdown: { type: Number, default: 0 },
+  sampleSizePacked: { type: Number, default: 0 },
+  sampleSizeUnpacked: { type: Number, default: 0 },
 }, { _id: false });
 
 const quantitySchema = new mongoose.Schema({
@@ -23,7 +23,7 @@ const quantitySchema = new mongoose.Schema({
   items: [quantityItemSchema],
   quantityResult: { type: String, default: "" },
   quantityRemark: { type: String, default: "" },
-  selectedCartonsCount: { type: String, default: "" },
+  selectedCartonsCount: { type: Number, default: 0 },
   cartonNo1: { type: String, default: "" },
   cartonNo2: { type: String, default: "" },
 }, { timestamps: true });

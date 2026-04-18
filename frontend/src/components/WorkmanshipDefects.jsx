@@ -137,7 +137,8 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
               </td>
               <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                 <input
-                  type="text"
+                  type="number"
+                  min="0"
                   name="acceptedCritical"
                   value={form.acceptedCritical || "0"}
                   onChange={handleChange}
@@ -146,7 +147,8 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
               </td>
               <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                 <input
-                  type="text"
+                  type="number"
+                  min="0"
                   name="totalFoundCritical"
                   value={form.totalFoundCritical || "0"}
                   onChange={handleChange}
@@ -176,6 +178,7 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
               <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                 <input
                   type="number"
+                  min="0"
                   name="acceptedMajor"
                   value={form.acceptedMajor || "0"}
                   onChange={handleChange}
@@ -185,6 +188,7 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
               <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                 <input
                   type="number"
+                  min="0"
                   name="totalFoundMajor"
                   value={form.totalFoundMajor || "0"}
                   onChange={handleChange}
@@ -213,7 +217,8 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
               </td>
               <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                 <input
-                  type="text"
+                  type="number"
+                  min="0"
                   name="acceptedMinor"
                   value={form.acceptedMinor || "0"}
                   onChange={handleChange}
@@ -222,7 +227,8 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
               </td>
               <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                 <input
-                  type="text"
+                  type="number"
+                  min="0"
                   name="totalFoundMinor"
                   value={form.totalFoundMinor || "0"}
                   onChange={handleChange}
@@ -292,6 +298,7 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
                 <td style={{ padding: "0px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                   <input
                     type="number"
+                    min="0"
                     value={defect.critical}
                     onChange={(e) => updateDefect(defect.id, "critical", e.target.value)}
                     style={{ width: "100%", padding: "12px 0", background: "transparent", color: colors.text, border: "none", textAlign: "center", outline: "none" }}
@@ -300,6 +307,7 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
                 <td style={{ padding: "0px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                   <input
                     type="number"
+                    min="0"
                     value={defect.major}
                     onChange={(e) => updateDefect(defect.id, "major", e.target.value)}
                     style={{ width: "100%", padding: "12px 0", background: "transparent", color: colors.text, border: "none", textAlign: "center", outline: "none" }}
@@ -308,6 +316,7 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
                 <td style={{ padding: "0px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                   <input
                     type="number"
+                    min="0"
                     value={defect.minor}
                     onChange={(e) => updateDefect(defect.id, "minor", e.target.value)}
                     style={{ width: "100%", padding: "12px 0", background: "transparent", color: colors.text, border: "none", textAlign: "center", outline: "none" }}
@@ -340,6 +349,7 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
               <td style={{ padding: "0px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                 <input
                   type="number"
+                  min="0"
                   name="totalFoundCritical"
                   value={form.totalFoundCritical || ""}
                   onChange={handleChange}
@@ -349,6 +359,7 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
               <td style={{ padding: "0px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                 <input
                   type="number"
+                  min="0"
                   name="totalFoundMajor"
                   value={form.totalFoundMajor || ""}
                   onChange={handleChange}
@@ -358,6 +369,7 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
               <td style={{ padding: "0px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                 <input
                   type="number"
+                  min="0"
                   name="totalFoundMinor"
                   value={form.totalFoundMinor || ""}
                   onChange={handleChange}
@@ -375,6 +387,7 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
               <td style={{ padding: "0px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                 <input
                   type="number"
+                  min="0"
                   name="acceptedCritical"
                   value={form.acceptedCritical || ""}
                   onChange={handleChange}
@@ -384,6 +397,7 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
               <td style={{ padding: "0px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                 <input
                   type="number"
+                  min="0"
                   name="acceptedMajor"
                   value={form.acceptedMajor || ""}
                   onChange={handleChange}
@@ -393,6 +407,7 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
               <td style={{ padding: "0px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
                 <input
                   type="number"
+                  min="0"
                   name="acceptedMinor"
                   value={form.acceptedMinor || ""}
                   onChange={handleChange}
