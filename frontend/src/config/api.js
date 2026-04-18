@@ -12,5 +12,6 @@ export const ENDPOINTS = {
     FORGOT_PASSWORD: `${API_BASE_URL}/api/auth/forgot-password`,
     RESET_PASSWORD: `${API_BASE_URL}/api/auth/reset-password`,
     ME: `${API_BASE_URL}/api/auth/me`,
-  }
+  },
+  HEALTH: `${API_BASE_URL}/`
 };

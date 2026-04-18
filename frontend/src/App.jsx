@@ -16,6 +16,23 @@ import { ENDPOINTS } from "./config/api";
 import { colors } from "./styles";
 import { compressImage, formatFileSize } from "./utils/imageCompression";
 
+// --- BACKEND KEEP-ALIVE ---
+function useBackendKeepAlive() {
+  useEffect(() => {
+    // Initial warmup ping
+    const ping = () => {
+      fetch(ENDPOINTS.HEALTH).catch(() => {});
+    };
+    
+    ping();
+    
+    // Ping every 14 minutes (Render sleeps after 15)
+    // Using 14 to be safe
+    const interval = setInterval(ping, 14 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+}
+
 // Auth Pages
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
@@ -124,6 +141,8 @@ const buildQuickFillItems = () => [
 ];
 
 function App() {
+  useBackendKeepAlive();
+
   // Load initial state from localStorage
   const [step, setStep] = useState(() => {
     const savedStep = localStorage.getItem("inspectionStep");
