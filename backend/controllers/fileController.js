@@ -32,7 +32,7 @@ exports.uploadFile = async (req, res) => {
  */
 exports.getFile = async (req, res) => {
   try {
-    const { key } = req.params;
+    const key = req.params[0]; // full path after /
     if (!key) {
       return res.status(400).json({ error: "File key is required" });
     }
