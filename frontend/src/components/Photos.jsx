@@ -175,10 +175,24 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
       }
 
       const data = await response.json();
-      if (data.description) {
-        setGroupDescription(data.description);
+      
+      if (data.descriptions && data.descriptions.length > 0) {
+        // Map descriptions to individual photos
+        const updatedPending = [...pendingFiles];
+        selected.slice(0, 5).forEach((p, idx) => {
+          const desc = data.descriptions[idx];
+          if (desc) {
+            const indexInPending = updatedPending.findIndex(item => item.id === p.id);
+            if (indexInPending !== -1) {
+              updatedPending[indexInPending].label = desc;
+            }
+          }
+        });
+        setPendingFiles(updatedPending);
+        setPendingPreviews([...updatedPending]);
+        setGroupDescription(`AI generated individual labels for ${Math.min(selected.length, 5)} photos.`);
       } else {
-        setGroupDescription("AI couldn't generate a description. Please type manually.");
+        setGroupDescription("AI couldn't generate descriptions. Please type manually.");
         setTimeout(() => setGroupDescription(""), 3000);
       }
     } catch (error) {

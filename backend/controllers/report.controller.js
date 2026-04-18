@@ -304,8 +304,18 @@ const analyzePhoto = async (req, res) => {
       return res.status(400).json({ error: "No images provided" });
     }
     const { analyzeVision } = require("../services/ai.service");
-    const description = await analyzeVision(images);
-    res.json({ description });
+    const aiResponse = await analyzeVision(images);
+    
+    // Parse the multi-description format: "Description 1: ... Description 2: ..."
+    const descriptions = aiResponse
+      .split(/Description \d+:/g)
+      .map(d => d.trim())
+      .filter(d => d.length > 0);
+
+    res.json({ 
+      description: descriptions[0] || "", // For backward compatibility
+      descriptions: descriptions 
+    });
   } catch (error) {
     console.error("Vision Controller Error:", error);
     res.status(500).json({ error: "Analysis Failed" });
