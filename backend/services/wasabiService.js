@@ -22,17 +22,20 @@ class WasabiService {
 
   /**
    * Uploads a file to Wasabi
-   * @param {Object} file - The file object from multer (diskStorage)
+   * @param {Object} file - The file object from multer (memoryStorage)
    * @returns {Promise<Object>} - Contains Location and Key
    */
   async uploadFile(file) {
-    const fileContent = fs.readFileSync(file.path);
+    if (!file || !file.buffer) {
+      throw new Error("File buffer is missing. Ensure file was uploaded correctly.");
+    }
+    
     const key = `${this.prefix}${Date.now()}-${file.originalname}`;
 
     const params = {
       Bucket: this.bucket,
       Key: key,
-      Body: fileContent,
+      Body: file.buffer,
       ContentType: file.mimetype,
     };
 

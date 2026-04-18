@@ -1,5 +1,4 @@
 const wasabiService = require("../services/wasabiService");
-const fs = require("fs");
 
 /**
  * Uploads a single file to Wasabi
@@ -11,11 +10,6 @@ exports.uploadFile = async (req, res) => {
     }
 
     const result = await wasabiService.uploadFile(req.file);
-
-    // Clean up local temp file
-    if (fs.existsSync(req.file.path)) {
-      fs.unlink(req.file.path, () => {});
-    }
 
     res.status(201).json({
       message: "File uploaded successfully",
@@ -55,19 +49,12 @@ exports.updateFile = async (req, res) => {
       return res.status(400).json({ error: "New file is required" });
     }
 
-    // 1. Delete old file if key is provided
     if (oldKey) {
       const cleanKey = wasabiService.extractKey(oldKey);
       await wasabiService.deleteFile(cleanKey);
     }
 
-    // 2. Upload new file
     const result = await wasabiService.uploadFile(req.file);
-
-    // 3. Clean up local temp file
-    if (fs.existsSync(req.file.path)) {
-      fs.unlink(req.file.path, () => {});
-    }
 
     res.json({
       message: "File updated successfully",
