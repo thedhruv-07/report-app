@@ -606,26 +606,8 @@ function createReportContent(data, uploadedFiles) {
   children.push(new Table({ width: { size: 100, type: "pct" }, rows: conclRows }));
   children.push(new Paragraph({ children: [] })); // Small gap
 
-  // Add Conclusion Photos (Inspector/Reviewer)
-  const conclusionPhotos = data.conclusionPhotos || [];
-  const reviewerPhotos = data.conclusionReviewerPhotos || [];
-  
-  if (conclusionPhotos.length > 0) {
-    children.push(new Paragraph({ 
-        children: [new TextRun({ text: "Conclusion Photos (Inspector Upload):", bold: true, size: 20 })],
-        spacing: { before: 200, after: 100 }
-    }));
-    children.push(createInlinePhotoGridTable(conclusionPhotos, { cellWidth: 230, cellHeight: 160 }));
-  }
-
-  if (reviewerPhotos.length > 0) {
-    children.push(new Paragraph({ 
-        children: [new TextRun({ text: "Conclusion Photos (Reviewer Upload):", bold: true, size: 20 })],
-        spacing: { before: 200, after: 100 }
-    }));
-    children.push(createInlinePhotoGridTable(reviewerPhotos, { cellWidth: 230, cellHeight: 160 }));
-  }
-
+  children.push(new Table({ width: { size: 100, type: "pct" }, rows: conclRows }));
+  children.push(new Paragraph({ children: [] })); // Small gap
 
   // Note Paragraph
   const noteText = "Note: 1. This report reflects our findings at the time and the place of inspection based on random samples selected. 2. This inspection was carried out to the best of our knowledge and abilities, and our responsibility is limited to the exercise of reasonable one. 3. This report does not relieve the sellers from their contractual obligations nor does it prejudice buyer's right for compensation for any apparent and/or hidden defects not detected during our inspection or occurring thereafter. 4. This report does not evidence shipment. 5. Our services are subject to the General Conditions of Service of Absolute Veritas, which is shown at our website and can be sent to you upon written request. 6. This report's inspection results only relate to the samples as (randomly picked) by our inspector. 7. This report is complete and its content may not be reproduced.";
@@ -850,21 +832,55 @@ function createReportContent(data, uploadedFiles) {
     new TableRow({ children: [ createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(blankIfEmpty(data.workmanshipRemark || "No critical workmanship issues observed."), { colSpan: 6, align: "left" }) ] }),
     new TableRow({ children: [ createQtyCell("Note:", { bold: true, shaded: true, align: "left" }), createQtyCell("A Defective is defined as a unit of product that contains one or more defects. A Defect is defined as any non-conformance of the inspected unit of product with specified requirements. A single defect is taken into account per each defective unit; only one most serious defect is taken into account per each defective unit.", { colSpan: 6, align: "left", size: 14 }) ] })
   ];
-  children.push(new Table({ width: { size: 100, type: "pct" }, rows: bRows }));
-
-  children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
-
-  // Defect Photos (Special request matching workmanshipPhotos array)
+  // Defect Photos (Now merged directly into the B table rows)
   if (Array.isArray(data.workmanshipPhotos) && data.workmanshipPhotos.length > 0) {
-      children.push(new Paragraph({ 
-          children: [new TextRun({ text: "Workmanship Defect Photos:", bold: true, size: 20, underline: {} })],
-          spacing: { before: 200, after: 100 }
-      }));
+      bRows.push(new TableRow({ children: [ new TableCell({ columnSpan: 7, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Workmanship Defect Photos:", bold: true })] })] }) ] }));
       
-      const wmPhotoGrid = createDefectPhotoGrid(data.workmanshipPhotos);
-      children.push(wmPhotoGrid);
-      children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
+      const photos = data.workmanshipPhotos;
+      for (let i = 0; i < photos.length; i += 2) {
+          const p1 = photos[i];
+          const p2 = photos[i+1];
+
+          // 1. Image Row
+          bRows.push(new TableRow({
+              children: [
+                  new TableCell({
+                      columnSpan: 3,
+                      borders: tableBorders(),
+                      children: [
+                          p1 && p1.preview ? new Paragraph({
+                              children: [new ImageRun({ data: Buffer.from(p1.preview.split(",")[1], "base64"), type: "png", transformation: { width: 340, height: 230 } })],
+                              alignment: "center",
+                              spacing: { before: 100, after: 100 }
+                          }) : new Paragraph({ children: [] })
+                      ]
+                  }),
+                  new TableCell({
+                      columnSpan: 4,
+                      borders: tableBorders(),
+                      children: [
+                          p2 && p2.preview ? new Paragraph({
+                              children: [new ImageRun({ data: Buffer.from(p2.preview.split(",")[1], "base64"), type: "png", transformation: { width: 340, height: 230 } })],
+                              alignment: "center",
+                              spacing: { before: 100, after: 100 }
+                          }) : new Paragraph({ children: [] })
+                      ]
+                  })
+              ]
+          }));
+
+          // 2. Description Row
+          bRows.push(new TableRow({
+              children: [
+                  new TableCell({ columnSpan: 3, borders: tableBorders(), shading: { fill: "F9F9F9" }, children: [new Paragraph({ alignment: "center", children: [new TextRun({ text: p1?.description || "Defect details", bold: true, size: 18 })] })] }),
+                  new TableCell({ columnSpan: 4, borders: tableBorders(), shading: { fill: "F9F9F9" }, children: [new Paragraph({ alignment: "center", children: [new TextRun({ text: p2?.description || (p2 ? "Defect details" : ""), bold: true, size: 18 })] })] }),
+              ]
+          }));
+      }
   }
+
+  children.push(new Table({ width: { size: 100, type: "pct" }, rows: bRows }));
+  children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
   children.push(new Paragraph({ children: [new PageBreak()] }));
 
   // C. ON-SITE TESTS (Separated table with exact colors)

@@ -437,18 +437,18 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
         <div
           style={{
             marginBottom: "24px",
-            border: `2px solid ${colors.primary}`,
+            border: `2px solid ${colors.warning}`,
             borderRadius: "10px",
             overflow: "hidden",
             background: colors.surface,
-            boxShadow: "0 4px 15px rgba(59,130,246,0.1)",
+            boxShadow: "0 4px 15px rgba(245, 158, 11, 0.1)",
           }}
         >
           {/* Staging Header */}
           <div
             style={{
               padding: "14px 16px",
-              background: `linear-gradient(135deg, ${colors.primary}15, ${colors.primary}08)`,
+              background: `linear-gradient(135deg, ${colors.warning}15, ${colors.warning}08)`,
               borderBottom: `1px solid ${colors.border}`,
               display: "flex",
               justifyContent: "space-between",
@@ -459,7 +459,7 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
           >
             <div>
               <span style={{ fontWeight: "700", fontSize: "14px", color: colors.text }}>
-                📋 Staging Area
+                ⚠️ Photos Without Description
               </span>
               <span style={{ color: colors.textMuted, fontSize: "12px", marginLeft: "8px" }}>
                 {pendingFiles.length} photo{pendingFiles.length !== 1 ? "s" : ""} uploaded •{" "}
@@ -498,19 +498,24 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
                 Deselect All
               </button>
               <button
-                onClick={clearAllPending}
+                onClick={() => {
+                  if (window.confirm("Are you sure you want to delete all staged photos?")) {
+                    clearAllPending();
+                  }
+                }}
                 style={{
-                  padding: "5px 10px",
+                  padding: "5px 12px",
                   background: colors.danger,
                   color: "#fff",
                   border: "none",
                   borderRadius: "6px",
                   fontSize: "11px",
-                  fontWeight: "600",
+                  fontWeight: "700",
                   cursor: "pointer",
+                  boxShadow: "0 2px 4px rgba(239, 68, 68, 0.2)"
                 }}
               >
-                Clear All
+                Delete All
               </button>
             </div>
           </div>
