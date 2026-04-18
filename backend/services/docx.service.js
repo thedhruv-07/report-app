@@ -1210,42 +1210,51 @@ function resolveResultWM(found, accepted) {
     return f <= a ? "Pass" : "Fail";
 }
 
-// HELPER: Create Workmanship Defect Photo Grid
+// HELPER: Create Workmanship Defect Photo Grid (Matched to high-fidelity grid)
 function createDefectPhotoGrid(photos) {
     const rows = [];
     for (let i = 0; i < photos.length; i += 2) {
+        const p1 = photos[i];
+        const p2 = photos[i+1];
+
+        // 1. Image Row
         rows.push(new TableRow({
             children: [
-                createDefectPhotoCell(photos[i]),
-                photos[i+1] ? createDefectPhotoCell(photos[i+1]) : new TableCell({ children: [new Paragraph({ children: [] })] })
+                new TableCell({
+                    borders: tableBorders(),
+                    children: [
+                        p1 && p1.preview ? new Paragraph({
+                            children: [new ImageRun({ data: Buffer.from(p1.preview.split(",")[1], "base64"), type: "png", transformation: { width: 340, height: 230 } })],
+                            alignment: "center",
+                            spacing: { before: 100, after: 100 }
+                        }) : new Paragraph({ children: [] })
+                    ]
+                }),
+                new TableCell({
+                    borders: tableBorders(),
+                    children: [
+                        p2 && p2.preview ? new Paragraph({
+                            children: [new ImageRun({ data: Buffer.from(p2.preview.split(",")[1], "base64"), type: "png", transformation: { width: 340, height: 230 } })],
+                            alignment: "center",
+                            spacing: { before: 100, after: 100 }
+                        }) : new Paragraph({ children: [] })
+                    ]
+                })
+            ]
+        }));
+
+        // 2. Description Row
+        rows.push(new TableRow({
+            children: [
+                p1 ? createQtyCell(p1.description || "Defect details", { bold: true, shaded: true }) : new TableCell({ children: [] }),
+                p2 ? createQtyCell(p2.description || "Defect details", { bold: true, shaded: true }) : new TableCell({ children: [] }),
             ]
         }));
     }
     return new Table({ width: { size: 100, type: "pct" }, rows });
 }
 
-function createDefectPhotoCell(photo) {
-    if (!photo || !photo.preview) return new TableCell({ children: [new Paragraph({ children: [] })] });
-    try {
-        const base64 = photo.preview.split(",")[1];
-        return new TableCell({
-            borders: tableBorders(),
-            children: [
-                new Paragraph({
-                    children: [new ImageRun({ data: Buffer.from(base64, "base64"), type: "png", transformation: { width: 250, height: 180 } })],
-                    alignment: "center"
-                }),
-                new Paragraph({
-                    children: [new TextRun({ text: photo.description || "Defect photo", size: 14 })],
-                    alignment: "center",
-                    spacing: { before: 100 }
-                })
-            ]
-        });
-    } catch (e) {
-        return new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "[Defect Photo Error]" })] })] });
-    }
-}
+
 
 function getPhotoContent(photoData, uploadedFiles) {
   const preview = typeof photoData === "string" ? photoData : (uploadedFiles[0]?.path ? `data:image/png;base64,${fs.readFileSync(uploadedFiles[0].path).toString("base64")}` : "");
