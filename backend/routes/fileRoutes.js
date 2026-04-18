@@ -9,7 +9,7 @@ router.post("/upload", authMiddleware, upload.single("file"), fileController.upl
 
 // GET /api/files/:key - Get a signed URL for a file
 // Note: Key might contain '/' so use a wildcard or handle in controller
-router.get("/*", authMiddleware, fileController.getFile);
+router.get("/:key", authMiddleware, fileController.getFile);
 
 // PUT /api/files/update - Replace a file
 router.put("/update", authMiddleware, upload.single("file"), fileController.updateFile);
