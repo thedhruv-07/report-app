@@ -606,9 +606,6 @@ function createReportContent(data, uploadedFiles) {
   children.push(new Table({ width: { size: 100, type: "pct" }, rows: conclRows }));
   children.push(new Paragraph({ children: [] })); // Small gap
 
-  children.push(new Table({ width: { size: 100, type: "pct" }, rows: conclRows }));
-  children.push(new Paragraph({ children: [] })); // Small gap
-
   // Note Paragraph
   const noteText = "Note: 1. This report reflects our findings at the time and the place of inspection based on random samples selected. 2. This inspection was carried out to the best of our knowledge and abilities, and our responsibility is limited to the exercise of reasonable one. 3. This report does not relieve the sellers from their contractual obligations nor does it prejudice buyer's right for compensation for any apparent and/or hidden defects not detected during our inspection or occurring thereafter. 4. This report does not evidence shipment. 5. Our services are subject to the General Conditions of Service of Absolute Veritas, which is shown at our website and can be sent to you upon written request. 6. This report's inspection results only relate to the samples as (randomly picked) by our inspector. 7. This report is complete and its content may not be reproduced.";
   children.push(new Paragraph({ 
@@ -1195,13 +1192,7 @@ function createReportContent(data, uploadedFiles) {
               const p1 = groupPhotos[i];
               const p2 = groupPhotos[i + 1];
 
-              // Description Row
-              photoRows.push(new TableRow({
-                  children: [
-                      createQtyCell(group.description || "-", { bold: true, shaded: true }),
-                      createQtyCell(p2 ? (group.description || "-") : "", { bold: true, shaded: true }),
-                  ]
-              }));
+              // We removed the Description Row since individual labels are rendered inside createPhotoCell directly under the image.
 
               // Image Row
               photoRows.push(new TableRow({

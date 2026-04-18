@@ -681,7 +681,7 @@ function App() {
         .filter(Boolean)
         .map((p) => {
           groupedIds.add(String(p.id));
-          return { id: String(p.id), preview: p.preview };
+          return { id: String(p.id), preview: p.preview, label: p.label || "" };
         });
       return {
         description: group.description || "",
@@ -694,17 +694,16 @@ function App() {
     if (ungrouped.length > 0) {
       reportPhotoGroups.push({
         description: "",
-        photos: ungrouped.map((p) => ({ id: String(p.id), preview: p.preview })),
+        photos: ungrouped.map((p) => ({ id: String(p.id), preview: p.preview, label: p.label || "" })),
       });
     }
 
     // Also send flat reportPhotos for backward-compat with existing getPhotoGridParagraphs
     const reportPhotos = validPhotos.map((p) => {
-      // Find group description for this photo
       const group = (photoGroups || []).find((g) => g.photoIds.includes(p.id));
       return {
         id: String(p.id || ""),
-        label: group ? (group.description || "") : (p.label || ""),
+        label: p.label || (group ? (group.description || "") : ""),
         preview: p.preview,
       };
     });
