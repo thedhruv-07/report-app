@@ -102,7 +102,7 @@ function createHeaderValueCell(text) {
   });
 }
 
-function createReportContent(data, uploadedFiles) {
+async function createReportContent(data, uploadedFiles) {
   const children = [];
   
   // I. GENERAL INFORMATION & Pre-Title (Unified Table)
@@ -1179,28 +1179,24 @@ function createReportContent(data, uploadedFiles) {
         new TableRow({ children: [ new TableCell({ columnSpan: 2, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "H. PHOTOS", bold: true, size: 22, color: "1F4E79" })] })] }) ] })
       ];
 
-      photoGroups.forEach(group => {
-          // In the payload from the frontend, group.photoIds is the array of IDs, 
-          // but we need the actual photo objects with previews.
-          // Depending on how the frontend sends it, we might need to map them.
-          // Based on your current structure, we expect group.photos to be populated.
+      for (const group of photoGroups) {
           const groupPhotos = (group.photos || []).filter(p => p.preview);
-          if (groupPhotos.length === 0) return;
+          if (groupPhotos.length === 0) continue;
 
           // Chunk photos by 2 for the grid
           for (let i = 0; i < groupPhotos.length; i += 2) {
               const p1 = groupPhotos[i];
               const p2 = groupPhotos[i + 1];
 
-              // Image Row (Photos displayed first)
+              // Image Row
               photoRows.push(new TableRow({
                   children: [
-                      createPhotoCell(p1),
-                      p2 ? createPhotoCell(p2) : new TableCell({ children: [new Paragraph({ children: [] })], borders: tableBorders() })
+                      await createPhotoCell(p1),
+                      p2 ? await createPhotoCell(p2) : new TableCell({ children: [new Paragraph({ children: [] })], borders: tableBorders() })
                   ]
               }));
 
-              // Description Row (Labels displayed directly beneath the photos)
+              // Description Row
               photoRows.push(new TableRow({
                   children: [
                       createQtyCell(p1.label || "No Description", { shaded: true, align: "center", fontSize: 18 }),
@@ -1208,7 +1204,7 @@ function createReportContent(data, uploadedFiles) {
                   ]
               }));
           }
-      });
+      }
 
       children.push(new Table({ width: { size: 100, type: "pct" }, rows: photoRows }));
   }
@@ -1269,6 +1265,50 @@ function createDefectPhotoGrid(photos) {
 
 
 
+const wasabiService = require("./wasabiService");
+
+/**
+ * Returns a Buffer of the image. 
+ * Prioritizes cloud storage (Wasabi) if a key is present.
+ */
+async function getImageBuffer(photoData) {
+  if (!photoData) return null;
+
+  // 1. Try Wasabi Cloud Storage first
+  if (photoData.wasabiKey) {
+    try {
+      console.log(`☁️ Fetching image from Wasabi: ${photoData.wasabiKey}`);
+      const params = {
+        Bucket: wasabiService.bucket,
+        Key: photoData.wasabiKey,
+      };
+      
+      const { Body } = await wasabiService.s3.send(new (require("@aws-sdk/client-s3").GetObjectCommand)(params));
+      
+      // Convert stream to Buffer
+      const chunks = [];
+      for await (const chunk of Body) {
+        chunks.push(chunk);
+      }
+      return Buffer.concat(chunks);
+    } catch (error) {
+      console.warn(`Wasabi fetch failed for ${photoData.wasabiKey}, falling back to local preview.`, error.message);
+    }
+  }
+
+  // 2. Fallback to local base64 preview
+  if (photoData.preview && typeof photoData.preview === "string" && photoData.preview.includes(",")) {
+    try {
+      const base64 = photoData.preview.split(",")[1];
+      return Buffer.from(base64, "base64");
+    } catch (e) {
+      console.warn("Failed to parse local base64 preview.");
+    }
+  }
+
+  return null;
+}
+
 function getPhotoContent(photoData, uploadedFiles) {
   const preview = typeof photoData === "string" ? photoData : (uploadedFiles[0]?.path ? `data:image/png;base64,${fs.readFileSync(uploadedFiles[0].path).toString("base64")}` : "");
   if (!preview.startsWith("data:image")) return [new Paragraph({ children: [new TextRun({ text: "[Photo area]" })] })];
@@ -1302,20 +1342,22 @@ function getGroupedPhotoGridParagraphs(groups) {
   return children;
 }
 
-function createPhotoCell(p) {
+async function createPhotoCell(p) {
   try {
-    const base64 = p.preview.split(",")[1];
+    const imgBuffer = await getImageBuffer(p);
+    if (!imgBuffer) throw new Error("No image data");
+
     return new TableCell({
       borders: tableBorders(),
       children: [
         new Paragraph({ 
-            children: [new ImageRun({ data: Buffer.from(base64, "base64"), type: "png", transformation: { width: 340, height: 230 } })], 
+            children: [new ImageRun({ data: imgBuffer, type: "png", transformation: { width: 340, height: 230 } })], 
             alignment: "center",
             spacing: { before: 100, after: 100 }
         })
       ]
     });
-  } catch (e) { return new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Error" })] })] }); }
+  } catch (e) { return new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Error loading photo" })] })] }); }
 }
 
 function createInlinePhotoGridTable(photos, opts = { cellWidth: 320, cellHeight: 220 }) {

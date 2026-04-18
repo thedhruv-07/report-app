@@ -10,6 +10,8 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
   const [pendingPreviews, setPendingPreviews] = useState([]); // previews of staged files
   const [selectedPending, setSelectedPending] = useState(new Set()); // toggled for selection
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [groupDescription, setGroupDescription] = useState("");
 
   // ─── LOCAL STORAGE PERSISTENCE ──────────────────────────────────────────────
@@ -208,22 +210,76 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
     }
   };
 
-  // Add selected pending photos as a group with description
-  const addSelectedAsGroup = () => {
+  // Add selected pending photos as a group with description (Integrated with Wasabi)
+  const addSelectedAsGroup = async () => {
     const selected = pendingFiles.filter((p) => selectedPending.has(p.id));
     if (selected.length === 0) return;
 
-    const description = groupDescription.trim() || "";
+    setIsUploading(true);
+    setUploadProgress({ current: 0, total: selected.length });
 
-    // Pass full objects to preserve labels
-    onPhotoFileChange(selected, description);
+    const uploadedPhotos = [];
+    const token = localStorage.getItem("token") || localStorage.getItem("reportToken");
 
-    // Remove the staged files that were added
-    const remaining = pendingFiles.filter((p) => !selectedPending.has(p.id));
-    setPendingFiles(remaining);
-    setPendingPreviews(remaining);
-    setSelectedPending(new Set());
-    setGroupDescription("");
+    try {
+      for (let i = 0; i < selected.length; i++) {
+        const photo = selected[i];
+        
+        // Only upload if it has a File object and hasn't been uploaded yet
+        if (photo.file && !photo.wasabiKey) {
+          const formData = new FormData();
+          formData.append("file", photo.file);
+
+          const response = await fetch(ENDPOINTS.FILES.UPLOAD, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${token}`
+            },
+            body: formData
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            uploadedPhotos.push({
+              ...photo,
+              wasabiKey: data.key,
+              wasabiUrl: data.url
+            });
+          } else {
+            console.warn(`Failed to upload photo ${i+1} to cloud. Falling back to local.`);
+            uploadedPhotos.push(photo);
+          }
+        } else {
+          uploadedPhotos.push(photo);
+        }
+        
+        setUploadProgress(prev => ({ ...prev, current: i + 1 }));
+      }
+
+      const description = groupDescription.trim() || "";
+
+      // Pass enriched objects to the report
+      onPhotoFileChange(uploadedPhotos, description);
+
+      // Remove the staged files that were added successfully
+      const remaining = pendingFiles.filter((p) => !selectedPending.has(p.id));
+      setPendingFiles(remaining);
+      setPendingPreviews(remaining);
+      setSelectedPending(new Set());
+      setGroupDescription("");
+    } catch (error) {
+      console.error("Cloud Upload Failed:", error);
+      alert("Failed to upload some photos to the cloud. They will still be added locally.");
+      
+      // Fallback: Add them locally anyway to avoid hindering the user
+      onPhotoFileChange(selected, groupDescription.trim());
+      const remaining = pendingFiles.filter((p) => !selectedPending.has(p.id));
+      setPendingFiles(remaining);
+      setPendingPreviews(remaining);
+      setSelectedPending(new Set());
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   // Remove a pending staged photo
@@ -454,6 +510,53 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
             boxShadow: "0 4px 15px rgba(245, 158, 11, 0.1)",
           }}
         >
+          {/* Uploading Overlay */}
+      {isUploading && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(255, 255, 255, 0.8)",
+          zIndex: 9999,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center"
+        }}>
+          <div style={{
+            padding: "30px",
+            backgroundColor: "#fff",
+            borderRadius: "12px",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+            textAlign: "center"
+          }}>
+            <div className="spinner" style={{ marginBottom: "15px" }}></div>
+            <h3 style={{ margin: "0 0 10px 0", color: "#1F4E79" }}>Uploading to Cloud...</h3>
+            <p style={{ margin: 0, color: "#666" }}>
+              Processing photo {uploadProgress.current} of {uploadProgress.total}
+            </p>
+            <div style={{
+              width: "200px",
+              height: "6px",
+              backgroundColor: "#eee",
+              borderRadius: "3px",
+              marginTop: "15px",
+              overflow: "hidden"
+            }}>
+              <div style={{
+                width: `${(uploadProgress.current / uploadProgress.total) * 100}%`,
+                height: "100%",
+                backgroundColor: colors.primary,
+                transition: "width 0.3s ease"
+              }}></div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Analyzing Overlay */}
           {/* Staging Header */}
           <div
             style={{

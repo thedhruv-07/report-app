@@ -13,5 +13,11 @@ export const ENDPOINTS = {
     RESET_PASSWORD: `${API_BASE_URL}/api/auth/reset-password`,
     ME: `${API_BASE_URL}/api/auth/me`,
   },
+  FILES: {
+    UPLOAD: `${API_BASE_URL}/api/files/upload`,
+    GET: (key) => `${API_BASE_URL}/api/files/${encodeURIComponent(key)}`,
+    UPDATE: `${API_BASE_URL}/api/files/update`,
+    DELETE: `${API_BASE_URL}/api/files/delete`,
+  },
   HEALTH: `${API_BASE_URL}/`
 };

@@ -3,6 +3,7 @@ const cors = require("cors");
 const path = require("path");
 const reportRoutes = require("./routes/report.routes");
 const authRoutes = require("./routes/auth.routes");
+const fileRoutes = require("./routes/fileRoutes");
 
 const app = express();
 
@@ -22,7 +23,8 @@ app.get("/", (req, res) => {
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/", reportRoutes);
+app.use("/api/files", fileRoutes);
+app.use("/api/reports", reportRoutes);
 
 // 404 handler for API
 app.use((req, res) => {

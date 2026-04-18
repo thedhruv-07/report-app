@@ -169,7 +169,7 @@ const generateReport = async (req, res) => {
     // Non-blocking learning
     try { learnFromReport(data); } catch (e) { console.error("Learning failed:", e); }
 
-    const reportContent = createReportContent(data, req.files || []);
+    const reportContent = await createReportContent(data, req.files || []);
     
     const doc = new Document({
       features: { updateFields: false },
