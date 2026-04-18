@@ -1192,13 +1192,19 @@ function createReportContent(data, uploadedFiles) {
               const p1 = groupPhotos[i];
               const p2 = groupPhotos[i + 1];
 
-              // We removed the Description Row since individual labels are rendered inside createPhotoCell directly under the image.
-
-              // Image Row
+              // Image Row (Photos displayed first)
               photoRows.push(new TableRow({
                   children: [
                       createPhotoCell(p1),
                       p2 ? createPhotoCell(p2) : new TableCell({ children: [new Paragraph({ children: [] })], borders: tableBorders() })
+                  ]
+              }));
+
+              // Description Row (Labels displayed directly beneath the photos)
+              photoRows.push(new TableRow({
+                  children: [
+                      createQtyCell(p1.label || "No Description", { shaded: true, align: "center", fontSize: 18 }),
+                      p2 ? createQtyCell(p2.label || "No Description", { shaded: true, align: "center", fontSize: 18 }) : new TableCell({ children: [], borders: tableBorders() }),
                   ]
               }));
           }
@@ -1306,11 +1312,6 @@ function createPhotoCell(p) {
             children: [new ImageRun({ data: Buffer.from(base64, "base64"), type: "png", transformation: { width: 340, height: 230 } })], 
             alignment: "center",
             spacing: { before: 100, after: 100 }
-        }),
-        new Paragraph({ 
-            children: [new TextRun({ text: sanitizeDocxText(p.label || ""), size: 18 })], 
-            alignment: "center",
-            spacing: { after: 100 }
         })
       ]
     });
