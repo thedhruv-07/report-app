@@ -564,9 +564,43 @@ function createReportContent(data, uploadedFiles) {
       })
     ]}),
     new TableRow({ children: [ new TableCell({ columnSpan: 2, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Inspector & Report Reviewer:", bold: true })] })] }) ] }),
+    
+    // Photo Row
     new TableRow({ children: [
-        new TableCell({ borders: tableBorders(), children: [new Paragraph({ alignment: "center", spacing: { before: 800 }, children: [new TextRun({ text: "Inspector(s): " + sanitizeDocxText(data.inspector || "Ronnie Zhu").replace("Inspector: ", ""), size: 18 })] })] }),
-        new TableCell({ borders: tableBorders(), children: [new Paragraph({ alignment: "center", spacing: { before: 800 }, children: [new TextRun({ text: "Report Reviewer: " + sanitizeDocxText(data.reportReviewer || "Helen").replace("Report Reviewer: ", ""), size: 18 })] })] }),
+        new TableCell({ 
+            borders: tableBorders(), 
+            children: data.conclusionPhotos?.[0] ? [
+                new Paragraph({ 
+                    alignment: "center", 
+                    children: [new ImageRun({ 
+                        data: Buffer.from(data.conclusionPhotos[0].preview.split(",")[1], "base64"), 
+                        type: "png", 
+                        transformation: { width: 220, height: 160 } 
+                    })],
+                    spacing: { before: 100, after: 100 }
+                })
+            ] : [new Paragraph({ alignment: "center", children: [new TextRun({ text: "No photo uploaded", size: 14, color: "888888" })], spacing: { before: 400, after: 400 } })]
+        }),
+        new TableCell({ 
+            borders: tableBorders(), 
+            children: data.conclusionReviewerPhotos?.[0] ? [
+                new Paragraph({ 
+                    alignment: "center", 
+                    children: [new ImageRun({ 
+                        data: Buffer.from(data.conclusionReviewerPhotos[0].preview.split(",")[1], "base64"), 
+                        type: "png", 
+                        transformation: { width: 220, height: 160 } 
+                    })],
+                    spacing: { before: 100, after: 100 }
+                })
+            ] : [new Paragraph({ alignment: "center", children: [new TextRun({ text: "No photo uploaded", size: 14, color: "888888" })], spacing: { before: 400, after: 400 } })]
+        }),
+    ]}),
+
+    // Label Row
+    new TableRow({ children: [
+        new TableCell({ borders: tableBorders(), shading: { fill: "F9F9F9" }, children: [new Paragraph({ alignment: "center", children: [new TextRun({ text: "Inspector(s): " + sanitizeDocxText(data.inspector || "-").replace("Inspector: ", ""), size: 18 })] })] }),
+        new TableCell({ borders: tableBorders(), shading: { fill: "F9F9F9" }, children: [new Paragraph({ alignment: "center", children: [new TextRun({ text: "Report Reviewer: " + sanitizeDocxText(data.reportReviewer || "-").replace("Report Reviewer: ", ""), size: 18 })] })] }),
     ]})
   ];
   children.push(new Table({ width: { size: 100, type: "pct" }, rows: conclRows }));

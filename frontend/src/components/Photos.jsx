@@ -210,9 +210,8 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
 
     const description = groupDescription.trim() || "";
 
-    // Upload the items through the parent handler (passing p itself if File is missing)
-    const itemsToUpload = selected.map((p) => p.file || p);
-    onPhotoFileChange(itemsToUpload, description);
+    // Pass full objects to preserve labels
+    onPhotoFileChange(selected, description);
 
     // Remove the staged files that were added
     const remaining = pendingFiles.filter((p) => !selectedPending.has(p.id));

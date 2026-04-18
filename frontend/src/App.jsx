@@ -149,6 +149,8 @@ function App() {
     return savedStep ? parseInt(savedStep) : 1;
   });
 
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
   const [form, setForm] = useState(() => {
     const savedForm = localStorage.getItem("inspectionForm");
     const parsedForm = safeJsonParse(savedForm, {});
@@ -239,13 +241,16 @@ function App() {
   };
 
   const handleLogout = () => {
-    if (window.confirm("Are you sure you want to log out?")) {
-      setUser(null);
-      setToken("");
-      localStorage.removeItem("reportUser");
-      localStorage.removeItem("reportToken");
-      setAuthPage("login");
-    }
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
+    setUser(null);
+    setToken("");
+    localStorage.removeItem("reportUser");
+    localStorage.removeItem("reportToken");
+    setAuthPage("login");
+    setShowLogoutModal(false);
   };
   // ────────────────────────────────────────────────────────────────────────────
 
@@ -479,7 +484,7 @@ function App() {
           ...prevPhotos,
           {
             id: item.id,
-            label: description,
+            label: item.label || description,
             file: null,
             preview: item.preview,
             originalSize: item.size || 0,
@@ -501,7 +506,7 @@ function App() {
           ...prevPhotos,
           { 
             id: uniqueId, 
-            label: description, 
+            label: item.label || description, 
             file: result.file, 
             preview: result.preview,
             originalSize: result.originalSize,
@@ -518,7 +523,7 @@ function App() {
               ...prevPhotos,
               { 
                 id: uniqueId, 
-                label: description, 
+                label: item.label || description, 
                 file: file, 
                 preview: reader.result,
                 originalSize: file.size,
@@ -1041,6 +1046,95 @@ function App() {
         
         </div>
       </div>
+
+      {/* Premium Logout Modal */}
+      {showLogoutModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0, 0, 0, 0.6)",
+          backdropFilter: "blur(8px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 10000,
+          animation: "fadeIn 0.3s ease-out"
+        }}>
+          <div style={{
+            width: "90%",
+            maxWidth: "400px",
+            background: colors.surface,
+            borderRadius: "20px",
+            padding: "32px",
+            boxShadow: "0 20px 40px rgba(0, 0, 0, 0.4)",
+            border: `1px solid ${colors.border}`,
+            textAlign: "center"
+          }}>
+            <div style={{
+              width: "60px",
+              height: "60px",
+              background: "rgba(239, 68, 68, 0.1)",
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 20px",
+              color: colors.danger,
+              fontSize: "24px"
+            }}>
+              🚪
+            </div>
+            <h3 style={{ fontSize: "20px", fontWeight: "700", color: colors.header, marginBottom: "12px" }}>
+              Confirm Logout
+            </h3>
+            <p style={{ fontSize: "14px", color: colors.textMuted, marginBottom: "32px", lineHeight: "1.5" }}>
+              Are you sure you want to log out? Your current session and unsaved changes will be lost.
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                style={{
+                  padding: "12px",
+                  borderRadius: "12px",
+                  border: `1px solid ${colors.border}`,
+                  background: colors.surfaceAlt,
+                  color: colors.text,
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmLogout}
+                style={{
+                  padding: "12px",
+                  borderRadius: "12px",
+                  border: "none",
+                  background: colors.danger,
+                  color: "#fff",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  boxShadow: "0 4px 12px rgba(239, 68, 68, 0.3)",
+                  transition: "all 0.2s"
+                }}
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+          <style>{`
+            @keyframes fadeIn {
+              from { opacity: 0; transform: scale(0.95); }
+              to { opacity: 1; transform: scale(1); }
+            }
+          `}</style>
+        </div>
+      )}
     </div>
   );
 }
