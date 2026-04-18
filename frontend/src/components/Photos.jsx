@@ -847,7 +847,7 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
                             fontStyle: group.description ? "normal" : "italic",
                           }}
                         >
-                          {group.description || "No description"}
+                          {group.description || `Photo Batch ${gIdx + 1}`}
                         </div>
                         <div style={{ fontSize: "11px", color: colors.textMuted, marginTop: "2px" }}>
                           {groupPhotos.length} photo{groupPhotos.length !== 1 ? "s" : ""}
@@ -952,6 +952,23 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
                       </div>
 
                       <div style={{ padding: "8px" }}>
+                        {/* Individual Photo Label */}
+                        <div
+                          style={{
+                            fontSize: "11px",
+                            color: photo.label ? colors.text : colors.textMuted,
+                            marginBottom: "8px",
+                            lineHeight: "1.3",
+                            fontStyle: photo.label ? "normal" : "italic",
+                            display: "-webkit-box",
+                            WebkitLineClamp: "3",
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {photo.label || "No individual label"}
+                        </div>
+
                         {/* File Size Info */}
                         {photo.compressedSize && (
                           <div
