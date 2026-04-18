@@ -150,8 +150,7 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
 
     try {
       // "Use less tokens": Compress to small size (~20KB) for AI analysis
-      // Handle cases where p.file is missing (restored from localStorage)
-      const images = await Promise.all(
+      const compressedImages = await Promise.all(
         selected.map(async p => {
           if (p.file) {
             const res = await compressImage(p.file, 20000);
@@ -161,43 +160,49 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
         })
       );
 
-      const response = await fetch(ENDPOINTS.AI_DESCRIBE, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("token") || localStorage.getItem("reportToken")}`
-        },
-        body: JSON.stringify({ images })
-      });
+      // Process in batches of 4 to prevent API timeouts or payload limits
+      const batchSize = 4;
+      const updatedPending = [...pendingFiles];
 
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.status}`);
-      }
+      for (let i = 0; i < compressedImages.length; i += batchSize) {
+        const batchImages = compressedImages.slice(i, i + batchSize);
+        const batchSelected = selected.slice(i, i + batchSize);
 
-      const data = await response.json();
-      
-      if (data.descriptions && data.descriptions.length > 0) {
-        // Map descriptions to individual photos
-        const updatedPending = [...pendingFiles];
-        selected.forEach((p, idx) => {
-          const desc = data.descriptions[idx];
-          if (desc) {
-            const indexInPending = updatedPending.findIndex(item => item.id === p.id);
-            if (indexInPending !== -1) {
-              updatedPending[indexInPending].label = desc;
-            }
+        try {
+          const response = await fetch(ENDPOINTS.AI_DESCRIBE, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${localStorage.getItem("token") || localStorage.getItem("reportToken")}`
+            },
+            body: JSON.stringify({ images: batchImages })
+          });
+
+          if (!response.ok) throw new Error(`Server error: ${response.status}`);
+
+          const data = await response.json();
+          if (data.descriptions && data.descriptions.length > 0) {
+            // Update UI incrementally batch by batch
+            batchSelected.forEach((p, idx) => {
+              const desc = data.descriptions[idx];
+              if (desc) {
+                const indexInPending = updatedPending.findIndex(item => item.id === p.id);
+                if (indexInPending !== -1) {
+                  updatedPending[indexInPending].label = desc;
+                }
+              }
+            });
+            setPendingFiles([...updatedPending]);
+            setPendingPreviews([...updatedPending]);
           }
-        });
-        setPendingFiles(updatedPending);
-        setPendingPreviews([...updatedPending]);
-        setGroupDescription(""); // Do not use common description
-      } else {
-        setGroupDescription("AI couldn't generate descriptions. Please type manually.");
-        setTimeout(() => setGroupDescription(""), 3000);
+        } catch (batchErr) {
+          console.warn(`AI Analysis Batch ${i/batchSize + 1} Failed:`, batchErr);
+        }
       }
+      setGroupDescription(""); // Do not use common description
+
     } catch (error) {
       console.error("AI Analysis Failed:", error);
-      setGroupDescription("");
     } finally {
       setIsAnalyzing(false);
     }

@@ -495,9 +495,9 @@ function App() {
         continue;
       }
 
-      // Otherwise it's a new File object
-      const file = item;
-      const uniqueId = `${Date.now()}_${Math.random()}_${index}`;
+      // Otherwise extract the File object (it might be nested if coming from Staging Area)
+      const file = item.file || item;
+      const uniqueId = item.id || `${Date.now()}_${Math.random()}_${index}`;
       photoIds.push(uniqueId);
       
       try {
