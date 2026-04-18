@@ -152,7 +152,7 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
       // "Use less tokens": Compress to small size (~20KB) for AI analysis
       // Handle cases where p.file is missing (restored from localStorage)
       const images = await Promise.all(
-        selected.slice(0, 5).map(async p => {
+        selected.map(async p => {
           if (p.file) {
             const res = await compressImage(p.file, 20000);
             return res.preview;
@@ -179,7 +179,7 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
       if (data.descriptions && data.descriptions.length > 0) {
         // Map descriptions to individual photos
         const updatedPending = [...pendingFiles];
-        selected.slice(0, 5).forEach((p, idx) => {
+        selected.forEach((p, idx) => {
           const desc = data.descriptions[idx];
           if (desc) {
             const indexInPending = updatedPending.findIndex(item => item.id === p.id);
@@ -190,7 +190,7 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
         });
         setPendingFiles(updatedPending);
         setPendingPreviews([...updatedPending]);
-        setGroupDescription(`AI generated individual labels for ${Math.min(selected.length, 5)} photos.`);
+        setGroupDescription(""); // Do not use common description
       } else {
         setGroupDescription("AI couldn't generate descriptions. Please type manually.");
         setTimeout(() => setGroupDescription(""), 3000);
@@ -238,6 +238,11 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
     setPendingPreviews([]);
     setSelectedPending(new Set());
     setGroupDescription("");
+  };
+
+  // Update individual pending label
+  const updatePendingLabel = (id, label) => {
+    setPendingFiles(prev => prev.map(p => p.id === id ? { ...p, label } : p));
   };
 
   // Start editing a group description
@@ -620,7 +625,7 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
                   </div>
                   <div
                     style={{
-                      padding: "5px 8px",
+                      padding: "5px 8px 2px",
                       fontSize: "10px",
                       color: colors.textMuted,
                       whiteSpace: "nowrap",
@@ -630,6 +635,24 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
                   >
                     {photo.fileName}
                   </div>
+                  <input
+                    type="text"
+                    placeholder="Auto or manual label..."
+                    value={photo.label || ""}
+                    onChange={(e) => updatePendingLabel(photo.id, e.target.value)}
+                    onClick={(e) => e.stopPropagation()} // Prevent toggling selection
+                    style={{
+                      width: "100%",
+                      padding: "6px",
+                      fontSize: "11px",
+                      border: "none",
+                      borderTop: `1px solid ${colors.border}`,
+                      background: colors.surfaceAlt,
+                      color: colors.text,
+                      boxSizing: "border-box",
+                      outline: "none"
+                    }}
+                  />
                 </div>
               );
             })}
@@ -648,28 +671,10 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
             }}
           >
             <div style={{ flex: 1, minWidth: "200px" }}>
-              <SmartTextarea
-                placeholder="Enter description for selected photos..."
-                value={groupDescription}
-                onChange={(e) => setGroupDescription(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && selectedPending.size > 0) addSelectedAsGroup();
-                }}
-                context="visual inspection photo content description"
-                style={{
-                  width: "100%",
-                  padding: "10px 14px",
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: "8px",
-                  fontSize: "13px",
-                  color: colors.text,
-                  background: colors.surface,
-                  boxSizing: "border-box",
-                  fontFamily: "inherit",
-                  outline: "none",
-                  transition: "border-color 0.2s ease",
-                }}
-              />
+              {/* Removed common description textarea per user request to enforce individual labels */}
+              <div style={{ fontSize: "12px", color: colors.textMuted, fontStyle: "italic", padding: "10px 0" }}>
+                Individual labels are typed directly on the photos above.
+              </div>
             </div>
             <button
               onClick={addSelectedAsGroup}
