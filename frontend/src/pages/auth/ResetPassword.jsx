@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import AuthLayout from "../../components/auth/AuthLayout";
 import AuthInput from "../../components/auth/AuthInput";
 import { colors, buttonStyle } from "../../styles";
+import { ENDPOINTS } from "../../config/api";
 
 export default function ResetPassword({ onReset }) {
   const [password, setPassword] = useState("");
@@ -28,7 +29,7 @@ export default function ResetPassword({ onReset }) {
     setError("");
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}/api/auth/reset-password`, {
+      const res = await fetch(ENDPOINTS.AUTH.RESET_PASSWORD, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, password }),

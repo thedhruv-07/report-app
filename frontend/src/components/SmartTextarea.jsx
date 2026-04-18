@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import { colors } from "../styles";
+import { ENDPOINTS } from "../config/api";
 
 export default function SmartTextarea({ 
   value, 
@@ -79,7 +80,7 @@ export default function SmartTextarea({
   const fetchSuggestion = async (partialText = "") => {
     try {
       const token = localStorage.getItem("token") || localStorage.getItem("reportToken");
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}/api/suggest`, {
+      const res = await fetch(ENDPOINTS.SUGGEST, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",

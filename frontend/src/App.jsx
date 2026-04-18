@@ -12,6 +12,7 @@ import MarkingLabeling from "./components/MarkingLabeling";
 import ClientSpecialRequirement from "./components/ClientSpecialRequirement";
 import Photos from "./components/Photos";
 import FinalStep from "./components/FinalStep";
+import { ENDPOINTS } from "./config/api";
 import { colors } from "./styles";
 import { compressImage, formatFileSize } from "./utils/imageCompression";
 
@@ -678,7 +679,7 @@ function App() {
     formData.append("reportPhotos", JSON.stringify(reportPhotos));
     formData.append("reportPhotoGroups", JSON.stringify(reportPhotoGroups));
 
-    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}/generate`, {
+    const res = await fetch(ENDPOINTS.GENERATE, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${token}`

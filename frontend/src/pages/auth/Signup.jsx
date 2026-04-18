@@ -3,6 +3,8 @@ import AuthLayout from "../../components/auth/AuthLayout";
 import AuthInput from "../../components/auth/AuthInput";
 import { colors, buttonStyle } from "../../styles";
 
+import { ENDPOINTS } from "../../config/api";
+
 export default function Signup({ onSignup, onSwitch }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -16,7 +18,7 @@ export default function Signup({ onSignup, onSwitch }) {
     setError("");
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}/api/auth/signup`, {
+      const res = await fetch(ENDPOINTS.AUTH.SIGNUP, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),

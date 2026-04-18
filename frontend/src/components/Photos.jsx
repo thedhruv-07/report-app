@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { colors, buttonStyle } from "../styles";
 import { formatFileSize, compressImage } from "../utils/imageCompression";
 import SmartTextarea from "./SmartTextarea";
+import { ENDPOINTS } from "../config/api";
 
 const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, onRemovePhoto, onPrev, onNext }) => {
   const [dragActive, setDragActive] = useState(false);
@@ -153,7 +154,7 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
         })
       );
 
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}/api/ai-describe`, {
+      const response = await fetch(ENDPOINTS.AI_DESCRIBE, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

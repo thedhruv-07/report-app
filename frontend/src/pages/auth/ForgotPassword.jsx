@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import AuthLayout from "../../components/auth/AuthLayout";
 import AuthInput from "../../components/auth/AuthInput";
 import { colors, buttonStyle } from "../../styles";
+import { ENDPOINTS } from "../../config/api";
 
 export default function ForgotPassword({ onBack }) {
   const [email, setEmail] = useState("");
@@ -15,7 +16,7 @@ export default function ForgotPassword({ onBack }) {
     setError("");
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}/api/auth/forgot-password`, {
+      const res = await fetch(ENDPOINTS.AUTH.FORGOT_PASSWORD, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

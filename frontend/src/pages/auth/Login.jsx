@@ -3,6 +3,7 @@ import { GoogleLogin } from "@react-oauth/google";
 import AuthLayout from "../../components/auth/AuthLayout";
 import AuthInput from "../../components/auth/AuthInput";
 import { colors, buttonStyle } from "../../styles";
+import { ENDPOINTS } from "../../config/api";
 
 export default function Login({ onLogin, onSwitch, onForgot }) {
   const [email, setEmail] = useState("");
@@ -16,7 +17,7 @@ export default function Login({ onLogin, onSwitch, onForgot }) {
     setError("");
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}/api/auth/login`, {
+      const res = await fetch(ENDPOINTS.AUTH.LOGIN, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), password }),
@@ -38,7 +39,7 @@ export default function Login({ onLogin, onSwitch, onForgot }) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}/api/auth/google`, {
+      const res = await fetch(ENDPOINTS.AUTH.GOOGLE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ credential: credentialResponse.credential }),
