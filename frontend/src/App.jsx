@@ -444,14 +444,16 @@ function App() {
     }));
   };
 
-  const handlePhotoFileChange = (files, description = "") => {
+  const handlePhotoFileChange = async (files, description = "") => {
     // Generate group entry for the batch
     const groupId = `group_${Date.now()}_${Math.random()}`;
     const photoIds = [];
-
-    // Process each item (could be a File or a restored Metadata object)
     const itemsArray = Array.from(files);
-    itemsArray.forEach((item, index) => {
+
+    // Sequential processing to avoid browser lag with large batches
+    for (let index = 0; index < itemsArray.length; index++) {
+      const item = itemsArray[index];
+      
       // If it's already a processed object (restored from localStorage)
       if (item && item.preview && !item.file) {
         setPhotos(prevPhotos => [
@@ -466,7 +468,7 @@ function App() {
           }
         ]);
         photoIds.push(item.id);
-        return;
+        continue;
       }
 
       // Otherwise it's a new File object
@@ -474,38 +476,44 @@ function App() {
       const uniqueId = `${Date.now()}_${Math.random()}_${index}`;
       photoIds.push(uniqueId);
       
-      compressImage(file).then(({ file: compressedFile, preview, originalSize, compressedSize }) => {
+      try {
+        const result = await compressImage(file);
         setPhotos(prevPhotos => [
           ...prevPhotos,
           { 
             id: uniqueId, 
             label: description, 
-            file: compressedFile, 
-            preview: preview,
-            originalSize: originalSize,
-            compressedSize: compressedSize
+            file: result.file, 
+            preview: result.preview,
+            originalSize: result.originalSize,
+            compressedSize: result.compressedSize
           }
         ]);
-      }).catch(error => {
+      } catch (error) {
         console.error(`Failed to compress image: ${file.name}`, error);
+        // Fallback: Read as data URL without compression if compression fails
         const reader = new FileReader();
-        reader.onloadend = () => {
-          setPhotos(prevPhotos => [
-            ...prevPhotos,
-            { 
-              id: uniqueId, 
-              label: description, 
-              file: file, 
-              preview: reader.result,
-              originalSize: file.size,
-              compressedSize: file.size,
-              error: true
-            }
-          ]);
-        };
-        reader.readAsDataURL(file);
-      });
-    });
+        const fallbackPromise = new Promise((resolve) => {
+          reader.onloadend = () => {
+            setPhotos(prevPhotos => [
+              ...prevPhotos,
+              { 
+                id: uniqueId, 
+                label: description, 
+                file: file, 
+                preview: reader.result,
+                originalSize: file.size,
+                compressedSize: file.size,
+                error: true
+              }
+            ]);
+            resolve();
+          };
+          reader.readAsDataURL(file);
+        });
+        await fallbackPromise;
+      }
+    }
 
     // Create the group entry
     setPhotoGroups(prevGroups => [

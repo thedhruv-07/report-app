@@ -5,6 +5,22 @@
  * @returns {Promise<{file: File, preview: string, originalSize: number, compressedSize: number}>}
  */
 export const compressImage = async (file, targetSize = 7500) => {
+  // SAFETY: If the file is already a DataURL string, we don't need to read it again
+  if (typeof file === "string" && file.startsWith("data:image")) {
+    return {
+      file: null, 
+      preview: file,
+      originalSize: Math.round(file.length * 0.75), 
+      compressedSize: Math.round(file.length * 0.75)
+    };
+  }
+
+  // SAFETY: Check if file is valid
+  if (!(file instanceof Blob || file instanceof File)) {
+    console.warn("Invalid file object:", file);
+    throw new Error("Invalid file object provided to compressImage");
+  }
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     
@@ -126,10 +142,16 @@ export const compressImage = async (file, targetSize = 7500) => {
     };
     
     reader.onerror = () => {
+      console.error("FileReader error for file:", file.name || "Unknown");
       reject(new Error('Failed to read file'));
     };
     
-    reader.readAsDataURL(file);
+    try {
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("Exception in readAsDataURL:", err);
+      reject(new Error('Exception during readAsDataURL'));
+    }
   });
 };
 

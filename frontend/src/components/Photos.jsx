@@ -49,6 +49,7 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
   const [selectedUngrouped, setSelectedUngrouped] = useState(new Set());
   const [ungroupedDescription, setUngroupedDescription] = useState("");
   const fileInputRef = useRef(null);
+  const folderInputRef = useRef(null);
 
   // Handle drag events
   const handleDrag = (e) => {
@@ -81,33 +82,32 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
   };
 
   // Stage files for preview & grouping (don't add to report yet)
-  const stageFiles = (fileList) => {
+  const stageFiles = async (fileList) => {
     const newFiles = Array.from(fileList);
     const newPreviews = [];
 
-    newFiles.forEach((file) => {
+    for (const file of newFiles) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        newPreviews.push({
-          id: `pending_${Date.now()}_${Math.random()}`,
-          file,
-          preview: reader.result,
-          fileName: file.name,
-          size: file.size,
-        });
-        if (newPreviews.length === newFiles.length) {
-          setPendingFiles((prev) => [...prev, ...newPreviews]);
-          setPendingPreviews((prev) => [...prev, ...newPreviews]);
-          // Auto-select all newly added
-          setSelectedPending((prev) => {
-            const updated = new Set(prev);
-            newPreviews.forEach((p) => updated.add(p.id));
-            return updated;
-          });
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+      const readPromise = new Promise((resolve) => {
+        reader.onloadend = () => {
+          const item = {
+            id: `pending_${Date.now()}_${Math.random()}`,
+            file,
+            preview: reader.result,
+            fileName: file.name,
+            size: file.size,
+          };
+          newPreviews.push(item);
+          // Update incrementaly for better feedback
+          setPendingFiles((prev) => [...prev, item]);
+          setPendingPreviews((prev) => [...prev, item]);
+          setSelectedPending((prev) => new Set(prev).add(item.id));
+          resolve();
+        };
+        reader.readAsDataURL(file);
+      });
+      await readPromise;
+    }
   };
 
   // Toggle selection of a pending photo
@@ -363,6 +363,7 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
             transition: "all 0.3s ease",
             border: "none",
             boxShadow: "0 2px 8px rgba(59,130,246,0.25)",
+            marginRight: "10px"
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = "translateY(-2px)";
@@ -373,7 +374,41 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
             e.currentTarget.style.boxShadow = "0 2px 8px rgba(59,130,246,0.25)";
           }}
         >
-          📁 Choose Photos
+          📷 Choose Photos
+        </label>
+
+        <input
+          type="file"
+          webkitdirectory="true"
+          directory="true"
+          onChange={handleFileInputChange}
+          style={{ display: "none" }}
+          id="folderFileInput"
+          ref={folderInputRef}
+        />
+
+        <label
+          htmlFor="folderFileInput"
+          style={{
+            display: "inline-block",
+            padding: "10px 20px",
+            background: `linear-gradient(135deg, ${colors.surfaceAlt}, ${colors.border})`,
+            color: colors.text,
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontSize: "13px",
+            fontWeight: "700",
+            transition: "all 0.3s ease",
+            border: `1px solid ${colors.border}`,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateY(-2px)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0)";
+          }}
+        >
+          📁 Upload Folder
         </label>
       </div>
 
