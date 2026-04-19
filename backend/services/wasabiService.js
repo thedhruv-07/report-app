@@ -37,18 +37,18 @@ class WasabiService {
       Key: key,
       Body: file.buffer,
       ContentType: file.mimetype,
+      ACL: 'public-read',
     };
 
     try {
       await this.s3.send(new PutObjectCommand(params));
-      
-      // Since it's private, we don't return a direct public URL, 
-      // but we return the key and the signed URL
-      const signedUrl = await this.getSignedUrl(key);
-      
+
+      // Return public URL since ACL is public-read
+      const publicUrl = `https://s3.ap-southeast-1.wasabisys.com/${this.bucket}/${key}`;
+
       return {
         key: key,
-        url: signedUrl,
+        url: publicUrl,
         originalName: file.originalname
       };
     } catch (error) {

@@ -14,7 +14,6 @@ module.exports = {
   MONGO_URI: process.env.MONGO_URI || "mongodb://127.0.0.1:27017/report-app",
   MEMORY_PATH,
   GROQ_API_KEY: process.env.GROQ_API_KEY,
-  OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   LOGO_PATH: path.join(__dirname, "..", "assets", "company-logo.png"),
   PACKAGE_ICON_PATH: path.join(__dirname, "..", "assets", "package.png"),
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
