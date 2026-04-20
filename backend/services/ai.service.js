@@ -41,7 +41,7 @@ const getAISuggestion = async (context, partialText = "") => {
             { role: "system", content: "You are a professional quality control inspector assistant. Provide concise, factual, and industry-standard completions or suggestions." }, 
             { role: "user", content: prompt }
           ],
-          model: "openai/gpt-oss-120b",
+          model: "llama-3.1-8b-instant",
           max_tokens: 100,
         });
         const suggestion = completion.choices[0]?.message?.content?.trim() || "";
