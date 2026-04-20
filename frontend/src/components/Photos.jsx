@@ -145,6 +145,29 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
     setSelectedPending(new Set());
   };
 
+  // Helper to shrink images for AI analysis (removes 400 errors from huge photos)
+  const compressImageForAI = (base64Str, maxWidth = 800) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64Str;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.6)); // 60% quality is plenty for AI
+      };
+      img.onerror = () => resolve(base64Str); // Fallback to original if error
+    });
+  };
+
   const handleIndividualAutoDescribe = async () => {
     const selected = pendingFiles.filter((p) => selectedPending.has(p.id));
     if (selected.length === 0) return;
@@ -153,7 +176,16 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
 
     try {
       const token = localStorage.getItem("token") || localStorage.getItem("reportToken");
-      // Send actual base64 previews for vision analysis
+      
+      // Compress each image sequentially for AI analysis
+      const imagesWithMeta = await Promise.all(selected.map(async (p) => {
+         const compressed = await compressImageForAI(p.preview);
+         return { 
+           data: compressed, 
+           fileName: p.fileName 
+         };
+      }));
+
       const response = await fetch(ENDPOINTS.AI_DESCRIBE, {
         method: "POST",
         headers: {
@@ -161,7 +193,7 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
           "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({ 
-          images: selected.map(p => p.preview),
+          images: imagesWithMeta, // Send data + metadata
           mode: 'individual'
         })
       });

@@ -307,8 +307,13 @@ const analyzePhoto = async (req, res) => {
     const { analyzeVision, analyzeIndividualPhotos } = require("../services/ai.service");
 
     if (mode === "individual") {
-      // images array should contain base64 strings
-      const suggestions = await analyzeIndividualPhotos(images);
+      // images array contains [{ data: 'base64...', fileName: '...' }]
+      const processedImages = images.map(img => {
+        if (typeof img === 'object' && img.data) return img;
+        return { data: img, fileName: 'unknown_photo' };
+      });
+      
+      const suggestions = await analyzeIndividualPhotos(processedImages);
       return res.json({ suggestions });
     }
 
