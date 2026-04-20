@@ -32,13 +32,13 @@ const getAISuggestion = async (context, partialText = "") => {
     // 2. Groq AI Match
     if (groq) {
       try {
-        const prompt = partialText 
+        const prompt = partialText
           ? `The user is typing a remark about "${context}". They have typed: "${partialText}". Complete their sentence professionally.`
           : `Generate a professional, concise initial sentence for a factory inspection report remark regarding "${context}". Focus on standard findings or observations.`;
 
         const completion = await groq.chat.completions.create({
           messages: [
-            { role: "system", content: "You are a professional quality control inspector assistant. Provide concise, factual, and industry-standard completions or suggestions." }, 
+            { role: "system", content: "You are a professional quality control inspector assistant. Provide concise, factual, and industry-standard completions or suggestions." },
             { role: "user", content: prompt }
           ],
           model: "llama-3.1-8b-instant",
@@ -49,9 +49,10 @@ const getAISuggestion = async (context, partialText = "") => {
         return suggestion.replace(/^["']|["']$/g, '');
       } catch (e) {
         console.error("Groq Error:", e);
+        throw e; // 🔥 DON'T SILENTLY FAIL
       }
     }
-    
+
     return "";
   } catch (error) {
     console.error("AI Service Error:", error);
