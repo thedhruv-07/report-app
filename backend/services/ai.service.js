@@ -127,41 +127,59 @@ const analyzeIndividualPhotos = async (imageDatas) => {
       return imageDatas.map(() => "Photo overview — no specific analysis available.");
     }
 
-    // Processes photos in parallel for speed
-    const results = await Promise.all(imageDatas.map(async (base64) => {
-      try {
-        // Ensure we strip any existing data:image prefix if present before re-adding it correctly
-        const base64Data = base64.includes(",") ? base64.split(",")[1] : base64;
+    const results = [];
+    console.log(`📸 Analyzing ${imageDatas.length} photos individually...`);
 
-        const response = await groq.chat.completions.create({
-          messages: [
-            {
-              role: "user",
-              content: [
-                { type: "text", text: "You are a professional factory inspector. Provide a one-sentence, concise, professional description for this inspection photo. Focus only on what is strictly visible (e.g. 'Overview of product packing', 'Close-up of brand label', 'Demonstration of product measurement'). No conversational filler." },
-                {
-                  type: "image_url",
-                  image_url: {
-                    url: `data:image/jpeg;base64,${base64Data}`,
-                  },
-                },
-              ],
-            },
-          ],
-          model: "llama-3.2-11b-vision-preview",
-          max_tokens: 100,
-        });
+    // Process sequentially to avoid hitting concurrent request limits or rate limits on preview models
+    for (let i = 0; i < imageDatas.length; i++) {
+        try {
+            const base64 = imageDatas[i];
+            const base64Data = base64.includes(",") ? base64.split(",")[1] : base64;
 
-        return response.choices[0]?.message?.content?.trim() || "Inspection photo.";
-      } catch (err) {
-        console.error("Individual Photo Error:", err);
-        return "Inspection photo.";
-      }
-    }));
+            const response = await groq.chat.completions.create({
+                messages: [
+                    {
+                        role: "system",
+                        content: "You are a professional third-party quality control inspector. Your task is to provide a strictly professional, factual, one-sentence description for inspection photos. Avoid adjectives like 'beautiful' or 'nice'. Focus on what is being documented: 'Overview of finished product', 'Close-up of carton shipping mark', 'Detection of surface scratching on metal casing', etc."
+                    },
+                    {
+                        role: "user",
+                        content: [
+                            { 
+                                type: "text", 
+                                text: "Describe this inspection photo concisely for a technical report." 
+                            },
+                            {
+                                type: "image_url",
+                                image_url: {
+                                    url: `data:image/jpeg;base64,${base64Data}`,
+                                },
+                            },
+                        ],
+                    },
+                ],
+                model: "llama-3.2-11b-vision-preview",
+                max_tokens: 100,
+                temperature: 0.1, // Low temperature for factual descriptions
+            });
+
+            const content = response.choices[0]?.message?.content?.trim();
+            results.push(content || "Overview of inspected item.");
+            console.log(`✅ Photo ${i + 1} analyzed: ${content}`);
+        } catch (err) {
+            console.error(`❌ Error analyzing photo ${i + 1}:`, err.message);
+            // If it's a rate limit or model error, we might want to know
+            if (err.message.includes("429") || err.message.includes("404")) {
+                results.push(`Inspection photo (AI error: ${err.message.split(':')[0]})`);
+            } else {
+                results.push("Overview of inspected item.");
+            }
+        }
+    }
 
     return results;
   } catch (error) {
-    console.error("Individual Photos AI Error:", error);
+    console.error("CRITICAL: Individual Photos AI Main Error:", error);
     return imageDatas.map(() => "Inspection photo.");
   }
 };
