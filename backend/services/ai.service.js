@@ -147,15 +147,11 @@ const analyzeIndividualPhotos = async (imageDatas) => {
             const response = await groq.chat.completions.create({
                 messages: [
                     {
-                        role: "system",
-                        content: "You are a professional third-party inspection assistant. Describe the provided inspection photo in one concise sentence. Focus on technical details (e.g., 'Overview of product packaging', 'Close-up of safety labels', 'Documentation of surface defect')."
-                    },
-                    {
-                        role: "user",
+                        role: "user", // Some vision models prefer all context in the user role
                         content: [
                             { 
                                 type: "text", 
-                                text: "Describe this photo for an inspection report." 
+                                text: "You are a professional inspection assistant. Provide a concise, one-sentence technical description for this inspection photo (e.g., 'Overview of product packaging', 'Close-up of safety label'). No conversational filler." 
                             },
                             {
                                 type: "image_url",
@@ -166,9 +162,9 @@ const analyzeIndividualPhotos = async (imageDatas) => {
                         ],
                     },
                 ],
-                model: "llama-3.2-11b-vision-preview",
-                max_tokens: 120,
-                temperature: 0.2,
+                model: "llava-v1.5-7b-4096-preview",
+                max_tokens: 150,
+                temperature: 0.1,
             });
 
             const content = response.choices[0]?.message?.content?.trim();
