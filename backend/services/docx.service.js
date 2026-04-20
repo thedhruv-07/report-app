@@ -1184,26 +1184,48 @@ async function createReportContent(data, uploadedFiles) {
   children.push(new Paragraph({ children: [] }));
 
 
-  // H. PHOTOS (Matched to high-fidelity grid SS)
-  const photoGroups = Array.isArray(data.photoGroups || data.reportPhotoGroups) ? (data.photoGroups || data.reportPhotoGroups) : [];
-  if (photoGroups.length > 0) {
-    children.push(new Paragraph({ children: [], spacing: { before: 100, after: 100 } }));
-
+  // H. PHOTOS
+  const finalPhotoGroups = Array.isArray(data.reportPhotoGroups) ? data.reportPhotoGroups : (Array.isArray(data.photoGroups) ? data.photoGroups : []);
+  
+  if (finalPhotoGroups.length > 0) {
+    children.push(new Paragraph({ children: [new PageBreak()] })); // Start photos on new page for better layout
+    
     const photoRows = [
-      // Header
-      new TableRow({ children: [new TableCell({ columnSpan: 2, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "H. PHOTOS", bold: true, size: 22, color: "1F4E79" })] })] })] })
+      new TableRow({ 
+        children: [
+          new TableCell({ 
+            columnSpan: 2, 
+            shading: { fill: "E8E8E8" }, 
+            borders: tableBorders(), 
+            children: [new Paragraph({ children: [new TextRun({ text: "H. PHOTOS", bold: true, size: 22, color: "1F4E79" })] })] 
+          })
+        ] 
+      })
     ];
 
-    for (const group of photoGroups) {
-      const groupPhotos = (group.photos || []).filter(p => p.preview);
-      if (groupPhotos.length === 0) continue;
+    for (const group of finalPhotoGroups) {
+      const photos = (group.photos || []).filter(p => p.preview || p.wasabiKey);
+      if (photos.length === 0) continue;
 
-      // Chunk photos by 2 for the grid
-      for (let i = 0; i < groupPhotos.length; i += 2) {
-        const p1 = groupPhotos[i];
-        const p2 = groupPhotos[i + 1];
+      // Group sub-header
+      if (group.description) {
+        photoRows.push(new TableRow({
+          children: [
+            new TableCell({
+              columnSpan: 2,
+              shading: { fill: "F2F2F2" },
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: `Group: ${group.description}`, bold: true })] })]
+            })
+          ]
+        }));
+      }
 
-        // Image Row
+      for (let i = 0; i < photos.length; i += 2) {
+        const p1 = photos[i];
+        const p2 = photos[i + 1];
+
+        // 🖼️ Image Row
         photoRows.push(new TableRow({
           children: [
             await createPhotoCell(p1),
@@ -1211,17 +1233,19 @@ async function createReportContent(data, uploadedFiles) {
           ]
         }));
 
-        // Description Row
+        // 📝 Description Row
         photoRows.push(new TableRow({
           children: [
-            createQtyCell(p1.label || "No Description", { shaded: true, align: "center", fontSize: 18 }),
-            p2 ? createQtyCell(p2.label || "No Description", { shaded: true, align: "center", fontSize: 18 }) : new TableCell({ children: [], borders: tableBorders() }),
+            createQtyCell(p1.label || "Inspection photo", { shaded: true, align: "center", fontSize: 18 }),
+            p2 ? createQtyCell(p2.label || "Inspection photo", { shaded: true, align: "center", fontSize: 18 }) : new TableCell({ children: [], borders: tableBorders() }),
           ]
         }));
       }
     }
 
-    children.push(new Table({ width: { size: 100, type: "pct" }, rows: photoRows }));
+    if (photoRows.length > 1) { // Only push if we actually added photos
+       children.push(new Table({ width: { size: 100, type: "pct" }, rows: photoRows }));
+    }
   }
 
   return children;
