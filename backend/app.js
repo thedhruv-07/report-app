@@ -7,6 +7,10 @@ const reportRoutes = require("./routes/report.routes");
 const authRoutes = require("./routes/auth.routes");
 const fileRoutes = require("./routes/fileRoutes");
 
+// V2 Routes
+const reportV2Routes = require("./routes/v2/report.routes");
+const photoV2Routes = require("./routes/v2/photo.routes");
+
 const app = express();
 
 // CORS
@@ -39,6 +43,10 @@ app.post("/generate", authMiddleware, upload.array("images"), reportController.g
 app.use("/api/auth", authRoutes);
 app.use("/api/files", fileRoutes);
 app.use("/api/reports", reportRoutes);
+
+// V2 Route Groups
+app.use("/api/v2/reports", reportV2Routes);
+app.use("/api/v2/photos", photoV2Routes);
 
 // 404 Handler
 app.use((req, res) => {
