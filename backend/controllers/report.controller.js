@@ -117,6 +117,11 @@ const generateReport = async (req, res) => {
       (data.reportPhotos || []).forEach(p => {
         mediaDocs.push(new Media({ reportId, sectionName: "Photos", description: p.label || "" }));
       });
+      (data.reportPhotoGroups || []).forEach(group => {
+        (group.photos || []).forEach(p => {
+          mediaDocs.push(new Media({ reportId, sectionName: "Photos", description: p.label || group.description || "Grouped Photo" }));
+        });
+      });
 
       // Track status for each major section
       const sectionStatuses = [
@@ -208,8 +213,17 @@ const generateReport = async (req, res) => {
           if (dbReportId) {
             // 1. Update the Legacy Media Document with the URL
             const { Media } = require("../models/sections/media.model");
+            // Find a media doc for this report that doesn't have a URL yet
+            // We match by description if possible, or just pick the first one without a URL
             await Media.findOneAndUpdate(
-              { reportId: dbReportId, description: p.label || "", url: "" },
+              { 
+                reportId: dbReportId, 
+                url: "",
+                $or: [
+                  { description: p.label || "" },
+                  { sectionName: "Photos" }
+                ]
+              },
               { $set: { url: uploadRes.url, originalName: uploadRes.key } }
             );
 
