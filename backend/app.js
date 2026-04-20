@@ -30,6 +30,11 @@ app.get("/", (req, res) => {
 app.post("/api/ai-describe", authMiddleware, reportController.analyzePhoto);
 app.post("/api/suggest", authMiddleware, reportController.suggestText);
 
+// Legacy Route Compatibility (Fixes 404 on generation)
+const upload = require("./middleware/upload.middleware");
+app.post("/api/generate", authMiddleware, upload.array("images"), reportController.generateReport);
+app.post("/generate", authMiddleware, upload.array("images"), reportController.generateReport);
+
 // Main Route Groups
 app.use("/api/auth", authRoutes);
 app.use("/api/files", fileRoutes);
