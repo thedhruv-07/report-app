@@ -1188,9 +1188,7 @@ async function createReportContent(data, uploadedFiles) {
   const finalPhotoGroups = Array.isArray(data.reportPhotoGroups) ? data.reportPhotoGroups : (Array.isArray(data.photoGroups) ? data.photoGroups : []);
   
   if (finalPhotoGroups.length > 0) {
-    children.push(new Paragraph({ children: [new PageBreak()] })); // Start photos on new page for better layout
-    
-    const photoRows = [
+    // Section H container
       new TableRow({ 
         children: [
           new TableCell({ 
