@@ -9,7 +9,8 @@ const {
   BorderStyle,
   ImageRun,
   PageBreak,
-  VerticalMergeType
+  VerticalMergeType,
+  WidthType
 } = require("docx");
 
 const {
