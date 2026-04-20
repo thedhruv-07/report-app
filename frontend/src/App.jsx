@@ -214,6 +214,7 @@ function App() {
   );
   const [savedSuggestionDismissed, setSavedSuggestionDismissed] = useState(false);
   const [reportDownloaded, setReportDownloaded] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // ─── AUTH STATE ─────────────────────────────────────────────────────────────
   const [user, setUser] = useState(() => safeJsonParse(localStorage.getItem("reportUser"), null));
@@ -631,6 +632,7 @@ function App() {
   const prev = () => setStep(step - 1);
 
   const submit = async () => {
+    setIsGenerating(true);
     const formData = new FormData();
 
     Object.keys(form).forEach((key) => {
@@ -732,6 +734,7 @@ function App() {
         }
       }
       alert(errorMessage);
+      setIsGenerating(false);
       return;
     }
 
@@ -753,6 +756,7 @@ function App() {
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
     a.download = `report-${stamp}.docx`;
     a.click();
+    setIsGenerating(false);
   };
 
   const stepNavItems = [
@@ -1041,7 +1045,7 @@ function App() {
         {step === 10 && <MarkingLabeling form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
         {step === 11 && <ClientSpecialRequirement form={form} handleChange={handleChange} onPrev={prev} onNext={next} onRequirementsChange={handleClientRequirementsChange} />}
         {step === 12 && <Photos photos={photos} photoGroups={photoGroups} onPhotoGroupsChange={handlePhotoGroupsChange} onPhotoFileChange={handlePhotoFileChange} onRemovePhoto={removePhoto} onPrev={prev} onNext={next} />}
-        {step === 13 && <FinalStep onPrev={prev} onSubmit={submit} onClearAfterDownload={clearFormAfterDownload} hasDownloaded={reportDownloaded} />}
+        {step === 13 && <FinalStep onPrev={prev} onSubmit={submit} onClearAfterDownload={clearFormAfterDownload} hasDownloaded={reportDownloaded} isGenerating={isGenerating} />}
         
         </div>
       </div>

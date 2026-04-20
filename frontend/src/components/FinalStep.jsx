@@ -1,7 +1,7 @@
 import React from "react";
 import { colors, buttonStyle } from "../styles";
 
-const FinalStep = ({ onPrev, onSubmit, onClearAfterDownload, hasDownloaded }) => {
+const FinalStep = ({ onPrev, onSubmit, onClearAfterDownload, hasDownloaded, isGenerating }) => {
   return (
     <div style={{ color: colors.text, fontSize: "14px", padding: "20px" }}>
       <h2 style={{ marginBottom: "20px", color: colors.text, fontSize: "18px", fontWeight: "bold" }}>
@@ -102,9 +102,10 @@ const FinalStep = ({ onPrev, onSubmit, onClearAfterDownload, hasDownloaded }) =>
         </button>
         <button
           onClick={onSubmit}
-          style={{ ...buttonStyle }}
+          disabled={isGenerating}
+          style={{ ...buttonStyle, opacity: isGenerating ? 0.7 : 1, cursor: isGenerating ? 'not-allowed' : 'pointer' }}
         >
-          SUBMIT & DOWNLOAD REPORT
+          {isGenerating ? "⏳ GENERATING REPORT... PLEASE WAIT" : "SUBMIT & DOWNLOAD REPORT"}
         </button>
       </div>
     </div>
