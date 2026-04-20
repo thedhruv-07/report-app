@@ -35,12 +35,14 @@ const uploadPhoto = async (req, res) => {
     });
     await newPhoto.save();
 
-    // 4. Update Report references (Map manipulation)
-    // Get the current array for this section, or initialize it
-    const currentSectionArray = report.sections.get(section) || [];
-    currentSectionArray.push(newPhoto._id);
+    // 4. Update Report references (Array manipulation)
+    const sectionIndex = report.sections.findIndex(s => s.sectionName === section);
+    if (sectionIndex > -1) {
+      report.sections[sectionIndex].photos.push(newPhoto._id);
+    } else {
+      report.sections.push({ sectionName: section, photos: [newPhoto._id] });
+    }
     
-    report.sections.set(section, currentSectionArray);
     await report.save();
 
     res.status(201).json({
@@ -78,11 +80,12 @@ const deletePhoto = async (req, res) => {
     await Photo.findByIdAndDelete(id);
 
     // 5. Remove reference from report
-    const currentSectionArray = report.sections.get(photo.section) || [];
-    const updatedArray = currentSectionArray.filter(
-      (pid) => pid.toString() !== id.toString()
-    );
-    report.sections.set(photo.section, updatedArray);
+    const sectionIndex = report.sections.findIndex(s => s.sectionName === photo.section);
+    if (sectionIndex > -1) {
+      report.sections[sectionIndex].photos = report.sections[sectionIndex].photos.filter(
+        (pid) => pid.toString() !== id.toString()
+      );
+    }
     await report.save();
 
     res.json({ message: "Photo deleted successfully" });
@@ -112,13 +115,18 @@ const updatePhoto = async (req, res) => {
     // If changing section, we need to move the reference in the Report
     if (section && section !== oldPhoto.section) {
       // Remove from old
-      const oldArr = report.sections.get(oldPhoto.section) || [];
-      report.sections.set(oldPhoto.section, oldArr.filter(pid => pid.toString() !== id.toString()));
+      const oldIdx = report.sections.findIndex(s => s.sectionName === oldPhoto.section);
+      if (oldIdx > -1) {
+        report.sections[oldIdx].photos = report.sections[oldIdx].photos.filter(pid => pid.toString() !== id.toString());
+      }
       
       // Add to new
-      const newArr = report.sections.get(section) || [];
-      newArr.push(id);
-      report.sections.set(section, newArr);
+      const newIdx = report.sections.findIndex(s => s.sectionName === section);
+      if (newIdx > -1) {
+        report.sections[newIdx].photos.push(id);
+      } else {
+        report.sections.push({ sectionName: section, photos: [id] });
+      }
       
       await report.save();
       updateData.section = section;

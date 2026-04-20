@@ -42,11 +42,8 @@ const getReportById = async (req, res) => {
     const userId = req.user.id || req.user._id;
     const { id } = req.params;
 
-    // We can't directly populate a Map of ObjectIds cleanly in all mongoose versions
-    // So we fetch the report, and then manually populate if needed, 
-    // but Mongoose 5.10+ supports populating maps: `populate('sections.$*')`
     const report = await ReportV2.findOne({ _id: id, createdBy: userId })
-      .populate("sections.$*")
+      .populate("sections.photos")
       .select("-__v");
 
     if (!report) {

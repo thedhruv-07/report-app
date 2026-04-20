@@ -15,11 +15,12 @@ const reportV2Schema = new mongoose.Schema(
       type: String,
       default: "Inspection Report",
     },
-    sections: {
-      type: Map,
-      of: [{ type: mongoose.Schema.Types.ObjectId, ref: "Photo" }],
-      default: {},
-    },
+    sections: [
+      {
+        sectionName: { type: String, required: true },
+        photos: [{ type: mongoose.Schema.Types.ObjectId, ref: "Photo" }],
+      }
+    ],
     summary: {
       type: summarySchema,
       default: () => ({}),
