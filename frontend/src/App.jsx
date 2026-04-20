@@ -12,6 +12,7 @@ import MarkingLabeling from "./components/MarkingLabeling";
 import ClientSpecialRequirement from "./components/ClientSpecialRequirement";
 import Photos from "./components/Photos";
 import FinalStep from "./components/FinalStep";
+import ReportLoader from "./components/ReportLoader";
 import { ENDPOINTS } from "./config/api";
 import { colors } from "./styles";
 import { compressImage, formatFileSize } from "./utils/imageCompression";
@@ -1138,6 +1139,7 @@ function App() {
           `}</style>
         </div>
       )}
+      {isGenerating && <ReportLoader />}
     </div>
   );
 }
