@@ -1,7 +1,6 @@
 const fs = require("fs");
 const Groq = require("groq-sdk");
 const { MEMORY_PATH, GROQ_API_KEY } = require("../config/config");
-const wasabiService = require("./wasabiService");
 
 const groq = GROQ_API_KEY ? new Groq({ apiKey: GROQ_API_KEY }) : null;
 
@@ -60,16 +59,62 @@ const getAISuggestion = async (context, partialText = "") => {
   }
 };
 
-const analyzeVision = async (images) => {
+const analyzeVision = async (images, count = 5) => {
   try {
     if (!images || !Array.isArray(images) || images.length === 0) return "";
 
-    // Temporary workaround: return fixed descriptions since Groq vision models are not working
-    const descriptions = images.map((_, index) =>
-      `Description ${index + 1}: Professional observation of factory inspection image showing technical details.`
-    ).join('\n');
+    const numPhotos = images.length;
 
-    return descriptions;
+    // Use Groq text model to generate multiple photo description suggestions
+    if (groq) {
+      const prompt = `You are a professional quality control inspector writing descriptions for inspection photos.
+Generate exactly ${count} different, concise, professional photo description suggestions for a batch of ${numPhotos} inspection photo${numPhotos > 1 ? "s" : ""}.
+Each suggestion should be realistic, varied, and cover different possible scenarios (e.g., product overview, defect documentation, packaging check, label verification, carton inspection).
+Format: Return ONLY a numbered list like:
+1. <description>
+2. <description>
+3. <description>
+4. <description>
+5. <description>
+
+No extra text, no explanations.`;
+
+      const completion = await groq.chat.completions.create({
+        messages: [
+          { role: "system", content: "You are a professional quality control inspector assistant. Always respond with a numbered list only." },
+          { role: "user", content: prompt }
+        ],
+        model: "llama-3.1-8b-instant",
+        max_tokens: 400,
+        temperature: 0.8,
+      });
+
+      const raw = completion.choices[0]?.message?.content?.trim() || "";
+      // Parse numbered list
+      const suggestions = raw
+        .split(/\n/)
+        .map(line => line.replace(/^\d+\.\s*/, "").trim())
+        .filter(line => line.length > 5);
+
+      // Return as a parseable format
+      return suggestions
+        .slice(0, count)
+        .map((s, i) => `Suggestion ${i + 1}: ${s}`)
+        .join("\n");
+    }
+
+    // Fallback static suggestions if Groq is unavailable
+    const fallbacks = [
+      "Overview of finished goods ready for shipment inspection.",
+      "Carton markings and label verification during pre-shipment check.",
+      "Product workmanship and surface finish quality check.",
+      "Packaging integrity and sealing condition assessment.",
+      "Defect documentation — minor cosmetic issues observed.",
+    ];
+    return fallbacks.slice(0, Math.min(count, fallbacks.length))
+      .map((s, i) => `Suggestion ${i + 1}: ${s}`)
+      .join("\n");
+
   } catch (error) {
     console.error("Vision AI Error:", error);
     return "";

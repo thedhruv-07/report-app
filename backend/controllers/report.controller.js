@@ -304,17 +304,18 @@ const analyzePhoto = async (req, res) => {
       return res.status(400).json({ error: "No images provided" });
     }
     const { analyzeVision } = require("../services/ai.service");
-    const aiResponse = await analyzeVision(images);
+    const aiResponse = await analyzeVision(images, 5);
     
-    // Parse the multi-description format: "Description 1: ... Description 2: ..."
-    const descriptions = aiResponse
-      .split(/Description \d+:/g)
-      .map(d => d.trim())
-      .filter(d => d.length > 0);
+    // Parse "Suggestion N: ..." format
+    const suggestions = aiResponse
+      .split(/\n/)
+      .map(line => line.replace(/^Suggestion \d+:\s*/i, "").trim())
+      .filter(s => s.length > 5);
 
     res.json({ 
-      description: descriptions[0] || "", // For backward compatibility
-      descriptions: descriptions 
+      suggestions,
+      description: suggestions[0] || "", // backward compat
+      descriptions: suggestions           // backward compat
     });
   } catch (error) {
     console.error("Vision Controller Error:", error);

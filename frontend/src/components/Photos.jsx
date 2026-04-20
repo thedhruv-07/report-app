@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { colors, buttonStyle } from "../styles";
-import { formatFileSize, compressImage } from "../utils/imageCompression";
+import { formatFileSize } from "../utils/imageCompression";
 import SmartTextarea from "./SmartTextarea";
 import { ENDPOINTS } from "../config/api";
 
@@ -13,6 +13,7 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [groupDescription, setGroupDescription] = useState("");
+  const [aiSuggestions, setAiSuggestions] = useState([]); // AI description suggestions panel
 
   // ─── LOCAL STORAGE PERSISTENCE ──────────────────────────────────────────────
   useEffect(() => {
@@ -148,73 +149,39 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
     if (selected.length === 0) return;
 
     setIsAnalyzing(true);
-    setGroupDescription("AI is analyzing photos...");
+    setAiSuggestions([]);
 
     try {
-      // Compress to small size (~20KB) for AI analysis
-      const compressedImages = await Promise.all(
-        selected.map(async p => {
-          if (p.file) {
-            const res = await compressImage(p.file, 20000);
-            // Some compressImage implementations return { preview: base64, ... }, some just base64
-            if (res && typeof res === "object" && res.preview) {
-              return res.preview;
-            } else if (typeof res === "string") {
-              return res;
-            }
-            // fallback to original preview if compression fails
-            return p.preview;
-          }
-          return p.preview; // Use existing preview for restored photos
-        })
-      );
+      // Send just the count of images — backend generates text-based suggestions
+      const token = localStorage.getItem("token") || localStorage.getItem("reportToken");
+      const response = await fetch(ENDPOINTS.AI_DESCRIBE, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        // Send minimal stub previews (just the count matters for text generation)
+        body: JSON.stringify({ images: selected.map(() => "stub") })
+      });
 
-      // Process in batches of 4 to prevent API timeouts or payload limits
-      const batchSize = 4;
-      const updatedPending = [...pendingFiles];
+      if (!response.ok) throw new Error(`Server error: ${response.status}`);
 
-      for (let i = 0; i < compressedImages.length; i += batchSize) {
-        const batchImages = compressedImages.slice(i, i + batchSize);
-        const batchSelected = selected.slice(i, i + batchSize);
-
-        try {
-          const response = await fetch(ENDPOINTS.AI_DESCRIBE, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${localStorage.getItem("token") || localStorage.getItem("reportToken")}`
-            },
-            body: JSON.stringify({ images: batchImages })
-          });
-
-          if (!response.ok) throw new Error(`Server error: ${response.status}`);
-
-          const data = await response.json();
-          if (data.descriptions && data.descriptions.length > 0) {
-            // Update UI incrementally batch by batch
-            batchSelected.forEach((p, idx) => {
-              const desc = data.descriptions[idx];
-              if (desc) {
-                const indexInPending = updatedPending.findIndex(item => item.id === p.id);
-                if (indexInPending !== -1) {
-                  updatedPending[indexInPending].label = desc;
-                }
-              }
-            });
-            setPendingFiles([...updatedPending]);
-            setPendingPreviews([...updatedPending]);
-          }
-        } catch (batchErr) {
-          console.warn(`AI Analysis Batch ${i/batchSize + 1} Failed:`, batchErr);
-        }
+      const data = await response.json();
+      const suggestions = data.suggestions || data.descriptions || [];
+      if (suggestions.length > 0) {
+        setAiSuggestions(suggestions);
+      } else {
+        setAiSuggestions(["No suggestions returned — try again."]);
       }
-      setGroupDescription("");
     } catch (error) {
-      console.error("AI Analysis Failed:", error);
+      console.error("AI Suggestions Failed:", error);
+      setAiSuggestions(["Failed to get suggestions. Please try again."]);
     } finally {
       setIsAnalyzing(false);
     }
   };
+
+  const dismissAiSuggestions = () => setAiSuggestions([]);
 
   // Add selected pending photos as a group with description (Integrated with Wasabi)
   const addSelectedAsGroup = async () => {
@@ -305,6 +272,7 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
     setPendingPreviews([]);
     setSelectedPending(new Set());
     setGroupDescription("");
+    setAiSuggestions([]);
   };
 
   // Update individual pending label
@@ -772,6 +740,80 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
             })}
           </div>
 
+          {/* AI Suggestions Panel */}
+          {aiSuggestions.length > 0 && (
+            <div
+              style={{
+                margin: "0",
+                padding: "14px 16px",
+                borderTop: `1px solid ${colors.border}`,
+                background: `linear-gradient(135deg, #6366f108, #8b5cf608)`,
+                borderLeft: `3px solid #6366f1`,
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                <span style={{ fontWeight: "700", fontSize: "13px", color: "#6366f1" }}>
+                  ✨ AI Suggestions — click one to use it
+                </span>
+                <button
+                  onClick={dismissAiSuggestions}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    color: colors.textMuted,
+                    fontSize: "16px",
+                    lineHeight: 1,
+                    padding: "0 4px",
+                  }}
+                  title="Dismiss suggestions"
+                >
+                  ×
+                </button>
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                {aiSuggestions.map((s, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      setGroupDescription(s);
+                      setAiSuggestions([]);
+                    }}
+                    title={s}
+                    style={{
+                      padding: "7px 14px",
+                      background: "rgba(99,102,241,0.08)",
+                      border: "1.5px solid #6366f140",
+                      borderRadius: "20px",
+                      cursor: "pointer",
+                      fontSize: "12px",
+                      color: "#4f46e5",
+                      fontWeight: "500",
+                      maxWidth: "320px",
+                      textAlign: "left",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "#6366f1";
+                      e.currentTarget.style.color = "#fff";
+                      e.currentTarget.style.borderColor = "#6366f1";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "rgba(99,102,241,0.08)";
+                      e.currentTarget.style.color = "#4f46e5";
+                      e.currentTarget.style.borderColor = "#6366f140";
+                    }}
+                  >
+                    {idx + 1}. {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Description + Add Group */}
           <div
             style={{
@@ -779,17 +821,30 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
               borderTop: `1px solid ${colors.border}`,
               background: `linear-gradient(135deg, ${colors.primary}08, ${colors.primary}03)`,
               display: "flex",
+              flexDirection: "column",
               gap: "10px",
-              alignItems: "center",
-              flexWrap: "wrap",
             }}
           >
-            <div style={{ flex: 1, minWidth: "200px" }}>
-              {/* Removed common description textarea per user request to enforce individual labels */}
-              <div style={{ fontSize: "12px", color: colors.textMuted, fontStyle: "italic", padding: "10px 0" }}>
-                Individual labels are typed directly on the photos above.
-              </div>
-            </div>
+            {/* Group description input */}
+            <SmartTextarea
+              placeholder="Type or pick an AI suggestion for the group description..."
+              value={groupDescription}
+              onChange={(e) => setGroupDescription(e.target.value)}
+              context="inspection photo group description"
+              style={{
+                width: "100%",
+                padding: "10px 14px",
+                border: `1px solid ${colors.border}`,
+                borderRadius: "8px",
+                fontSize: "13px",
+                color: colors.text,
+                background: colors.surface,
+                boxSizing: "border-box",
+                fontFamily: "inherit",
+                outline: "none",
+              }}
+            />
+            <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
             <button
               onClick={addSelectedAsGroup}
               disabled={selectedPending.size === 0}
@@ -813,24 +868,26 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
             <button
               onClick={handleAutoDescribe}
               disabled={selectedPending.size === 0 || isAnalyzing}
-              title="Auto-describe with AI"
+              title="Get AI description suggestions"
               style={{
-                padding: "10px 14px",
+                padding: "10px 16px",
                 background: selectedPending.size > 0 && !isAnalyzing ? `linear-gradient(135deg, #6366f1, #8b5cf6)` : colors.surfaceAlt,
                 color: selectedPending.size > 0 && !isAnalyzing ? "#fff" : colors.textMuted,
                 border: "none",
                 borderRadius: "8px",
                 cursor: selectedPending.size > 0 && !isAnalyzing ? "pointer" : "not-allowed",
-                fontSize: "16px",
+                fontSize: "12px",
+                fontWeight: "700",
                 transition: "all 0.3s ease",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
-                minWidth: "44px"
+                gap: "6px",
+                whiteSpace: "nowrap",
               }}
             >
-              {isAnalyzing ? "..." : "✨"}
+              {isAnalyzing ? "⏳ Getting suggestions..." : "✨ AI Suggestions"}
             </button>
+            </div>
           </div>
         </div>
       )}
