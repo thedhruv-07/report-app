@@ -169,48 +169,45 @@ const generateReport = async (req, res) => {
     // Non-blocking learning
     try { learnFromReport(data); } catch (e) { console.error("Learning failed:", e); }
 
-    // --- CLOUD STORAGE UPLOAD (WASABI) ---
+    // --- OPTIMIZED CLOUD STORAGE UPLOAD (PARALLEL) ---
     const wasabiService = require("../services/wasabiService");
     
-    const uploadToBase64Wasabi = async (photos) => {
-      if (!Array.isArray(photos)) return [];
-      const results = [];
-      for (const p of photos) {
+    // 1. Collect all photos needing upload
+    const uploadQueue = [];
+    const collectFromList = (list) => {
+      if (!Array.isArray(list)) return;
+      list.forEach(p => {
         if (p.preview && String(p.preview).startsWith("data:image")) {
-          try {
-            console.log(`📤 Uploading photo ${p.id || 'new'} to Wasabi...`);
-            const base64 = p.preview.split(",")[1];
-            const buffer = Buffer.from(base64, "base64");
-            const mimeMatch = p.preview.match(/^data:(image\/\w+);base64,/);
-            const mimetype = mimeMatch ? mimeMatch[1] : "image/png";
-            
-            const uploadRes = await wasabiService.uploadFile({
-              buffer,
-              originalname: `report_photo_${Date.now()}_${Math.floor(Math.random() * 1000)}.png`,
-              mimetype
-            });
-            results.push({ ...p, wasabiKey: uploadRes.key });
-          } catch (err) {
-            console.warn("⚠️ Photo upload to Wasabi failed, keeping base64 fallback:", err.message);
-            results.push(p);
-          }
-        } else {
-          results.push(p);
+          uploadQueue.push(p);
         }
-      }
-      return results;
+      });
     };
 
-    // Process both grouped and flat photo lists if they exist
-    if (data.reportPhotoGroups && Array.isArray(data.reportPhotoGroups)) {
-      for (const group of data.reportPhotoGroups) {
-        group.photos = await uploadToBase64Wasabi(group.photos);
-      }
+    if (data.reportPhotoGroups) data.reportPhotoGroups.forEach(g => collectFromList(g.photos));
+    if (data.reportPhotos) collectFromList(data.reportPhotos);
+
+    // 2. Upload everything in parallel
+    if (uploadQueue.length > 0) {
+      console.log(`⚡ Parallel uploading ${uploadQueue.length} photos to Wasabi...`);
+      await Promise.all(uploadQueue.map(async (p) => {
+        try {
+          const base64 = p.preview.split(",")[1];
+          const buffer = Buffer.from(base64, "base64");
+          const mimeMatch = p.preview.match(/^data:(image\/\w+);base64,/);
+          
+          const uploadRes = await wasabiService.uploadFile({
+            buffer,
+            originalname: `report_photo_${Date.now()}.png`,
+            mimetype: mimeMatch ? mimeMatch[1] : "image/png"
+          });
+          p.wasabiKey = uploadRes.key;
+          // Optional: p.preview = null; // Clean up memory if not needed anymore
+        } catch (err) {
+          console.warn(`⚠️ Parallel upload failed for ${p.id}:`, err.message);
+        }
+      }));
     }
-    if (data.reportPhotos && Array.isArray(data.reportPhotos)) {
-      data.reportPhotos = await uploadToBase64Wasabi(data.reportPhotos);
-    }
-    // --- END UPLOAD LOGIC ---
+    // --- END OPTIMIZED UPLOAD LOGIC ---
 
     const reportContent = await createReportContent(data, req.files || []);
     

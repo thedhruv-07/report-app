@@ -1187,26 +1187,33 @@ async function createReportContent(data, uploadedFiles) {
   const finalPhotoGroups = Array.isArray(data.reportPhotoGroups) ? data.reportPhotoGroups : (Array.isArray(data.photoGroups) ? data.photoGroups : []);
   
   if (finalPhotoGroups.length > 0) {
-    const photoRows = [
-      new TableRow({ 
-        children: [
-          new TableCell({ 
-            columnSpan: 2, 
-            shading: { fill: "E8E8E8" }, 
-            borders: tableBorders(), 
-            children: [new Paragraph({ children: [new TextRun({ text: "H. PHOTOS", bold: true, size: 22, color: "1F4E79" })] })] 
-          })
-        ] 
-      })
-    ];
+    // 1. Header Table (Small, easily fits on any page)
+    children.push(new Table({
+      width: { size: 100, type: "pct" },
+      rows: [
+        new TableRow({ 
+          children: [
+            new TableCell({ 
+              columnSpan: 2, 
+              shading: { fill: "E8E8E8" }, 
+              borders: tableBorders(), 
+              children: [new Paragraph({ children: [new TextRun({ text: "H. PHOTOS", bold: true, size: 22, color: "1F4E79" })] })] 
+            })
+          ] 
+        })
+      ]
+    }));
 
+    // 2. Individual Tables for each Group (Allows page breaks between groups)
     for (const group of finalPhotoGroups) {
       const photos = (group.photos || []).filter(p => p.preview || p.wasabiKey);
       if (photos.length === 0) continue;
 
+      const groupRows = [];
+
       // Group sub-header
       if (group.description) {
-        photoRows.push(new TableRow({
+        groupRows.push(new TableRow({
           children: [
             new TableCell({
               columnSpan: 2,
@@ -1223,7 +1230,7 @@ async function createReportContent(data, uploadedFiles) {
         const p2 = photos[i + 1];
 
         // 🖼️ Image Row
-        photoRows.push(new TableRow({
+        groupRows.push(new TableRow({
           children: [
             await createPhotoCell(p1),
             p2 ? await createPhotoCell(p2) : new TableCell({ children: [new Paragraph({ children: [] })], borders: tableBorders() })
@@ -1231,17 +1238,16 @@ async function createReportContent(data, uploadedFiles) {
         }));
 
         // 📝 Description Row
-        photoRows.push(new TableRow({
+        groupRows.push(new TableRow({
           children: [
             createQtyCell(p1.label || "Inspection photo", { shaded: true, align: "center", fontSize: 18 }),
             p2 ? createQtyCell(p2.label || "Inspection photo", { shaded: true, align: "center", fontSize: 18 }) : new TableCell({ children: [], borders: tableBorders() }),
           ]
         }));
       }
-    }
-
-    if (photoRows.length > 1) { // Only push if we actually added photos
-       children.push(new Table({ width: { size: 100, type: "pct" }, rows: photoRows }));
+      
+      children.push(new Table({ width: { size: 100, type: "pct" }, rows: groupRows }));
+      children.push(new Paragraph({ children: [], spacing: { after: 100 } })); // Tiny spacer between groups
     }
   }
 
