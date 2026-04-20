@@ -132,52 +132,54 @@ const analyzeIndividualPhotos = async (imageObjects) => {
 
     for (let i = 0; i < imageObjects.length; i++) {
         try {
-            if (i > 0) await new Promise(resolve => setTimeout(resolve, 500));
+            if (i > 0) await new Promise(resolve => setTimeout(resolve, 800)); // Slightly more delay for Scout model
 
             const { data, fileName } = imageObjects[i];
             
-            // --- TRY VISION FIRST (Stable model) ---
+            // --- LAYER 1: TRUE VISION ANALYSIS (Llama 4 Scout) ---
             try {
                 const response = await groq.chat.completions.create({
                     messages: [
                         {
                             role: "user",
                             content: [
-                                { type: "text", text: "Briefly describe this inspection photo in one technical sentence." },
-                                { type: "image_url", image_url: { url: data.startsWith("data:") ? data : `data:image/jpeg;base64,${data}` } },
+                                { 
+                                    type: "text", 
+                                    text: "Describe exactly what is shown in this inspection photo in one professional, technical sentence. Focus on the physical item or document visible. No conversational filler." 
+                                },
+                                { 
+                                    type: "image_url", 
+                                    image_url: { url: data.startsWith("data:") ? data : `data:image/jpeg;base64,${data}` } 
+                                },
                             ],
                         },
                     ],
-                    model: "llava-v1.5-7b-4096-preview", // Standard fallback vision
-                    max_tokens: 100,
-                    temperature: 0.1,
+                    model: "meta-llama/llama-4-scout-17b-16e-instruct",
+                    max_tokens: 150,
+                    temperature: 0.2,
                 });
 
                 const content = response.choices[0]?.message?.content?.trim();
                 if (content && content.length > 5) {
                     results.push(content);
-                    console.log(`✅ Vision Success for ${fileName}: ${content}`);
-                    continue; // Success!
+                    console.log(`✨ Llama 4 Vision Success for ${fileName}: ${content}`);
+                    continue; // Skip to next photo
                 }
             } catch (vErr) {
-                // If 404/400, it's a model availability issue — move to text fallback
-                if (![404, 400].includes(vErr.status)) throw vErr;
-                console.warn(`Vision unavailable (Status ${vErr.status}). Falling back to text analysis for ${fileName}`);
+                console.warn(`Vision AI (Llama 4) unavailable or failed for ${fileName}: ${vErr.message}`);
+                // Proceed to next layer if this specifically fails
             }
 
-            // --- FALLBACK: Text-based Metadata Analysis (Using Llama 3.3) ---
+            // --- LAYER 2: SMART METADATA FALLBACK (Llama 3.3) ---
             const textResponse = await groq.chat.completions.create({
                 messages: [
                     {
                         role: "system",
-                        content: "You are a professional factory inspector. Generate a professional description for a photo based ONLY on its filename and the context of a factory inspection. Be descriptive but concise."
+                        content: "You are a professional factory inspector. Generate a professional description for a photo based on its filename and the context of a factory inspection. Be descriptive but concise."
                     },
                     {
                         role: "user",
-                        content: `Analyze this filename: "${fileName}". What is this photo likely documenting? 
-                        Examples: 'IMG_Label.jpg' -> 'Close-up of product rating plate and labels.'
-                        'Factory_A.png' -> 'Overview of the main production floor area.'
-                        Return ONLY the description string.`
+                        content: `Analyze this filename: "${fileName}". What is this photo documenting? Return ONLY the description.`
                     }
                 ],
                 model: "llama-3.3-70b-versatile",
@@ -187,7 +189,7 @@ const analyzeIndividualPhotos = async (imageObjects) => {
 
             const textDesc = textResponse.choices[0]?.message?.content?.trim() || "Inspection photo.";
             results.push(textDesc.replace(/^["']|["']$/g, ''));
-            console.log(`ℹ️ Text Fallback for ${fileName}: ${textDesc}`);
+            console.log(`ℹ️ Text Fallback used for ${fileName}: ${textDesc}`);
 
         } catch (err) {
             console.error(`❌ Critical Error for photo ${i + 1}:`, err.message);
