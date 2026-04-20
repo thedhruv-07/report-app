@@ -151,12 +151,19 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
     setGroupDescription("AI is analyzing photos...");
 
     try {
-      // "Use less tokens": Compress to small size (~20KB) for AI analysis
+      // Compress to small size (~20KB) for AI analysis
       const compressedImages = await Promise.all(
         selected.map(async p => {
           if (p.file) {
             const res = await compressImage(p.file, 20000);
-            return res.preview;
+            // Some compressImage implementations return { preview: base64, ... }, some just base64
+            if (res && typeof res === "object" && res.preview) {
+              return res.preview;
+            } else if (typeof res === "string") {
+              return res;
+            }
+            // fallback to original preview if compression fails
+            return p.preview;
           }
           return p.preview; // Use existing preview for restored photos
         })
@@ -201,8 +208,7 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
           console.warn(`AI Analysis Batch ${i/batchSize + 1} Failed:`, batchErr);
         }
       }
-      setGroupDescription(""); // Do not use common description
-
+      setGroupDescription("");
     } catch (error) {
       console.error("AI Analysis Failed:", error);
     } finally {
