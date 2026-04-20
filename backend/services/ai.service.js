@@ -133,46 +133,56 @@ const analyzeIndividualPhotos = async (imageDatas) => {
     // Process sequentially to avoid hitting concurrent request limits or rate limits on preview models
     for (let i = 0; i < imageDatas.length; i++) {
         try {
-            const base64 = imageDatas[i];
-            const base64Data = base64.includes(",") ? base64.split(",")[1] : base64;
+            // If it's a large batch, add a tiny delay between requests to avoid RPM issues
+            if (i > 0) await new Promise(resolve => setTimeout(resolve, 500));
+
+            const imageData = imageDatas[i];
+            let imageUrl = imageData;
+            
+            // If it's just raw base64, wrap it. If it's a data URL, use as-is.
+            if (!imageData.startsWith("data:")) {
+                imageUrl = `data:image/jpeg;base64,${imageData}`;
+            }
 
             const response = await groq.chat.completions.create({
                 messages: [
                     {
                         role: "system",
-                        content: "You are a professional third-party quality control inspector. Your task is to provide a strictly professional, factual, one-sentence description for inspection photos. Avoid adjectives like 'beautiful' or 'nice'. Focus on what is being documented: 'Overview of finished product', 'Close-up of carton shipping mark', 'Detection of surface scratching on metal casing', etc."
+                        content: "You are a professional third-party inspection assistant. Describe the provided inspection photo in one concise sentence. Focus on technical details (e.g., 'Overview of product packaging', 'Close-up of safety labels', 'Documentation of surface defect')."
                     },
                     {
                         role: "user",
                         content: [
                             { 
                                 type: "text", 
-                                text: "Describe this inspection photo concisely for a technical report." 
+                                text: "Describe this photo for an inspection report." 
                             },
                             {
                                 type: "image_url",
                                 image_url: {
-                                    url: `data:image/jpeg;base64,${base64Data}`,
+                                    url: imageUrl,
                                 },
                             },
                         ],
                     },
                 ],
                 model: "llama-3.2-11b-vision-preview",
-                max_tokens: 100,
-                temperature: 0.1, // Low temperature for factual descriptions
+                max_tokens: 120,
+                temperature: 0.2,
             });
 
             const content = response.choices[0]?.message?.content?.trim();
-            results.push(content || "Overview of inspected item.");
-            console.log(`✅ Photo ${i + 1} analyzed: ${content}`);
+            results.push(content || "Inspection photo overview.");
+            console.log(`✅ AI Response for photo ${i + 1}: ${content}`);
         } catch (err) {
-            console.error(`❌ Error analyzing photo ${i + 1}:`, err.message);
-            // If it's a rate limit or model error, we might want to know
-            if (err.message.includes("429") || err.message.includes("404")) {
-                results.push(`Inspection photo (AI error: ${err.message.split(':')[0]})`);
+            console.error(`❌ AI Analysis Error (Photo ${i + 1}):`, err.status, err.message);
+            // Provide a slightly more useful fallback if it's a known error type
+            if (err.status === 429) {
+                results.push("Error: AI Rate Limit (Wait a minute)");
+            } else if (err.status === 400 || err.status === 404) {
+                results.push("Error: AI Model Issue");
             } else {
-                results.push("Overview of inspected item.");
+                results.push("Inspection photo (pending manual review).");
             }
         }
     }
