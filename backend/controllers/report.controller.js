@@ -24,9 +24,11 @@ const generateReport = async (req, res) => {
     const rawData = normalizePayload(req.body);
     const data = enrichReportHeaderData(rawData);
     
+    let dbReportId = null;
     // --- DATABASE PERSISTENCE LOGIC ---
     try {
       const reportId = new mongoose.Types.ObjectId();
+      dbReportId = reportId;
       const userId = new mongoose.Types.ObjectId(req.user.id || req.user._id);
 
       const generalInfo = new GeneralInfo({
@@ -171,6 +173,7 @@ const generateReport = async (req, res) => {
 
     // --- OPTIMIZED CLOUD STORAGE UPLOAD (PARALLEL) ---
     const wasabiService = require("../services/wasabiService");
+    const { Photo } = require("../models/v2/photo.model");
     
     // 1. Collect all photos needing upload
     const uploadQueue = [];
@@ -201,6 +204,17 @@ const generateReport = async (req, res) => {
             mimetype: mimeMatch ? mimeMatch[1] : "image/png"
           });
           p.wasabiKey = uploadRes.key;
+          
+          if (dbReportId) {
+            const photoDoc = new Photo({
+              url: uploadRes.url,
+              key: uploadRes.key,
+              reportId: dbReportId,
+              section: "Photos",
+              caption: p.label || ""
+            });
+            await photoDoc.save();
+          }
           // Optional: p.preview = null; // Clean up memory if not needed anymore
         } catch (err) {
           console.warn(`⚠️ Parallel upload failed for ${p.id}:`, err.message);
