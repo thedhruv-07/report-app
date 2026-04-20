@@ -206,6 +206,14 @@ const generateReport = async (req, res) => {
           p.wasabiKey = uploadRes.key;
           
           if (dbReportId) {
+            // 1. Update the Legacy Media Document with the URL
+            const { Media } = require("../models/sections/media.model");
+            await Media.findOneAndUpdate(
+              { reportId: dbReportId, description: p.label || "", url: "" },
+              { $set: { url: uploadRes.url, originalName: uploadRes.key } }
+            );
+
+            // 2. Save to the new architecture
             const photoDoc = new Photo({
               url: uploadRes.url,
               key: uploadRes.key,
