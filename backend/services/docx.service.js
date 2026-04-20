@@ -1181,14 +1181,13 @@ async function createReportContent(data, uploadedFiles) {
     })
   ];
   children.push(new Table({ width: { size: 100, type: "pct" }, rows: gRows }));
-  children.push(new Paragraph({ children: [] }));
 
 
   // H. PHOTOS
   const finalPhotoGroups = Array.isArray(data.reportPhotoGroups) ? data.reportPhotoGroups : (Array.isArray(data.photoGroups) ? data.photoGroups : []);
   
   if (finalPhotoGroups.length > 0) {
-    // Section H container
+    const photoRows = [
       new TableRow({ 
         children: [
           new TableCell({ 
