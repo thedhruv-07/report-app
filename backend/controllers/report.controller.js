@@ -16,6 +16,7 @@ const { Safety } = require("../models/sections/safety.model");
 const { Comments } = require("../models/sections/comments.model");
 const { Media } = require("../models/sections/media.model");
 const { SectionStatus } = require("../models/sections/sectionStatus.model");
+const { ReportV2 } = require("../models/v2/report.model");
 
 const generateReport = async (req, res) => {
   console.log("📥 Generating full report and saving to granular modular database...");
@@ -157,6 +158,18 @@ const generateReport = async (req, res) => {
         sectionStatuses: sectionStatuses.map(s => s._id),
       });
 
+      const reportV2 = new ReportV2({
+        title: `Inspection Report - ${data.productName || "No Title"}`,
+        createdBy: userId,
+        sections: [],
+        summary: {
+          overview: data.inspectorOpinion || "",
+          issues: data.remarks ? data.remarks.filter(r => r && r.trim()) : [],
+          recommendations: [data.recommendationText].filter(r => r && r.trim())
+        }
+      });
+      // We'll save reportV2 later after population in the upload loop
+
       await Promise.all([
         generalInfo.save(),
         quantityDoc.save(),
@@ -235,7 +248,7 @@ const generateReport = async (req, res) => {
               );
             }
 
-            // 2. Save to the new architecture
+            // 2. Save to the new architecture (Photo doc)
             const photoDoc = new Photo({
               url: uploadRes.url,
               key: uploadRes.key,
@@ -244,12 +257,37 @@ const generateReport = async (req, res) => {
               caption: p.label || ""
             });
             await photoDoc.save();
+
+            // 3. Update the ReportV2 document sections array in real-time
+            const sectionName = "Photos";
+            const sectionIndex = reportV2.sections.findIndex(s => s.sectionName === sectionName);
+            const photoEntry = {
+              photoId: photoDoc._id,
+              url: uploadRes.url,
+              caption: p.label || ""
+            };
+
+            if (sectionIndex > -1) {
+              reportV2.sections[sectionIndex].photos.push(photoEntry);
+            } else {
+              reportV2.sections.push({
+                sectionName,
+                photos: [photoEntry]
+              });
+            }
           }
           // Optional: p.preview = null; // Clean up memory if not needed anymore
         } catch (err) {
           console.warn(`⚠️ Parallel upload failed for ${p.id}:`, err.message);
         }
       }));
+    }
+    // Finalize the V2 summary and save the V2 report
+    try {
+      await reportV2.save();
+      console.log(`✅ Parallel V2 Report saved with id: ${reportV2._id}`);
+    } catch (v2Err) {
+      console.warn("⚠️ V2 Report save failed (non-critical):", v2Err.message);
     }
     // --- END OPTIMIZED UPLOAD LOGIC ---
 

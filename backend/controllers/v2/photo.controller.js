@@ -37,10 +37,19 @@ const uploadPhoto = async (req, res) => {
 
     // 4. Update Report references (Array manipulation)
     const sectionIndex = report.sections.findIndex(s => s.sectionName === section);
+    const photoEntry = {
+      photoId: newPhoto._id,
+      url: newPhoto.url,
+      caption: newPhoto.caption
+    };
+
     if (sectionIndex > -1) {
-      report.sections[sectionIndex].photos.push(newPhoto._id);
+      report.sections[sectionIndex].photos.push(photoEntry);
     } else {
-      report.sections.push({ sectionName: section, photos: [newPhoto._id] });
+      report.sections.push({ 
+        sectionName: section, 
+        photos: [photoEntry] 
+      });
     }
     
     await report.save();
@@ -83,7 +92,7 @@ const deletePhoto = async (req, res) => {
     const sectionIndex = report.sections.findIndex(s => s.sectionName === photo.section);
     if (sectionIndex > -1) {
       report.sections[sectionIndex].photos = report.sections[sectionIndex].photos.filter(
-        (pid) => pid.toString() !== id.toString()
+        (p) => p.photoId.toString() !== id.toString()
       );
     }
     await report.save();
@@ -117,15 +126,21 @@ const updatePhoto = async (req, res) => {
       // Remove from old
       const oldIdx = report.sections.findIndex(s => s.sectionName === oldPhoto.section);
       if (oldIdx > -1) {
-        report.sections[oldIdx].photos = report.sections[oldIdx].photos.filter(pid => pid.toString() !== id.toString());
+        report.sections[oldIdx].photos = report.sections[oldIdx].photos.filter(p => p.photoId.toString() !== id.toString());
       }
       
       // Add to new
       const newIdx = report.sections.findIndex(s => s.sectionName === section);
+      const photoEntry = {
+        photoId: oldPhoto._id,
+        url: oldPhoto.url,
+        caption: oldPhoto.caption
+      };
+
       if (newIdx > -1) {
-        report.sections[newIdx].photos.push(id);
+        report.sections[newIdx].photos.push(photoEntry);
       } else {
-        report.sections.push({ sectionName: section, photos: [id] });
+        report.sections.push({ sectionName: section, photos: [photoEntry] });
       }
       
       await report.save();

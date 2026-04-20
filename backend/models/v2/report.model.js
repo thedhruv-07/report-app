@@ -18,7 +18,13 @@ const reportV2Schema = new mongoose.Schema(
     sections: [
       {
         sectionName: { type: String, required: true },
-        photos: [{ type: mongoose.Schema.Types.ObjectId, ref: "Photo" }],
+        photos: [
+          {
+            photoId: { type: mongoose.Schema.Types.ObjectId, ref: "Photo" },
+            url: { type: String, required: true },
+            caption: { type: String, default: "" },
+          },
+        ],
       }
     ],
     summary: {
