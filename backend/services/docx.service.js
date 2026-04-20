@@ -10,7 +10,17 @@ const {
   ImageRun,
   PageBreak,
   VerticalMergeType,
-  WidthType
+  WidthType,
+  AlignmentType,
+  HeadingLevel,
+  UnderlineType,
+  CheckBox,
+  Document,
+  Packer,
+  SymbolRun,
+  ShadingType,
+  Header,
+  Footer
 } = require("docx");
 
 const {
