@@ -299,11 +299,20 @@ const suggestText = async (req, res) => {
 
 const analyzePhoto = async (req, res) => {
   try {
-    const { images } = req.body;
+    const { images, mode } = req.body;
     if (!images || !Array.isArray(images) || images.length === 0) {
       return res.status(400).json({ error: "No images provided" });
     }
-    const { analyzeVision } = require("../services/ai.service");
+
+    const { analyzeVision, analyzeIndividualPhotos } = require("../services/ai.service");
+
+    if (mode === "individual") {
+      // images array should contain base64 strings
+      const suggestions = await analyzeIndividualPhotos(images);
+      return res.json({ suggestions });
+    }
+
+    // Default: Group mode (text-based generic suggestions)
     const aiResponse = await analyzeVision(images, 5);
     
     // Parse "Suggestion N: ..." format

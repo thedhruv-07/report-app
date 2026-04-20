@@ -10,6 +10,7 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
   const [pendingPreviews, setPendingPreviews] = useState([]); // previews of staged files
   const [selectedPending, setSelectedPending] = useState(new Set()); // toggled for selection
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isAnalyzingIndividual, setIsAnalyzingIndividual] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [groupDescription, setGroupDescription] = useState("");
@@ -142,6 +143,59 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
   // Deselect all pending
   const deselectAllPending = () => {
     setSelectedPending(new Set());
+  };
+
+  const handleIndividualAutoDescribe = async () => {
+    const selected = pendingFiles.filter((p) => selectedPending.has(p.id));
+    if (selected.length === 0) return;
+
+    setIsAnalyzingIndividual(true);
+
+    try {
+      const token = localStorage.getItem("token") || localStorage.getItem("reportToken");
+      // Send actual base64 previews for vision analysis
+      const response = await fetch(ENDPOINTS.AI_DESCRIBE, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          images: selected.map(p => p.preview),
+          mode: 'individual'
+        })
+      });
+
+      if (!response.ok) throw new Error(`Server error: ${response.status}`);
+
+      const data = await response.json();
+      const suggestions = data.suggestions || [];
+      
+      if (suggestions.length > 0) {
+        // Update each photo's label based on its index
+        setPendingFiles(prev => prev.map(p => {
+          const idx = selected.findIndex(sel => sel.id === p.id);
+          if (idx !== -1 && suggestions[idx]) {
+            return { ...p, label: suggestions[idx] };
+          }
+          return p;
+        }));
+        
+        // Also update previews to keep labels synced
+        setPendingPreviews(prev => prev.map(p => {
+          const idx = selected.findIndex(sel => sel.id === p.id);
+          if (idx !== -1 && suggestions[idx]) {
+            return { ...p, label: suggestions[idx] };
+          }
+          return p;
+        }));
+      }
+    } catch (error) {
+      console.error("Individual AI Analysis Failed:", error);
+      alert("Failed to get individual descriptions. Please try again.");
+    } finally {
+      setIsAnalyzingIndividual(false);
+    }
   };
 
   const handleAutoDescribe = async () => {
@@ -867,8 +921,8 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
             
             <button
               onClick={handleAutoDescribe}
-              disabled={selectedPending.size === 0 || isAnalyzing}
-              title="Get AI description suggestions"
+              disabled={selectedPending.size === 0 || isAnalyzing || isAnalyzingIndividual}
+              title="Get AI group description suggestions"
               style={{
                 padding: "10px 16px",
                 background: selectedPending.size > 0 && !isAnalyzing ? `linear-gradient(135deg, #6366f1, #8b5cf6)` : colors.surfaceAlt,
@@ -885,7 +939,31 @@ const Photos = ({ photos, photoGroups, onPhotoGroupsChange, onPhotoFileChange, o
                 whiteSpace: "nowrap",
               }}
             >
-              {isAnalyzing ? "⏳ Getting suggestions..." : "✨ AI Suggestions"}
+              {isAnalyzing ? "⏳ Thinking..." : "✨ Group Suggestions"}
+            </button>
+
+            <button
+              onClick={handleIndividualAutoDescribe}
+              disabled={selectedPending.size === 0 || isAnalyzing || isAnalyzingIndividual}
+              title="AI describes each photo based on its content"
+              style={{
+                padding: "10px 16px",
+                background: selectedPending.size > 0 && !isAnalyzingIndividual ? `linear-gradient(135deg, #ec4899, #8b5cf6)` : colors.surfaceAlt,
+                color: selectedPending.size > 0 && !isAnalyzingIndividual ? "#fff" : colors.textMuted,
+                border: "none",
+                borderRadius: "8px",
+                cursor: selectedPending.size > 0 && !isAnalyzingIndividual ? "pointer" : "not-allowed",
+                fontSize: "12px",
+                fontWeight: "700",
+                transition: "all 0.3s ease",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                whiteSpace: "nowrap",
+                boxShadow: selectedPending.size > 0 && !isAnalyzingIndividual ? "0 4px 12px rgba(236,72,153,0.3)" : "none",
+              }}
+            >
+              {isAnalyzingIndividual ? "⏳ Analyzing Photos..." : "✨ Auto-Describe Each"}
             </button>
             </div>
           </div>

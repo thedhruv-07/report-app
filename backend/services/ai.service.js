@@ -121,8 +121,54 @@ No extra text, no explanations.`;
   }
 };
 
+const analyzeIndividualPhotos = async (imageDatas) => {
+  try {
+    if (!groq || !imageDatas || !Array.isArray(imageDatas) || imageDatas.length === 0) {
+      return imageDatas.map(() => "Photo overview — no specific analysis available.");
+    }
+
+    // Processes photos in parallel for speed
+    const results = await Promise.all(imageDatas.map(async (base64) => {
+      try {
+        // Ensure we strip any existing data:image prefix if present before re-adding it correctly
+        const base64Data = base64.includes(",") ? base64.split(",")[1] : base64;
+
+        const response = await groq.chat.completions.create({
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: "You are a professional factory inspector. Provide a one-sentence, concise, professional description for this inspection photo. Focus only on what is strictly visible (e.g. 'Overview of product packing', 'Close-up of brand label', 'Demonstration of product measurement'). No conversational filler." },
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: `data:image/jpeg;base64,${base64Data}`,
+                  },
+                },
+              ],
+            },
+          ],
+          model: "llama-3.2-11b-vision-preview",
+          max_tokens: 100,
+        });
+
+        return response.choices[0]?.message?.content?.trim() || "Inspection photo.";
+      } catch (err) {
+        console.error("Individual Photo Error:", err);
+        return "Inspection photo.";
+      }
+    }));
+
+    return results;
+  } catch (error) {
+    console.error("Individual Photos AI Error:", error);
+    return imageDatas.map(() => "Inspection photo.");
+  }
+};
+
 module.exports = {
   learnFromReport,
   getAISuggestion,
   analyzeVision,
+  analyzeIndividualPhotos,
 };
