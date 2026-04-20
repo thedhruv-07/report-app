@@ -26,11 +26,14 @@ const generateReport = async (req, res) => {
     const data = enrichReportHeaderData(rawData);
     
     let dbReportId = null;
+    let userId = null;
+    let reportV2 = null;
+
     // --- DATABASE PERSISTENCE LOGIC ---
     try {
       const reportId = new mongoose.Types.ObjectId();
       dbReportId = reportId;
-      const userId = new mongoose.Types.ObjectId(req.user.id || req.user._id);
+      userId = new mongoose.Types.ObjectId(req.user.id || req.user._id);
 
       const generalInfo = new GeneralInfo({
         reportId: reportId,
@@ -158,7 +161,7 @@ const generateReport = async (req, res) => {
         sectionStatuses: sectionStatuses.map(s => s._id),
       });
 
-      const reportV2 = new ReportV2({
+      reportV2 = new ReportV2({
         title: `Inspection Report - ${data.productName || "No Title"}`,
         createdBy: userId,
         sections: [],
