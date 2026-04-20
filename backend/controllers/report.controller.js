@@ -112,14 +112,23 @@ const generateReport = async (req, res) => {
       // Track photo metadata for each section
       const mediaDocs = [];
       if (data.generalPhoto) {
-        mediaDocs.push(new Media({ reportId, sectionName: "General", description: "General Info Photo" }));
+        const gm = new Media({ reportId, sectionName: "General", description: "General Info Photo" });
+        mediaDocs.push(gm);
+        // Link to the photo object for later URL update
+        if (data.generalPhoto && typeof data.generalPhoto === 'object') data.generalPhoto.mediaId = gm._id;
       }
+
       (data.reportPhotos || []).forEach(p => {
-        mediaDocs.push(new Media({ reportId, sectionName: "Photos", description: p.label || "" }));
+        const m = new Media({ reportId, sectionName: "Photos", description: p.label || "" });
+        mediaDocs.push(m);
+        p.mediaId = m._id; // Attach ID
       });
+
       (data.reportPhotoGroups || []).forEach(group => {
         (group.photos || []).forEach(p => {
-          mediaDocs.push(new Media({ reportId, sectionName: "Photos", description: p.label || group.description || "Grouped Photo" }));
+          const m = new Media({ reportId, sectionName: "Photos", description: p.label || group.description || "Grouped Photo" });
+          mediaDocs.push(m);
+          p.mediaId = m._id; // Attach ID
         });
       });
 
@@ -211,21 +220,20 @@ const generateReport = async (req, res) => {
           p.wasabiKey = uploadRes.key;
           
           if (dbReportId) {
-            // 1. Update the Legacy Media Document with the URL
+            // 1. Update the Legacy Media Document with the URL using the attached mediaId
             const { Media } = require("../models/sections/media.model");
-            // Find a media doc for this report that doesn't have a URL yet
-            // We match by description if possible, or just pick the first one without a URL
-            await Media.findOneAndUpdate(
-              { 
-                reportId: dbReportId, 
-                url: "",
-                $or: [
-                  { description: p.label || "" },
-                  { sectionName: "Photos" }
-                ]
-              },
-              { $set: { url: uploadRes.url, originalName: uploadRes.key } }
-            );
+            if (p.mediaId) {
+              console.log(`Updating Media doc ${p.mediaId} with URL: ${uploadRes.url}`);
+              await Media.findByIdAndUpdate(p.mediaId, { 
+                $set: { url: uploadRes.url, originalName: uploadRes.key } 
+              });
+            } else {
+              // Fallback for any outliers
+              await Media.findOneAndUpdate(
+                { reportId: dbReportId, url: "", sectionName: "Photos" },
+                { $set: { url: uploadRes.url, originalName: uploadRes.key } }
+              );
+            }
 
             // 2. Save to the new architecture
             const photoDoc = new Photo({
