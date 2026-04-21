@@ -216,6 +216,7 @@ function App() {
   const [savedSuggestionDismissed, setSavedSuggestionDismissed] = useState(false);
   const [reportDownloaded, setReportDownloaded] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showSaveToast, setShowSaveToast] = useState(false);
 
   // ─── AUTH STATE ─────────────────────────────────────────────────────────────
   const [user, setUser] = useState(() => safeJsonParse(localStorage.getItem("reportUser"), null));
@@ -629,6 +630,24 @@ function App() {
     setSavedSuggestionDismissed(true);
   };
 
+  const handleSaveDraft = () => {
+    try {
+      localStorage.setItem("inspectionForm", JSON.stringify(form));
+      localStorage.setItem("inspectionItems", JSON.stringify(items));
+      localStorage.setItem("inspectionPhotos", JSON.stringify(photos));
+      localStorage.setItem("inspectionPhotoGroups", JSON.stringify(photoGroups));
+      localStorage.setItem("inspectionStep", step.toString());
+      if (generalPhoto) localStorage.setItem("inspectionGeneralPhoto", generalPhoto);
+      if (generalPhotoData) localStorage.setItem("inspectionGeneralPhotoData", JSON.stringify(generalPhotoData));
+      
+      setShowSaveToast(true);
+      setTimeout(() => setShowSaveToast(false), 3000);
+    } catch (error) {
+      console.error("Draft save failed:", error);
+      alert("Failed to save draft locally. Local storage might be full.");
+    }
+  };
+
   const next = () => setStep(step + 1);
   const prev = () => setStep(step - 1);
 
@@ -991,6 +1010,29 @@ function App() {
             ⚡ Quick Fill Template
           </button>
           <button
+            onClick={handleSaveDraft}
+            style={{
+              padding: isMobile ? "8px 14px" : "10px 18px",
+              background: colors.warning,
+              color: "#fff",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+              fontSize: isMobile ? "11px" : "13px",
+              fontWeight: "600",
+              transition: "all 0.3s ease",
+              boxShadow: "0 2px 8px rgba(245, 158, 11, 0.2)"
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = colors.warningHover;
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = colors.warning;
+            }}
+          >
+            💾 Save Draft
+          </button>
+          <button
             onClick={clearForm}
             style={{
               padding: isMobile ? "8px 14px" : "10px 18px",
@@ -1140,6 +1182,36 @@ function App() {
         </div>
       )}
       {isGenerating && <ReportLoader />}
+      
+      {/* Save Toast Notification */}
+      {showSaveToast && (
+        <div style={{
+          position: "fixed",
+          bottom: "30px",
+          right: "30px",
+          background: colors.text,
+          color: "#fff",
+          padding: "12px 24px",
+          borderRadius: "12px",
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
+          zIndex: 10001,
+          animation: "slideUp 0.3s ease-out",
+          fontSize: "14px",
+          fontWeight: "600"
+        }}>
+          <span style={{ fontSize: "18px" }}>✅</span>
+          Draft Saved Successfully!
+          <style>{`
+            @keyframes slideUp {
+              from { transform: translateY(20px); opacity: 0; }
+              to { transform: translateY(0); opacity: 1; }
+            }
+          `}</style>
+        </div>
+      )}
     </div>
   );
 }

@@ -11,6 +11,7 @@ export const colors = {
   dangerHover: "#dc2626",  // Darker Red
   
   warning: "#f59e0b",      // Amber
+  warningHover: "#d97706", // Darker Amber
   
   background: "#f8fafc",   // Nearly White (Light Blue-Gray)
   surface: "#ffffff",      // Pure White
