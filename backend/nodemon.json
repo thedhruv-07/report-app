@@ -1,0 +1,14 @@
+{
+  "ignore": [
+    "data/**/*",
+    "**/data/**",
+    "assets/**/*",
+    "tmp/**/*",
+    "*.docx",
+    "frontend/**/*",
+    "memory.json"
+  ],
+  "watch": ["."],
+  "ext": "js,json",
+  "verbose": true
+}

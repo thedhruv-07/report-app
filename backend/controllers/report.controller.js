@@ -23,6 +23,12 @@ const generateReport = async (req, res) => {
   
   try {
     const rawData = normalizePayload(req.body);
+
+    // Flatten CLS specific fields for the DOCX generator
+    if (rawData.productConformityDetails && typeof rawData.productConformityDetails === 'object') {
+      Object.assign(rawData, rawData.productConformityDetails);
+    }
+
     const data = enrichReportHeaderData(rawData);
     
     let dbReportId = null;
@@ -263,20 +269,26 @@ const generateReport = async (req, res) => {
 
             // 3. Update the ReportV2 document sections array in real-time
             const sectionName = "Photos";
-            const sectionIndex = reportV2.sections.findIndex(s => s.sectionName === sectionName);
+            let sectionIndex = -1;
+            
+            if (reportV2 && reportV2.sections) {
+              sectionIndex = reportV2.sections.findIndex(s => s.sectionName === sectionName);
+            }
             const photoEntry = {
               photoId: photoDoc._id,
               url: uploadRes.url,
               caption: p.label || ""
             };
 
-            if (sectionIndex > -1) {
-              reportV2.sections[sectionIndex].photos.push(photoEntry);
-            } else {
-              reportV2.sections.push({
-                sectionName,
-                photos: [photoEntry]
-              });
+            if (reportV2 && reportV2.sections) {
+              if (sectionIndex > -1) {
+                reportV2.sections[sectionIndex].photos.push(photoEntry);
+              } else {
+                reportV2.sections.push({
+                  sectionName,
+                  photos: [photoEntry]
+                });
+              }
             }
           }
           // Optional: p.preview = null; // Clean up memory if not needed anymore
@@ -287,7 +299,9 @@ const generateReport = async (req, res) => {
     }
     // Finalize the V2 summary and save the V2 report
     try {
-      await reportV2.save();
+      if (reportV2) {
+        await reportV2.save();
+      }
       console.log(`✅ Parallel V2 Report saved with id: ${reportV2._id}`);
     } catch (v2Err) {
       console.warn("⚠️ V2 Report save failed (non-critical):", v2Err.message);
@@ -364,7 +378,9 @@ const generateReport = async (req, res) => {
     // Async cleanup
     if (req.files) {
       req.files.forEach(file => {
-        fs.unlink(file.path, () => {});
+        if (file.path) {
+          fs.unlink(file.path, () => {});
+        }
       });
     }
   } catch (error) {

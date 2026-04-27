@@ -29,7 +29,7 @@ export default function AuthLayout({ children, title, subtitle }) {
             letterSpacing: "-0.02em",
             marginBottom: "8px"
           }}>
-            VERITAS REPORT
+            ABSOLUTE VERITAS REPORT
           </div>
           <h1 style={{ fontSize: "20px", fontWeight: "700", color: colors.header, margin: "0 0 8px" }}>
             {title}

@@ -15,11 +15,17 @@ const app = express();
 
 // CORS
 const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+console.log("🛠️ CORS Origin:", frontendUrl);
 app.use(cors({
   origin: frontendUrl,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
+
+app.use((req, res, next) => {
+  console.log(`📡 ${req.method} ${req.url}`);
+  next();
+});
 
 // Body parser
 app.use(express.json({ limit: "500mb" }));

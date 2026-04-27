@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import GeneralInfo from "./components/GeneralInfo";
 import InspectionSummaryTable from "./components/InspectionSummaryTable";
 import RemarksStep from "./components/RemarksStep";
@@ -34,11 +35,7 @@ function useBackendKeepAlive() {
   }, []);
 }
 
-// Auth Pages
-import Login from "./pages/auth/Login";
-import Signup from "./pages/auth/Signup";
-import ForgotPassword from "./pages/auth/ForgotPassword";
-import ResetPassword from "./pages/auth/ResetPassword";
+import { useAuth } from "./context/AuthContext";
 
 const safeJsonParse = (value, fallback) => {
   try {
@@ -143,6 +140,7 @@ const buildQuickFillItems = () => [
 
 function App() {
   useBackendKeepAlive();
+  const navigate = useNavigate();
 
   // Load initial state from localStorage
   const [step, setStep] = useState(() => {
@@ -150,7 +148,6 @@ function App() {
     return savedStep ? parseInt(savedStep) : 1;
   });
 
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const [form, setForm] = useState(() => {
     const savedForm = localStorage.getItem("inspectionForm");
@@ -218,44 +215,7 @@ function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showSaveToast, setShowSaveToast] = useState(false);
 
-  // ─── AUTH STATE ─────────────────────────────────────────────────────────────
-  const [user, setUser] = useState(() => safeJsonParse(localStorage.getItem("reportUser"), null));
-  const [token, setToken] = useState(() => localStorage.getItem("reportToken") || "");
-  const [authPage, setAuthPage] = useState("login"); // login | signup | forgot | reset
-
-  // Check for reset token in URL on mount
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("page") === "reset-password") {
-      setAuthPage("reset");
-    }
-  }, []);
-
-  const handleAuthSuccess = (user, token) => {
-    setUser(user);
-    setToken(token);
-    localStorage.setItem("reportUser", JSON.stringify(user));
-    localStorage.setItem("reportToken", token);
-    // Remove reset token from URL if present
-    const url = new URL(window.location);
-    url.searchParams.delete("page");
-    url.searchParams.delete("token");
-    window.history.replaceState({}, "", url);
-  };
-
-  const handleLogout = () => {
-    setShowLogoutModal(true);
-  };
-
-  const confirmLogout = () => {
-    setUser(null);
-    setToken("");
-    localStorage.removeItem("reportUser");
-    localStorage.removeItem("reportToken");
-    setAuthPage("login");
-    setShowLogoutModal(false);
-  };
-  // ────────────────────────────────────────────────────────────────────────────
+  const { token } = useAuth();
 
   // Responsiveness Support
   const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
@@ -801,12 +761,6 @@ function App() {
     setMobileSidebarOpen(false);
   };
 
-  if (!user) {
-    if (authPage === "signup") return <Signup onSignup={handleAuthSuccess} onSwitch={() => setAuthPage("login")} />;
-    if (authPage === "forgot") return <ForgotPassword onBack={() => setAuthPage("login")} />;
-    if (authPage === "reset") return <ResetPassword onReset={handleAuthSuccess} />;
-    return <Login onLogin={handleAuthSuccess} onSwitch={() => setAuthPage("signup")} onForgot={() => setAuthPage("forgot")} />;
-  }
 
   return (
     <div style={{ 
@@ -829,35 +783,10 @@ function App() {
         flexDirection: isMobile ? "column" : "row",
         alignItems: "stretch",
         boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
-        zIndex: 999,
+        zIndex: 10,
         flexShrink: 0
       }}>
-        {/* Brand Area */}
-          <div style={{ 
-            padding: "16px 24px", 
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            borderRight: isMobile ? "none" : `1px solid ${colors.border}`,
-            borderBottom: isMobile ? `1px solid ${colors.border}` : "none",
-            minWidth: "max-content",
-            background: colors.headerBg
-          }}>
-            <div>
-              <div style={{ fontSize: "16px", fontWeight: "800", color: colors.primary, letterSpacing: "-0.02em" }}>
-                VERITAS REPORT
-              </div>
-              <div style={{ fontSize: "11px", fontWeight: "600", color: colors.textMuted, marginTop: "4px", textTransform: "uppercase" }}>
-                Inspection Portal v2.0
-              </div>
-            </div>
-            {user && isMobile && (
-              <button onClick={handleLogout} style={{ border: `1px solid ${colors.danger}`, color: colors.danger, background: "transparent", borderRadius: "6px", padding: "4px 8px", fontSize: "11px", fontWeight: "600" }}>
-                Logout
-              </button>
-            )}
-          </div>
-
+        {/* Brand Area Removed */}
         {/* Horizontal Navigation Area */}
         <div style={{ 
           flex: 1, 
@@ -910,29 +839,6 @@ function App() {
           })}
         </div>
 
-        {user && !isMobile && (
-          <div style={{ padding: "0 24px", display: "flex", alignItems: "center", gap: "12px", borderLeft: `1px solid ${colors.border}` }}>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: "13px", fontWeight: "700", color: colors.text }}>{user.name}</div>
-              <div style={{ fontSize: "11px", color: colors.textMuted }}>{user.email}</div>
-            </div>
-            <button
-              onClick={handleLogout}
-              style={{
-                padding: "8px 14px",
-                border: `1px solid ${colors.danger}`,
-                borderRadius: "8px",
-                background: "transparent",
-                color: colors.danger,
-                fontSize: "12px",
-                fontWeight: "600",
-                cursor: "pointer"
-              }}
-            >
-              Logout
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Main Content Area - Scrollable */}
@@ -1088,99 +994,12 @@ function App() {
         {step === 10 && <MarkingLabeling form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
         {step === 11 && <ClientSpecialRequirement form={form} handleChange={handleChange} onPrev={prev} onNext={next} onRequirementsChange={handleClientRequirementsChange} />}
         {step === 12 && <Photos photos={photos} photoGroups={photoGroups} onPhotoGroupsChange={handlePhotoGroupsChange} onPhotoFileChange={handlePhotoFileChange} onRemovePhoto={removePhoto} onPrev={prev} onNext={next} />}
-        {step === 13 && <FinalStep onPrev={prev} onSubmit={submit} onClearAfterDownload={clearFormAfterDownload} hasDownloaded={reportDownloaded} isGenerating={isGenerating} />}
+        {step === 13 && <FinalStep form={form} onPrev={prev} onSubmit={submit} onClearAfterDownload={clearFormAfterDownload} hasDownloaded={reportDownloaded} isGenerating={isGenerating} />}
         
         </div>
       </div>
 
-      {/* Premium Logout Modal */}
-      {showLogoutModal && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: "rgba(0, 0, 0, 0.6)",
-          backdropFilter: "blur(8px)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 10000,
-          animation: "fadeIn 0.3s ease-out"
-        }}>
-          <div style={{
-            width: "90%",
-            maxWidth: "400px",
-            background: colors.surface,
-            borderRadius: "20px",
-            padding: "32px",
-            boxShadow: "0 20px 40px rgba(0, 0, 0, 0.4)",
-            border: `1px solid ${colors.border}`,
-            textAlign: "center"
-          }}>
-            <div style={{
-              width: "60px",
-              height: "60px",
-              background: "rgba(239, 68, 68, 0.1)",
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              margin: "0 auto 20px",
-              color: colors.danger,
-              fontSize: "24px"
-            }}>
-              🚪
-            </div>
-            <h3 style={{ fontSize: "20px", fontWeight: "700", color: colors.header, marginBottom: "12px" }}>
-              Confirm Logout
-            </h3>
-            <p style={{ fontSize: "14px", color: colors.textMuted, marginBottom: "32px", lineHeight: "1.5" }}>
-              Are you sure you want to log out? Your current session and unsaved changes will be lost.
-            </p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-              <button
-                onClick={() => setShowLogoutModal(false)}
-                style={{
-                  padding: "12px",
-                  borderRadius: "12px",
-                  border: `1px solid ${colors.border}`,
-                  background: colors.surfaceAlt,
-                  color: colors.text,
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  transition: "all 0.2s"
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmLogout}
-                style={{
-                  padding: "12px",
-                  borderRadius: "12px",
-                  border: "none",
-                  background: colors.danger,
-                  color: "#fff",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  boxShadow: "0 4px 12px rgba(239, 68, 68, 0.3)",
-                  transition: "all 0.2s"
-                }}
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-          <style>{`
-            @keyframes fadeIn {
-              from { opacity: 0; transform: scale(0.95); }
-              to { opacity: 1; transform: scale(1); }
-            }
-          `}</style>
-        </div>
-      )}
+
       {isGenerating && <ReportLoader />}
       
       {/* Save Toast Notification */}

@@ -1,0 +1,128 @@
+import { colors } from "../../styles";
+import { compressImage, formatFileSize } from "../../utils/imageCompression";
+import { UploadCloud, X, Camera } from "lucide-react";
+import { useState } from "react";
+
+export default function SchemaPhotos({ config, formData, onChange }) {
+  const [processingGroups, setProcessingGroups] = useState({});
+
+  const handlePhotosUpload = async (groupId, files) => {
+    const selectedFiles = Array.from(files || []);
+    if (selectedFiles.length === 0) return;
+
+    setProcessingGroups(prev => ({ ...prev, [groupId]: true }));
+
+    const processedPhotos = await Promise.all(
+      selectedFiles.map(async (file, index) => {
+        const uniqueId = `${groupId}_${Date.now()}_${Math.random()}_${index}`;
+        try {
+          const { file: compressedFile, preview, originalSize, compressedSize } = await compressImage(file);
+          return { id: uniqueId, label: "", fileName: compressedFile.name, preview, originalSize, compressedSize };
+        } catch {
+          const preview = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(file);
+          });
+          return { id: uniqueId, label: "", fileName: file.name, preview, originalSize: file.size, compressedSize: file.size, error: true };
+        }
+      })
+    );
+
+    const currentPhotos = formData[groupId] || [];
+    onChange({ target: { name: groupId, value: [...currentPhotos, ...processedPhotos] } });
+    
+    setProcessingGroups(prev => ({ ...prev, [groupId]: false }));
+  };
+
+  const updatePhotoLabel = (groupId, photoId, label) => {
+    const currentPhotos = formData[groupId] || [];
+    const updatedPhotos = currentPhotos.map(p => p.id === photoId ? { ...p, label } : p);
+    onChange({ target: { name: groupId, value: updatedPhotos } });
+  };
+
+  const removePhoto = (groupId, photoId) => {
+    const currentPhotos = formData[groupId] || [];
+    const updatedPhotos = currentPhotos.filter(p => p.id !== photoId);
+    onChange({ target: { name: groupId, value: updatedPhotos } });
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
+      {config.groups.map(group => {
+        const photos = formData[group.id] || [];
+        const isProcessing = processingGroups[group.id];
+
+        return (
+          <div key={group.id} style={{ border: `1px solid ${colors.border}`, borderRadius: "12px", overflow: "hidden", background: "white", boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
+            <div style={{ padding: "16px 20px", background: colors.headerBg, borderBottom: `1px solid ${colors.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <Camera size={18} color={colors.primary} />
+                <h3 style={{ fontSize: "16px", fontWeight: "700", color: colors.text, margin: 0 }}>
+                  {group.label}
+                </h3>
+              </div>
+              
+              <label style={{
+                display: "inline-flex", alignItems: "center", gap: "6px",
+                padding: "8px 16px", borderRadius: "8px",
+                background: isProcessing ? colors.surfaceAlt : colors.primaryLight,
+                color: isProcessing ? colors.textMuted : colors.primary,
+                cursor: isProcessing ? "not-allowed" : "pointer",
+                fontSize: "13px", fontWeight: "600", transition: "all 0.2s"
+              }}>
+                <UploadCloud size={16} />
+                {isProcessing ? "Processing..." : "Upload Photos"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  style={{ display: "none" }}
+                  disabled={isProcessing}
+                  onChange={(e) => {
+                    handlePhotosUpload(group.id, e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
+
+            <div style={{ padding: "20px", background: colors.surface }}>
+              {photos.length === 0 ? (
+                <div style={{ padding: "40px 20px", textAlign: "center", border: `2px dashed ${colors.border}`, borderRadius: "8px", background: colors.surfaceAlt }}>
+                  <p style={{ margin: 0, color: colors.textMuted, fontSize: "14px" }}>No photos uploaded for this section yet.</p>
+                </div>
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "16px" }}>
+                  {photos.map(photo => (
+                    <div key={photo.id} style={{ border: `1px solid ${colors.border}`, borderRadius: "8px", overflow: "hidden", background: colors.surface, position: "relative" }}>
+                      <button
+                        onClick={() => removePhoto(group.id, photo.id)}
+                        style={{ position: "absolute", top: "8px", right: "8px", background: "rgba(239, 68, 68, 0.9)", color: "white", border: "none", borderRadius: "50%", width: "24px", height: "24px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 10 }}
+                      >
+                        <X size={14} />
+                      </button>
+                      <img src={photo.preview} alt={photo.fileName} style={{ width: "100%", height: "150px", objectFit: "cover", display: "block" }} />
+                      <div style={{ padding: "10px" }}>
+                        <input
+                          type="text"
+                          value={photo.label || ""}
+                          onChange={(e) => updatePhotoLabel(group.id, photo.id, e.target.value)}
+                          placeholder="Photo description"
+                          style={{ width: "100%", padding: "8px", borderRadius: "6px", border: `1px solid ${colors.border}`, fontSize: "12px", boxSizing: "border-box", marginBottom: "6px" }}
+                        />
+                        <div style={{ fontSize: "10px", color: colors.textMuted }}>
+                          {photo.compressedSize ? formatFileSize(photo.compressedSize) : ""}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}

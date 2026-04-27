@@ -68,7 +68,7 @@ export default function SmartTextarea({
   // ─── AI suggestion debounce ────────────────────────────────────────────────
   useEffect(() => {
     setSuggestion("");
-    if (!value || value.trim() === "" || /[.\n]$/.test(value)) return;
+    if (!value || typeof value !== "string" || value.trim() === "" || /[.\n]$/.test(value)) return;
 
     const timer = setTimeout(async () => {
       fetchSuggestion(value);

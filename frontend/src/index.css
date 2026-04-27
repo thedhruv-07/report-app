@@ -1,3 +1,15 @@
+@import "tailwindcss" layer(tailwind);
+
+/*
+ * Disable Tailwind's preflight (CSS reset) so it doesn't
+ * interfere with the existing PSI inline-style components.
+ */
+@layer tailwind {
+  @layer base {
+    /* intentionally empty — blocks preflight from applying */
+  }
+}
+
 :root {
   --primary: #3b82f6;
   --text: #1e293b;

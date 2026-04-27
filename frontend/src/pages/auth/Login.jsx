@@ -1,13 +1,16 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
-import AuthLayout from "../../components/auth/AuthLayout";
-import AuthInput from "../../components/auth/AuthInput";
-import { colors, buttonStyle } from "../../styles";
+import { useAuth } from "../../context/AuthContext";
 import { ENDPOINTS } from "../../config/api";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 
-export default function Login({ onLogin, onSwitch, onForgot }) {
+export default function Login() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -15,7 +18,6 @@ export default function Login({ onLogin, onSwitch, onForgot }) {
     e.preventDefault();
     setLoading(true);
     setError("");
-
     try {
       const res = await fetch(ENDPOINTS.AUTH.LOGIN, {
         method: "POST",
@@ -24,11 +26,12 @@ export default function Login({ onLogin, onSwitch, onForgot }) {
       });
       const data = await res.json();
       if (res.ok) {
-        onLogin(data.user, data.token);
+        login(data.user, data.token);
+        navigate("/dashboard");
       } else {
         setError(data.error || "Login failed");
       }
-    } catch (err) {
+    } catch {
       setError("Network error. Please try again.");
     } finally {
       setLoading(false);
@@ -46,127 +49,111 @@ export default function Login({ onLogin, onSwitch, onForgot }) {
       });
       const data = await res.json();
       if (res.ok) {
-        onLogin(data.user, data.token);
+        login(data.user, data.token);
+        navigate("/dashboard");
       } else {
         setError(data.error || "Google login failed");
       }
-    } catch (err) {
+    } catch {
       setError("Network error during Google login.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleError = () => {
-    setError("Google Sign-In was unsuccessful. Please try again.");
-  };
-
   return (
-    <AuthLayout title="Welcome Back" subtitle="Log in to your account to continue">
-      <form onSubmit={handleSubmit}>
-        {error && (
-          <div style={{ 
-            padding: "12px", 
-            background: "rgba(239, 68, 68, 0.1)", 
-            color: colors.danger, 
-            borderRadius: "8px", 
-            fontSize: "14px", 
-            marginBottom: "20px",
-            textAlign: "center"
-          }}>
-            {error}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50/40 px-4">
+      <div className="w-full max-w-md">
+        {/* Brand */}
+        <div className="text-center mb-8">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/20">
+            <span className="text-white font-bold text-lg">AV</span>
           </div>
-        )}
+          <h1 className="text-xl font-extrabold text-blue-600 tracking-tight">ABSOLUTE VERITAS REPORT</h1>
+          <p className="text-sm text-slate-400 mt-1">Inspection Portal</p>
+        </div>
 
-        <AuthInput
-          label="Email Address"
-          type="email"
-          placeholder="name@company.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+        {/* Card */}
+        <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-200 p-8">
+          <h2 className="text-xl font-bold text-slate-800 mb-1">Welcome Back</h2>
+          <p className="text-sm text-slate-500 mb-6">Log in to your account to continue</p>
 
-        <div style={{ position: "relative" }}>
-          <AuthInput
-            label={
-              <div style={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
-                <span>Password</span>
-                <button
-                  type="button"
-                  onClick={onForgot}
-                  style={{
-                    border: "none",
-                    background: "transparent",
-                    color: colors.primary,
-                    fontSize: "12px",
-                    fontWeight: "600",
-                    cursor: "pointer",
-                    padding: "0"
-                  }}
-                >
-                  Forgot?
+          {error && (
+            <div className="p-3 mb-4 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm text-center font-medium">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Email Address</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@company.com"
+                  required
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-slate-200 text-sm focus:border-blue-500 focus:ring-0 outline-none transition-colors"
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-sm font-semibold text-slate-700">Password</label>
+                <Link to="/forgot-password" className="text-xs font-semibold text-blue-600 hover:text-blue-700">Forgot?</Link>
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border-2 border-slate-200 text-sm focus:border-blue-500 focus:ring-0 outline-none transition-colors"
+                />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-            }
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold text-sm rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 hover:brightness-110 active:scale-[0.98] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {loading ? "Logging in..." : "Log In"}
+            </button>
+          </form>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-6">
+            <div className="flex-1 h-px bg-slate-200" />
+            <span className="text-xs font-semibold text-slate-400">OR</span>
+            <div className="flex-1 h-px bg-slate-200" />
+          </div>
+
+          <div className="flex justify-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError("Google Sign-In was unsuccessful.")}
+              useOneTap
+              width="100%"
+              theme="outline"
+              shape="rectangular"
+            />
+          </div>
+
+          <p className="text-center mt-6 text-sm text-slate-500">
+            Don't have an account?{" "}
+            <Link to="/signup" className="font-semibold text-blue-600 hover:text-blue-700">Create Account</Link>
+          </p>
         </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            ...buttonStyle,
-            width: "100%",
-            marginTop: "10px",
-            height: "48px",
-            opacity: loading ? 0.7 : 1,
-            cursor: loading ? "not-allowed" : "pointer"
-          }}
-        >
-          {loading ? "Logging in..." : "Log In"}
-        </button>
-
-        <div style={{ display: "flex", alignItems: "center", margin: "24px 0" }}>
-          <div style={{ flex: 1, height: "1px", background: colors.border }}></div>
-          <span style={{ padding: "0 12px", fontSize: "12px", color: colors.textMuted, fontWeight: "600" }}>OR</span>
-          <div style={{ flex: 1, height: "1px", background: colors.border }}></div>
-        </div>
-
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={handleGoogleError}
-            useOneTap
-            width="100%"
-            theme="outline"
-            shape="rectangular"
-          />
-        </div>
-
-        <p style={{ textAlign: "center", marginTop: "32px", fontSize: "14px", color: colors.textMuted }}>
-          Don't have an account?{" "}
-          <button
-            type="button"
-            onClick={onSwitch}
-            style={{
-              border: "none",
-              background: "transparent",
-              color: colors.primary,
-              fontWeight: "700",
-              cursor: "pointer",
-              padding: "0"
-            }}
-          >
-            Create Account
-          </button>
-        </p>
-      </form>
-    </AuthLayout>
+      </div>
+    </div>
   );
 }

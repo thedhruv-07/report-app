@@ -1,7 +1,15 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { colors, buttonStyle } from "../styles";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import ReportPDF from "../pdf/ReportPDF";
 
-const FinalStep = ({ onPrev, onSubmit, onClearAfterDownload, hasDownloaded, isGenerating }) => {
+const FinalStep = ({ form, onPrev, onSubmit, onClearAfterDownload, hasDownloaded, isGenerating }) => {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   return (
     <div style={{ color: colors.text, fontSize: "14px", padding: "20px" }}>
       <h2 style={{ marginBottom: "20px", color: colors.text, fontSize: "18px", fontWeight: "bold" }}>
@@ -93,20 +101,30 @@ const FinalStep = ({ onPrev, onSubmit, onClearAfterDownload, hasDownloaded, isGe
       )}
 
       {/* Navigation */}
-      <div style={{ display: "flex", gap: "10px", marginTop: "30px" }}>
+      <div style={{ display: "flex", gap: "10px", marginTop: "30px", flexWrap: "wrap" }}>
         <button
           onClick={onPrev}
-          style={{ ...buttonStyle }}
+          style={{ ...buttonStyle, flex: "0 0 auto", minWidth: "120px" }}
         >
           Previous
         </button>
         <button
           onClick={onSubmit}
           disabled={isGenerating}
-          style={{ ...buttonStyle, opacity: isGenerating ? 0.7 : 1, cursor: isGenerating ? 'not-allowed' : 'pointer' }}
+          style={{ ...buttonStyle, flex: 1, minWidth: "200px", background: colors.success, opacity: isGenerating ? 0.7 : 1, cursor: isGenerating ? 'not-allowed' : 'pointer' }}
         >
-          {isGenerating ? "⏳ GENERATING REPORT... PLEASE WAIT" : "SUBMIT & DOWNLOAD REPORT"}
+          {isGenerating ? "⏳ GENERATING DOCX..." : "DOWNLOAD DOCX"}
         </button>
+
+        {isClient && form && (
+          <PDFDownloadLink
+            document={<ReportPDF data={form} serviceType="psi" />}
+            fileName={`PSI-Report-${new Date().toISOString().slice(0, 10)}.pdf`}
+            style={{ ...buttonStyle, flex: 1, minWidth: "200px", background: colors.primary, textDecoration: "none", textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center" }}
+          >
+            {({ loading }) => (loading ? "⏳ PREPARING PDF..." : "DOWNLOAD PDF")}
+          </PDFDownloadLink>
+        )}
       </div>
     </div>
   );
