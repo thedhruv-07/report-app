@@ -14,8 +14,12 @@ export default function ReportPDF({ data, serviceType }) {
       const processedData = { ...data };
       const photoGroupsConfig = [
         { id: "remarkPhotos", label: "Remarks Photos" },
-        { id: "temperaturePhotos", label: "Temperature & Environment Photos" },
+        { id: "loadingAreaPhotos", label: "Loading Area Photos" },
+        { id: "warehousePhotos", label: "Warehouse Photos" },
+        { id: "emptyContainerPhotos", label: "Empty Container Photos" },
+        { id: "truckCheckPhotos", label: "Truck Check Photos" },
         { id: "loadingPhotos", label: "Loading Process Photos" },
+        { id: "sealingPhotos", label: "Container Sealing Photos" },
         { id: "containerPhotos", label: "Container & Seal Photos" }
       ];
 

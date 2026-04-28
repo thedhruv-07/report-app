@@ -12,6 +12,7 @@ import SchemaTable from "../../components/FormBuilder/SchemaTable";
 import SchemaPhotos from "../../components/FormBuilder/SchemaPhotos";
 import SchemaRemarks from "../../components/FormBuilder/SchemaRemarks";
 import SchemaChecklist from "../../components/FormBuilder/SchemaChecklist";
+import SchemaChecklistTable from "../../components/FormBuilder/SchemaChecklistTable";
 import ProductConformityTable from "../../components/FormBuilder/ProductConformityTable";
 import CLSPackingTable from "../../components/FormBuilder/CLSPackingTable";
 
@@ -102,19 +103,46 @@ export default function ContainerLoading() {
       ],
       sampleCollection: "No Sample-Inspector didn't collected any sample from Factory.",
 
+      // Section D - Loading Process
       containerNo: "MSKU1234567",
+      containerType: "40' HC REEFER",
       sealNo: "987654",
+      avSealNo: "AV1234567",
+      cargoBreakdown: "2500 Cartons of Frozen Meat",
+      shelter: "Covered Area",
       weather: "Sunny, 28°C",
+      loadingStartTime: "09:00 AM",
+      loadingEndTime: "04:30 PM",
 
-      noHoles: "true",
-      doorsWorking: "true",
-      clean: "true",
-      watertight: "true",
-      noProtrusions: "true",
+      // Checklists
+      containerCheck: [
+        { id: "holes", result: "Yes", finding: "No holes found" },
+        { id: "doors", result: "Yes", finding: "Working smoothly" },
+        { id: "clean", result: "Yes", finding: "Clean and dry" },
+        { id: "watertight", result: "Yes", finding: "Tested with light" },
+        { id: "protrusions", result: "Yes", finding: "None" },
+        { id: "floor", result: "Yes", finding: "Solid" },
+        { id: "odour", result: "Yes", finding: "No smell" },
+        { id: "markings", result: "Yes", finding: "Valid CSC plate" }
+      ],
+      loadingCheck: [
+        { id: "evenWeight", result: "Yes", finding: "Balanced loading" },
+        { id: "method", result: "Yes", finding: "Manual and Forklift" },
+        { id: "layers", result: "Yes", finding: "4 Layers" },
+        { id: "noDamaged", result: "Yes", finding: "All cartons intact" },
+        { id: "properStowage", result: "Yes", finding: "Tightly packed" },
+        { id: "ventilation", result: "Yes", finding: "Maintained" },
+        { id: "tempMonitor", result: "Yes", finding: "-18C maintained" },
+        { id: "loadingAreaClean", result: "Yes", finding: "Cleaned before loading" },
+        { id: "protection", result: "Yes", finding: "Shelter used" }
+      ],
+      containerSealing: [
+        { id: "correctSeal", result: "Yes", finding: "Verified against docs" },
+        { id: "properlyFixed", result: "Yes", finding: "Checked manually" },
+        { id: "sealIntegrity", result: "Yes", finding: "Intact" },
+        { id: "photoTaken", result: "Yes", finding: "Documented" }
+      ],
 
-      evenWeight: "true",
-      loadingMethod: "Forklift and Manual",
-      layersCount: "4",
       remarks_loading: "All pallets were securely positioned.",
       
       temperatureCheck: "25°C - Acceptable",
@@ -208,7 +236,6 @@ export default function ContainerLoading() {
         <SchemaRemarks title="III. REMARKS - General Remarks" dataKey="generalRemarks" formData={form} onChange={handleChange} />
         <SchemaSection title="III. REMARKS - Sample Collection" fields={[{name: 'sampleCollection', label: 'Sample Collection Record', type: 'text'}]} formData={form} onChange={handleChange} />
         
-        {/* Integrated Photo Upload for Remarks */}
         <div style={{ marginTop: "10px" }}>
           <SchemaPhotos 
             config={{ groups: [{ id: "remarkPhotos", label: "Remarks Photos" }] }} 
@@ -222,11 +249,58 @@ export default function ContainerLoading() {
     { id: 5, label: "Quantity", component: <SchemaTable title="5. Quantity Details" config={clsSchema.quantityTable} dataKey="quantityTable" formData={form} onChange={handleChange} /> },
     { id: 6, label: "Product Conformity", component: <ProductConformityTable formData={form} onChange={handleChange} /> },
     { id: 7, label: "Packing", component: <CLSPackingTable formData={form} onChange={handleChange} /> },
-    { id: 8, label: "Loading Process", component: <SchemaSection title="8. Loading Process" fields={clsSchema.loadingProcess} formData={form} onChange={handleChange} /> },
-    { id: 9, label: "Container Check", component: <SchemaChecklist title="9. Container Condition" fields={clsSchema.containerCheck} formData={form} onChange={handleChange} /> },
-    { id: 10, label: "Loading Check", component: <SchemaSection title="10. Loading Check" fields={clsSchema.loadingCheck} formData={form} onChange={handleChange} /> },
-    { id: 11, label: "Client Requirement", component: <SchemaSection title="11. Client Requirement" fields={clsSchema.clientRequirement} formData={form} onChange={handleChange} /> },
-    { id: 12, label: "Photos", component: <SchemaPhotos config={clsSchema.photos} formData={form} onChange={handleChange} /> },
+    { id: 8, label: "Loading Process", component: (
+      <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
+        <SchemaSection title="8. Loading Process" fields={clsSchema.loadingProcess} formData={form} onChange={handleChange} />
+        <SchemaPhotos 
+          config={{ groups: [
+            { id: "loadingAreaPhotos", label: "Loading Area Photos" },
+            { id: "warehousePhotos", label: "Warehouse Photos" }
+          ] }} 
+          formData={form} 
+          onChange={handleChange} 
+        />
+      </div>
+    ) },
+    { id: 9, label: "Container Check", component: (
+      <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
+        <SchemaChecklistTable title="9. Empty Container Check" items={clsSchema.containerCheck} dataKey="containerCheck" formData={form} onChange={handleChange} />
+        <SchemaPhotos 
+          config={{ groups: [
+            { id: "emptyContainerPhotos", label: "Empty Container Photos" },
+            { id: "truckCheckPhotos", label: "Truck Check Photos" }
+          ] }} 
+          formData={form} 
+          onChange={handleChange} 
+        />
+      </div>
+    ) },
+    { id: 10, label: "Loading Check", component: (
+      <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
+        <SchemaChecklistTable title="10. Loading Process Check" items={clsSchema.loadingCheck} dataKey="loadingCheck" formData={form} onChange={handleChange} />
+        <SchemaPhotos 
+          config={{ groups: [
+            { id: "loadingPhotos", label: "Loading Process Photos" }
+          ] }} 
+          formData={form} 
+          onChange={handleChange} 
+        />
+      </div>
+    ) },
+    { id: 11, label: "Container Sealing", component: (
+      <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
+        <SchemaChecklistTable title="11. Container Sealing Check" items={clsSchema.containerSealing} dataKey="containerSealing" formData={form} onChange={handleChange} />
+        <SchemaPhotos 
+          config={{ groups: [
+            { id: "sealingPhotos", label: "Container Sealing Photos" },
+            { id: "containerPhotos", label: "Container & Seal Photos" }
+          ] }} 
+          formData={form} 
+          onChange={handleChange} 
+        />
+      </div>
+    ) },
+    { id: 12, label: "Client Requirement", component: <SchemaSection title="12. Client Requirement" fields={clsSchema.clientRequirement} formData={form} onChange={handleChange} /> },
   ];
 
   const currentStep = steps.find(s => s.id === step);
