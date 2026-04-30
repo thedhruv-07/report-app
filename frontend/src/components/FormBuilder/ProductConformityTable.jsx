@@ -1,5 +1,6 @@
 import React from "react";
 import { colors } from "../../styles";
+import SmartTextarea from "../SmartTextarea";
 
 export default function ProductConformityTable({ formData, onChange }) {
   const handleChange = (field, value) => {
@@ -177,15 +178,15 @@ export default function ProductConformityTable({ formData, onChange }) {
         </div>
       </div>
 
-      {/* Remark */}
       <div style={{ display: "flex", background: colors.surface }}>
         <div style={{ width: "20%", padding: "8px", fontWeight: "bold", borderRight: `1px solid ${colors.border}` }}>Remark:</div>
-        <div style={{ width: "80%", padding: "4px" }}>
-          <input 
-            type="text" 
-            value={formData.conformityRemark || ""} 
+        <div style={{ width: "80%", padding: "8px" }}>
+          <SmartTextarea
+            name="conformityRemark"
+            value={formData.conformityRemark || ""}
             onChange={(e) => handleChange("conformityRemark", e.target.value)}
-            placeholder="N/A"
+            placeholder="Enter observation or remark..."
+            minHeight={40}
             style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: "13px" }}
           />
         </div>

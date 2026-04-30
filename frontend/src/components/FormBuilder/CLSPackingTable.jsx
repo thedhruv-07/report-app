@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { colors } from "../../styles";
 import { clsSchema } from "../../shared/formSchemas";
+import SmartTextarea from "../SmartTextarea";
 
 const sectionBg = "#E9ECEF";
 const subHeaderBg = "#F2F2F2";
@@ -187,8 +188,15 @@ export default function CLSPackingTable({ formData, onChange }) {
       {/* Remark */}
       <div style={{ display: "flex", background: colors.surface }}>
         <div style={{ width: "20%", padding: "8px", fontWeight: "bold", borderRight: `1px solid ${colors.border}`, background: subHeaderBg }}>Remark:</div>
-        <div style={{ width: "80%", padding: "4px" }}>
-          <input type="text" value={formData.cls_packing_remark || ""} onChange={(e) => handleChange("cls_packing_remark", e.target.value)} placeholder="" style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: "13px" }} />
+        <div style={{ width: "80%", padding: "8px" }}>
+          <SmartTextarea
+            name="cls_packing_remark"
+            value={formData.cls_packing_remark || ""}
+            onChange={(e) => handleChange("cls_packing_remark", e.target.value)}
+            placeholder="Enter packing remarks..."
+            minHeight={40}
+            style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: "13px" }}
+          />
         </div>
       </div>
     </div>

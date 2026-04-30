@@ -1,7 +1,8 @@
 import { colors } from "../../styles";
 import { Plus, Trash2 } from "lucide-react";
+import SmartTextarea from "../SmartTextarea";
 
-export default function SchemaTable({ title, config, formData, onChange, dataKey }) {
+export default function SchemaTable({ title, config, formData, onChange, dataKey, ai = true }) {
   const rows = Array.isArray(formData[dataKey]) ? formData[dataKey] : [];
 
   const handleRowChange = (index, field, value) => {
@@ -62,13 +63,24 @@ export default function SchemaTable({ title, config, formData, onChange, dataKey
                   </td>
                   {config.columns.map(col => (
                     <td key={col.key} style={{ padding: "6px", borderBottom: `1px solid ${colors.border}`, background: colors.surface }}>
-                      <input
-                        type={col.type || "text"}
-                        value={row[col.key] || ""}
-                        onChange={(e) => handleRowChange(index, col.key, e.target.value)}
-                        placeholder={`Enter ${col.label.toLowerCase()}`}
-                        style={{ width: "100%", border: `1px solid ${colors.border}`, padding: "8px", borderRadius: "4px", fontSize: "13px", boxSizing: "border-box" }}
-                      />
+                      {ai ? (
+                        <SmartTextarea
+                          name={`${dataKey}_${index}_${col.key}`}
+                          value={row[col.key] || ""}
+                          onChange={(e) => handleRowChange(index, col.key, e.target.value)}
+                          placeholder={`Enter ${col.label.toLowerCase()}`}
+                          minHeight={36}
+                          style={{ width: "100%", border: `1px solid ${colors.border}`, padding: "6px", borderRadius: "4px", fontSize: "13px", boxSizing: "border-box" }}
+                        />
+                      ) : (
+                        <input
+                          type={col.type || "text"}
+                          value={row[col.key] || ""}
+                          onChange={(e) => handleRowChange(index, col.key, e.target.value)}
+                          placeholder={`Enter ${col.label.toLowerCase()}`}
+                          style={{ width: "100%", border: `1px solid ${colors.border}`, padding: "8px", borderRadius: "4px", fontSize: "13px", boxSizing: "border-box" }}
+                        />
+                      )}
                     </td>
                   ))}
                   <td style={{ padding: "10px", textAlign: "center", borderBottom: `1px solid ${colors.border}`, background: colors.surface }}>
@@ -100,6 +112,15 @@ export default function SchemaTable({ title, config, formData, onChange, dataKey
                 >
                   {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                 </select>
+              ) : ai ? (
+                <SmartTextarea
+                  name={field.name}
+                  value={formData[field.name] || field.defaultValue || ""}
+                  onChange={(e) => onChange({ target: { name: field.name, value: e.target.value } })}
+                  placeholder={field.placeholder || ""}
+                  minHeight={field.type === "textarea" ? 80 : 38}
+                  style={{ padding: "8px", borderRadius: "4px", border: `1px solid ${colors.border}`, fontSize: "13px", background: "white", fontFamily: "inherit" }}
+                />
               ) : field.type === "textarea" ? (
                 <textarea
                   value={formData[field.name] || field.defaultValue || ""}

@@ -1,7 +1,7 @@
 import { colors, tableLabelStyle } from "../../styles";
 import SmartTextarea from "../SmartTextarea";
 
-export default function SchemaSection({ title, fields, formData, onChange }) {
+export default function SchemaSection({ title, fields, formData, onChange, ai = true }) {
   return (
     <div style={{ marginBottom: "30px" }}>
       <h3 style={{ fontSize: "18px", fontWeight: "700", color: colors.header, marginBottom: "20px", borderBottom: `3px solid ${colors.primary}`, padding: "12px", backgroundColor: colors.surfaceAlt }}>
@@ -26,25 +26,40 @@ export default function SchemaSection({ title, fields, formData, onChange }) {
                       <option key={opt} value={opt}>{opt}</option>
                     ))}
                   </select>
-                ) : field.type === "textarea" ? (
-                  <SmartTextarea
-                    name={field.name}
-                    value={formData[field.name] || ""}
-                    onChange={onChange}
-                    placeholder={field.placeholder || ""}
-                    style={{ width: "100%", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, padding: "8px", borderRadius: "6px", boxSizing: "border-box", fontSize: "14px", minHeight: "80px", fontFamily: "inherit" }}
-                  />
-                ) : field.type === "checkbox" ? (
-                  <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
-                    <input
-                      type="checkbox"
+                ) : (field.type === "text" || field.type === "textarea" || !field.type) ? (
+                  ai ? (
+                    <SmartTextarea
                       name={field.name}
-                      checked={!!formData[field.name]}
-                      onChange={(e) => onChange({ target: { name: field.name, value: e.target.checked } })}
-                      style={{ width: "18px", height: "18px", accentColor: colors.primary, cursor: "pointer" }}
+                      value={formData[field.name] || ""}
+                      onChange={onChange}
+                      placeholder={field.placeholder || ""}
+                      context={field.label}
+                      minHeight={field.type === "textarea" ? 80 : 38}
+                      style={{ 
+                        width: "100%", background: colors.surface, color: colors.text, 
+                        border: `2px solid ${colors.border}`, padding: "8px", borderRadius: "6px", 
+                        boxSizing: "border-box", fontSize: "14px", fontFamily: "inherit",
+                        resize: "none"
+                      }}
                     />
-                    <span style={{ fontSize: "14px", color: colors.text }}>{field.label}</span>
-                  </label>
+                  ) : field.type === "textarea" ? (
+                    <textarea
+                      name={field.name}
+                      value={formData[field.name] || ""}
+                      onChange={onChange}
+                      placeholder={field.placeholder || ""}
+                      style={{ width: "100%", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, padding: "8px", borderRadius: "6px", boxSizing: "border-box", fontSize: "14px", minHeight: "80px", fontFamily: "inherit" }}
+                    />
+                  ) : (
+                    <input
+                      type={field.type || "text"}
+                      name={field.name}
+                      placeholder={field.placeholder || ""}
+                      value={formData[field.name] || ""}
+                      onChange={onChange}
+                      style={{ width: "100%", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, padding: "8px", borderRadius: "6px", boxSizing: "border-box", fontSize: "14px" }}
+                    />
+                  )
                 ) : (
                   <input
                     type={field.type || "text"}

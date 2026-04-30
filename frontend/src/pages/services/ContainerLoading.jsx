@@ -15,6 +15,7 @@ import SchemaChecklist from "../../components/FormBuilder/SchemaChecklist";
 import SchemaChecklistTable from "../../components/FormBuilder/SchemaChecklistTable";
 import ProductConformityTable from "../../components/FormBuilder/ProductConformityTable";
 import CLSPackingTable from "../../components/FormBuilder/CLSPackingTable";
+import { compressImage, formatFileSize } from "../../utils/imageCompression";
 
 const safeJsonParse = (value, fallback) => {
   try { return value ? JSON.parse(value) : fallback; } catch { return fallback; }
@@ -36,6 +37,7 @@ export default function ContainerLoading() {
 
   const [showSaveToast, setShowSaveToast] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isPhotoProcessing, setIsPhotoProcessing] = useState(false);
 
   // Responsiveness
   const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
@@ -174,6 +176,29 @@ export default function ContainerLoading() {
   const next = () => setStep(step + 1);
   const prev = () => setStep(step - 1);
 
+  const handleGeneralPhotoUpload = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    setIsPhotoProcessing(true);
+    try {
+      const { file: compressedFile, preview, originalSize, compressedSize } = await compressImage(file);
+      setForm(prev => ({
+        ...prev,
+        generalPhoto: preview,
+        generalPhotoMeta: { fileName: compressedFile.name, originalSize, compressedSize }
+      }));
+    } catch (error) {
+      console.error("Photo upload failed:", error);
+    } finally {
+      setIsPhotoProcessing(false);
+      e.target.value = "";
+    }
+  };
+
+  const clearGeneralPhoto = () => {
+    setForm(prev => ({ ...prev, generalPhoto: null, generalPhotoMeta: null }));
+  };
+
   const submit = async () => {
     setIsGenerating(true);
     const formData = new FormData();
@@ -233,7 +258,66 @@ export default function ContainerLoading() {
   };
 
   const steps = [
-    { id: 1, label: "General Information", component: <SchemaSection title="1. General Information" fields={clsSchema.generalInfo} formData={form} onChange={handleChange} /> },
+    { id: 1, label: "General Information", component: (
+      <div style={{ display: "flex", gap: "30px", flexDirection: isMobile ? "column" : "row" }}>
+        <div style={{ flex: 1 }}>
+          <SchemaSection title="1. General Information" fields={clsSchema.generalInfo} formData={form} onChange={handleChange} ai={false} />
+        </div>
+        <div style={{ width: isMobile ? "100%" : "280px", flexShrink: 0 }}>
+          <div style={{ marginBottom: "10px" }}>
+            <label style={{ display: "block", marginBottom: "8px", fontSize: "13px", fontWeight: "600", color: colors.text }}>
+              General Photo:
+            </label>
+            <input 
+              type="file" 
+              accept="image/*"
+              onChange={handleGeneralPhotoUpload}
+              style={{ width: "100%", padding: "10px", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, borderRadius: "8px", cursor: "pointer", fontSize: "12px", boxSizing: "border-box" }}
+              disabled={isPhotoProcessing}
+            />
+          </div>
+
+          {form.generalPhoto ? (
+            <div>
+              <div style={{ position: "relative", borderRadius: "12px", overflow: "hidden", border: `2px solid ${colors.border}`, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
+                <img 
+                  src={form.generalPhoto} 
+                  alt="General photo preview"
+                  style={{ width: "100%", height: "220px", objectFit: "cover", display: "block" }}
+                />
+                {isPhotoProcessing && (
+                  <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "600", color: colors.primary }}>
+                    Processing...
+                  </div>
+                )}
+              </div>
+              {form.generalPhotoMeta && (
+                <div style={{ marginTop: "10px", padding: "10px", background: colors.surfaceAlt, borderRadius: "8px", border: `1px solid ${colors.border}` }}>
+                  <div style={{ fontSize: "11px", color: colors.text, fontWeight: "600", marginBottom: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {form.generalPhotoMeta.fileName}
+                  </div>
+                  <div style={{ fontSize: "10px", color: colors.success, fontWeight: "500" }}>
+                    {formatFileSize(form.generalPhotoMeta.compressedSize)}
+                  </div>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={clearGeneralPhoto}
+                style={{ marginTop: "10px", width: "100%", border: "none", borderRadius: "8px", background: "#fee2e2", color: "#ef4444", fontSize: "12px", padding: "10px", cursor: "pointer", fontWeight: "600", transition: "all 0.2s" }}
+              >
+                Remove Photo
+              </button>
+            </div>
+          ) : (
+            <div style={{ width: "100%", height: "220px", border: `2px dashed ${colors.border}`, borderRadius: "12px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: colors.textMuted, background: colors.surfaceAlt, gap: "10px" }}>
+              <span style={{ fontSize: "24px" }}>📷</span>
+              <span style={{ fontSize: "12px", fontWeight: "500" }}>No photo uploaded</span>
+            </div>
+          )}
+        </div>
+      </div>
+    ) },
     { id: 2, label: "Inspection Summary", component: <SchemaSection title="2. Inspection Summary" fields={clsSchema.inspectionSummary} formData={form} onChange={handleChange} /> },
     { id: 3, label: "Remarks", component: (
       <div style={{ display: "flex", flexDirection: "column", gap: "25px" }}>
@@ -251,7 +335,7 @@ export default function ContainerLoading() {
       </div>
     ) },
     { id: 4, label: "Conclusion", component: <SchemaSection title="4. Overall Conclusion" fields={clsSchema.conclusion} formData={form} onChange={handleChange} /> },
-    { id: 5, label: "Quantity", component: <SchemaTable title="5. Quantity Details" config={clsSchema.quantityTable} dataKey="quantityTable" formData={form} onChange={handleChange} /> },
+    { id: 5, label: "Quantity", component: <SchemaTable title="5. Quantity Details" config={clsSchema.quantityTable} dataKey="quantityTable" formData={form} onChange={handleChange} ai={false} /> },
     { id: 6, label: "Product Conformity", component: <ProductConformityTable formData={form} onChange={handleChange} /> },
     { id: 7, label: "Packing", component: <CLSPackingTable formData={form} onChange={handleChange} /> },
     { id: 8, label: "Loading Process", component: (

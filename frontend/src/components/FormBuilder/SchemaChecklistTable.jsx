@@ -1,4 +1,5 @@
 import { colors } from "../../styles";
+import SmartTextarea from "../SmartTextarea";
 
 export default function SchemaChecklistTable({ title, items, formData, onChange, dataKey }) {
   const currentData = Array.isArray(formData[dataKey]) ? formData[dataKey] : [];
@@ -83,12 +84,13 @@ export default function SchemaChecklistTable({ title, items, formData, onChange,
                   </div>
                 </td>
                 <td style={{ padding: "6px", borderBottom: `1px solid ${colors.border}` }}>
-                  <input
-                    type="text"
+                  <SmartTextarea
+                    name={`finding_${item.id}`}
                     value={getFinding(item.id)}
                     onChange={(e) => handleFindingChange(item.id, e.target.value)}
                     placeholder="Enter findings..."
-                    style={{ width: "100%", border: `1px solid ${colors.border}`, padding: "6px", borderRadius: "4px", fontSize: "12px" }}
+                    minHeight={32}
+                    style={{ width: "100%", border: `1px solid ${colors.border}`, padding: "4px 6px", borderRadius: "4px", fontSize: "12px", background: "white" }}
                   />
                 </td>
               </tr>

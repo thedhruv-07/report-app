@@ -312,6 +312,17 @@ const generateReport = async (req, res) => {
     
     const doc = new Document({
       features: { updateFields: false },
+      styles: {
+        default: {
+          document: {
+            run: {
+              font: "Arial",
+              size: 18, // 9pt
+              color: "000000",
+            },
+          },
+        },
+      },
       sections: [
         {
           headers: {

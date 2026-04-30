@@ -60,7 +60,7 @@ function createConclusionTable(data, isCls = false) {
                       text: conclusionResult,
                       bold: true,
                       size: 84,
-                      font: "Times New Roman",
+                      font: "Arial",
                       color: isPass ? "228B22" : "CC0000"
                     })
                   ],
@@ -98,7 +98,7 @@ function createConclusionTable(data, isCls = false) {
           width: { size: 60, type: "pct" },
           borders: tableBorders(),
           children: [
-            new Paragraph({ children: [new TextRun({ text: conclusionResult, bold: true, size: 84, font: "Times New Roman", color: isPass ? "228B22" : "CC0000" })], alignment: "left", spacing: { before: 300, after: 300 } }),
+            new Paragraph({ children: [new TextRun({ text: conclusionResult, bold: true, size: 84, font: "Arial", color: isPass ? "228B22" : "CC0000" })], alignment: "left", spacing: { before: 300, after: 300 } }),
             ...legend.map(l => new Paragraph({
               children: [
                 new TextRun({ text: l.label, bold: true, size: 18 }),
@@ -459,112 +459,65 @@ async function createReportContent(data, uploadedFiles) {
     ["Reference Sample:", data.referenceSample],
   ];
 
-  if (data.serviceType === 'cls') {
-    const infoRows = [
-      new TableRow({
-        children: [
-          new TableCell({
-            columnSpan: 3,
-            shading: { fill: "FFFFFF" },
-            borders: tableBorders(),
-            children: [new Paragraph({
-              children: [new TextRun({ text: data.servicePerformed || "Container Loading Supervision (CLS)", bold: true, size: 28, color: "1F4E79" })],
-              alignment: "center",
-              spacing: { before: 80, after: 80 }
-            })]
-          })
-        ]
-      }),
-      new TableRow({
-        children: [
-          new TableCell({
-            columnSpan: 3,
-            shading: { fill: "E9ECEF" },
-            borders: tableBorders(),
-            children: [new Paragraph({
-              children: [new TextRun({ text: "I. GENERAL INFORMATION", bold: true, size: 22, color: "1F4E79" })],
-              alignment: "left",
-              spacing: { before: 60, after: 60 }
-            })]
-          })
-        ]
-      }),
-      new TableRow({
-        children: [
-          createQtyCell(generalData[0][0], { bold: true, align: "left", shaded: true, width: { size: 25, type: "pct" } }),
-          createQtyCell(blankIfEmpty(generalData[0][1]), { align: "left", width: { size: 35, type: "pct" } }),
-          new TableCell({
-            rowSpan: generalData.length,
-            width: { size: 40, type: "pct" },
-            borders: tableBorders(),
-            children: getPhotoContent(data.generalPhoto, uploadedFiles, data)
-          })
-        ]
-      }),
-      ...generalData.slice(1).map(([label, val]) =>
-        new TableRow({
-          children: [
-            createQtyCell(label, { bold: true, align: "left", shaded: true, width: { size: 25, type: "pct" } }),
-            createQtyCell(blankIfEmpty(val), { align: "left", width: { size: 35, type: "pct" } })
-          ]
+  const isClsReport = data.serviceType === 'cls';
+  const serviceTitle = data.servicePerformed || (isClsReport ? "Container Loading Supervision (CLS)" : "Pre-Shipment Inspection Report");
+  
+  const infoRows = [
+    // Service Title Row
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 3,
+          shading: { fill: "FFFFFF" },
+          borders: tableBorders(),
+          children: [new Paragraph({
+            children: [new TextRun({ text: serviceTitle, bold: true, size: 28, color: "1F4E79" })],
+            alignment: "center",
+            spacing: { before: 120, after: 120 }
+          })]
         })
-      )
-    ];
-    children.push(new Table({ width: { size: 100, type: "pct" }, rows: infoRows }));
-  } else {
-    // Legacy PSI Header & General Info
-    const infoRows = [
-      new TableRow({
-        children: [
-          new TableCell({
-            columnSpan: 3,
-            shading: { fill: "FFFFFF" },
-            borders: tableBorders(),
-            children: [new Paragraph({
-              children: [new TextRun({ text: data.servicePerformed || "Pre-Shipment Inspection Report", bold: true, size: 28, color: "1F4E79" })],
-              alignment: "center",
-              spacing: { before: 80, after: 80 }
-            })]
-          })
-        ]
-      }),
-      new TableRow({
-        children: [
-          new TableCell({
-            columnSpan: 3,
-            shading: { fill: "E9ECEF" },
-            borders: tableBorders(),
-            children: [new Paragraph({
-              children: [new TextRun({ text: "I. GENERAL INFORMATION", bold: true, size: 22, color: "1F4E79" })],
-              alignment: "left",
-              spacing: { before: 60, after: 60 }
-            })]
-          })
-        ]
-      }),
-      new TableRow({
-        children: [
-          createQtyCell(generalData[0][0], { bold: true, align: "left", shaded: true, width: { size: 25, type: "pct" } }),
-          createQtyCell(blankIfEmpty(generalData[0][1]), { align: "left", width: { size: 35, type: "pct" } }),
-          new TableCell({
-            rowSpan: generalData.length,
-            width: { size: 40, type: "pct" },
-            borders: tableBorders(),
-            children: getPhotoContent(data.generalPhoto, uploadedFiles, data)
-          })
-        ]
-      }),
-      ...generalData.slice(1).map(([label, val]) =>
-        new TableRow({
-          children: [
-            createQtyCell(label, { bold: true, align: "left", shaded: true, width: { size: 25, type: "pct" } }),
-            createQtyCell(blankIfEmpty(val), { align: "left", width: { size: 35, type: "pct" } })
-          ]
+      ]
+    }),
+    // Section Header Row
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 3,
+          shading: { fill: "E9ECEF" },
+          borders: tableBorders(),
+          children: [new Paragraph({
+            children: [new TextRun({ text: "I. GENERAL INFORMATION", bold: true, size: 22, color: "1F4E79" })],
+            alignment: "left",
+            spacing: { before: 80, after: 80 }
+          })]
         })
-      )
-    ];
-    children.push(new Table({ width: { size: 100, type: "pct" }, rows: infoRows }));
-  }
+      ]
+    }),
+    // First Data Row with Photo (rowSpan)
+    new TableRow({
+      children: [
+        createQtyCell(generalData[0][0], { bold: true, align: "left", shaded: true, width: { size: 25, type: "pct" }, spacing: { before: 60, after: 60 } }),
+        createQtyCell(blankIfEmpty(generalData[0][1]), { align: "left", width: { size: 35, type: "pct" }, spacing: { before: 60, after: 60 } }),
+        new TableCell({
+          rowSpan: generalData.length,
+          width: { size: 40, type: "pct" },
+          borders: tableBorders(),
+          verticalAlign: "center",
+          children: getPhotoContent(data.generalPhoto, uploadedFiles, data)
+        })
+      ]
+    }),
+    // Remaining Data Rows
+    ...generalData.slice(1).map(([label, val]) =>
+      new TableRow({
+        children: [
+          createQtyCell(label, { bold: true, align: "left", shaded: true, width: { size: 25, type: "pct" }, spacing: { before: 60, after: 60 } }),
+          createQtyCell(blankIfEmpty(val), { align: "left", width: { size: 35, type: "pct" }, spacing: { before: 60, after: 60 } })
+        ]
+      })
+    )
+  ];
+  children.push(new Table({ width: { size: 100, type: "pct" }, rows: infoRows }));
   children.push(new Paragraph({ children: [], spacing: { before: 100, after: 100 } }));
 
   // II. INSPECTION SUMMARY
@@ -1064,359 +1017,361 @@ async function createReportContent(data, uploadedFiles) {
     children.push(new Paragraph({ children: [new PageBreak()] }));
   }
 
-  // C. ON-SITE TESTS (Separated table with exact colors)
-  const osResult = data.onSiteTestResult || "Pending";
-  const osRows = [
-    new TableRow({ children: [new TableCell({ columnSpan: 5, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "C. ON-SITE TESTS", bold: true, size: 22, color: "1F4E79" })] })] })] }),
-    new TableRow({
-      children: [
-        createQtyCell(""),
-        createQtyCell("Description", { bold: true, shaded: true, align: "left" }),
-        createQtyCell("Method", { bold: true, shaded: true, align: "left" }),
-        createQtyCell("Sample Size", { bold: true, shaded: true }),
-        createQtyCell("Result / Reading", { bold: true, shaded: true }),
-      ]
-    }),
-    ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(id => {
-      const desc = data[`testDesc${id}`];
-      if (!desc && id > 1) return null;
-      return new TableRow({
+  if (!isCls) {
+    // C. ON-SITE TESTS (Separated table with exact colors)
+    const osResult = data.onSiteTestResult || "Pending";
+    const osRows = [
+      new TableRow({ children: [new TableCell({ columnSpan: 5, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "C. ON-SITE TESTS", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+      new TableRow({
         children: [
-          createQtyCell(String(id)),
-          createQtyCell(desc || (id === 1 ? "Function test" : "-"), { align: "left" }),
-          createQtyCell(data[`testMethod${id}`] || (id === 1 ? "Check if the equipment can operate normally" : "-"), { align: "left" }),
-          createQtyCell(data[`testSample${id}`] || "1pc"),
-          createQtyCell(data[`testResult${id}`] || "pending", { bold: true, color: String(data[`testResult${id}`] || "pending").toLowerCase().includes("pass") ? "228B22" : "E36C09" }),
+          createQtyCell(""),
+          createQtyCell("Description", { bold: true, shaded: true, align: "left" }),
+          createQtyCell("Method", { bold: true, shaded: true, align: "left" }),
+          createQtyCell("Sample Size", { bold: true, shaded: true }),
+          createQtyCell("Result / Reading", { bold: true, shaded: true }),
         ]
-      });
-    }).filter(Boolean),
-    new TableRow({ children: [createQtyCell("Result:", { bold: true, shaded: true, align: "left" }), createQtyCell(osResult, { colSpan: 4, align: "left", bold: true, color: String(osResult).toLowerCase().includes("pass") ? "228B22" : "E36C09" })] }),
-    new TableRow({ children: [createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(data.onSiteTestRemark || "The factory did not provide the equipment for other tests", { colSpan: 4, align: "left" })] })
-  ];
-  children.push(new Table({ width: { size: 100, type: "pct" }, rows: osRows }));
-  children.push(new Paragraph({ children: [], spacing: { after: 200 } })); // Separator gap
-
-
-  // D. PRODUCT SPECIFICATION (Separated table matching SS)
-  const prodRes = data.productResult || "Passed";
-  const specItems = [
-    new TableRow({ children: [new TableCell({ columnSpan: 6, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "D. PRODUCT SPECIFICATION", bold: true, size: 22, color: "1F4E79" })] })] })] }),
-    new TableRow({
-      children: [
-        createQtyCell(""),
-        createQtyCell("Client's Spec.", { bold: true, shaded: true }),
-        createQtyCell("Ref. Sample", { bold: true, shaded: true }),
-        createQtyCell("1# Sample", { bold: true, shaded: true }),
-        createQtyCell("2# Sample", { bold: true, shaded: true }),
-        createQtyCell("3# Sample", { bold: true, shaded: true }),
-      ]
-    }),
-    // Main Item
-    new TableRow({ children: [createQtyCell("Item No.:", { bold: true, shaded: true, align: "left" }), createQtyCell(data.productDescription || "30B nut forming machine (Model: 30B-6S-40)", { colSpan: 5, bold: true })] }),
-    new TableRow({
-      children: [
-        createQtyCell(data.blank_row_0 || "30B-6S-40", { align: "left" }),
-        createQtyCell(data.blank_row_c0 || "NA"),
-        createQtyCell(data.blank_row_c1 || "-"),
-        createQtyCell(data.blank_row_c2 || "676x294x238cm"),
-        createQtyCell(data.blank_row_c3 || "-"),
-        createQtyCell(data.blank_row_c4 || "-"),
-      ]
-    }),
-    // Dynamic Items (map matching frontend loop)
-    ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(id => {
-      const descKey = `item_${id}_desc`;
-      if (!data[descKey] && id > 1) return null;
-      return [
-        new TableRow({ children: [createQtyCell("Item No.:", { bold: true, shaded: true, align: "left" }), createQtyCell(data[descKey] || (id === 1 ? "Mould M10" : "-"), { colSpan: 5, bold: true })] }),
-        new TableRow({
+      }),
+      ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(id => {
+        const desc = data[`testDesc${id}`];
+        if (!desc && id > 1) return null;
+        return new TableRow({
           children: [
-            createQtyCell(data[`item_${id}_name`] || (id === 1 ? "Mould M10" : "-"), { align: "left" }),
-            createQtyCell(data[`item_${id}_c0`] || "NA"),
-            createQtyCell(data[`item_${id}_c1`] || "-"),
-            createQtyCell(data[`item_${id}_c2`] || (id === 1 ? "10mm" : "-")),
-            createQtyCell(data[`item_${id}_c3`] || "-"),
-            createQtyCell(data[`item_${id}_c4`] || "-"),
+            createQtyCell(String(id)),
+            createQtyCell(desc || (id === 1 ? "Function test" : "-"), { align: "left" }),
+            createQtyCell(data[`testMethod${id}`] || (id === 1 ? "Check if the equipment can operate normally" : "-"), { align: "left" }),
+            createQtyCell(data[`testSample${id}`] || "1pc"),
+            createQtyCell(data[`testResult${id}`] || "pending", { bold: true, color: String(data[`testResult${id}`] || "pending").toLowerCase().includes("pass") ? "228B22" : "E36C09" }),
           ]
-        })
-      ];
-    }).filter(Boolean).flat(),
-    new TableRow({ children: [createQtyCell("Result:", { bold: true, shaded: true, align: "left" }), createQtyCell(prodRes, { colSpan: 5, align: "left", bold: true, color: String(prodRes).toLowerCase().includes("pass") ? "228B22" : "CC0000" })] }),
-    new TableRow({ children: [createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(data.productRemark || "N/A", { colSpan: 5, align: "left" })] })
-  ];
-  children.push(new Table({ width: { size: 100, type: "pct" }, rows: specItems }));
-  children.push(new Paragraph({ children: [], spacing: { after: 200 } })); // Gap instead of page break
+        });
+      }).filter(Boolean),
+      new TableRow({ children: [createQtyCell("Result:", { bold: true, shaded: true, align: "left" }), createQtyCell(osResult, { colSpan: 4, align: "left", bold: true, color: String(osResult).toLowerCase().includes("pass") ? "228B22" : "E36C09" })] }),
+      new TableRow({ children: [createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(data.onSiteTestRemark || "The factory did not provide the equipment for other tests", { colSpan: 4, align: "left" })] })
+    ];
+    children.push(new Table({ width: { size: 100, type: "pct" }, rows: osRows }));
+    children.push(new Paragraph({ children: [], spacing: { after: 200 } })); // Separator gap
 
 
-  // E. PACKING (Detailed implementation matching legacy SS)
-  let packageIconRun = null;
-  try {
-    if (fs.existsSync(PACKAGE_ICON_PATH)) {
-      packageIconRun = new ImageRun({ data: fs.readFileSync(PACKAGE_ICON_PATH), type: "png", transformation: { width: 50, height: 50 } });
-    }
-  } catch (e) { }
-
-  const eRows = [
-    // Header
-    new TableRow({ children: [new TableCell({ columnSpan: 9, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "E. PACKING", bold: true, size: 22, color: "1F4E79" })] })] })] }),
-    // Logo & Subtitle
-    new TableRow({
-      children: [
-        new TableCell({ columnSpan: 7, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Package Details:", bold: true })] })] }),
-        new TableCell({ columnSpan: 2, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [packageIconRun ? new Paragraph({ children: [packageIconRun], alignment: "right" }) : new Paragraph({ children: [] })] })
-      ]
-    }),
-    // Sub-headers Row 1
-    new TableRow({
-      children: [
-        new TableCell({ rowSpan: 2, borders: tableBorders(), shading: { fill: "F2F2F2" }, children: [new Paragraph({ children: [new TextRun({ text: "Item No.", bold: true })], alignment: "center" })] }),
-        createQtyCell("Qty / Carton", { bold: true, colSpan: 2, shaded: true }),
-        createQtyCell("Carton Size L×W×H (cm)", { bold: true, colSpan: 2, shaded: true }),
-        createQtyCell("Gross Weight (KG)", { bold: true, colSpan: 2, shaded: true }),
-        createQtyCell("Qty / Inner box", { bold: true, colSpan: 2, shaded: true }),
-      ]
-    }),
-    // Sub-headers Row 2
-    new TableRow({
-      children: [
-        createQtyCell("Marking", { shaded: true }), createQtyCell("Actual", { shaded: true }),
-        createQtyCell("Marking", { shaded: true }), createQtyCell("Actual", { shaded: true }),
-        createQtyCell("Marking", { shaded: true }), createQtyCell("Actual", { shaded: true }),
-        createQtyCell("Marking", { shaded: true }), createQtyCell("Actual", { shaded: true }),
-      ]
-    }),
-    // Dynamic Packing Body
-    ...[1, 2, 3].map(id => {
-      const itemName = data[`packing_item_${id}`];
-      if (!itemName && id > 1) return null;
-      return new TableRow({
+    // D. PRODUCT SPECIFICATION (Separated table matching SS)
+    const prodRes = data.productResult || "Passed";
+    const specItems = [
+      new TableRow({ children: [new TableCell({ columnSpan: 6, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "D. PRODUCT SPECIFICATION", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+      new TableRow({
         children: [
-          createQtyCell(itemName || (id === 1 ? "30B nut forming machine (Model: 30B-6S-40)" : "-"), { align: "left" }),
-          createQtyCell(data[`packing_qty_carton_marking_${id}`] || "-"),
-          createQtyCell(data[`packing_qty_carton_actual_${id}`] || "-"),
-          createQtyCell(data[`packing_carton_size_marking_${id}`] || "-"),
-          createQtyCell(data[`packing_carton_size_actual_${id}`] || "-"),
-          createQtyCell(data[`packing_weight_marking_${id}`] || "-"),
-          createQtyCell(data[`packing_weight_actual_${id}`] || "-"),
-          createQtyCell(data[`packing_qty_inner_marking_${id}`] || "-"),
-          createQtyCell(data[`packing_qty_inner_actual_${id}`] || "-"),
+          createQtyCell(""),
+          createQtyCell("Client's Spec.", { bold: true, shaded: true }),
+          createQtyCell("Ref. Sample", { bold: true, shaded: true }),
+          createQtyCell("1# Sample", { bold: true, shaded: true }),
+          createQtyCell("2# Sample", { bold: true, shaded: true }),
+          createQtyCell("3# Sample", { bold: true, shaded: true }),
         ]
-      });
-    }).filter(Boolean),
-    // Export Carton Details
-    new TableRow({ children: [new TableCell({ columnSpan: 9, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Export Carton Details", bold: true })] })] })] }),
-    new TableRow({
-      children: [
-        createQtyCell("Fastening Metal Staples", { colSpan: 3, align: "right" }),
-        createQtyCell(data.fastening_metal_staples || "-", { colSpan: 2, align: "left" }),
-        createQtyCell("Nylon Band", { colSpan: 2, align: "right" }),
-        createQtyCell(data.nylon_band || "-", { colSpan: 2, align: "left" }),
-      ]
-    }),
-    new TableRow({
-      children: [
-        createQtyCell("Material", { colSpan: 3, align: "right" }),
-        createQtyCell(data.material || "-", { colSpan: 2, align: "left" }),
-        createQtyCell("Corrugated Paper Plies", { colSpan: 2, align: "right" }),
-        createQtyCell(`${data.corrugated_paper_plies || "-"}-ply`, { colSpan: 2, align: "left" }),
-      ]
-    }),
-    // Packing Method
-    new TableRow({ children: [new TableCell({ columnSpan: 9, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Packing Method", bold: true })] })] })] }),
-    new TableRow({ children: [createQtyCell(data.packing_method || "NA", { colSpan: 9, align: "left" })] }),
-    // Assortment Method
-    new TableRow({ children: [new TableCell({ columnSpan: 9, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Assortment Method", bold: true })] })] })] }),
-    new TableRow({ children: [createQtyCell(data.assortment_method || "-", { colSpan: 9, align: "left" })] }),
-    // Result & Remark
-    new TableRow({ children: [createQtyCell("Result:", { bold: true, colSpan: 2, align: "left" }), createQtyCell(data.packing_result || "Passed", { colSpan: 7, align: "center", bold: true, color: String(data.packing_result).toLowerCase().includes("fail") ? "CC0000" : "228B22" })] }),
-    new TableRow({ children: [createQtyCell("Remark:", { bold: true, colSpan: 2, align: "left" }), createQtyCell(data.packing_remark || "No packing", { colSpan: 7, align: "left" })] })
-  ];
-  children.push(new Table({ width: { size: 100, type: "pct" }, rows: eRows }));
-  children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
+      }),
+      // Main Item
+      new TableRow({ children: [createQtyCell("Item No.:", { bold: true, shaded: true, align: "left" }), createQtyCell(data.productDescription || "30B nut forming machine (Model: 30B-6S-40)", { colSpan: 5, bold: true })] }),
+      new TableRow({
+        children: [
+          createQtyCell(data.blank_row_0 || "30B-6S-40", { align: "left" }),
+          createQtyCell(data.blank_row_c0 || "NA"),
+          createQtyCell(data.blank_row_c1 || "-"),
+          createQtyCell(data.blank_row_c2 || "676x294x238cm"),
+          createQtyCell(data.blank_row_c3 || "-"),
+          createQtyCell(data.blank_row_c4 || "-"),
+        ]
+      }),
+      // Dynamic Items (map matching frontend loop)
+      ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(id => {
+        const descKey = `item_${id}_desc`;
+        if (!data[descKey] && id > 1) return null;
+        return [
+          new TableRow({ children: [createQtyCell("Item No.:", { bold: true, shaded: true, align: "left" }), createQtyCell(data[descKey] || (id === 1 ? "Mould M10" : "-"), { colSpan: 5, bold: true })] }),
+          new TableRow({
+            children: [
+              createQtyCell(data[`item_${id}_name`] || (id === 1 ? "Mould M10" : "-"), { align: "left" }),
+              createQtyCell(data[`item_${id}_c0`] || "NA"),
+              createQtyCell(data[`item_${id}_c1`] || "-"),
+              createQtyCell(data[`item_${id}_c2`] || (id === 1 ? "10mm" : "-")),
+              createQtyCell(data[`item_${id}_c3`] || "-"),
+              createQtyCell(data[`item_${id}_c4`] || "-"),
+            ]
+          })
+        ];
+      }).filter(Boolean).flat(),
+      new TableRow({ children: [createQtyCell("Result:", { bold: true, shaded: true, align: "left" }), createQtyCell(prodRes, { colSpan: 5, align: "left", bold: true, color: String(prodRes).toLowerCase().includes("pass") ? "228B22" : "CC0000" })] }),
+      new TableRow({ children: [createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(data.productRemark || "N/A", { colSpan: 5, align: "left" })] })
+    ];
+    children.push(new Table({ width: { size: 100, type: "pct" }, rows: specItems }));
+    children.push(new Paragraph({ children: [], spacing: { after: 200 } })); // Gap instead of page break
 
 
-  // F. MARKING & LABELING (Detailed Implementation)
-  const markResFinal = data.marking_result_final || "Pending";
-  const fRows = [
-    // Header
-    new TableRow({ children: [new TableCell({ columnSpan: 3, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "F. MARKING & LABELING", bold: true, size: 22, color: "1F4E79" })] })] })] }),
-    // Sub-header
-    new TableRow({ children: [new TableCell({ columnSpan: 3, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Barcode/Labeling/Printing", bold: true })] })] })] }),
-    // Column Headers
-    new TableRow({
-      children: [
-        createQtyCell("Name", { bold: true, shaded: true }),
-        createQtyCell("Location", { bold: true, shaded: true }),
-        createQtyCell("Result", { bold: true, shaded: true }),
-      ]
-    }),
-    // Barcode Row
-    new TableRow({
-      children: [
-        createQtyCell(data.barcode_name || "Rating label"),
-        createQtyCell(data.barcode_location || "Unit"),
-        createQtyCell(data.barcode_result || "pass"),
-      ]
-    }),
-    // Documentation Checks
-    new TableRow({
-      children: [
-        createQtyCell("Instruction manual and documentation check", { align: "left" }),
-        createQtyCell(data.instruction_provided_by_label || "Provided By factory"),
-        createQtyCell(data.instruction_provided_by || "pass"),
-      ]
-    }),
-    new TableRow({
-      children: [
-        createQtyCell("No instruction manual included", { align: "left" }),
-        createQtyCell(""),
-        createQtyCell(data.no_instruction_result || "-"),
-      ]
-    }),
-    new TableRow({
-      children: [
-        createQtyCell("No CDF was provided for comparison during inspection.", { align: "left" }),
-        createQtyCell(""),
-        createQtyCell(data.no_cdf_result || "-"),
-      ]
-    }),
-    // Shipping Marks sub-header
-    new TableRow({ children: [new TableCell({ columnSpan: 3, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Shipping Marks", bold: true })] })] })] }),
-    // Marks rows
-    new TableRow({
-      children: [
-        createQtyCell("Shipping Marks (on _ side)", { colSpan: 2, align: "left" }),
-        createQtyCell(data.shipping_marks || "-"),
-      ]
-    }),
-    new TableRow({
-      children: [
-        createQtyCell("Side Marks (on _ side)", { colSpan: 2, align: "left" }),
-        createQtyCell(data.side_marks || "-"),
-      ]
-    }),
-    new TableRow({
-      children: [
-        createQtyCell("Inner Box Marks (on _ side)", { colSpan: 2, align: "left" }),
-        createQtyCell(data.inner_box_marks || "-"),
-      ]
-    }),
-    // Result & Remark
-    new TableRow({ children: [createQtyCell("Result:", { bold: true, colSpan: 2, align: "left" }), createQtyCell(markResFinal, { colSpan: 1, align: "center", bold: true, color: markResFinal.toLowerCase().includes("pending") ? "E36C09" : "228B22" })] }),
-    new TableRow({ children: [createQtyCell("Remark:", { colSpan: 2, align: "left" }), createQtyCell(data.marking_remark || "No shipping mark, only rated label", { colSpan: 1, align: "left" })] })
-  ];
-  children.push(new Table({ width: { size: 100, type: "pct" }, rows: fRows }));
-  children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
-
-
-  // G. CLIENT SPECIAL REQUIREMENT (Single Unified Table)
-  const clientResult = data.client_requirement_result || "-";
-  const clientReqs = Array.isArray(data.clientRequirements) ? data.clientRequirements : [];
-
-  const gRows = [
-    // Main Header
-    new TableRow({ children: [new TableCell({ columnSpan: 3, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "G. CLIENT SPECIAL REQUIREMENT", bold: true, size: 22, color: "1F4E79" })] })] })] }),
-    // Sub-header
-    new TableRow({ children: [new TableCell({ columnSpan: 3, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Client Requirements:", bold: true })] })] })] }),
-    // Column Labels
-    new TableRow({
-      children: [
-        createQtyCell(""), // for Number
-        createQtyCell("Client Requirements", { bold: true, align: "center" }),
-        createQtyCell("Result", { bold: true, align: "center" }),
-      ]
-    }),
-    // Dynamic Requirements (from clientRequirements array)
-    ...(clientReqs.length > 0 ? clientReqs : [{ requirement: "-", result: "-" }]).map((req, i) => new TableRow({
-      children: [
-        createQtyCell(`${i + 1}.`, { width: { size: 5, type: "pct" }, align: "left" }),
-        createQtyCell(req.requirement || "-", { align: "left" }),
-        createQtyCell(req.result || "-"),
-      ]
-    })),
-    // Result Row
-    new TableRow({
-      children: [
-        createQtyCell("Result:", { bold: true, align: "left" }),
-        createQtyCell(clientResult, { colSpan: 2, align: "left", color: String(clientResult).toLowerCase().includes("fail") ? "CC0000" : (String(clientResult).toLowerCase().includes("pending") ? "E36C09" : "000000") }),
-      ]
-    }),
-    // Remark Row
-    new TableRow({
-      children: [
-        createQtyCell("Remark:", { align: "left" }),
-        createQtyCell(data.client_requirement_remark || "-", { colSpan: 2, align: "left" }),
-      ]
-    })
-  ];
-  children.push(new Table({ width: { size: 100, type: "pct" }, rows: gRows }));
-
-
-  // H. PHOTOS
-  const finalPhotoGroups = Array.isArray(data.reportPhotoGroups) ? data.reportPhotoGroups : (Array.isArray(data.photoGroups) ? data.photoGroups : []);
-  
-  if (finalPhotoGroups.length > 0) {
-    // 1. Header Table (Small, easily fits on any page)
-    children.push(new Table({
-      width: { size: 100, type: "pct" },
-      rows: [
-        new TableRow({ 
-          children: [
-            new TableCell({ 
-              columnSpan: 2, 
-              shading: { fill: "E8E8E8" }, 
-              borders: tableBorders(), 
-              children: [new Paragraph({ children: [new TextRun({ text: "H. PHOTOS", bold: true, size: 22, color: "1F4E79" })] })] 
-            })
-          ] 
-        })
-      ]
-    }));
-
-    // 2. Individual Tables for each Group (Allows page breaks between groups)
-    for (const group of finalPhotoGroups) {
-      const photos = (group.photos || []).filter(p => p.preview || p.wasabiKey);
-      if (photos.length === 0) continue;
-
-      const groupRows = [];
-
-      // Group sub-header
-      if (group.description) {
-        groupRows.push(new TableRow({
-          children: [
-            new TableCell({
-              columnSpan: 2,
-              shading: { fill: "F2F2F2" },
-              borders: tableBorders(),
-              children: [new Paragraph({ children: [new TextRun({ text: `Group: ${group.description}`, bold: true })] })]
-            })
-          ]
-        }));
+    // E. PACKING (Detailed implementation matching legacy SS)
+    let packageIconRun = null;
+    try {
+      if (fs.existsSync(PACKAGE_ICON_PATH)) {
+        packageIconRun = new ImageRun({ data: fs.readFileSync(PACKAGE_ICON_PATH), type: "png", transformation: { width: 50, height: 50 } });
       }
+    } catch (e) { }
 
-      for (let i = 0; i < photos.length; i += 2) {
-        const p1 = photos[i];
-        const p2 = photos[i + 1];
-
-        // 🖼️ Image Row
-        groupRows.push(new TableRow({
+    const eRows = [
+      // Header
+      new TableRow({ children: [new TableCell({ columnSpan: 9, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "E. PACKING", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+      // Logo & Subtitle
+      new TableRow({
+        children: [
+          new TableCell({ columnSpan: 7, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Package Details:", bold: true })] })] }),
+          new TableCell({ columnSpan: 2, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [packageIconRun ? new Paragraph({ children: [packageIconRun], alignment: "right" }) : new Paragraph({ children: [] })] })
+        ]
+      }),
+      // Sub-headers Row 1
+      new TableRow({
+        children: [
+          new TableCell({ rowSpan: 2, borders: tableBorders(), shading: { fill: "F2F2F2" }, children: [new Paragraph({ children: [new TextRun({ text: "Item No.", bold: true })], alignment: "center" })] }),
+          createQtyCell("Qty / Carton", { bold: true, colSpan: 2, shaded: true }),
+          createQtyCell("Carton Size L×W×H (cm)", { bold: true, colSpan: 2, shaded: true }),
+          createQtyCell("Gross Weight (KG)", { bold: true, colSpan: 2, shaded: true }),
+          createQtyCell("Qty / Inner box", { bold: true, colSpan: 2, shaded: true }),
+        ]
+      }),
+      // Sub-headers Row 2
+      new TableRow({
+        children: [
+          createQtyCell("Marking", { shaded: true }), createQtyCell("Actual", { shaded: true }),
+          createQtyCell("Marking", { shaded: true }), createQtyCell("Actual", { shaded: true }),
+          createQtyCell("Marking", { shaded: true }), createQtyCell("Actual", { shaded: true }),
+          createQtyCell("Marking", { shaded: true }), createQtyCell("Actual", { shaded: true }),
+        ]
+      }),
+      // Dynamic Packing Body
+      ...[1, 2, 3].map(id => {
+        const itemName = data[`packing_item_${id}`];
+        if (!itemName && id > 1) return null;
+        return new TableRow({
           children: [
-            await createPhotoCell(p1),
-            p2 ? await createPhotoCell(p2) : new TableCell({ children: [new Paragraph({ children: [] })], borders: tableBorders() })
+            createQtyCell(itemName || (id === 1 ? "30B nut forming machine (Model: 30B-6S-40)" : "-"), { align: "left" }),
+            createQtyCell(data[`packing_qty_carton_marking_${id}`] || "-"),
+            createQtyCell(data[`packing_qty_carton_actual_${id}`] || "-"),
+            createQtyCell(data[`packing_carton_size_marking_${id}`] || "-"),
+            createQtyCell(data[`packing_carton_size_actual_${id}`] || "-"),
+            createQtyCell(data[`packing_weight_marking_${id}`] || "-"),
+            createQtyCell(data[`packing_weight_actual_${id}`] || "-"),
+            createQtyCell(data[`packing_qty_inner_marking_${id}`] || "-"),
+            createQtyCell(data[`packing_qty_inner_actual_${id}`] || "-"),
           ]
-        }));
+        });
+      }).filter(Boolean),
+      // Export Carton Details
+      new TableRow({ children: [new TableCell({ columnSpan: 9, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Export Carton Details", bold: true })] })] })] }),
+      new TableRow({
+        children: [
+          createQtyCell("Fastening Metal Staples", { colSpan: 3, align: "right" }),
+          createQtyCell(data.fastening_metal_staples || "-", { colSpan: 2, align: "left" }),
+          createQtyCell("Nylon Band", { colSpan: 2, align: "right" }),
+          createQtyCell(data.nylon_band || "-", { colSpan: 2, align: "left" }),
+        ]
+      }),
+      new TableRow({
+        children: [
+          createQtyCell("Material", { colSpan: 3, align: "right" }),
+          createQtyCell(data.material || "-", { colSpan: 2, align: "left" }),
+          createQtyCell("Corrugated Paper Plies", { colSpan: 2, align: "right" }),
+          createQtyCell(`${data.corrugated_paper_plies || "-"}-ply`, { colSpan: 2, align: "left" }),
+        ]
+      }),
+      // Packing Method
+      new TableRow({ children: [new TableCell({ columnSpan: 9, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Packing Method", bold: true })] })] })] }),
+      new TableRow({ children: [createQtyCell(data.packing_method || "NA", { colSpan: 9, align: "left" })] }),
+      // Assortment Method
+      new TableRow({ children: [new TableCell({ columnSpan: 9, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Assortment Method", bold: true })] })] })] }),
+      new TableRow({ children: [createQtyCell(data.assortment_method || "-", { colSpan: 9, align: "left" })] }),
+      // Result & Remark
+      new TableRow({ children: [createQtyCell("Result:", { bold: true, colSpan: 2, align: "left" }), createQtyCell(data.packing_result || "Passed", { colSpan: 7, align: "center", bold: true, color: String(data.packing_result).toLowerCase().includes("fail") ? "CC0000" : "228B22" })] }),
+      new TableRow({ children: [createQtyCell("Remark:", { bold: true, colSpan: 2, align: "left" }), createQtyCell(data.packing_remark || "No packing", { colSpan: 7, align: "left" })] })
+    ];
+    children.push(new Table({ width: { size: 100, type: "pct" }, rows: eRows }));
+    children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
 
-        // 📝 Description Row
-        groupRows.push(new TableRow({
-          children: [
-            createQtyCell(p1.label || "Inspection photo", { shaded: true, align: "center", fontSize: 18 }),
-            p2 ? createQtyCell(p2.label || "Inspection photo", { shaded: true, align: "center", fontSize: 18 }) : new TableCell({ children: [], borders: tableBorders() }),
-          ]
-        }));
+
+    // F. MARKING & LABELING (Detailed Implementation)
+    const markResFinal = data.marking_result_final || "Pending";
+    const fRows = [
+      // Header
+      new TableRow({ children: [new TableCell({ columnSpan: 3, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "F. MARKING & LABELING", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+      // Sub-header
+      new TableRow({ children: [new TableCell({ columnSpan: 3, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Barcode/Labeling/Printing", bold: true })] })] })] }),
+      // Column Headers
+      new TableRow({
+        children: [
+          createQtyCell("Name", { bold: true, shaded: true }),
+          createQtyCell("Location", { bold: true, shaded: true }),
+          createQtyCell("Result", { bold: true, shaded: true }),
+        ]
+      }),
+      // Barcode Row
+      new TableRow({
+        children: [
+          createQtyCell(data.barcode_name || "Rating label"),
+          createQtyCell(data.barcode_location || "Unit"),
+          createQtyCell(data.barcode_result || "pass"),
+        ]
+      }),
+      // Documentation Checks
+      new TableRow({
+        children: [
+          createQtyCell("Instruction manual and documentation check", { align: "left" }),
+          createQtyCell(data.instruction_provided_by_label || "Provided By factory"),
+          createQtyCell(data.instruction_provided_by || "pass"),
+        ]
+      }),
+      new TableRow({
+        children: [
+          createQtyCell("No instruction manual included", { align: "left" }),
+          createQtyCell(""),
+          createQtyCell(data.no_instruction_result || "-"),
+        ]
+      }),
+      new TableRow({
+        children: [
+          createQtyCell("No CDF was provided for comparison during inspection.", { align: "left" }),
+          createQtyCell(""),
+          createQtyCell(data.no_cdf_result || "-"),
+        ]
+      }),
+      // Shipping Marks sub-header
+      new TableRow({ children: [new TableCell({ columnSpan: 3, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Shipping Marks", bold: true })] })] })] }),
+      // Marks rows
+      new TableRow({
+        children: [
+          createQtyCell("Shipping Marks (on _ side)", { colSpan: 2, align: "left" }),
+          createQtyCell(data.shipping_marks || "-"),
+        ]
+      }),
+      new TableRow({
+        children: [
+          createQtyCell("Side Marks (on _ side)", { colSpan: 2, align: "left" }),
+          createQtyCell(data.side_marks || "-"),
+        ]
+      }),
+      new TableRow({
+        children: [
+          createQtyCell("Inner Box Marks (on _ side)", { colSpan: 2, align: "left" }),
+          createQtyCell(data.inner_box_marks || "-"),
+        ]
+      }),
+      // Result & Remark
+      new TableRow({ children: [createQtyCell("Result:", { bold: true, colSpan: 2, align: "left" }), createQtyCell(markResFinal, { colSpan: 1, align: "center", bold: true, color: markResFinal.toLowerCase().includes("pending") ? "E36C09" : "228B22" })] }),
+      new TableRow({ children: [createQtyCell("Remark:", { colSpan: 2, align: "left" }), createQtyCell(data.marking_remark || "No shipping mark, only rated label", { colSpan: 1, align: "left" })] })
+    ];
+    children.push(new Table({ width: { size: 100, type: "pct" }, rows: fRows }));
+    children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
+
+
+    // G. CLIENT SPECIAL REQUIREMENT (Single Unified Table)
+    const clientResult = data.client_requirement_result || "-";
+    const clientReqs = Array.isArray(data.clientRequirements) ? data.clientRequirements : [];
+
+    const gRows = [
+      // Main Header
+      new TableRow({ children: [new TableCell({ columnSpan: 3, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "G. CLIENT SPECIAL REQUIREMENT", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+      // Sub-header
+      new TableRow({ children: [new TableCell({ columnSpan: 3, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Client Requirements:", bold: true })] })] })] }),
+      // Column Labels
+      new TableRow({
+        children: [
+          createQtyCell(""), // for Number
+          createQtyCell("Client Requirements", { bold: true, align: "center" }),
+          createQtyCell("Result", { bold: true, align: "center" }),
+        ]
+      }),
+      // Dynamic Requirements (from clientRequirements array)
+      ...(clientReqs.length > 0 ? clientReqs : [{ requirement: "-", result: "-" }]).map((req, i) => new TableRow({
+        children: [
+          createQtyCell(`${i + 1}.`, { width: { size: 5, type: "pct" }, align: "left" }),
+          createQtyCell(req.requirement || "-", { align: "left" }),
+          createQtyCell(req.result || "-"),
+        ]
+      })),
+      // Result Row
+      new TableRow({
+        children: [
+          createQtyCell("Result:", { bold: true, align: "left" }),
+          createQtyCell(clientResult, { colSpan: 2, align: "left", color: String(clientResult).toLowerCase().includes("fail") ? "CC0000" : (String(clientResult).toLowerCase().includes("pending") ? "E36C09" : "000000") }),
+        ]
+      }),
+      // Remark Row
+      new TableRow({
+        children: [
+          createQtyCell("Remark:", { align: "left" }),
+          createQtyCell(data.client_requirement_remark || "-", { colSpan: 2, align: "left" }),
+        ]
+      })
+    ];
+    children.push(new Table({ width: { size: 100, type: "pct" }, rows: gRows }));
+
+
+    // H. PHOTOS
+    const finalPhotoGroups = Array.isArray(data.reportPhotoGroups) ? data.reportPhotoGroups : (Array.isArray(data.photoGroups) ? data.photoGroups : []);
+
+    if (finalPhotoGroups.length > 0) {
+      // 1. Header Table (Small, easily fits on any page)
+      children.push(new Table({
+        width: { size: 100, type: "pct" },
+        rows: [
+          new TableRow({
+            children: [
+              new TableCell({
+                columnSpan: 2,
+                shading: { fill: "E8E8E8" },
+                borders: tableBorders(),
+                children: [new Paragraph({ children: [new TextRun({ text: "H. PHOTOS", bold: true, size: 22, color: "1F4E79" })] })]
+              })
+            ]
+          })
+        ]
+      }));
+
+      // 2. Individual Tables for each Group (Allows page breaks between groups)
+      for (const group of finalPhotoGroups) {
+        const photos = (group.photos || []).filter(p => p.preview || p.wasabiKey);
+        if (photos.length === 0) continue;
+
+        const groupRows = [];
+
+        // Group sub-header
+        if (group.description) {
+          groupRows.push(new TableRow({
+            children: [
+              new TableCell({
+                columnSpan: 2,
+                shading: { fill: "F2F2F2" },
+                borders: tableBorders(),
+                children: [new Paragraph({ children: [new TextRun({ text: `Group: ${group.description}`, bold: true })] })]
+              })
+            ]
+          }));
+        }
+
+        for (let i = 0; i < photos.length; i += 2) {
+          const p1 = photos[i];
+          const p2 = photos[i + 1];
+
+          // 🖼️ Image Row
+          groupRows.push(new TableRow({
+            children: [
+              await createPhotoCell(p1),
+              p2 ? await createPhotoCell(p2) : new TableCell({ children: [new Paragraph({ children: [] })], borders: tableBorders() })
+            ]
+          }));
+
+          // 📝 Description Row
+          groupRows.push(new TableRow({
+            children: [
+              createQtyCell(p1.label || "Inspection photo", { shaded: true, align: "center", fontSize: 18 }),
+              p2 ? createQtyCell(p2.label || "Inspection photo", { shaded: true, align: "center", fontSize: 18 }) : new TableCell({ children: [], borders: tableBorders() }),
+            ]
+          }));
+        }
+
+        children.push(new Table({ width: { size: 100, type: "pct" }, rows: groupRows }));
+        children.push(new Paragraph({ children: [], spacing: { after: 100 } })); // Tiny spacer between groups
       }
-      
-      children.push(new Table({ width: { size: 100, type: "pct" }, rows: groupRows }));
-      children.push(new Paragraph({ children: [], spacing: { after: 100 } })); // Tiny spacer between groups
     }
   }
 
@@ -1657,9 +1612,13 @@ function getPhotoContent(photoData, uploadedFiles, allData = {}) {
 
   try {
     const base64 = preview.split(",")[1];
-    return [new Paragraph({ children: [new ImageRun({ data: Buffer.from(base64, "base64"), type: "png", transformation: { width: 200, height: 280 } })], alignment: "center" })];
+    return [new Paragraph({ 
+      children: [new ImageRun({ data: Buffer.from(base64, "base64"), type: "png", transformation: { width: 320, height: 260 } })], 
+      alignment: "center",
+      spacing: { before: 0, after: 0 }
+    })];
   } catch (e) { 
-    return [new Paragraph({ children: [new TextRun({ text: "[Photo Error]" })], alignment: "center" })]; 
+    return [new Paragraph({ children: [new TextRun({ text: "[Photo Error]" })], alignment: "center", spacing: { before: 0, after: 0 } })]; 
   }
 }
 
@@ -2298,9 +2257,9 @@ function createCLSClientRequirementTable(data) {
           children: [
             new TableCell({
               columnSpan: 3,
-              shading: { fill: "1F497D" },
+              shading: { fill: "E9ECEF" },
               borders: tableBorders(),
-              children: [new Paragraph({ children: [new TextRun({ text: "E. CLIENT SPECIAL REQUIREMENT", bold: true, size: 22, color: "FFFFFF" })] })]
+              children: [new Paragraph({ children: [new TextRun({ text: "E. CLIENT SPECIAL REQUIREMENT", bold: true, size: 22, color: "1F4E79" })] })]
             })
           ]
         }),

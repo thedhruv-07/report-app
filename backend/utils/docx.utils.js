@@ -22,12 +22,16 @@ const createQtyCell = (text, options = {}) => {
     color,
     fontSize = 18,
     width,
+    verticalAlign = "center",
+    spacing = { before: 20, after: 20 },
+    font = "Arial"
   } = options;
 
   const textRunOptions = {
     text: sanitizeDocxText(text),
     bold,
     size: fontSize,
+    font
   };
   if (color) {
     textRunOptions.color = color;
@@ -36,12 +40,14 @@ const createQtyCell = (text, options = {}) => {
   const paragraphOptions = {
     children: [new TextRun(textRunOptions)],
     alignment: align,
+    spacing
   };
 
   const cellOptions = {
     children: [new Paragraph(paragraphOptions)],
     width,
     borders: tableBorders(),
+    verticalAlign
   };
   if (shaded) {
     cellOptions.shading = { fill: "E9ECEF" };

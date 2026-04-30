@@ -1,10 +1,45 @@
 import { colors } from "../../styles";
 import { compressImage, formatFileSize } from "../../utils/imageCompression";
-import { UploadCloud, X, Camera } from "lucide-react";
+import { UploadCloud, X, Camera, Sparkles } from "lucide-react";
 import { useState } from "react";
+import { ENDPOINTS } from "../../config/api";
 
 export default function SchemaPhotos({ config, formData, onChange }) {
   const [processingGroups, setProcessingGroups] = useState({});
+
+  const generateAutoDescriptions = async (groupId) => {
+    const photos = formData[groupId] || [];
+    if (photos.length === 0) return;
+
+    setProcessingGroups(prev => ({ ...prev, [groupId]: true }));
+    try {
+      const token = localStorage.getItem("token") || localStorage.getItem("reportToken");
+      const res = await fetch(ENDPOINTS.AI_DESCRIBE, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": token ? `Bearer ${token}` : ""
+        },
+        body: JSON.stringify({ 
+          mode: "individual",
+          images: photos.map(p => ({ data: p.preview, fileName: p.fileName }))
+        }),
+      });
+
+      const data = await res.json();
+      if (data.suggestions && Array.isArray(data.suggestions)) {
+        const updatedPhotos = photos.map((p, i) => ({
+          ...p,
+          label: data.suggestions[i] || p.label
+        }));
+        onChange({ target: { name: groupId, value: updatedPhotos } });
+      }
+    } catch (error) {
+      console.error("AI Description Error:", error);
+    } finally {
+      setProcessingGroups(prev => ({ ...prev, [groupId]: false }));
+    }
+  };
 
   const handlePhotosUpload = async (groupId, files) => {
     const selectedFiles = Array.from(files || []);
@@ -63,28 +98,48 @@ export default function SchemaPhotos({ config, formData, onChange }) {
                 </h3>
               </div>
               
-              <label style={{
-                display: "inline-flex", alignItems: "center", gap: "6px",
-                padding: "8px 16px", borderRadius: "8px",
-                background: isProcessing ? colors.surfaceAlt : colors.primaryLight,
-                color: isProcessing ? colors.textMuted : colors.primary,
-                cursor: isProcessing ? "not-allowed" : "pointer",
-                fontSize: "13px", fontWeight: "600", transition: "all 0.2s"
-              }}>
-                <UploadCloud size={16} />
-                {isProcessing ? "Processing..." : "Upload Photos"}
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  style={{ display: "none" }}
-                  disabled={isProcessing}
-                  onChange={(e) => {
-                    handlePhotosUpload(group.id, e.target.files);
-                    e.target.value = "";
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <button
+                  type="button"
+                  onClick={() => generateAutoDescriptions(group.id)}
+                  disabled={photos.length === 0 || isProcessing}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: "6px",
+                    padding: "8px 16px", borderRadius: "8px",
+                    background: (photos.length === 0 || isProcessing) ? colors.surfaceAlt : colors.primary,
+                    color: "#fff",
+                    cursor: (photos.length === 0 || isProcessing) ? "not-allowed" : "pointer",
+                    fontSize: "13px", fontWeight: "600", transition: "all 0.2s",
+                    border: "none"
                   }}
-                />
-              </label>
+                >
+                  <Sparkles size={16} />
+                  {isProcessing ? "Analyzing..." : "Magic Auto-Describe"}
+                </button>
+
+                <label style={{
+                  display: "inline-flex", alignItems: "center", gap: "6px",
+                  padding: "8px 16px", borderRadius: "8px",
+                  background: isProcessing ? colors.surfaceAlt : colors.primaryLight,
+                  color: isProcessing ? colors.textMuted : colors.primary,
+                  cursor: isProcessing ? "not-allowed" : "pointer",
+                  fontSize: "13px", fontWeight: "600", transition: "all 0.2s"
+                }}>
+                  <UploadCloud size={16} />
+                  {isProcessing ? "Processing..." : "Upload Photos"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    style={{ display: "none" }}
+                    disabled={isProcessing}
+                    onChange={(e) => {
+                      handlePhotosUpload(group.id, e.target.files);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              </div>
             </div>
 
             <div style={{ padding: "20px", background: colors.surface }}>
@@ -104,12 +159,11 @@ export default function SchemaPhotos({ config, formData, onChange }) {
                       </button>
                       <img src={photo.preview} alt={photo.fileName} style={{ width: "100%", height: "150px", objectFit: "cover", display: "block" }} />
                       <div style={{ padding: "10px" }}>
-                        <input
-                          type="text"
+                        <textarea
                           value={photo.label || ""}
                           onChange={(e) => updatePhotoLabel(group.id, photo.id, e.target.value)}
                           placeholder="Photo description"
-                          style={{ width: "100%", padding: "8px", borderRadius: "6px", border: `1px solid ${colors.border}`, fontSize: "12px", boxSizing: "border-box", marginBottom: "6px" }}
+                          style={{ width: "100%", height: "60px", padding: "8px", borderRadius: "6px", border: `1px solid ${colors.border}`, fontSize: "12px", boxSizing: "border-box", marginBottom: "6px", resize: "none", background: "transparent" }}
                         />
                         <div style={{ fontSize: "10px", color: colors.textMuted }}>
                           {photo.compressedSize ? formatFileSize(photo.compressedSize) : ""}
