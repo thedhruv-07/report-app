@@ -145,8 +145,13 @@ export default function ContainerLoading() {
 
       remarks_loading: "All pallets were securely positioned.",
       
-      temperatureCheck: "25°C - Acceptable",
-      remarks_client: "Standard temperature maintained.",
+      clientRequirementTable: [
+        { requirement: "Temperature check of products", result: "22°C - Acceptable" },
+        { requirement: "Check for moisture in cartons", result: "None found" }
+      ],
+      client_requirement_result: "Passed",
+      client_requirement_remark: "Standard temperature and moisture levels maintained.",
+      
       conclusion: "PASSED"
     });
     alert("Demo data has been filled!");
@@ -260,11 +265,8 @@ export default function ContainerLoading() {
           formData={form} 
           onChange={handleChange} 
         />
-      </div>
-    ) },
-    { id: 9, label: "Container Check", component: (
-      <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
-        <SchemaChecklistTable title="9. Empty Container Check" items={clsSchema.containerCheck} dataKey="containerCheck" formData={form} onChange={handleChange} />
+
+        <SchemaChecklistTable title="8.1 Empty Container Check" items={clsSchema.containerCheck} dataKey="containerCheck" formData={form} onChange={handleChange} />
         <SchemaPhotos 
           config={{ groups: [
             { id: "emptyContainerPhotos", label: "Empty Container Photos" },
@@ -273,11 +275,8 @@ export default function ContainerLoading() {
           formData={form} 
           onChange={handleChange} 
         />
-      </div>
-    ) },
-    { id: 10, label: "Loading Check", component: (
-      <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
-        <SchemaChecklistTable title="10. Loading Process Check" items={clsSchema.loadingCheck} dataKey="loadingCheck" formData={form} onChange={handleChange} />
+
+        <SchemaChecklistTable title="8.2 Loading Process Check" items={clsSchema.loadingCheck} dataKey="loadingCheck" formData={form} onChange={handleChange} />
         <SchemaPhotos 
           config={{ groups: [
             { id: "loadingPhotos", label: "Loading Process Photos" }
@@ -287,9 +286,9 @@ export default function ContainerLoading() {
         />
       </div>
     ) },
-    { id: 11, label: "Container Sealing", component: (
+    { id: 9, label: "Container Sealing", component: (
       <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
-        <SchemaChecklistTable title="11. Container Sealing Check" items={clsSchema.containerSealing} dataKey="containerSealing" formData={form} onChange={handleChange} />
+        <SchemaChecklistTable title="9. Container Sealing Check" items={clsSchema.containerSealing} dataKey="containerSealing" formData={form} onChange={handleChange} />
         <SchemaPhotos 
           config={{ groups: [
             { id: "sealingPhotos", label: "Container Sealing Photos" },
@@ -300,7 +299,25 @@ export default function ContainerLoading() {
         />
       </div>
     ) },
-    { id: 12, label: "Client Requirement", component: <SchemaSection title="12. Client Requirement" fields={clsSchema.clientRequirement} formData={form} onChange={handleChange} /> },
+    { id: 10, label: "Client Requirement", component: (
+      <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
+        <SchemaTable title="10. Client Special Requirements" config={clsSchema.clientRequirementTable} dataKey="clientRequirementTable" formData={form} onChange={handleChange} />
+        <SchemaPhotos 
+          config={{ groups: [{ id: "clientRequirementPhotos", label: "Client Requirement Photos" }] }} 
+          formData={form} 
+          onChange={handleChange} 
+        />
+      </div>
+    ) },
+    { id: 11, label: "Final Photos", component: (
+      <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
+        <SchemaPhotos 
+          config={{ groups: [{ id: "generalPhotos", label: "F. PHOTOS" }] }} 
+          formData={form} 
+          onChange={handleChange} 
+        />
+      </div>
+    ) },
   ];
 
   const currentStep = steps.find(s => s.id === step);
@@ -356,7 +373,7 @@ export default function ContainerLoading() {
             ← Previous
           </button>
           
-          {step < steps.length ? (
+          {step < 11 ? (
             <button onClick={next} style={{ padding: "12px 24px", borderRadius: "8px", border: "none", background: colors.primary, color: "#fff", cursor: "pointer", fontWeight: "600", transition: "all 0.2s", boxShadow: "0 4px 12px rgba(59, 130, 246, 0.25)" }}>
               Next Step →
             </button>

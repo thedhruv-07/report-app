@@ -100,11 +100,19 @@ export default function SchemaTable({ title, config, formData, onChange, dataKey
                 >
                   {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                 </select>
+              ) : field.type === "textarea" ? (
+                <textarea
+                  value={formData[field.name] || field.defaultValue || ""}
+                  onChange={(e) => onChange({ target: { name: field.name, value: e.target.value } })}
+                  placeholder={field.placeholder || ""}
+                  style={{ padding: "8px", borderRadius: "4px", border: `1px solid ${colors.border}`, fontSize: "13px", background: "white", minHeight: "80px", fontFamily: "inherit" }}
+                />
               ) : (
                 <input
                   type={field.type || "text"}
                   value={formData[field.name] || field.defaultValue || ""}
                   onChange={(e) => onChange({ target: { name: field.name, value: e.target.value } })}
+                  placeholder={field.placeholder || ""}
                   style={{ padding: "8px", borderRadius: "4px", border: `1px solid ${colors.border}`, fontSize: "13px", background: "white" }}
                 />
               )}

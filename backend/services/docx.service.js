@@ -624,10 +624,12 @@ async function createReportContent(data, uploadedFiles) {
     children.push(createConclusionTable(data, true));
     children.push(new Paragraph({ children: [new PageBreak()] }));
     children.push(createHighFidelityQuantityTable(data));
-    children.push(new Paragraph({ children: [], spacing: { before: 200, after: 200 } }));
-    children.push(createProductConformityTable(data));
-    children.push(new Paragraph({ children: [], spacing: { before: 200, after: 200 } }));
-    children.push(createCLSPackingTable(data));
+    children.push(new Paragraph({ children: [new PageBreak()] }));
+    children.push(...createCLSLoadingProcessTable(data));
+    children.push(new Paragraph({ children: [new PageBreak()] }));
+    children.push(...createCLSClientRequirementTable(data));
+    children.push(new Paragraph({ children: [new PageBreak()] }));
+    children.push(...createCLSFinalPhotosSection(data));
   } else {
     // PSI Only Sections (Workmanship, Factory Signs, etc.)
     const wmResult = String(data.workmanshipResult || "Passed");
@@ -2081,6 +2083,336 @@ function createCLSPackingTable(data) {
   ];
 
   return new Table({ width: { size: 100, type: "pct" }, rows });
+}
+
+function createCLSLoadingProcessTable(data) {
+  const containerCheck = Array.isArray(data.containerCheck) ? data.containerCheck : [];
+  const loadingCheck = Array.isArray(data.loadingCheck) ? data.loadingCheck : [];
+  const containerSealing = Array.isArray(data.containerSealing) ? data.containerSealing : [];
+  
+  const loadingAreaPhotos = (data.reportPhotoGroups || []).find(g => g.description?.toLowerCase().includes("loading area"))?.photos || [];
+  const warehousePhotos = (data.reportPhotoGroups || []).find(g => g.description?.toLowerCase().includes("warehouse"))?.photos || [];
+  const emptyPhotos = (data.reportPhotoGroups || []).find(g => g.description?.toLowerCase().includes("empty container"))?.photos || [];
+  const truckPhotos = (data.reportPhotoGroups || []).find(g => g.description?.toLowerCase().includes("truck check"))?.photos || [];
+  const loadingPhotos = (data.reportPhotoGroups || []).find(g => g.description?.toLowerCase().includes("loading process photos"))?.photos || [];
+  const sealingPhotos = (data.reportPhotoGroups || []).find(g => g.description?.toLowerCase().includes("container sealing photos"))?.photos || [];
+  const containerSealPhotos = (data.reportPhotoGroups || []).find(g => g.description?.toLowerCase().includes("container & seal photos"))?.photos || [];
+
+  const children = [
+    // Section Header
+    new Table({
+      width: { size: 100, type: "pct" },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              shading: { fill: "E9ECEF" },
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: "D. LOADING PROCESS", bold: true, size: 22, color: "1F4E79" })] })]
+            })
+          ]
+        })
+      ]
+    }),
+    new Paragraph({ children: [], spacing: { before: 100 } }),
+
+    // Container Table
+    new Table({
+      width: { size: 100, type: "pct" },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({ columnSpan: 5, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Container:", bold: true })] })] })
+          ]
+        }),
+        new TableRow({
+          children: [
+            createQtyCell("Container Type", { bold: true, shaded: true }),
+            createQtyCell("Container No.", { bold: true, shaded: true }),
+            createQtyCell("Seal No.", { bold: true, shaded: true }),
+            createQtyCell("Seal No. (AV)", { bold: true, shaded: true }),
+            createQtyCell("Cargo Breakdown", { bold: true, shaded: true }),
+          ]
+        }),
+        new TableRow({
+          children: [
+            createQtyCell(data.containerType || "/"),
+            createQtyCell(data.containerNo || "/"),
+            createQtyCell(data.sealNo || "/"),
+            createQtyCell(data.avSealNo || "/"),
+            createQtyCell(data.cargoBreakdown || "/"),
+          ]
+        }),
+      ]
+    }),
+    new Paragraph({ children: [], spacing: { before: 100 } }),
+
+    // Loading Condition Table
+    new Table({
+      width: { size: 100, type: "pct" },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({ columnSpan: 2, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Loading Condition", bold: true })] })] })
+          ]
+        }),
+        ...[
+          ["Loading Location:", data.location],
+          ["Weather:", data.weather],
+          ["Sheltered:", data.shelter],
+          ["Start Time:", data.loadingStartTime],
+          ["End Time:", data.loadingEndTime]
+        ].map(([l, v]) => new TableRow({
+          children: [
+            createQtyCell(l, { bold: true, align: "right", width: { size: 30, type: "pct" } }),
+            createQtyCell(blankIfEmpty(v), { align: "left" })
+          ]
+        }))
+      ]
+    }),
+    new Paragraph({ children: [], spacing: { before: 100 } }),
+
+    new Paragraph({ children: [], spacing: { before: 100 } }),
+
+    // Empty Container Check Table
+    new Table({
+      width: { size: 100, type: "pct" },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({ columnSpan: 3, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Empty Container Check", bold: true })] })] })
+          ]
+        }),
+        new TableRow({
+          children: [
+            createQtyCell("No.", { bold: true, shaded: true, width: { size: 10, type: "pct" } }),
+            createQtyCell("Requirement conditions", { bold: true, shaded: true, width: { size: 70, type: "pct" } }),
+            createQtyCell("Result", { bold: true, shaded: true, width: { size: 20, type: "pct" } }),
+          ]
+        }),
+        ...containerCheck.map((c, i) => new TableRow({
+          children: [
+            createQtyCell(String(i + 1)),
+            createQtyCell(c.label || "/", { align: "left" }),
+            createQtyCell(c.result || "N/A", { color: String(c.result || "").toLowerCase().includes("pass") || String(c.result || "").toLowerCase() === "yes" ? "228B22" : "CC0000" })
+          ]
+        }))
+      ]
+    }),
+    new Paragraph({ children: [], spacing: { before: 100 } }),
+    new Paragraph({ children: [], spacing: { before: 100 } }),
+
+    // Loading Check Table
+    new Table({
+      width: { size: 100, type: "pct" },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({ columnSpan: 4, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Loading Check - 1/4 Full, 1/2 Full, 3/4 Full, Full container", bold: true })] })] })
+          ]
+        }),
+        new TableRow({
+          children: [
+            createQtyCell("No.", { bold: true, shaded: true, width: { size: 8, type: "pct" } }),
+            createQtyCell("Condition", { bold: true, shaded: true, width: { size: 52, type: "pct" } }),
+            createQtyCell("Result", { bold: true, shaded: true, width: { size: 15, type: "pct" } }),
+            createQtyCell("Findings and comments", { bold: true, shaded: true, width: { size: 25, type: "pct" } }),
+          ]
+        }),
+        ...loadingCheck.map((c, i) => new TableRow({
+          children: [
+            createQtyCell(String(i + 1)),
+            createQtyCell(c.label || "/", { align: "left" }),
+            createQtyCell(c.result || "N/A", { color: String(c.result || "").toLowerCase().includes("pass") || String(c.result || "").toLowerCase() === "yes" ? "228B22" : "CC0000" }),
+            createQtyCell(c.finding || "/")
+          ]
+        }))
+      ]
+    }),
+    new Paragraph({ children: [], spacing: { before: 100 } }),
+    new Paragraph({ children: [], spacing: { before: 100 } }),
+
+    // Container Sealing Table
+    new Table({
+      width: { size: 100, type: "pct" },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({ columnSpan: 4, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Container Checking:", bold: true })] })] })
+          ]
+        }),
+        new TableRow({
+          children: [
+            createQtyCell("No.", { bold: true, shaded: true, width: { size: 8, type: "pct" } }),
+            createQtyCell("Condition", { bold: true, shaded: true, width: { size: 52, type: "pct" } }),
+            createQtyCell("Result", { bold: true, shaded: true, width: { size: 15, type: "pct" } }),
+            createQtyCell("Findings and comments", { bold: true, shaded: true, width: { size: 25, type: "pct" } }),
+          ]
+        }),
+        ...containerSealing.map((c, i) => new TableRow({
+          children: [
+            createQtyCell(String(i + 1)),
+            createQtyCell(c.label || "/", { align: "left" }),
+            createQtyCell(c.result || "N/A", { color: String(c.result || "").toLowerCase().includes("pass") || String(c.result || "").toLowerCase() === "yes" ? "228B22" : "CC0000" }),
+            createQtyCell(c.finding || "/")
+          ]
+        }))
+      ]
+    }),
+    new Paragraph({ children: [], spacing: { before: 100 } }),
+    new Paragraph({ children: [], spacing: { before: 100 } }),
+
+    // Result & Remark Table
+    new Table({
+      width: { size: 100, type: "pct" },
+      rows: [
+        new TableRow({
+          children: [
+            createQtyCell("Result:", { bold: true, width: { size: 15, type: "pct" }, shaded: true }),
+            createQtyCell(data.loadingProcessResult || "Passed", { align: "left", bold: true, color: String(data.loadingProcessResult || "").toLowerCase().includes("fail") ? "CC0000" : "228B22" })
+          ]
+        }),
+        new TableRow({
+          children: [
+            createQtyCell("Remark:", { bold: true, width: { size: 15, type: "pct" }, shaded: true }),
+            createQtyCell(data.remarks_loading || "N/A", { align: "left" })
+          ]
+        })
+      ]
+    })
+  ];
+
+  return children;
+}
+
+function createCLSClientRequirementTable(data) {
+  const reqTable = Array.isArray(data.clientRequirementTable) ? data.clientRequirementTable : [];
+  const clientPhotos = (data.reportPhotoGroups || []).find(g => g.description?.toLowerCase().includes("client requirement"))?.photos || [];
+
+  const children = [
+    new Table({
+      width: { size: 100, type: "pct" },
+      rows: [
+        // Main Header
+        new TableRow({
+          children: [
+            new TableCell({
+              columnSpan: 3,
+              shading: { fill: "1F497D" },
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: "E. CLIENT SPECIAL REQUIREMENT", bold: true, size: 22, color: "FFFFFF" })] })]
+            })
+          ]
+        }),
+        // Table Header
+        new TableRow({
+          children: [
+            createQtyCell("No.", { bold: true, shaded: true, width: { size: 10, type: "pct" } }),
+            createQtyCell("Client Requirements", { bold: true, shaded: true, width: { size: 65, type: "pct" } }),
+            createQtyCell("Result", { bold: true, shaded: true, width: { size: 25, type: "pct" } }),
+          ]
+        }),
+        // Data Rows
+        ...reqTable.map((row, i) => new TableRow({
+          children: [
+            createQtyCell(String(i + 1) + "."),
+            createQtyCell(row.requirement || "/", { align: "left" }),
+            createQtyCell(row.result || "Actual finding")
+          ]
+        })),
+        // If no rows
+        ...(reqTable.length === 0 ? [new TableRow({ children: [createQtyCell("1."), createQtyCell("/", { align: "left" }), createQtyCell("Actual finding")] })] : []),
+        // Overall Result Row
+        new TableRow({
+          children: [
+            createQtyCell("Result:", { bold: true, width: { size: 15, type: "pct" }, shaded: true }),
+            createQtyCell(data.client_requirement_result || "Passed", { 
+              colSpan: 2, 
+              align: "left", 
+              bold: true, 
+              color: String(data.client_requirement_result || "").toLowerCase().includes("fail") ? "CC0000" : "228B22" 
+            })
+          ]
+        }),
+        // Remark Row
+        new TableRow({
+          children: [
+            createQtyCell("Remark:", { bold: true, width: { size: 15, type: "pct" }, shaded: true }),
+            createQtyCell(data.client_requirement_remark || "N/A", { colSpan: 2, align: "left" })
+          ]
+        })
+      ]
+    }),
+    new Paragraph({ children: [], spacing: { before: 100 } }),
+  ];
+
+  return children;
+}
+
+function createCLSFinalPhotosSection(data) {
+  const photoGroups = data.reportPhotoGroups || [];
+  
+  const children = [
+    // Section Header
+    new Table({
+      width: { size: 100, type: "pct" },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              shading: { fill: "E9ECEF" },
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: "F. PHOTOS", bold: true, size: 22, color: "1F4E79" })] })]
+            })
+          ]
+        })
+      ]
+    }),
+    new Paragraph({ children: [], spacing: { before: 100 } }),
+
+    // Photo Summary Table
+    new Table({
+      width: { size: 100, type: "pct" },
+      rows: [
+        new TableRow({
+          children: [
+            createQtyCell("No.", { bold: true, shaded: true, width: { size: 10, type: "pct" } }),
+            createQtyCell("Description", { bold: true, shaded: true, width: { size: 90, type: "pct" } }),
+          ]
+        }),
+        ...photoGroups.map((g, i) => new TableRow({
+          children: [
+            createQtyCell(String(i + 1)),
+            createQtyCell(g.description || "Inspection Photos", { align: "left" })
+          ]
+        }))
+      ]
+    }),
+    new Paragraph({ children: [], spacing: { before: 200 } }),
+  ];
+
+  // Actual Photo Groups
+  photoGroups.forEach(g => {
+    children.push(new Table({
+      width: { size: 100, type: "pct" },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              shading: { fill: "F2F2F2" },
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: g.description || "Photos", bold: true })] })]
+            })
+          ]
+        })
+      ]
+    }));
+    children.push(new Paragraph({ children: [], spacing: { before: 100 } }));
+    children.push(createInlinePhotoGridTable(g.photos || []));
+    children.push(new Paragraph({ children: [], spacing: { before: 200 } }));
+  });
+
+  return children;
 }
 
 module.exports = {

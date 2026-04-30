@@ -98,8 +98,6 @@ export default function CLSSections({ data }) {
         <View style={pdfStyles.table}>
           {[
             { l: 'Quantity', v: data.quantity },
-            { l: 'Product Conformity', v: data.productConformity },
-            { l: 'Packing', v: data.packing },
             { l: 'Loading Process', v: data.loadingProcess },
             { l: 'Client Requirement', v: data.clientRequirement }
           ].map((item, i) => (
@@ -448,19 +446,121 @@ export default function CLSSections({ data }) {
         </View>
       </Section>
 
-      {/* 9. Client Requirement */}
-      <Section title="E. CLIENT REQUIREMENT">
-        <View style={pdfStyles.table}>
-          {[
-            { l: 'Temperature Check Result', v: data.temperatureCheck },
-            { l: 'Special Requirements Remarks', v: data.remarks_client }
-          ].map((item, i) => (
-            <View key={i} style={pdfStyles.tableRow}>
-              <View style={[pdfStyles.tableCol, { width: '40%', backgroundColor: pdfColors.lightGray, padding: 5 }]}><Text style={pdfStyles.bold}>{item.l}:</Text></View>
-              <View style={[pdfStyles.tableCol, { width: '60%', padding: 5, borderRightWidth: 0 }]}><Text>{blankIfEmpty(item.v)}</Text></View>
+      {/* E. CLIENT REQUIREMENT */}
+      <Section title="E. CLIENT SPECIAL REQUIREMENT">
+        <View style={{ borderWidth: 1, borderColor: '#000', marginBottom: 15 }}>
+          <View style={{ backgroundColor: '#1F497D', padding: 5, borderBottomWidth: 1, borderColor: '#000' }}>
+            <Text style={{ fontSize: 9, fontWeight: 'bold', color: '#fff' }}>E. CLIENT SPECIAL REQUIREMENT</Text>
+          </View>
+          
+          {/* Table Header */}
+          <View style={{ flexDirection: 'row', backgroundColor: pdfColors.lightGray, borderBottomWidth: 1, borderColor: '#000' }}>
+            <View style={{ width: '10%', padding: 4, borderRightWidth: 1, borderColor: '#000', alignItems: 'center' }}>
+              <Text style={{ fontSize: 8, fontWeight: 'bold' }}>No.</Text>
+            </View>
+            <View style={{ width: '65%', padding: 4, borderRightWidth: 1, borderColor: '#000', alignItems: 'center' }}>
+              <Text style={{ fontSize: 8, fontWeight: 'bold' }}>Client Requirements</Text>
+            </View>
+            <View style={{ width: '25%', padding: 4, alignItems: 'center' }}>
+              <Text style={{ fontSize: 8, fontWeight: 'bold' }}>Result</Text>
+            </View>
+          </View>
+
+          {/* Table Rows */}
+          {((data?.clientRequirementTable) || []).length > 0 ? (
+            data.clientRequirementTable.map((row, i) => (
+              <View key={i} style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: '#000' }}>
+                <View style={{ width: '10%', padding: 4, borderRightWidth: 1, borderColor: '#000', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 8 }}>{i + 1}.</Text>
+                </View>
+                <View style={{ width: '65%', padding: 4, borderRightWidth: 1, borderColor: '#000' }}>
+                  <Text style={{ fontSize: 8 }}>{row.requirement || '/'}</Text>
+                </View>
+                <View style={{ width: '25%', padding: 4, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 8 }}>{row.result || 'Actual finding'}</Text>
+                </View>
+              </View>
+            ))
+          ) : (
+            <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: '#000' }}>
+              <View style={{ width: '10%', padding: 4, borderRightWidth: 1, borderColor: '#000', alignItems: 'center' }}><Text style={{ fontSize: 8 }}>1.</Text></View>
+              <View style={{ width: '65%', padding: 4, borderRightWidth: 1, borderColor: '#000' }}><Text style={{ fontSize: 8 }}>/</Text></View>
+              <View style={{ width: '25%', padding: 4, alignItems: 'center' }}><Text style={{ fontSize: 8 }}>Actual finding</Text></View>
+            </View>
+          )}
+
+          {/* Overall Result */}
+          <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: '#000' }}>
+            <View style={{ width: '20%', backgroundColor: pdfColors.lightGray, padding: 4, borderRightWidth: 1, borderColor: '#000' }}>
+              <Text style={{ fontSize: 8, fontWeight: 'bold' }}>Result:</Text>
+            </View>
+            <View style={{ width: '80%', padding: 4 }}>
+              <Text style={{ fontSize: 8, fontWeight: 'bold', color: String(data.client_requirement_result || '').toLowerCase().includes('fail') ? pdfColors.danger : pdfColors.success }}>
+                {data.client_requirement_result || 'Passed'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Remark */}
+          <View style={{ flexDirection: 'row' }}>
+            <View style={{ width: '20%', backgroundColor: pdfColors.lightGray, padding: 4, borderRightWidth: 1, borderColor: '#000' }}>
+              <Text style={{ fontSize: 8, fontWeight: 'bold' }}>Remark:</Text>
+            </View>
+            <View style={{ width: '80%', padding: 4 }}>
+              <Text style={{ fontSize: 8 }}>{data.client_requirement_remark || 'N/A'}</Text>
+            </View>
+          </View>
+        </View>
+      </Section>
+
+      {/* F. PHOTOS */}
+      <Section title="F. PHOTOS">
+        {/* Photo Summary Table */}
+        <View style={{ borderWidth: 1, borderColor: '#000', marginBottom: 15 }}>
+          <View style={{ backgroundColor: pdfColors.lightGray, padding: 5, borderBottomWidth: 1, borderColor: '#000' }}>
+            <Text style={{ fontSize: 9, fontWeight: 'bold' }}>F. PHOTOS</Text>
+          </View>
+          <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: '#000', backgroundColor: pdfColors.lightGray }}>
+            <View style={{ width: '10%', padding: 4, borderRightWidth: 1, borderColor: '#000', alignItems: 'center' }}>
+              <Text style={{ fontSize: 8, fontWeight: 'bold' }}>No.</Text>
+            </View>
+            <View style={{ width: '90%', padding: 4, alignItems: 'center' }}>
+              <Text style={{ fontSize: 8, fontWeight: 'bold' }}>Description</Text>
+            </View>
+          </View>
+          
+          {((data?.reportPhotoGroups) || []).map((group, i) => (
+            <View key={i} style={{ flexDirection: 'row', borderBottomWidth: i === data.reportPhotoGroups.length - 1 ? 0 : 1, borderColor: '#000' }}>
+              <View style={{ width: '10%', padding: 4, borderRightWidth: 1, borderColor: '#000', alignItems: 'center' }}>
+                <Text style={{ fontSize: 8 }}>{i + 1}</Text>
+              </View>
+              <View style={{ width: '90%', padding: 4 }}>
+                <Text style={{ fontSize: 8 }}>{group.description || 'Inspection Photos'}</Text>
+              </View>
             </View>
           ))}
         </View>
+
+        {/* Actual Photos Grid */}
+        {((data?.reportPhotoGroups) || []).map((group, groupIdx) => (
+          <View key={groupIdx} wrap={false} style={{ marginBottom: 20 }}>
+            <View style={{ backgroundColor: pdfColors.lightGray, padding: 5, marginBottom: 10, borderLeftWidth: 3, borderColor: '#1F497D' }}>
+              <Text style={{ fontSize: 10, fontWeight: 'bold' }}>{group.description}</Text>
+            </View>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', borderTopWidth: 1, borderLeftWidth: 1, borderColor: '#000' }}>
+              {group.photos.map((photo, photoIdx) => (
+                <View key={photoIdx} style={{ width: '50%', borderBottomWidth: 1, borderRightWidth: 1, borderColor: '#000' }}>
+                  <View style={{ height: 200, padding: 2 }}>
+                    <Image src={photo.preview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </View>
+                  <View style={{ padding: 4, borderTopWidth: 1, borderColor: '#000', alignItems: 'center', backgroundColor: pdfColors.lightGray }}>
+                    <Text style={{ fontSize: 8 }}>{photo.label || `Photo ${photoIdx + 1}`}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        ))}
       </Section>
     </View>
   );

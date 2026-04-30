@@ -20,7 +20,9 @@ export default function ReportPDF({ data, serviceType }) {
         { id: "truckCheckPhotos", label: "Truck Check Photos" },
         { id: "loadingPhotos", label: "Loading Process Photos" },
         { id: "sealingPhotos", label: "Container Sealing Photos" },
-        { id: "containerPhotos", label: "Container & Seal Photos" }
+        { id: "containerPhotos", label: "Container & Seal Photos" },
+        { id: "clientRequirementPhotos", label: "Client Requirement Photos" },
+        { id: "generalPhotos", label: "General Photos" }
       ];
 
       processedData.reportPhotoGroups = photoGroupsConfig.map(group => ({

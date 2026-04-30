@@ -93,10 +93,16 @@ export const clsSchema = {
     { id: "sealIntegrity", label: "The seal integrity is checked and confirmed.", result: "Passed" },
     { id: "photoTaken", label: "Photos of seal and container number are taken.", result: "Passed" }
   ],
-  clientRequirement: [
-    { name: "temperatureCheck", label: "Temperature Check Result", type: "text", placeholder: "e.g., 22°C" },
-    { name: "remarks_client", label: "Special Requirements Remarks", type: "textarea", placeholder: "Notes regarding client specific requirements..." }
-  ],
+  clientRequirementTable: {
+    columns: [
+      { key: "requirement", label: "Client Requirements", type: "text" },
+      { key: "result", label: "Result (Actual Finding)", type: "text" },
+    ],
+    metadata: [
+      { name: "client_requirement_result", label: "Overall Result", type: "select", options: ["Passed", "Failed", "Pending", "N/A"], defaultValue: "Passed" },
+      { name: "client_requirement_remark", label: "Remark", type: "textarea", placeholder: "General remarks for client requirements..." },
+    ]
+  },
   photos: {
     groups: [
       { id: "remarkPhotos", label: "Remarks Photos" },
@@ -106,7 +112,9 @@ export const clsSchema = {
       { id: "truckCheckPhotos", label: "Truck Check Photos" },
       { id: "loadingPhotos", label: "Loading Process Photos" },
       { id: "sealingPhotos", label: "Container Sealing Photos" },
-      { id: "containerPhotos", label: "Container & Seal Photos" }
+      { id: "containerPhotos", label: "Container & Seal Photos" },
+      { id: "clientRequirementPhotos", label: "Client Requirement Photos" },
+      { id: "generalPhotos", label: "General Photos" }
     ]
   },
   clsPacking: {
