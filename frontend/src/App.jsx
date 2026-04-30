@@ -611,9 +611,10 @@ function App() {
   const next = () => setStep(step + 1);
   const prev = () => setStep(step - 1);
 
-  const submit = async () => {
+  const submit = async (format = 'docx') => {
     setIsGenerating(true);
     const formData = new FormData();
+    formData.append("format", format);
 
     Object.keys(form).forEach((key) => {
       const value = form[key];
@@ -734,7 +735,7 @@ function App() {
     const a = document.createElement("a");
     a.href = url;
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    a.download = `report-${stamp}.docx`;
+    a.download = `PSI-Report-${stamp}.${format}`;
     a.click();
     setIsGenerating(false);
   };
@@ -994,7 +995,7 @@ function App() {
         {step === 10 && <MarkingLabeling form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
         {step === 11 && <ClientSpecialRequirement form={form} handleChange={handleChange} onPrev={prev} onNext={next} onRequirementsChange={handleClientRequirementsChange} />}
         {step === 12 && <Photos photos={photos} photoGroups={photoGroups} onPhotoGroupsChange={handlePhotoGroupsChange} onPhotoFileChange={handlePhotoFileChange} onRemovePhoto={removePhoto} onPrev={prev} onNext={next} />}
-        {step === 13 && <FinalStep form={form} onPrev={prev} onSubmit={submit} onClearAfterDownload={clearFormAfterDownload} hasDownloaded={reportDownloaded} isGenerating={isGenerating} />}
+        {step === 13 && <FinalStep form={form} onPrev={prev} onSubmit={submit} onClearAfterDownload={clearFormAfterDownload} hasDownloaded={reportDownloaded} isGenerating={isGenerating} onToggleLoader={setIsGenerating} />}
         
         </div>
       </div>

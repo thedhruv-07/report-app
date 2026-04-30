@@ -380,11 +380,28 @@ const generateReport = async (req, res) => {
       ],
     });
 
+    const { convertDocxToPdf } = require("../utils/pdf.utils");
+    const format = req.body.format || "docx";
+
     const buffer = await Packer.toBuffer(doc);
 
-    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-    res.setHeader("Content-Disposition", "attachment; filename=report.docx");
-    res.send(buffer);
+    if (format === "pdf") {
+      try {
+        const pdfBuffer = await convertDocxToPdf(buffer);
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", "attachment; filename=report.pdf");
+        res.send(pdfBuffer);
+      } catch (pdfErr) {
+        console.error("PDF Conversion Error:", pdfErr);
+        if (!res.headersSent) {
+          res.status(500).json({ error: "PDF Conversion Failed", detail: pdfErr.message });
+        }
+      }
+    } else {
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+      res.setHeader("Content-Disposition", "attachment; filename=report.docx");
+      res.send(buffer);
+    }
 
     // Async cleanup
     if (req.files) {

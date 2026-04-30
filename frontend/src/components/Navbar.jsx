@@ -34,14 +34,12 @@ export default function Navbar({ onToggleSidebar }) {
   return (
     <header className="sticky top-0 z-[1001] h-16 bg-white border-b border-slate-200 flex items-center px-4 lg:px-6 shadow-sm flex-shrink-0">
       {/* Logo */}
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/20">
-          <span className="text-white font-bold text-sm">AV</span>
-        </div>
-        <div className="hidden sm:block">
-          <h1 className="text-sm font-extrabold tracking-tight text-slate-800">ABSOLUTE VERITAS</h1>
-          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider -mt-0.5">Inspection Portal</p>
-        </div>
+      <div className="flex items-center cursor-pointer" onClick={() => navigate("/dashboard")}>
+        <img 
+          src="/company-logo.png" 
+          alt="Absolute Veritas" 
+          className="h-10 w-auto object-contain"
+        />
       </div>
 
       {/* Center Navigation */}

@@ -577,11 +577,8 @@ async function createReportContent(data, uploadedFiles) {
     children.push(createConclusionTable(data, true));
     children.push(new Paragraph({ children: [new PageBreak()] }));
     children.push(createHighFidelityQuantityTable(data));
-    children.push(new Paragraph({ children: [new PageBreak()] }));
     children.push(...createCLSLoadingProcessTable(data));
-    children.push(new Paragraph({ children: [new PageBreak()] }));
     children.push(...createCLSClientRequirementTable(data));
-    children.push(new Paragraph({ children: [new PageBreak()] }));
     children.push(...createCLSFinalPhotosSection(data));
   } else {
     // PSI Only Sections (Workmanship, Factory Signs, etc.)
@@ -1306,8 +1303,11 @@ async function createReportContent(data, uploadedFiles) {
     children.push(new Table({ width: { size: 100, type: "pct" }, rows: gRows }));
 
 
-    // H. PHOTOS
-    const finalPhotoGroups = Array.isArray(data.reportPhotoGroups) ? data.reportPhotoGroups : (Array.isArray(data.photoGroups) ? data.photoGroups : []);
+    // H. PHOTOS — exclude remark photo groups since they're already rendered inside createRemarksTable
+    const allPhotoGroups = Array.isArray(data.reportPhotoGroups) ? data.reportPhotoGroups : (Array.isArray(data.photoGroups) ? data.photoGroups : []);
+    const finalPhotoGroups = allPhotoGroups.filter(g => 
+      g.id !== "remarkPhotos" && !g.description?.toLowerCase().includes("remark")
+    );
 
     if (finalPhotoGroups.length > 0) {
       // 1. Header Table (Small, easily fits on any page)
@@ -1374,6 +1374,9 @@ async function createReportContent(data, uploadedFiles) {
       }
     }
   }
+
+  // END OF REPORT SECTION
+  children.push(...createEndOfReportSection());
 
   return children;
 }
@@ -2372,6 +2375,54 @@ function createCLSFinalPhotosSection(data) {
   });
 
   return children;
+}
+
+function createEndOfReportSection() {
+  return [
+    new Paragraph({ children: [], spacing: { before: 400 } }),
+    new Table({
+      width: { size: 100, type: "pct" },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              borders: { 
+                top: { style: "single", size: 12, color: "1F4E79" }, 
+                bottom: { style: "single", size: 12, color: "1F4E79" }, 
+                left: { style: "none" }, 
+                right: { style: "none" } 
+              },
+              children: [
+                new Paragraph({
+                  children: [new TextRun({ text: "END OF REPORT", bold: true, size: 28, color: "1F4E79" })],
+                  alignment: "center",
+                  spacing: { before: 200, after: 200 }
+                })
+              ]
+            })
+          ]
+        })
+      ]
+    }),
+    new Paragraph({ children: [], spacing: { before: 300 } }),
+    new Paragraph({
+      children: [new TextRun({ text: "Important Note:", bold: true, size: 24, color: "1F4E79" })],
+      alignment: "left",
+      spacing: { after: 200 }
+    }),
+    ...[
+      "1. THIS REPORT REFLECTS ABSOLUTE VERITAS FINDINGS AT THE TIME AND PLACE OF INSPECTION.",
+      "2. THIS REPORT DOES NOT RELEASE THE BUYER OR SELLER FROM CONTRACTUAL RESPONSIBILITIES, NOR DOES IT PREJUDICE THE BUYER'S RIGHT OF CLAIM TOWARD THE SELLER/SUPPLIER FOR COMPENSATION FOR ANY APPARENT AND/OR HIDDEN DEFECTS NOT DETECTED DURING INSPECTION OR OCCURRING ANYTIME THEREAFTER.",
+      "3. THIS REPORT DOES NOT PROVE SHIPMENT.",
+      "4. RESULTS ARE RELATED TO ONLY THE SAMPLE TESTED.",
+      "5. THE INSPECTION SCOPE IS BASED ON AGREEMENT BETWEEN ABSOLUTE VERITAS AND BUYER, ABSOLUTE VERITAS RESPONSIBILITY IS ONLY LIMITED TO REQUESTED CHECKING POINTS."
+    ].map(text => new Paragraph({
+      children: [new TextRun({ text, size: 18 })],
+      alignment: "left",
+      spacing: { before: 100, after: 100 },
+      indent: { left: 440, hanging: 440 }
+    }))
+  ];
 }
 
 module.exports = {

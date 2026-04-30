@@ -11,7 +11,7 @@ const ReportLoader = () => {
           <div></div>
         </div>
         <div style={{ textAlign: "center" }}>
-          <p className="pulsing-text">GENERATING YOUR REPORT</p>
+          <p className="pulsing-text">PREPARING YOUR REPORT</p>
           <p className="loading-subtext">Uploading photos & assembling document... Please do not close this window.</p>
         </div>
       </div>

@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { colors, buttonStyle } from "../styles";
-import { PDFDownloadLink } from "@react-pdf/renderer";
-import ReportPDF from "../pdf/ReportPDF";
 
-const FinalStep = ({ form, onPrev, onSubmit, onClearAfterDownload, hasDownloaded, isGenerating }) => {
+const FinalStep = ({ form, onPrev, onSubmit, onClearAfterDownload, hasDownloaded, isGenerating, onToggleLoader }) => {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -117,13 +115,13 @@ const FinalStep = ({ form, onPrev, onSubmit, onClearAfterDownload, hasDownloaded
         </button>
 
         {isClient && form && (
-          <PDFDownloadLink
-            document={<ReportPDF data={form} serviceType="psi" />}
-            fileName={`PSI-Report-${new Date().toISOString().slice(0, 10)}.pdf`}
-            style={{ ...buttonStyle, flex: 1, minWidth: "200px", background: colors.primary, textDecoration: "none", textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center" }}
+          <button
+            onClick={() => onSubmit('pdf')}
+            disabled={isGenerating}
+            style={{ ...buttonStyle, flex: 1, minWidth: "200px", background: colors.primary, opacity: isGenerating ? 0.7 : 1, cursor: isGenerating ? 'not-allowed' : 'pointer' }}
           >
-            {({ loading }) => (loading ? "⏳ PREPARING PDF..." : "DOWNLOAD PDF")}
-          </PDFDownloadLink>
+            {isGenerating ? "⏳ PREPARING PDF..." : "DOWNLOAD PDF"}
+          </button>
         )}
       </div>
     </div>

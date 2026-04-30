@@ -4,8 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { ENDPOINTS } from "../../config/api";
 import { colors } from "../../styles";
 import { clsSchema } from "../../shared/formSchemas";
-import { PDFDownloadLink } from "@react-pdf/renderer";
-import ReportPDF from "../../pdf/ReportPDF";
+import ReportLoader from "../../components/ReportLoader";
 
 import SchemaSection from "../../components/FormBuilder/SchemaSection";
 import SchemaTable from "../../components/FormBuilder/SchemaTable";
@@ -199,11 +198,12 @@ export default function ContainerLoading() {
     setForm(prev => ({ ...prev, generalPhoto: null, generalPhotoMeta: null }));
   };
 
-  const submit = async () => {
+  const submit = async (format = 'docx') => {
     setIsGenerating(true);
     const formData = new FormData();
     
     formData.append("serviceType", "cls");
+    formData.append("format", format);
     
     // Add flat data
     Object.keys(form).forEach((key) => {
@@ -247,7 +247,7 @@ export default function ContainerLoading() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `CLS-Report-${new Date().toISOString().slice(0,10)}.docx`;
+      a.download = `CLS-Report-${new Date().toISOString().slice(0,10)}.${format}`;
       a.click();
       
     } catch (error) {
@@ -463,24 +463,20 @@ export default function ContainerLoading() {
             </button>
           ) : (
             <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-              <button onClick={submit} disabled={isGenerating} style={{ padding: "12px 24px", borderRadius: "8px", border: "none", background: isGenerating ? colors.textMuted : colors.success, color: "#fff", cursor: isGenerating ? "not-allowed" : "pointer", fontWeight: "600", transition: "all 0.2s", boxShadow: isGenerating ? "none" : "0 4px 12px rgba(16, 185, 129, 0.25)" }}>
+              <button onClick={() => submit('docx')} disabled={isGenerating} style={{ padding: "12px 24px", borderRadius: "8px", border: "none", background: isGenerating ? colors.textMuted : colors.success, color: "#fff", cursor: isGenerating ? "not-allowed" : "pointer", fontWeight: "600", transition: "all 0.2s", boxShadow: isGenerating ? "none" : "0 4px 12px rgba(16, 185, 129, 0.25)" }}>
                 {isGenerating ? "Generating DOCX..." : "Download DOCX"}
               </button>
               
-              {isClient && (
-                <PDFDownloadLink
-                  document={<ReportPDF data={form} serviceType="cls" />}
-                  fileName={`CLS-Report-${new Date().toISOString().slice(0, 10)}.pdf`}
-                  style={{ padding: "12px 24px", borderRadius: "8px", border: "none", background: colors.primary, color: "#fff", cursor: "pointer", fontWeight: "600", transition: "all 0.2s", boxShadow: "0 4px 12px rgba(59, 130, 246, 0.25)", textDecoration: "none", display: "inline-block", textAlign: "center" }}
-                >
-                  {({ loading }) => (loading ? "Preparing PDF..." : "Download PDF")}
-                </PDFDownloadLink>
-              )}
+              <button onClick={() => submit('pdf')} disabled={isGenerating} style={{ padding: "12px 24px", borderRadius: "8px", border: "none", background: isGenerating ? colors.textMuted : colors.primary, color: "#fff", cursor: isGenerating ? "not-allowed" : "pointer", fontWeight: "600", transition: "all 0.2s", boxShadow: isGenerating ? "none" : "0 4px 12px rgba(59, 130, 246, 0.25)" }}>
+                {isGenerating ? "Preparing PDF..." : "Download PDF"}
+              </button>
             </div>
           )}
         </div>
 
       </div>
+
+      {isGenerating && <ReportLoader />}
 
       {showSaveToast && (
         <div style={{ position: "fixed", bottom: "24px", right: "24px", background: colors.success, color: "white", padding: "12px 24px", borderRadius: "8px", fontWeight: "600", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", zIndex: 9999, animation: "slideUp 0.3s ease" }}>

@@ -66,11 +66,11 @@ export default function Login() {
       <div className="w-full max-w-md">
         {/* Brand */}
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/20">
-            <span className="text-white font-bold text-lg">AV</span>
-          </div>
-          <h1 className="text-xl font-extrabold text-blue-600 tracking-tight">ABSOLUTE VERITAS REPORT</h1>
-          <p className="text-sm text-slate-400 mt-1">Inspection Portal</p>
+          <img 
+            src="/company-logo.png" 
+            alt="Absolute Veritas" 
+            className="h-20 w-auto mx-auto object-contain"
+          />
         </div>
 
         {/* Card */}

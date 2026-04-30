@@ -36,10 +36,11 @@ export default function ForgotPassword() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50/40 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/20">
-            <span className="text-white font-bold text-lg">AV</span>
-          </div>
-          <h1 className="text-xl font-extrabold text-blue-600 tracking-tight">ABSOLUTE VERITAS REPORT</h1>
+          <img 
+            src="/company-logo.png" 
+            alt="Absolute Veritas" 
+            className="h-20 w-auto mx-auto object-contain"
+          />
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-200 p-8">
