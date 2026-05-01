@@ -14,10 +14,20 @@ const photoV2Routes = require("./routes/v2/photo.routes");
 const app = express();
 
 // CORS
-const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-console.log("🛠️ CORS Origin:", frontendUrl);
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://absolute-veritas.netlify.app",
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(cors({
-  origin: frontendUrl,
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
