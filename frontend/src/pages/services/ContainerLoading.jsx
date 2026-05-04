@@ -298,6 +298,11 @@ export default function ContainerLoading() {
                   </div>
                   <div style={{ fontSize: "10px", color: colors.success, fontWeight: "500" }}>
                     {formatFileSize(form.generalPhotoMeta.compressedSize)}
+                    {form.generalPhotoMeta.originalSize > form.generalPhotoMeta.compressedSize && (
+                      <span style={{ marginLeft: "4px", opacity: 0.8 }}>
+                        (saved {formatFileSize(form.generalPhotoMeta.originalSize - form.generalPhotoMeta.compressedSize)})
+                      </span>
+                    )}
                   </div>
                 </div>
               )}

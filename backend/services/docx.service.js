@@ -577,6 +577,11 @@ async function createReportContent(data, uploadedFiles) {
     children.push(createConclusionTable(data, true));
     children.push(new Paragraph({ children: [new PageBreak()] }));
     children.push(createHighFidelityQuantityTable(data));
+    children.push(new Paragraph({ children: [], spacing: { before: 200, after: 200 } }));
+    children.push(createProductConformityTable(data));
+    children.push(new Paragraph({ children: [], spacing: { before: 200, after: 200 } }));
+    children.push(createCLSPackingTable(data));
+    children.push(new Paragraph({ children: [], spacing: { before: 200, after: 200 } }));
     children.push(...createCLSLoadingProcessTable(data));
     children.push(...createCLSClientRequirementTable(data));
     children.push(...createCLSFinalPhotosSection(data));
