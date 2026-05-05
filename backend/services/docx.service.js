@@ -1311,9 +1311,10 @@ async function createReportContent(data, uploadedFiles) {
 
     // H. PHOTOS — exclude remark photo groups since they're already rendered inside createRemarksTable
     const allPhotoGroups = Array.isArray(data.reportPhotoGroups) ? data.reportPhotoGroups : (Array.isArray(data.photoGroups) ? data.photoGroups : []);
-    const finalPhotoGroups = allPhotoGroups.filter(g => 
-      g.id !== "remarkPhotos" && !g.description?.toLowerCase().includes("remark")
-    );
+    const finalPhotoGroups = allPhotoGroups.filter(g => {
+      const desc = (g.description || "").toLowerCase();
+      return g.id !== "remarkPhotos" && !desc.includes("remark") && !desc.includes("general");
+    });
 
     if (finalPhotoGroups.length > 0) {
       // 1. Header Table (Small, easily fits on any page)
