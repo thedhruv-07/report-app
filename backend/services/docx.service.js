@@ -459,7 +459,7 @@ async function createReportContent(data, uploadedFiles) {
     ["Reference Sample:", data.referenceSample],
   ];
 
-  const isClsReport = data.serviceType === 'cls';
+  const isClsReport = data.serviceType?.toLowerCase() === 'cls';
   const serviceTitle = data.servicePerformed || (isClsReport ? "Container Loading Supervision (CLS)" : "Pre-Shipment Inspection Report");
   
   const infoRows = [
@@ -521,7 +521,7 @@ async function createReportContent(data, uploadedFiles) {
   children.push(new Paragraph({ children: [], spacing: { before: 100, after: 100 } }));
 
   // II. INSPECTION SUMMARY
-  const isCls = data.serviceType === "cls";
+  const isCls = data.serviceType?.toLowerCase() === "cls";
   
   const summaryResults = isCls ? [
     { label: "A. Quantity", val: data.quantity },
