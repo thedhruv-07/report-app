@@ -583,6 +583,7 @@ async function createReportContent(data, uploadedFiles) {
     children.push(createCLSPackingTable(data));
     children.push(new Paragraph({ children: [], spacing: { before: 200, after: 200 } }));
     children.push(...createCLSLoadingProcessTable(data));
+    children.push(new Paragraph({ children: [], spacing: { before: 200, after: 200 } }));
     children.push(...createCLSClientRequirementTable(data));
     children.push(...createCLSFinalPhotosSection(data));
   } else {
@@ -2328,7 +2329,10 @@ function createCLSClientRequirementTable(data) {
 }
 
 function createCLSFinalPhotosSection(data) {
-  const photoGroups = data.reportPhotoGroups || [];
+  const photoGroups = (data.reportPhotoGroups || []).filter(g => 
+    !g.description?.toLowerCase().includes('remark') && 
+    !g.description?.toLowerCase().includes('general')
+  );
   
   const children = [
     // Section Header

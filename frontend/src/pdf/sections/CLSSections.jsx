@@ -446,7 +446,7 @@ export default function CLSSections({ data }) {
             <View style={{ width: '85%', padding: 4 }}><Text style={{ fontSize: 8 }}>{data.remarks_loading || 'N/A'}</Text></View>
           </View>
         </View>
-      </Section>
+      <View style={{ height: 15 }} />
 
       {/* E. CLIENT REQUIREMENT */}
       <Section title="E. CLIENT SPECIAL REQUIREMENT">
@@ -531,8 +531,8 @@ export default function CLSSections({ data }) {
             </View>
           </View>
           
-          {((data?.reportPhotoGroups) || []).map((group, i) => (
-            <View key={i} style={{ flexDirection: 'row', borderBottomWidth: i === data.reportPhotoGroups.length - 1 ? 0 : 1, borderColor: '#000' }}>
+          {((data?.reportPhotoGroups) || []).filter(g => !g.description?.toLowerCase().includes('remark') && !g.description?.toLowerCase().includes('general')).map((group, i, filtered) => (
+            <View key={i} style={{ flexDirection: 'row', borderBottomWidth: i === filtered.length - 1 ? 0 : 1, borderColor: '#000' }}>
               <View style={{ width: '10%', padding: 4, borderRightWidth: 1, borderColor: '#000', alignItems: 'center' }}>
                 <Text style={{ fontSize: 8 }}>{i + 1}</Text>
               </View>
@@ -544,7 +544,7 @@ export default function CLSSections({ data }) {
         </View>
 
         {/* Actual Photos Grid */}
-        {((data?.reportPhotoGroups) || []).map((group, groupIdx) => (
+        {((data?.reportPhotoGroups) || []).filter(g => !g.description?.toLowerCase().includes('remark') && !g.description?.toLowerCase().includes('general')).map((group, groupIdx) => (
           <View key={groupIdx} wrap={false} style={{ marginBottom: 20 }}>
             <View style={{ backgroundColor: pdfColors.lightGray, padding: 5, marginBottom: 10, borderLeftWidth: 3, borderColor: '#1F497D' }}>
               <Text style={{ fontSize: 10, fontWeight: 'bold' }}>{group.description}</Text>
