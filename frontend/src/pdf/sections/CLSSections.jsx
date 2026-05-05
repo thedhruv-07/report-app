@@ -446,6 +446,7 @@ export default function CLSSections({ data }) {
             <View style={{ width: '85%', padding: 4 }}><Text style={{ fontSize: 8 }}>{data.remarks_loading || 'N/A'}</Text></View>
           </View>
         </View>
+      </Section>
       <View style={{ height: 15 }} />
 
       {/* E. CLIENT REQUIREMENT */}
@@ -531,7 +532,10 @@ export default function CLSSections({ data }) {
             </View>
           </View>
           
-          {((data?.reportPhotoGroups) || []).filter(g => !g.description?.toLowerCase().includes('remark') && !g.description?.toLowerCase().includes('general')).map((group, i, filtered) => (
+          {((data?.reportPhotoGroups) || []).filter(g => {
+            const desc = (g.description || '').toLowerCase();
+            return !desc.includes('remark') && !desc.includes('general');
+          }).map((group, i, filtered) => (
             <View key={i} style={{ flexDirection: 'row', borderBottomWidth: i === filtered.length - 1 ? 0 : 1, borderColor: '#000' }}>
               <View style={{ width: '10%', padding: 4, borderRightWidth: 1, borderColor: '#000', alignItems: 'center' }}>
                 <Text style={{ fontSize: 8 }}>{i + 1}</Text>
@@ -544,16 +548,19 @@ export default function CLSSections({ data }) {
         </View>
 
         {/* Actual Photos Grid */}
-        {((data?.reportPhotoGroups) || []).filter(g => !g.description?.toLowerCase().includes('remark') && !g.description?.toLowerCase().includes('general')).map((group, groupIdx) => (
+        {((data?.reportPhotoGroups) || []).filter(g => {
+          const desc = (g.description || '').toLowerCase();
+          return !desc.includes('remark') && !desc.includes('general');
+        }).map((group, groupIdx) => (
           <View key={groupIdx} wrap={false} style={{ marginBottom: 20 }}>
             <View style={{ backgroundColor: pdfColors.lightGray, padding: 5, marginBottom: 10, borderLeftWidth: 3, borderColor: '#1F497D' }}>
               <Text style={{ fontSize: 10, fontWeight: 'bold' }}>{group.description}</Text>
             </View>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', borderTopWidth: 1, borderLeftWidth: 1, borderColor: '#000' }}>
-              {group.photos.map((photo, photoIdx) => (
+              {(group.photos || []).map((photo, photoIdx) => (
                 <View key={photoIdx} style={{ width: '50%', borderBottomWidth: 1, borderRightWidth: 1, borderColor: '#000' }}>
                   <View style={{ height: 200, padding: 2 }}>
-                    <Image src={photo.preview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    {photo.preview && <Image src={photo.preview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                   </View>
                   <View style={{ padding: 4, borderTopWidth: 1, borderColor: '#000', alignItems: 'center', backgroundColor: pdfColors.lightGray }}>
                     <Text style={{ fontSize: 8 }}>{photo.label || `Photo ${photoIdx + 1}`}</Text>

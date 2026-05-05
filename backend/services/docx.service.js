@@ -2329,10 +2329,10 @@ function createCLSClientRequirementTable(data) {
 }
 
 function createCLSFinalPhotosSection(data) {
-  const photoGroups = (data.reportPhotoGroups || []).filter(g => 
-    !g.description?.toLowerCase().includes('remark') && 
-    !g.description?.toLowerCase().includes('general')
-  );
+  const photoGroups = (data.reportPhotoGroups || []).filter(g => {
+    const desc = (g.description || "").toLowerCase();
+    return !desc.includes("remark") && !desc.includes("general");
+  });
   
   const children = [
     // Section Header
