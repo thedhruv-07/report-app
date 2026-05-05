@@ -14,6 +14,7 @@ import SchemaChecklist from "../../components/FormBuilder/SchemaChecklist";
 import SchemaChecklistTable from "../../components/FormBuilder/SchemaChecklistTable";
 import ProductConformityTable from "../../components/FormBuilder/ProductConformityTable";
 import CLSPackingTable from "../../components/FormBuilder/CLSPackingTable";
+import LoadingProcessTable from "../../components/FormBuilder/LoadingProcessTable";
 import { compressImage, formatFileSize } from "../../utils/imageCompression";
 
 const safeJsonParse = (value, fallback) => {
@@ -343,17 +344,10 @@ export default function ContainerLoading() {
     { id: 5, label: "Quantity", component: <SchemaTable title="5. Quantity Details" config={clsSchema.quantityTable} dataKey="quantityTable" formData={form} onChange={handleChange} ai={false} /> },
     { id: 6, label: "Product Conformity", component: <ProductConformityTable formData={form} onChange={handleChange} /> },
     { id: 7, label: "Packing", component: <CLSPackingTable formData={form} onChange={handleChange} /> },
+
     { id: 8, label: "Loading Process", component: (
       <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
-        <SchemaSection title="8. Loading Process" fields={clsSchema.loadingProcess} formData={form} onChange={handleChange} />
-        <SchemaPhotos 
-          config={{ groups: [
-            { id: "loadingAreaPhotos", label: "Loading Area Photos" },
-            { id: "warehousePhotos", label: "Warehouse Photos" }
-          ] }} 
-          formData={form} 
-          onChange={handleChange} 
-        />
+        <LoadingProcessTable formData={form} onChange={handleChange} />
 
         <SchemaChecklistTable title="8.1 Empty Container Check" items={clsSchema.containerCheck} dataKey="containerCheck" formData={form} onChange={handleChange} />
         <SchemaPhotos 
@@ -373,14 +367,18 @@ export default function ContainerLoading() {
           formData={form} 
           onChange={handleChange} 
         />
-      </div>
-    ) },
-    { id: 9, label: "Container Sealing", component: (
-      <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
-        <SchemaChecklistTable title="9. Container Sealing Check" items={clsSchema.containerSealing} dataKey="containerSealing" formData={form} onChange={handleChange} />
+
+        <SchemaChecklistTable 
+          title="8.3 Container Closing" 
+          items={clsSchema.containerClosing} 
+          dataKey="containerClosing" 
+          formData={form} 
+          onChange={handleChange}
+          options={["Passed", "Actual finding", "N/A"]}
+        />
         <SchemaPhotos 
           config={{ groups: [
-            { id: "sealingPhotos", label: "Container Sealing Photos" },
+            { id: "closingPhotos", label: "Container Closing Photos" },
             { id: "containerPhotos", label: "Container & Seal Photos" }
           ] }} 
           formData={form} 
@@ -388,9 +386,9 @@ export default function ContainerLoading() {
         />
       </div>
     ) },
-    { id: 10, label: "Client Requirement", component: (
+    { id: 9, label: "Client Requirement", component: (
       <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
-        <SchemaTable title="10. Client Special Requirements" config={clsSchema.clientRequirementTable} dataKey="clientRequirementTable" formData={form} onChange={handleChange} />
+        <SchemaTable title="9. Client Special Requirements" config={clsSchema.clientRequirementTable} dataKey="clientRequirementTable" formData={form} onChange={handleChange} />
         <SchemaPhotos 
           config={{ groups: [{ id: "clientRequirementPhotos", label: "Client Requirement Photos" }] }} 
           formData={form} 
@@ -398,7 +396,7 @@ export default function ContainerLoading() {
         />
       </div>
     ) },
-    { id: 11, label: "Final Photos", component: (
+    { id: 10, label: "Final Photos", component: (
       <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
         <SchemaPhotos 
           config={{ groups: [{ id: "generalPhotos", label: "F. PHOTOS" }] }} 
@@ -462,7 +460,7 @@ export default function ContainerLoading() {
             ← Previous
           </button>
           
-          {step < 11 ? (
+          {step < 10 ? (
             <button onClick={next} style={{ padding: "12px 24px", borderRadius: "8px", border: "none", background: colors.primary, color: "#fff", cursor: "pointer", fontWeight: "600", transition: "all 0.2s", boxShadow: "0 4px 12px rgba(59, 130, 246, 0.25)" }}>
               Next Step →
             </button>

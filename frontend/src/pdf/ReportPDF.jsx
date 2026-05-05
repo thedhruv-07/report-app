@@ -19,7 +19,7 @@ export default function ReportPDF({ data, serviceType }) {
         { id: "emptyContainerPhotos", label: "Empty Container Photos" },
         { id: "truckCheckPhotos", label: "Truck Check Photos" },
         { id: "loadingPhotos", label: "Loading Process Photos" },
-        { id: "sealingPhotos", label: "Container Sealing Photos" },
+        { id: "closingPhotos", label: "Container Closing Photos" },
         { id: "containerPhotos", label: "Container & Seal Photos" },
         { id: "clientRequirementPhotos", label: "Client Requirement Photos" },
         { id: "generalPhotos", label: "General Photos" }

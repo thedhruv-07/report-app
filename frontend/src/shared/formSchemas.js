@@ -58,7 +58,8 @@ export const clsSchema = {
     { name: "containerNo", label: "Container No.", type: "text", placeholder: "e.g., SUDU9201319" },
     { name: "sealNo", label: "Seal No.", type: "text", placeholder: "e.g., BOLTD1715318" },
     { name: "avSealNo", label: "Seal No. (AV) If Used", type: "text", defaultValue: "/" },
-    { name: "cargoBreakdown", label: "Cargo Breakdown", type: "text", placeholder: "e.g., 2500 Cartons of Frozen Meat" },
+    { name: "cargoBreakdown", label: "Item No.", type: "text", placeholder: "e.g., Topside, Silverside..." },
+    { name: "loadedCarton", label: "Loaded Carton", type: "text", placeholder: "e.g., 1425" },
     { name: "shelter", label: "Shelter / Loading Area", type: "text", placeholder: "e.g., Covered Area" },
     { name: "weather", label: "Weather Condition", type: "text", placeholder: "e.g., Sunny" },
     { name: "loadingStartTime", label: "Loading Start Time", type: "text", placeholder: "e.g., 09:00 AM" },
@@ -87,11 +88,11 @@ export const clsSchema = {
     { id: "loadingAreaClean", label: "Loading area is clean and suitable.", result: "Passed" },
     { id: "protection", label: "Protection against rain/sun during loading.", result: "Passed" }
   ],
-  containerSealing: [
-    { id: "correctSeal", label: "The seal number matches the documentation.", result: "Passed" },
-    { id: "properlyFixed", label: "The seal is properly fixed and locked.", result: "Passed" },
-    { id: "sealIntegrity", label: "The seal integrity is checked and confirmed.", result: "Passed" },
-    { id: "photoTaken", label: "Photos of seal and container number are taken.", result: "Passed" }
+  containerClosing: [
+    { id: "doorsClosed", label: "The doors and (if applicable) roof covering have been carefully closed.", result: "Passed" },
+    { id: "containerFull", label: "Is the container completely full? If no, describe how carton are tied together.", result: "Actual finding" },
+    { id: "reeferTemp", label: "For refrigerated containers with a refrigeration unit and heat able tank containers: the correct temperature has been set. For refrigerated containers, the temperature recorder is running and the temperature is displayed.", result: "N/A" },
+    { id: "cargoWeight", label: "How much do the cargoes weigh? (if there is a weighbridge) Method 1 : total weight a = weight of empty container + weight of truck, total weight b = weight of empty container + weight of truck + gross weight of products. The gross weight of product c = b-a. This method is applicable for the scenario that the same truck is used to carry the container before and after loading. Method 2 : a=Weight of truck which would carry the container after loading; b= weight of truck which would carry the container after loading + weight of empty container + gross weight of product; the gross weight of product = b - a - claimed weight of empty container. This method is applicable for the scenario that the container was carried by different truck before and after loading, specially when the loading happens at the dock, or big logistic area.", result: "Actual finding" }
   ],
   clientRequirementTable: {
     columns: [
@@ -111,7 +112,7 @@ export const clsSchema = {
       { id: "emptyContainerPhotos", label: "Empty Container Photos" },
       { id: "truckCheckPhotos", label: "Truck Check Photos" },
       { id: "loadingPhotos", label: "Loading Process Photos" },
-      { id: "sealingPhotos", label: "Container Sealing Photos" },
+      { id: "closingPhotos", label: "Container Closing Photos" },
       { id: "containerPhotos", label: "Container & Seal Photos" },
       { id: "clientRequirementPhotos", label: "Client Requirement Photos" },
       { id: "generalPhotos", label: "General Photos" }

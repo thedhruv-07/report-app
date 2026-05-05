@@ -1,7 +1,7 @@
 import { colors } from "../../styles";
 import SmartTextarea from "../SmartTextarea";
 
-export default function SchemaChecklistTable({ title, items, formData, onChange, dataKey }) {
+export default function SchemaChecklistTable({ title, items, formData, onChange, dataKey, options = ["Yes", "No", "N/A"] }) {
   const currentData = Array.isArray(formData[dataKey]) ? formData[dataKey] : [];
 
   const handleStatusChange = (itemId, status) => {
@@ -52,7 +52,7 @@ export default function SchemaChecklistTable({ title, items, formData, onChange,
             <tr style={{ background: colors.surfaceAlt }}>
               <th style={{ padding: "10px", textAlign: "left", borderBottom: `1px solid ${colors.border}`, color: colors.textMuted, fontSize: "12px", width: "40px" }}>#</th>
               <th style={{ padding: "10px", textAlign: "left", borderBottom: `1px solid ${colors.border}`, color: colors.textMuted, fontSize: "12px" }}>Check Point</th>
-              <th style={{ padding: "10px", textAlign: "center", borderBottom: `1px solid ${colors.border}`, color: colors.textMuted, fontSize: "12px", width: "180px" }}>Result (Yes/No/NA)</th>
+              <th style={{ padding: "10px", textAlign: "center", borderBottom: `1px solid ${colors.border}`, color: colors.textMuted, fontSize: "12px", width: "240px" }}>Result ({options.join('/')})</th>
               <th style={{ padding: "10px", textAlign: "left", borderBottom: `1px solid ${colors.border}`, color: colors.textMuted, fontSize: "12px", width: "200px" }}>Finding / Remarks</th>
             </tr>
           </thead>
@@ -62,8 +62,8 @@ export default function SchemaChecklistTable({ title, items, formData, onChange,
                 <td style={{ padding: "10px", borderBottom: `1px solid ${colors.border}`, fontSize: "13px", background: colors.surfaceAlt, textAlign: "center" }}>{index + 1}</td>
                 <td style={{ padding: "10px", borderBottom: `1px solid ${colors.border}`, fontSize: "13px", fontWeight: "500" }}>{item.label}</td>
                 <td style={{ padding: "10px", borderBottom: `1px solid ${colors.border}`, textAlign: "center" }}>
-                  <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
-                    {["Yes", "No", "N/A"].map(status => (
+                  <div style={{ display: "flex", justifyContent: "center", gap: "8px", flexWrap: "wrap" }}>
+                    {options.map(status => (
                       <button
                         key={status}
                         onClick={() => handleStatusChange(item.id, status)}

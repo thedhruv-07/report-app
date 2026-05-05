@@ -2055,14 +2055,14 @@ function createCLSPackingTable(data) {
 function createCLSLoadingProcessTable(data) {
   const containerCheck = Array.isArray(data.containerCheck) ? data.containerCheck : [];
   const loadingCheck = Array.isArray(data.loadingCheck) ? data.loadingCheck : [];
-  const containerSealing = Array.isArray(data.containerSealing) ? data.containerSealing : [];
+  const containerClosing = Array.isArray(data.containerClosing) ? data.containerClosing : [];
   
   const loadingAreaPhotos = (data.reportPhotoGroups || []).find(g => g.description?.toLowerCase().includes("loading area"))?.photos || [];
   const warehousePhotos = (data.reportPhotoGroups || []).find(g => g.description?.toLowerCase().includes("warehouse"))?.photos || [];
   const emptyPhotos = (data.reportPhotoGroups || []).find(g => g.description?.toLowerCase().includes("empty container"))?.photos || [];
   const truckPhotos = (data.reportPhotoGroups || []).find(g => g.description?.toLowerCase().includes("truck check"))?.photos || [];
   const loadingPhotos = (data.reportPhotoGroups || []).find(g => g.description?.toLowerCase().includes("loading process photos"))?.photos || [];
-  const sealingPhotos = (data.reportPhotoGroups || []).find(g => g.description?.toLowerCase().includes("container sealing photos"))?.photos || [];
+  const closingPhotos = (data.reportPhotoGroups || []).find(g => g.description?.toLowerCase().includes("container closing photos"))?.photos || [];
   const containerSealPhotos = (data.reportPhotoGroups || []).find(g => g.description?.toLowerCase().includes("container & seal photos"))?.photos || [];
 
   const children = [
@@ -2089,16 +2089,26 @@ function createCLSLoadingProcessTable(data) {
       rows: [
         new TableRow({
           children: [
-            new TableCell({ columnSpan: 5, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Container:", bold: true })] })] })
+            new TableCell({ columnSpan: 6, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Container:", bold: true })] })] })
           ]
         }),
         new TableRow({
           children: [
-            createQtyCell("Container Type", { bold: true, shaded: true }),
-            createQtyCell("Container No.", { bold: true, shaded: true }),
-            createQtyCell("Seal No.", { bold: true, shaded: true }),
-            createQtyCell("Seal No. (AV)", { bold: true, shaded: true }),
-            createQtyCell("Cargo Breakdown", { bold: true, shaded: true }),
+            new TableCell({ rowSpan: 2, verticalMerge: "restart", shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Container Type", bold: true })], alignment: "center" })] }),
+            new TableCell({ rowSpan: 2, verticalMerge: "restart", shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Container No.", bold: true })], alignment: "center" })] }),
+            new TableCell({ rowSpan: 2, verticalMerge: "restart", shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Seal No.", bold: true })], alignment: "center" })] }),
+            new TableCell({ rowSpan: 2, verticalMerge: "restart", shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Seal No. (AV) If used", bold: true })], alignment: "center" })] }),
+            new TableCell({ columnSpan: 2, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Loaded Cargo", bold: true })], alignment: "center" })] }),
+          ]
+        }),
+        new TableRow({
+          children: [
+            new TableCell({ verticalMerge: "continue", shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [] }),
+            new TableCell({ verticalMerge: "continue", shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [] }),
+            new TableCell({ verticalMerge: "continue", shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [] }),
+            new TableCell({ verticalMerge: "continue", shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [] }),
+            createQtyCell("Item No.", { bold: true, shaded: true }),
+            createQtyCell("Loaded Carton", { bold: true, shaded: true }),
           ]
         }),
         new TableRow({
@@ -2108,6 +2118,7 @@ function createCLSLoadingProcessTable(data) {
             createQtyCell(data.sealNo || "/"),
             createQtyCell(data.avSealNo || "/"),
             createQtyCell(data.cargoBreakdown || "/"),
+            createQtyCell(data.loadedCarton || "/"),
           ]
         }),
       ]
@@ -2199,13 +2210,13 @@ function createCLSLoadingProcessTable(data) {
     new Paragraph({ children: [], spacing: { before: 100 } }),
     new Paragraph({ children: [], spacing: { before: 100 } }),
 
-    // Container Sealing Table
+    // Container Closing Table
     new Table({
       width: { size: 100, type: "pct" },
       rows: [
         new TableRow({
           children: [
-            new TableCell({ columnSpan: 4, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Container Checking:", bold: true })] })] })
+            new TableCell({ columnSpan: 4, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Container Closing:", bold: true })] })] })
           ]
         }),
         new TableRow({
@@ -2216,7 +2227,7 @@ function createCLSLoadingProcessTable(data) {
             createQtyCell("Findings and comments", { bold: true, shaded: true, width: { size: 25, type: "pct" } }),
           ]
         }),
-        ...containerSealing.map((c, i) => new TableRow({
+        ...containerClosing.map((c, i) => new TableRow({
           children: [
             createQtyCell(String(i + 1)),
             createQtyCell(c.label || "/", { align: "left" }),

@@ -147,7 +147,8 @@ export default function CLSSections({ data }) {
             <View style={[pdfStyles.tableCol, { width: '15%', padding: 3, borderRightWidth: 1, borderColor: '#000', alignItems: 'center' }]}><Text style={{ fontSize: 8, fontWeight: 'bold' }}>Container No.</Text></View>
             <View style={[pdfStyles.tableCol, { width: '15%', padding: 3, borderRightWidth: 1, borderColor: '#000', alignItems: 'center' }]}><Text style={{ fontSize: 8, fontWeight: 'bold' }}>Seal No.</Text></View>
             <View style={[pdfStyles.tableCol, { width: '15%', padding: 3, borderRightWidth: 1, borderColor: '#000', alignItems: 'center' }]}><Text style={{ fontSize: 8, fontWeight: 'bold', textAlign: 'center' }}>Seal No. (AV){"\n"}If Used</Text></View>
-            <View style={[pdfStyles.tableCol, { width: '40%', padding: 3, borderRightWidth: 0, alignItems: 'center' }]}><Text style={{ fontSize: 8, fontWeight: 'bold' }}>Cargo Breakdown</Text></View>
+            <View style={[pdfStyles.tableCol, { width: '30%', padding: 3, borderRightWidth: 1, borderColor: '#000', alignItems: 'center' }]}><Text style={{ fontSize: 8, fontWeight: 'bold' }}>Item No.</Text></View>
+            <View style={[pdfStyles.tableCol, { width: '10%', padding: 3, borderRightWidth: 0, alignItems: 'center' }]}><Text style={{ fontSize: 8, fontWeight: 'bold' }}>Loaded Carton</Text></View>
           </View>
           {/* Data Row */}
           <View style={{ flexDirection: 'row', backgroundColor: pdfColors.white, borderBottomWidth: 1, borderColor: '#000' }}>
@@ -155,7 +156,8 @@ export default function CLSSections({ data }) {
             <View style={[pdfStyles.tableCol, { width: '15%', padding: 5, borderRightWidth: 1, borderColor: '#000', alignItems: 'center' }]}><Text style={{ fontSize: 8 }}>{data.containerNo || '/'}</Text></View>
             <View style={[pdfStyles.tableCol, { width: '15%', padding: 5, borderRightWidth: 1, borderColor: '#000', alignItems: 'center' }]}><Text style={{ fontSize: 8 }}>{data.sealNo || '/'}</Text></View>
             <View style={[pdfStyles.tableCol, { width: '15%', padding: 5, borderRightWidth: 1, borderColor: '#000', alignItems: 'center' }]}><Text style={{ fontSize: 8 }}>{data.avSealNo || '/'}</Text></View>
-            <View style={[pdfStyles.tableCol, { width: '40%', padding: 5, borderRightWidth: 0, alignItems: 'center' }]}><Text style={{ fontSize: 8, textAlign: 'center' }}>{data.cargoBreakdown || '/'}</Text></View>
+            <View style={[pdfStyles.tableCol, { width: '30%', padding: 5, borderRightWidth: 1, borderColor: '#000', alignItems: 'center' }]}><Text style={{ fontSize: 8, textAlign: 'center' }}>{data.cargoBreakdown || '/'}</Text></View>
+            <View style={[pdfStyles.tableCol, { width: '10%', padding: 5, borderRightWidth: 0, alignItems: 'center' }]}><Text style={{ fontSize: 8 }}>{data.loadedCarton || '/'}</Text></View>
           </View>
 
           {/* Loading Condition Table */}
@@ -379,10 +381,10 @@ export default function CLSSections({ data }) {
           })()}
         </View>
 
-        {/* Container Checking (Sealing) Section */}
+        {/* Container Closing Section */}
         <View style={{ marginTop: 15, borderWidth: 1, borderColor: '#000' }}>
           <View style={{ backgroundColor: pdfColors.lightGray, padding: 5, borderBottomWidth: 1, borderColor: '#000' }}>
-            <Text style={{ fontSize: 9, fontWeight: 'bold' }}>Container Checking:</Text>
+            <Text style={{ fontSize: 9, fontWeight: 'bold' }}>Container Closing:</Text>
           </View>
           <View style={{ flexDirection: 'row', backgroundColor: pdfColors.lightGray, borderBottomWidth: 1, borderColor: '#000' }}>
             <View style={[pdfStyles.tableCol, { width: '5%', padding: 3, borderRightWidth: 1, borderColor: '#000', alignItems: 'center' }]}><Text style={{ fontSize: 8, fontWeight: 'bold' }}>No</Text></View>
@@ -390,10 +392,10 @@ export default function CLSSections({ data }) {
             <View style={[pdfStyles.tableCol, { width: '15%', padding: 3, borderRightWidth: 1, borderColor: '#000', alignItems: 'center' }]}><Text style={{ fontSize: 8, fontWeight: 'bold' }}>Result</Text></View>
             <View style={[pdfStyles.tableCol, { width: '25%', padding: 3, borderRightWidth: 0, alignItems: 'center' }]}><Text style={{ fontSize: 8, fontWeight: 'bold' }}>Findings and comments</Text></View>
           </View>
-          {clsSchema.containerSealing.map((item, i) => {
-            const check = (data.containerSealing || []).find(c => c.id === item.id) || {};
+          {clsSchema.containerClosing.map((item, i) => {
+            const check = (data.containerClosing || []).find(c => c.id === item.id) || {};
             return (
-              <View key={i} style={{ flexDirection: 'row', borderBottomWidth: i === (clsSchema.containerSealing.length - 1) ? 0 : 1, borderColor: '#000' }}>
+              <View key={i} style={{ flexDirection: 'row', borderBottomWidth: i === (clsSchema.containerClosing.length - 1) ? 0 : 1, borderColor: '#000' }}>
                 <View style={[pdfStyles.tableCol, { width: '5%', padding: 3, borderRightWidth: 1, borderColor: '#000', alignItems: 'center' }]}><Text style={{ fontSize: 8 }}>{i + 1}</Text></View>
                 <View style={[pdfStyles.tableCol, { width: '55%', padding: 3, borderRightWidth: 1, borderColor: '#000' }]}><Text style={{ fontSize: 7 }}>{item.label}</Text></View>
                 <View style={[pdfStyles.tableCol, { width: '15%', padding: 3, borderRightWidth: 1, borderColor: '#000', alignItems: 'center' }]}><Text style={{ fontSize: 8, color: check.result === 'Yes' || check.result === 'Passed' ? pdfColors.success : pdfColors.danger }}>{check.result || 'N/A'}</Text></View>
@@ -403,11 +405,11 @@ export default function CLSSections({ data }) {
           })}
         </View>
 
-        {/* Sealing Photos Grid */}
+        {/* Closing Photos Grid */}
         <View style={{ marginTop: 5 }}><Text style={{ fontSize: 10, fontWeight: 'bold' }}>Photos:</Text></View>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', borderTopWidth: 1, borderLeftWidth: 1, borderColor: '#000' }}>
           {(() => {
-            const photos = getPhotosByGroup('sealingPhotos');
+            const photos = getPhotosByGroup('closingPhotos');
             const gridItems = [
               { photo: photos[0], caption: 'Close right door' },
               { photo: photos[1], caption: 'Close both doors' },
