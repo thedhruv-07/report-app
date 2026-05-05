@@ -1693,7 +1693,7 @@ function createInlinePhotoCell(p, opts) {
       borders: tableBorders(),
       children: [
         new Paragraph({ children: [new ImageRun({ data: Buffer.from(base64, "base64"), type: "png", transformation: { width: opts.cellWidth, height: opts.cellHeight } })], alignment: "center" }),
-        new Paragraph({ children: [new TextRun({ text: sanitizeDocxText(p.label || ""), size: 10 })], alignment: "center" })
+        new Paragraph({ children: [new TextRun({ text: sanitizeDocxText(p.label || ""), size: 18 })], alignment: "center" })
       ]
     });
   } catch (e) { return new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Error" })] })] }); }

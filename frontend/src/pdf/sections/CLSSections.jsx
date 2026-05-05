@@ -563,7 +563,7 @@ export default function CLSSections({ data }) {
                     {photo.preview && <Image src={photo.preview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                   </View>
                   <View style={{ padding: 4, borderTopWidth: 1, borderColor: '#000', alignItems: 'center', backgroundColor: pdfColors.lightGray }}>
-                    <Text style={{ fontSize: 8 }}>{photo.label || `Photo ${photoIdx + 1}`}</Text>
+                    <Text style={{ fontSize: 10 }}>{photo.label || `Photo ${photoIdx + 1}`}</Text>
                   </View>
                 </View>
               ))}
