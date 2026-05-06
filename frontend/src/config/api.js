@@ -1,6 +1,7 @@
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 export const ENDPOINTS = {
+  BASE_URL: API_BASE_URL,
   GENERATE: `${API_BASE_URL}/generate`,
   REPORTS: `${API_BASE_URL}/reports`,
   SUGGEST: `${API_BASE_URL}/api/suggest`,
@@ -19,5 +20,9 @@ export const ENDPOINTS = {
     UPDATE: `${API_BASE_URL}/api/files/update`,
     DELETE: `${API_BASE_URL}/api/files/delete`,
   },
-  HEALTH: `${API_BASE_URL}/`
+  HEALTH: `${API_BASE_URL}/`,
+  FACTORY_AUDIT: {
+    BASE: `${API_BASE_URL}/api/factory-audit`,
+    GENERATE: (id) => `${API_BASE_URL}/api/factory-audit/${id}/generate`,
+  }
 };

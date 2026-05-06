@@ -24,4 +24,13 @@ export const services = [
     icon: "📦",
     route: "/dashboard/container-loading",
   },
+  {
+    id: "fa",
+    name: "Factory Audit",
+    slug: "factory-audit",
+    description:
+      "Conduct detailed factory audits including production capacity, quality systems, and compliance evaluation.",
+    icon: "🏭",
+    route: "/dashboard/factory-audit",
+  },
 ];

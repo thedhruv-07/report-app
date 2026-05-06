@@ -10,6 +10,7 @@ import DashboardLayout from './components/DashboardLayout'
 import Dashboard from './pages/Dashboard.jsx'
 import App from './App.jsx'
 import ContainerLoading from './pages/services/ContainerLoading.jsx'
+import FactoryAudit from './pages/services/FactoryAudit.jsx'
 
 import Login from './pages/auth/Login.jsx'
 import Signup from './pages/auth/Signup.jsx'
@@ -36,6 +37,7 @@ createRoot(document.getElementById('root')).render(
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/dashboard/pre-shipment" element={<App />} />
                 <Route path="/dashboard/container-loading" element={<ContainerLoading />} />
+                <Route path="/dashboard/factory-audit" element={<FactoryAudit />} />
               </Route>
             </Route>
 

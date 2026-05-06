@@ -730,7 +730,7 @@ async function createReportContent(data, uploadedFiles) {
       spacing: { before: 600 }
     }));
 
-    children.push(new Paragraph({ children: [new PageBreak()] }));
+
 
     // For PSI, Remarks goes after signatures
     children.push(...createRemarksTable(data));

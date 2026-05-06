@@ -107,7 +107,7 @@ const FinalStep = ({ form, onPrev, onSubmit, onClearAfterDownload, hasDownloaded
           Previous
         </button>
         <button
-          onClick={onSubmit}
+          onClick={() => onSubmit('docx')}
           disabled={isGenerating}
           style={{ ...buttonStyle, flex: 1, minWidth: "200px", background: colors.success, opacity: isGenerating ? 0.7 : 1, cursor: isGenerating ? 'not-allowed' : 'pointer' }}
         >

@@ -10,6 +10,7 @@ const fileRoutes = require("./routes/fileRoutes");
 // V2 Routes
 const reportV2Routes = require("./routes/v2/report.routes");
 const photoV2Routes = require("./routes/v2/photo.routes");
+const factoryAuditRoutes = require("./routes/factoryAudit.routes");
 
 const app = express();
 
@@ -65,6 +66,7 @@ app.use("/api/reports", reportRoutes);
 // V2 Route Groups
 app.use("/api/v2/reports", reportV2Routes);
 app.use("/api/v2/photos", photoV2Routes);
+app.use("/api/factory-audit", factoryAuditRoutes);
 
 // 404 Handler
 app.use((req, res) => {
