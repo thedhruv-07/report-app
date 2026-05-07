@@ -2186,13 +2186,156 @@ exports.createFAContent = (data) => {
   children.push(new Paragraph({ children: [new PageBreak()] }));
   children.push(new Paragraph({ text: "", spacing: { before: 400, after: 400 } }));
 
-  // 9. Quality Control
-  children.push(createDataTable([
-    ["QC Management", data.qualityControl?.qcManagement],
-    ["Inspection Procedures", data.qualityControl?.inspectionProcedures],
-    ["Equipment Calibration", data.qualityControl?.equipmentCalibration],
-  ], null, "IX. QUALITY CONTROL"));
+  // 5. QUALITY ASSURANCE & QUALITY CONTROL SYSTEM
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              columnSpan: 2,
+              shading: { fill: "1F4E79" },
+              borders: tableBorders(),
+              children: [
+                new Paragraph({
+                  children: [new TextRun({ text: "5. QUALITY ASSURANCE & QUALITY CONTROL SYSTEM", bold: true, size: 24, color: "FFFFFF" })],
+                  alignment: AlignmentType.CENTER,
+                  spacing: { before: 120, after: 120 },
+                }),
+              ],
+            }),
+          ],
+        }),
+      ],
+    })
+  );
   children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
+
+  // QC System Checklist
+  const qcRows = [
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 2,
+          shading: { fill: "E9ECEF" },
+          borders: tableBorders(),
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: "QC Management & Procedures", bold: true, size: 22, color: "1F4E79" })],
+              spacing: { before: 80, after: 80 },
+            }),
+          ],
+        }),
+      ],
+    }),
+    ...[
+      ["Quality Assurance & Quality Control system available?", data.part5?.qcSystem?.qcSystemAvailable || ""],
+      ["QC personnel independent from production?", data.part5?.qcSystem?.qcPersonnelIndependent || ""],
+      ["Raw material inspection conducted?", data.part5?.qcSystem?.rawMaterialInspection || ""],
+      ["In-process quality control (IPQC) conducted?", data.part5?.qcSystem?.inProcessInspection || ""],
+      ["Final inspection conducted before shipment?", data.part5?.qcSystem?.finalInspection || ""],
+      ["QC records maintained and retrievable?", data.part5?.qcSystem?.qcRecordsMaintained || ""],
+    ].map(([label, val]) => new TableRow({
+      children: [
+        new TableCell({ width: { size: 60, type: WidthType.PERCENTAGE }, borders: tableBorders(), children: [new Paragraph({ text: label, bold: true })] }),
+        new TableCell({ width: { size: 40, type: WidthType.PERCENTAGE }, borders: tableBorders(), children: [new Paragraph({ text: val, alignment: AlignmentType.CENTER })] }),
+      ]
+    }))
+  ];
+  children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: qcRows }));
+  children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
+
+  // Testing Equipment
+  if (data.part5?.testingEquipment?.length > 0) {
+    const equipRows = [
+      new TableRow({
+        children: [
+          new TableCell({ columnSpan: 5, shading: { fill: "E9ECEF" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Testing Equipment / Facilities", bold: true, size: 22, color: "1F4E79" })], spacing: { before: 80, after: 80 } })] }),
+        ]
+      }),
+      new TableRow({
+        children: [
+          new TableCell({ shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ text: "#", bold: true, alignment: AlignmentType.CENTER })] }),
+          new TableCell({ shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ text: "Equipment Name", bold: true, alignment: AlignmentType.CENTER })] }),
+          new TableCell({ shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ text: "Purpose / Usage", bold: true, alignment: AlignmentType.CENTER })] }),
+          new TableCell({ shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ text: "Last Calibration", bold: true, alignment: AlignmentType.CENTER })] }),
+          new TableCell({ shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ text: "Status", bold: true, alignment: AlignmentType.CENTER })] }),
+        ]
+      }),
+      ...data.part5.testingEquipment.map((item, idx) => new TableRow({
+        children: [
+          new TableCell({ borders: tableBorders(), children: [new Paragraph({ text: (idx + 1).toString(), alignment: AlignmentType.CENTER })] }),
+          new TableCell({ borders: tableBorders(), children: [new Paragraph({ text: item.equipmentName || "" })] }),
+          new TableCell({ borders: tableBorders(), children: [new Paragraph({ text: item.purpose || "" })] }),
+          new TableCell({ borders: tableBorders(), children: [new Paragraph({ text: item.calibrationDate || "" })] }),
+          new TableCell({ borders: tableBorders(), children: [new Paragraph({ text: item.status || "" })] }),
+        ]
+      }))
+    ];
+    children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: equipRows }));
+    children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
+  }
+
+  // QC Photos
+  const qcPhotoRows = [
+    new TableRow({
+      children: [
+        new TableCell({
+          width: { size: 50, type: WidthType.PERCENTAGE },
+          borders: tableBorders(),
+          children: [
+            ...(data.part5?.qaqcPhotos?.qcDepartment ? getPhotoContent(data.part5.qaqcPhotos.qcDepartment, 240, 180) : []),
+            new Paragraph({ text: "QC Department / Testing Room", alignment: AlignmentType.CENTER })
+          ]
+        }),
+        new TableCell({
+          width: { size: 50, type: WidthType.PERCENTAGE },
+          borders: tableBorders(),
+          children: [
+            ...(data.part5?.qaqcPhotos?.testingProcess ? getPhotoContent(data.part5.qaqcPhotos.testingProcess, 240, 180) : []),
+            new Paragraph({ text: "Testing Process", alignment: AlignmentType.CENTER })
+          ]
+        }),
+      ]
+    })
+  ];
+  children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: qcPhotoRows }));
+  children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
+
+  // Part 5 Score
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              width: { size: 15, type: WidthType.PERCENTAGE },
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: "Score", bold: true, color: "FF0000", size: 28 })] })],
+            }),
+            ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => 
+              new TableCell({
+                width: { size: 8.5, type: WidthType.PERCENTAGE },
+                shading: { fill: data.part5?.part5Score === num ? "E9ECEF" : "FFFFFF" },
+                borders: tableBorders(),
+                children: [
+                  new Paragraph({ 
+                    children: [new TextRun({ text: num.toString(), bold: data.part5?.part5Score === num, color: data.part5?.part5Score === num ? "FF0000" : "000000" })], 
+                    alignment: AlignmentType.CENTER 
+                  })
+                ],
+              })
+            ),
+          ],
+        }),
+      ],
+    })
+  );
+
+  children.push(new Paragraph({ children: [new PageBreak()] }));
+  children.push(new Paragraph({ text: "", spacing: { before: 400, after: 400 } }));
 
   // 10. R&D
   children.push(createDataTable([

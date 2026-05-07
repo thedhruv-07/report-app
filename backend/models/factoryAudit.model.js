@@ -195,6 +195,28 @@ const FactoryAuditSchema = new mongoose.Schema({
     part4Score: Number
   },
 
+  part5: {
+    qcSystem: {
+      qcSystemAvailable: String,
+      qcPersonnelIndependent: String,
+      rawMaterialInspection: String,
+      inProcessInspection: String,
+      finalInspection: String,
+      qcRecordsMaintained: String
+    },
+    testingEquipment: [{
+      equipmentName: String,
+      purpose: String,
+      calibrationDate: String,
+      status: String
+    }],
+    qaqcPhotos: {
+      qcDepartment: String,
+      testingProcess: String
+    },
+    part5Score: Number
+  },
+
   // Section 8: Machinery
   machinery: [
     { name: String, quantity: Number, condition: String }

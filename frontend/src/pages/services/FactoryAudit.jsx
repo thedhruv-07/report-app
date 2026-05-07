@@ -331,6 +331,24 @@ export default function FactoryAudit() {
         part4Score: form.part4Score
       };
 
+      // Part 5: Quality Assurance & Quality Control System
+      nestedData.part5 = {
+        qcSystem: {
+          qcSystemAvailable: form.qcSystemAvailable,
+          qcPersonnelIndependent: form.qcPersonnelIndependent,
+          rawMaterialInspection: form.rawMaterialInspection,
+          inProcessInspection: form.inProcessInspection,
+          finalInspection: form.finalInspection,
+          qcRecordsMaintained: form.qcRecordsMaintained
+        },
+        testingEquipment: form.testingEquipment || [],
+        qaqcPhotos: {
+          qcDepartment: form.qcDepartment,
+          testingProcess: form.testingProcess
+        },
+        part5Score: form.part5Score
+      };
+
       // Handle individual certificate photos in relatedPictures
       nestedData.relatedPictures = {
         certPhoto: form.certPhoto,
@@ -759,8 +777,51 @@ export default function FactoryAudit() {
         </div>
       </div>
     ) },
-    { id: 10, label: "Quality Control", component: (
-      <SchemaSection title="Quality Control" fields={faSchema.qualityControl} formData={form} onChange={handleChange} />
+    { id: 10, label: "Part 5: QA/QC System", component: (
+      <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
+        <SchemaSection title="Quality Assurance & Quality Control System" fields={faSchema.part5.qcSystem} formData={form} onChange={handleChange} />
+        
+        <div style={{ background: colors.surfaceAlt, padding: "20px", borderRadius: "12px", border: `1px solid ${colors.border}` }}>
+          <h3 style={{ fontSize: "18px", fontWeight: "700", color: colors.header, marginBottom: "20px", padding: "10px", backgroundColor: colors.surface, borderLeft: `5px solid ${colors.primary}` }}>
+            Testing Equipment / Facilities
+          </h3>
+          <SchemaTable config={faSchema.part5.testingEquipment} rows={form.testingEquipment || []} setRows={(rows) => setForm(prev => ({ ...prev, testingEquipment: rows }))} />
+        </div>
+
+        <div style={{ background: colors.surfaceAlt, padding: "20px", borderRadius: "12px", border: `1px solid ${colors.border}` }}>
+          <h3 style={{ fontSize: "18px", fontWeight: "700", color: colors.header, marginBottom: "20px", padding: "10px", backgroundColor: colors.surface, borderLeft: `5px solid ${colors.primary}` }}>
+            QC Department Photos
+          </h3>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+            <SchemaPhotos config={{ groups: [faSchema.part5.qaqcPhotos.qcDepartment] }} formData={form} onChange={handleChange} />
+            <SchemaPhotos config={{ groups: [faSchema.part5.qaqcPhotos.testingProcess] }} formData={form} onChange={handleChange} />
+          </div>
+        </div>
+
+        <div style={{ background: "#fff", padding: "25px", borderRadius: "12px", border: `2px solid ${colors.primary}`, boxShadow: "0 4px 15px rgba(59, 130, 246, 0.1)" }}>
+          <h3 style={{ fontSize: "18px", fontWeight: "800", color: colors.primary, marginBottom: "15px", display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ background: colors.primary, color: "#fff", padding: "4px 12px", borderRadius: "6px", fontSize: "14px" }}>Part 5</span>
+            Assessment Score
+          </h3>
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+              <button
+                key={num}
+                onClick={() => setForm(prev => ({ ...prev, part5Score: num }))}
+                style={{
+                  width: "45px", height: "45px", borderRadius: "10px",
+                  border: `2px solid ${form.part5Score === num ? colors.primary : colors.border}`,
+                  backgroundColor: form.part5Score === num ? colors.primaryLight : colors.surfaceAlt,
+                  color: form.part5Score === num ? colors.primary : colors.text,
+                  fontWeight: "bold", cursor: "pointer", transition: "all 0.2s"
+                }}
+              >
+                {num}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
     ) },
     { id: 11, label: "R&D", component: (
       <SchemaSection title="Research & Development" fields={faSchema.researchDevelopment} formData={form} onChange={handleChange} />

@@ -254,5 +254,32 @@ export const faSchema = {
     score: [
       { name: "part4Score", label: "Part 4 Score (1-10)", type: "number", min: 1, max: 10 }
     ]
+  },
+  part5: {
+    qcSystem: [
+      { name: "qcSystemAvailable", label: "Quality Assurance & Quality Control system available?", type: "radio", options: ["Yes", "No"] },
+      { name: "qcPersonnelIndependent", label: "QC personnel independent from production?", type: "radio", options: ["Yes", "No"] },
+      { name: "rawMaterialInspection", label: "Raw material inspection conducted?", type: "radio", options: ["Yes", "No"] },
+      { name: "inProcessInspection", label: "In-process quality control (IPQC) conducted?", type: "radio", options: ["Yes", "No"] },
+      { name: "finalInspection", label: "Final inspection conducted before shipment?", type: "radio", options: ["Yes", "No"] },
+      { name: "qcRecordsMaintained", label: "QC records maintained and retrievable?", type: "radio", options: ["Yes", "No"] },
+    ],
+    testingEquipment: {
+      id: "testingEquipment",
+      label: "Testing Equipment / Facilities",
+      columns: [
+        { name: "equipmentName", label: "Equipment Name", type: "text" },
+        { name: "purpose", label: "Purpose / Usage", type: "text" },
+        { name: "calibrationDate", label: "Last Calibration Date", type: "text" },
+        { name: "status", label: "Status (Working/Not Working)", type: "text" },
+      ]
+    },
+    qaqcPhotos: {
+      qcDepartment: { id: "qcDepartment", label: "QC Department / Testing Room", limit: 1 },
+      testingProcess: { id: "testingProcess", label: "Testing Process in action", limit: 1 },
+    },
+    score: [
+      { name: "part5Score", label: "Part 5 Score (1-10)", type: "number", min: 1, max: 10 }
+    ]
   }
 };
