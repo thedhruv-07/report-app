@@ -1,4 +1,4 @@
-const { Paragraph, TextRun, TableCell, BorderStyle } = require("docx");
+const { Paragraph, TextRun, TableCell, BorderStyle, VerticalAlign, AlignmentType, WidthType } = require("docx");
 
 const sanitizeDocxText = (value) => {
   const str = String(value ?? "");
@@ -15,14 +15,14 @@ const tableBorders = () => ({
 const createQtyCell = (text, options = {}) => {
   const {
     bold = false,
-    align = "center",
+    align = AlignmentType.CENTER,
     colSpan,
     rowSpan,
     shaded = false,
     color,
     fontSize = 18,
     width,
-    verticalAlign = "center",
+    verticalAlign = VerticalAlign.CENTER,
     spacing = { before: 20, after: 20 },
     font = "Arial"
   } = options;
@@ -45,10 +45,17 @@ const createQtyCell = (text, options = {}) => {
 
   const cellOptions = {
     children: [new Paragraph(paragraphOptions)],
-    width,
     borders: tableBorders(),
     verticalAlign
   };
+
+  if (width) {
+    if (typeof width === "number") {
+      cellOptions.width = { size: width, type: WidthType.PERCENTAGE };
+    } else {
+      cellOptions.width = width;
+    }
+  }
   if (shaded) {
     cellOptions.shading = { fill: "E9ECEF" };
   }

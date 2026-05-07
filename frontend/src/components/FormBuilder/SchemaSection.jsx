@@ -1,5 +1,7 @@
 import { colors, tableLabelStyle } from "../../styles";
 import SmartTextarea from "../SmartTextarea";
+import { compressImage } from "../../utils/imageCompression";
+import { UploadCloud } from "lucide-react";
 
 export default function SchemaSection({ title, fields, formData, onChange, ai = true }) {
   return (
@@ -10,7 +12,7 @@ export default function SchemaSection({ title, fields, formData, onChange, ai = 
       
       <table style={{ width: "100%", borderCollapse: "collapse", border: `1px solid ${colors.border}` }}>
         <tbody>
-          {fields.map((field) => (
+          {Array.isArray(fields) && fields.map((field) => (
             <tr key={field.name}>
               <td style={{ ...tableLabelStyle, width: "30%" }}>{field.label}:</td>
               <td style={{ padding: "12px 14px", border: `1px solid ${colors.border}`, background: colors.surface }}>
@@ -26,6 +28,56 @@ export default function SchemaSection({ title, fields, formData, onChange, ai = 
                       <option key={opt} value={opt}>{opt}</option>
                     ))}
                   </select>
+                ) : field.type === "photo" ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    {formData[field.name] ? (
+                      <div style={{ position: "relative", width: "160px" }}>
+                        <img 
+                          src={formData[field.name]} 
+                          alt="Preview" 
+                          style={{ width: "160px", height: "160px", objectFit: "contain", borderRadius: "8px", border: `1px solid ${colors.border}`, background: "#f8f9fa" }} 
+                        />
+                        <button
+                          type="button"
+                          onClick={() => onChange({ target: { name: field.name, value: "" } })}
+                          style={{ position: "absolute", top: "-8px", right: "-8px", background: "#ef4444", color: "white", border: "none", borderRadius: "50%", width: "24px", height: "24px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", boxShadow: "0 2px 4px rgba(0,0,0,0.2)" }}
+                        >
+                          X
+                        </button>
+                      </div>
+                    ) : (
+                      <label style={{
+                        display: "inline-flex", alignItems: "center", gap: "8px",
+                        padding: "10px 20px", borderRadius: "8px",
+                        background: colors.primaryLight,
+                        color: colors.primary,
+                        cursor: "pointer",
+                        fontSize: "14px", fontWeight: "600",
+                        border: `1px dashed ${colors.primary}`,
+                        width: "fit-content",
+                        transition: "all 0.2s"
+                      }}>
+                        <UploadCloud size={18} />
+                        Upload Document
+                        <input
+                          type="file"
+                          accept="image/*"
+                          style={{ display: "none" }}
+                          onChange={async (e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              try {
+                                const { preview } = await compressImage(file);
+                                onChange({ target: { name: field.name, value: preview } });
+                              } catch (err) {
+                                alert("Failed to process image");
+                              }
+                            }
+                          }}
+                        />
+                      </label>
+                    )}
+                  </div>
                 ) : (field.type === "text" || field.type === "textarea" || !field.type) ? (
                   ai ? (
                     <SmartTextarea

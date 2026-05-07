@@ -2,7 +2,7 @@ const fs = require("fs");
 const { 
   Paragraph, TextRun, Table, TableRow, TableCell, 
   WidthType, AlignmentType, BorderStyle, VerticalMergeType,
-  ImageRun
+  ImageRun, PageBreak, VerticalAlign
 } = require("docx");
 const { sanitizeDocxText, tableBorders, createQtyCell } = require("../utils/docx.utils");
 const { LOGO_PATH } = require("../config/config");
@@ -13,27 +13,29 @@ const { LOGO_PATH } = require("../config/config");
  * Isolated from PSI/CLS logic.
  */
 
-// Helper to get photo content safely
-const getPhotoContent = (photoData) => {
+// Helper to get photo content safely with custom sizing
+const getPhotoContent = (photoData, width = 200, height = 150) => {
   if (!photoData || !photoData.startsWith("data:image")) {
     return [new Paragraph({ text: "No photo uploaded", alignment: AlignmentType.CENTER, spacing: { before: 400, after: 400 } })];
   }
   try {
-    const buffer = Buffer.from(photoData.split(",")[1], "base64");
+    const parts = photoData.split(",");
+    if (parts.length < 2) throw new Error("Invalid image data");
+    const buffer = Buffer.from(parts[1], "base64");
     return [
       new Paragraph({
         alignment: AlignmentType.CENTER,
         children: [
           new ImageRun({
             data: buffer,
-            type: "png",
-            transformation: { width: 220, height: 160 },
+            transformation: { width, height },
           }),
         ],
         spacing: { before: 100, after: 100 },
       }),
     ];
   } catch (e) {
+    console.error("Photo processing error:", e);
     return [new Paragraph({ text: "Error loading photo", alignment: AlignmentType.CENTER })];
   }
 };
@@ -69,38 +71,64 @@ const createSectionHeader = (text) => {
   });
 };
 
-// Helper to create a 2nd/3rd column data table with optional photo (rowSpan)
-const createDataTable = (dataArray, photoData = null) => {
-  const rows = dataArray.map(([label, value], index) => {
+// Helper to create a 2nd/3rd column data table with optional photo (rowSpan) and integrated title
+const createDataTable = (dataArray, photoData = null, title = null) => {
+  const rows = [];
+
+  // If title is provided, prepend the integrated header row
+  if (title) {
+    rows.push(
+      new TableRow({
+        children: [
+          new TableCell({
+            columnSpan: photoData ? 3 : 2,
+            shading: { fill: "E9ECEF" },
+            borders: tableBorders(),
+            children: [
+              new Paragraph({
+                children: [new TextRun({ text: title, bold: true, size: 22, color: "1F4E79" })],
+                alignment: AlignmentType.LEFT,
+                spacing: { before: 100, after: 100 },
+              }),
+            ],
+          }),
+        ],
+      })
+    );
+  }
+
+  const dataRows = dataArray.map(([label, value], index) => {
     const cells = [
       createQtyCell(label, { 
         bold: true, 
-        align: "left", 
+        align: AlignmentType.LEFT, 
         shaded: true, 
         width: { size: 25, type: WidthType.PERCENTAGE },
         spacing: { before: 60, after: 60 }
       }),
       createQtyCell(value || "-", { 
-        align: "left", 
+        align: AlignmentType.LEFT, 
         width: { size: photoData ? 35 : 75, type: WidthType.PERCENTAGE },
         spacing: { before: 60, after: 60 }
       }),
     ];
 
-    if (photoData && index === 0) {
+    if (photoData) {
       cells.push(
         new TableCell({
-          rowSpan: dataArray.length,
           width: { size: 40, type: WidthType.PERCENTAGE },
           borders: tableBorders(),
-          verticalAlign: "center",
-          children: getPhotoContent(photoData),
+          verticalAlign: VerticalAlign.CENTER,
+          verticalMerge: index === 0 ? VerticalMergeType.RESTART : VerticalMergeType.CONTINUE,
+          children: index === 0 ? getPhotoContent(photoData) : [new Paragraph({ text: "" })],
         })
       );
     }
 
     return new TableRow({ children: cells });
   });
+
+  rows.push(...dataRows);
 
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
@@ -151,11 +179,11 @@ exports.createFAHeaderTable = (data) => {
       new TableRow({
         children: [
           new TableCell({ 
-            width: { size: 30, type: "pct" }, 
+            width: { size: 30, type: WidthType.PERCENTAGE }, 
             verticalMerge: VerticalMergeType.RESTART, 
             borders: tableBorders(),
             children: [logoRun ? new Paragraph({ children: [logoRun], alignment: AlignmentType.CENTER }) : new Paragraph({ text: "" })], 
-            verticalAlign: "center" 
+            verticalAlign: VerticalAlign.CENTER 
           }),
           createHeaderLabelCell("Client Name:"),
           createHeaderValueCell(header.client || "-"),
@@ -172,14 +200,15 @@ exports.createFAHeaderTable = (data) => {
             borders: tableBorders(),
             children: [new Paragraph({ 
               children: [new TextRun({ 
-                text: conclusion.toUpperCase(), 
+                text: sanitizeDocxText(conclusion).toUpperCase(), 
                 bold: true, 
                 size: 40, 
-                color: conclusion.toUpperCase().includes("PASS") ? "008000" : "FF0000" 
+                color: conclusion.toUpperCase().includes("PASS") ? "008000" : 
+                       conclusion.toUpperCase().includes("PENDING") ? "F39C12" : "FF0000"
               })], 
               alignment: AlignmentType.CENTER 
             })],
-            verticalAlign: "center",
+            verticalAlign: VerticalAlign.CENTER,
           }),
         ],
       }),
@@ -196,22 +225,413 @@ exports.createFAHeaderTable = (data) => {
 };
 
 exports.createFAContent = (data) => {
+  const conclusionText = data.conclusion?.result || data.result || "PENDING";
   const children = [];
 
-  // Service Title
+  // Add a gap between the header and the first section
+  children.push(new Paragraph({ text: "", spacing: { before: 400, after: 400 } }));
+
+  // 1. Title and General Info Combined Table (removes gaps)
+  const info = data.generalInfo || {};
+  const generalRows = [
+    ["Factory name", info.factory || data.factory],
+    ["Supplier name", info.supplier || data.supplier],
+    ["Client's name", info.client || data.client],
+    ["Audit date", info.auditDate || data.auditDate],
+    ["Factory location", info.factoryAddress || data.factoryAddress],
+    ["Supplier location", info.supplierAddress || data.supplierAddress],
+  ];
+
+  const mainRows = [
+    // Service Title Row
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 3,
+          borders: tableBorders(),
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: "FACTORY AUDIT REPORT", bold: true, size: 36, color: "1F4E79" })],
+              alignment: AlignmentType.CENTER,
+              spacing: { before: 400, after: 120 },
+            }),
+          ],
+        }),
+      ],
+    }),
+    // Section Header Row
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 3,
+          shading: { fill: "E9ECEF" },
+          borders: tableBorders(),
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: "GENERAL INFORMATION", bold: true, size: 24, color: "1F4E79" })],
+              alignment: AlignmentType.LEFT,
+              spacing: { before: 80, after: 80 },
+            }),
+          ],
+        }),
+      ],
+    }),
+  ];
+
+  // Add Data Rows with Merged Photo Column
+  generalRows.forEach(([label, value], idx) => {
+    const cells = [
+      new TableCell({
+        width: { size: 25, type: WidthType.PERCENTAGE },
+        borders: tableBorders(),
+        shading: { fill: "F2F2F2" },
+        children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, size: 18 })], spacing: { before: 80, after: 80 } })],
+      }),
+      new TableCell({
+        width: { size: 35, type: WidthType.PERCENTAGE },
+        borders: tableBorders(),
+        children: [new Paragraph({ children: [new TextRun({ text: sanitizeDocxText(value || "-"), size: 18 })], spacing: { before: 80, after: 80 } })],
+      }),
+    ];
+
+    // Add Photo Cell (Merged vertically)
+    cells.push(
+      new TableCell({
+        width: { size: 40, type: WidthType.PERCENTAGE },
+        borders: tableBorders(),
+        verticalAlign: VerticalAlign.CENTER,
+        verticalMerge: idx === 0 ? VerticalMergeType.RESTART : VerticalMergeType.CONTINUE,
+        children: idx === 0 ? getPhotoContent(data.generalPhoto) : [new Paragraph({ text: "" })],
+      })
+    );
+
+    mainRows.push(new TableRow({ children: cells }));
+  });
+
+  children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: mainRows }));
+  children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
+
+  // 2. Audit Overview Section
+  const overviewSections = [
+    { id: "profile", label: "Supplier/Factory Profile", weight: 5 },
+    { id: "orgCharts", label: "Factory Organization Charts", weight: 3 },
+    { id: "lines", label: "Production Lines - Capacity", weight: 5 },
+    { id: "machinery", label: "Factory Facilities - machinery Conditions", weight: 5 },
+    { id: "qaqc", label: "Quality Assurance & Quality Control System", weight: 5 },
+    { id: "rd", label: "R&D – Sampling Capacity", weight: 3 },
+    { id: "environment", label: "Environment (optional)", weight: 3 },
+  ];
+
+  const overviewRows = [
+    // Section Header Row
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 5,
+          shading: { fill: "E9ECEF" },
+          borders: tableBorders(),
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: "II. General overview of audit", bold: true, size: 24, color: "1F4E79" })],
+              alignment: AlignmentType.LEFT,
+              spacing: { before: 100, after: 100 },
+            }),
+          ],
+        }),
+      ],
+    }),
+    // Table Header Row
+    new TableRow({
+      children: [
+        createQtyCell("#", { bold: true, shaded: true, align: AlignmentType.CENTER, width: { size: 5, type: WidthType.PERCENTAGE } }),
+        createQtyCell("Fields", { bold: true, shaded: true, align: AlignmentType.CENTER, width: { size: 45, type: WidthType.PERCENTAGE } }),
+        createQtyCell("Score /10", { bold: true, shaded: true, align: AlignmentType.CENTER, width: { size: 15, type: WidthType.PERCENTAGE } }),
+        createQtyCell("Weight /5", { bold: true, shaded: true, align: AlignmentType.CENTER, width: { size: 15, type: WidthType.PERCENTAGE } }),
+        createQtyCell("Weighted score", { bold: true, shaded: true, align: AlignmentType.CENTER, width: { size: 20, type: WidthType.PERCENTAGE } }),
+      ]
+    })
+  ];
+
+  let totalScore = 0;
+  let totalWeight = 0;
+  let totalWeighted = 0;
+
+  overviewSections.forEach((sec, idx) => {
+    const weight = data.auditOverview?.[`${sec.id}_weight`] ?? sec.weight;
+    const score = data.auditOverview?.[sec.id] || 0;
+    const weighted = data.auditOverview?.[`${sec.id}_weighted`] ?? (score * weight);
+    totalScore += score;
+    totalWeight += weight;
+    totalWeighted += weighted;
+
+    overviewRows.push(
+      new TableRow({
+        children: [
+          createQtyCell((idx + 1).toString(), { align: AlignmentType.CENTER }),
+          createQtyCell(sec.label, { align: AlignmentType.LEFT }),
+          createQtyCell(score.toString(), { align: AlignmentType.CENTER }),
+          createQtyCell(weight.toString(), { align: AlignmentType.CENTER }),
+          createQtyCell(weighted.toString(), { align: AlignmentType.CENTER, bold: true }),
+        ]
+      })
+    );
+  });
+
+  const conclusionVal = totalWeight > 0 ? (totalWeighted / totalWeight).toFixed(2) : "0.00";
+
+  // Total and Conclusion Rows
+  overviewRows.push(
+    new TableRow({
+      children: [
+        new TableCell({ 
+          columnSpan: 2, 
+          borders: tableBorders(), 
+          shading: { fill: "F2F2F2" }, 
+          children: [new Paragraph({ children: [new TextRun({ text: "Total:", bold: true })], alignment: AlignmentType.RIGHT })] 
+        }),
+        createQtyCell(totalScore.toString(), { align: AlignmentType.CENTER, bold: true, shaded: true }),
+        createQtyCell(totalWeight.toString(), { align: AlignmentType.CENTER, bold: true, shaded: true }),
+        createQtyCell(totalWeighted.toString(), { align: AlignmentType.CENTER, bold: true, shaded: true }),
+      ]
+    })
+  );
+
+  overviewRows.push(
+    new TableRow({
+      children: [
+        new TableCell({ 
+          columnSpan: 4, 
+          borders: tableBorders(), 
+          shading: { fill: "F2F2F2" }, 
+          children: [new Paragraph({ children: [new TextRun({ text: "General Overview Conclusion", bold: true })] })] 
+        }),
+        new TableCell({ 
+          borders: tableBorders(), 
+          children: [new Paragraph({ children: [new TextRun({ text: `${conclusionVal}/ 10`, bold: true, color: "CC0000", size: 28 })], alignment: AlignmentType.CENTER })] 
+        }),
+      ]
+    })
+  );
+
+  children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: overviewRows }));
+
+  // Legend
+  children.push(new Paragraph({
+    children: [
+      new TextRun({ text: "PASSED:   ", bold: true, size: 18 }),
+      new TextRun({ text: "The general overview conclusion is minimum 8", size: 18 }),
+    ],
+    spacing: { before: 100 }
+  }));
+  children.push(new Paragraph({
+    children: [
+      new TextRun({ text: "PENDING:  ", bold: true, size: 18 }),
+      new TextRun({ text: "The general overview conclusion is less than 8 and minimum 6", size: 18 }),
+    ],
+  }));
+  children.push(new Paragraph({
+    children: [
+      new TextRun({ text: "FAILED:   ", bold: true, size: 18 }),
+      new TextRun({ text: "The general overview conclusion is less than 6", size: 18 }),
+    ],
+    spacing: { after: 200 }
+  }));
+
+  // 3. Comments Section
+  const commentParagraphs = (data.generalOverviewRemarks || []).map((c, i) => (
+    new Paragraph({
+      children: [
+        new TextRun({ text: `${i + 1}. `, bold: true }),
+        new TextRun({ text: c }),
+      ],
+      spacing: { before: 120, after: 120 },
+      indent: { left: 240, hanging: 240 },
+    })
+  ));
+
   children.push(
     new Table({
       width: { size: 100, type: WidthType.PERCENTAGE },
       rows: [
+        // Section Header Row
         new TableRow({
           children: [
             new TableCell({
+              columnSpan: 2,
+              shading: { fill: "E9ECEF" },
               borders: tableBorders(),
               children: [
                 new Paragraph({
-                  children: [new TextRun({ text: "FACTORY AUDIT REPORT", bold: true, size: 28, color: "1F4E79" })],
+                  children: [new TextRun({ text: "III. COMMENTS", bold: true, size: 24, color: "1F4E79" })],
+                  alignment: AlignmentType.LEFT,
+                  spacing: { before: 100, after: 100 },
+                }),
+              ],
+            }),
+          ],
+        }),
+        // Data Row
+        new TableRow({
+          children: [
+            new TableCell({
+              width: { size: 25, type: WidthType.PERCENTAGE },
+              borders: tableBorders(),
+              verticalAlign: VerticalAlign.CENTER,
+              children: [
+                new Paragraph({
+                  children: [new TextRun({ text: "Main comments of this audit", bold: true })],
                   alignment: AlignmentType.CENTER,
-                  spacing: { before: 120, after: 120 },
+                }),
+              ],
+            }),
+            new TableCell({
+              width: { size: 75, type: WidthType.PERCENTAGE },
+              borders: tableBorders(),
+              children: commentParagraphs.length > 0 ? commentParagraphs : [new Paragraph({ text: "No comments recorded." })],
+            }),
+          ],
+        }),
+      ],
+    })
+  );
+  children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
+
+  // 4. Special Requirements Section
+  const specialReqRows = [
+    // Section Header Row
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 4,
+          shading: { fill: "E9ECEF" },
+          borders: tableBorders(),
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: "IV. Client's special requirement of audit", bold: true, size: 24, color: "1F4E79" })],
+              alignment: AlignmentType.LEFT,
+              spacing: { before: 100, after: 100 },
+            }),
+          ],
+        }),
+      ],
+    }),
+    // Table Header Row
+    new TableRow({
+      children: [
+        createQtyCell("#", { bold: true, shaded: true, width: { size: 5, type: WidthType.PERCENTAGE } }),
+        createQtyCell("Requirement", { bold: true, shaded: true, width: { size: 60, type: WidthType.PERCENTAGE } }),
+        createQtyCell("Result", { bold: true, shaded: true, width: { size: 15, type: WidthType.PERCENTAGE } }),
+        createQtyCell("Remark", { bold: true, shaded: true, width: { size: 20, type: WidthType.PERCENTAGE } }),
+      ],
+    }),
+  ];
+
+  if (data.specialRequirements && data.specialRequirements.length > 0) {
+    data.specialRequirements.forEach((req, idx) => {
+      specialReqRows.push(
+        new TableRow({
+          children: [
+            createQtyCell(`4.${idx + 1}`, { align: AlignmentType.CENTER }),
+            createQtyCell(req.requirement || ""),
+            createQtyCell(req.result || ""),
+            createQtyCell(req.remark || ""),
+          ],
+        })
+      );
+    });
+  } else {
+    specialReqRows.push(
+      new TableRow({
+        children: [
+          new TableCell({
+            columnSpan: 4,
+            borders: tableBorders(),
+            children: [new Paragraph({ text: "No special requirements listed", alignment: AlignmentType.CENTER, spacing: { before: 100, after: 100 } })],
+          })
+        ],
+      })
+    );
+  }
+
+  // Special Requirement Conclusion Row
+  specialReqRows.push(
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 3,
+          shading: { fill: "F2F2F2" },
+          borders: tableBorders(),
+          children: [new Paragraph({ children: [new TextRun({ text: "Special Requirement Conclusion", bold: true })] })],
+        }),
+        new TableCell({
+          shading: { fill: "F2F2F2" },
+          borders: tableBorders(),
+          children: [new Paragraph({ text: data.specialRequirementConclusion || "-" })],
+        }),
+      ],
+    })
+  );
+
+  children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: specialReqRows }));
+  children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
+
+
+  // 12. Conclusion
+  const result = data.conclusion?.result || "PENDING";
+  
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        // Section Header Row
+        new TableRow({
+          children: [
+            new TableCell({
+              columnSpan: 2,
+              shading: { fill: "E9ECEF" },
+              borders: tableBorders(),
+              children: [
+                new Paragraph({
+                  children: [new TextRun({ text: "XII. FINAL CONCLUSION", bold: true, size: 24, color: "1F4E79" })],
+                  alignment: AlignmentType.LEFT,
+                  spacing: { before: 100, after: 100 },
+                }),
+              ],
+            }),
+          ],
+        }),
+        // Conclusion Data Row
+        new TableRow({
+          children: [
+            new TableCell({
+              width: { size: 40, type: WidthType.PERCENTAGE },
+              shading: { fill: "F2F2F2" },
+              borders: tableBorders(),
+              verticalAlign: VerticalAlign.CENTER,
+              children: [
+                new Paragraph({
+                  children: [new TextRun({ text: "Overall Conclusion", bold: true, size: 32 })],
+                  alignment: AlignmentType.CENTER,
+                }),
+              ],
+            }),
+            new TableCell({
+              width: { size: 60, type: WidthType.PERCENTAGE },
+              shading: { fill: "F2F2F2" },
+              borders: tableBorders(),
+              verticalAlign: VerticalAlign.CENTER,
+              children: [
+                new Paragraph({
+                  children: [
+                    new TextRun({ 
+                      text: result.toUpperCase(), 
+                      bold: true, 
+                      size: 40, 
+                      color: result.toUpperCase().includes("PASS") ? "228B22" : 
+                             result.toUpperCase().includes("PENDING") ? "F39C12" : "CC0000" 
+                    })
+                  ],
+                  alignment: AlignmentType.CENTER,
                 }),
               ],
             }),
@@ -220,57 +640,1275 @@ exports.createFAContent = (data) => {
       ],
     })
   );
-  children.push(new Paragraph({ text: "", spacing: { after: 100 } }));
 
-  // 1. General Info
-  children.push(createSectionHeader("I. GENERAL INFORMATION"));
-  children.push(createDataTable([
-    ["Client", data.generalInfo?.client],
-    ["Supplier", data.generalInfo?.supplier],
-    ["Factory", data.generalInfo?.factory],
-    ["Factory Address", data.generalInfo?.factoryAddress],
-    ["Contact Person", data.generalInfo?.contactPerson],
-    ["Email", data.generalInfo?.email],
-    ["Phone", data.generalInfo?.phone],
-    ["Audit Date", data.generalInfo?.auditDate],
-    ["Auditor", data.generalInfo?.auditorName],
-  ], data.generalPhoto));
+  children.push(new Paragraph({ text: "", spacing: { before: 200, after: 200 } }));
+  children.push(new Paragraph({ children: [new TextRun({ text: data.conclusion?.summary || "" })] }));
+  children.push(new Paragraph({ children: [new PageBreak()] }));
+  children.push(new Paragraph({ text: "", spacing: { before: 400, after: 400 } }));
+
+  // ===== REMARKS SECTION (new page) =====
+  // Helper to build a remarks sub-section table
+  const buildRemarksTable = (subTitle, remarksArr, startNum) => {
+    const rows = [
+      // Sub-header row
+      new TableRow({
+        children: [
+          new TableCell({
+            columnSpan: 2,
+            shading: { fill: "E9ECEF" },
+            borders: tableBorders(),
+            children: [
+              new Paragraph({
+                children: [new TextRun({ text: subTitle, bold: true, size: 20 })],
+                spacing: { before: 60, after: 60 },
+              }),
+            ],
+          }),
+        ],
+      }),
+    ];
+
+    if (remarksArr && remarksArr.length > 0) {
+      remarksArr.forEach((remark, idx) => {
+        rows.push(
+          new TableRow({
+            children: [
+              new TableCell({
+                width: { size: 8, type: WidthType.PERCENTAGE },
+                borders: tableBorders(),
+                verticalAlign: VerticalAlign.TOP,
+                children: [
+                  new Paragraph({
+                    children: [new TextRun({ text: (startNum + idx).toString(), bold: true })],
+                    alignment: AlignmentType.CENTER,
+                  }),
+                ],
+              }),
+              new TableCell({
+                width: { size: 92, type: WidthType.PERCENTAGE },
+                borders: tableBorders(),
+                children: [
+                  new Paragraph({
+                    children: [new TextRun({ text: remark || "" })],
+                    spacing: { before: 40, after: 40 },
+                  }),
+                ],
+              }),
+            ],
+          })
+        );
+      });
+    } else {
+      rows.push(
+        new TableRow({
+          children: [
+            new TableCell({
+              width: { size: 8, type: WidthType.PERCENTAGE },
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: startNum.toString() })] , alignment: AlignmentType.CENTER })],
+            }),
+            new TableCell({
+              width: { size: 92, type: WidthType.PERCENTAGE },
+              borders: tableBorders(),
+              children: [new Paragraph({ text: "-" })],
+            }),
+          ],
+        })
+      );
+    }
+
+    return { rows, nextNum: startNum + Math.max((remarksArr || []).length, 1) };
+  };
+
+  const generalOverviewRemarks = data.generalOverviewRemarks || [];
+  const clientSpecialRemarks = data.clientSpecialRemarks || [];
+  const suggestionsRemarks = data.suggestions || [];
+
+  const section1 = buildRemarksTable("General Overview:", generalOverviewRemarks, 1);
+  const section2 = buildRemarksTable("Client's special requirement", clientSpecialRemarks, section1.nextNum);
+  const section3 = buildRemarksTable("Suggestion:", suggestionsRemarks, section2.nextNum);
+
+  const allRemarksRows = [
+    // Main Section Header Row
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 2,
+          shading: { fill: "E9ECEF" },
+          borders: tableBorders(),
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: "REMARKS", bold: true, size: 28, color: "1F4E79" })],
+              alignment: AlignmentType.LEFT,
+              spacing: { before: 100, after: 100 },
+            }),
+          ],
+        }),
+      ],
+    }),
+    ...section1.rows, 
+    ...section2.rows, 
+    ...section3.rows
+  ];
+
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: allRemarksRows,
+    })
+  );
+
+  children.push(new Paragraph({ children: [new PageBreak()] }));
+  children.push(new Paragraph({ text: "", spacing: { before: 400, after: 400 } }));
+
+  // ===== CONTENT SECTION (new page) =====
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              shading: { fill: "E9ECEF" },
+              borders: tableBorders(),
+              children: [
+                new Paragraph({
+                  children: [new TextRun({ text: "CONTENT:", bold: true, size: 28, color: "1F4E79" })],
+                  alignment: AlignmentType.LEFT,
+                  spacing: { before: 100, after: 100 },
+                }),
+              ],
+            }),
+          ],
+        }),
+      ],
+    })
+  );
+
+  const contentParts = [
+    "Part 1—Supplier/Factory Profile",
+    "Part 2—Factory Organization",
+    "Part 3—Production Lines/Capacity",
+    "Part 4—Factory Facilities/Machinery Conditions",
+    "Part 5—Quality Assurance & Quality Control System",
+    "Part 6—R & D/Sampling Capacity",
+    "Part 7—Environment (optional)",
+  ];
+
+  children.push(new Paragraph({ text: "", spacing: { before: 800 } }));
+
+  contentParts.forEach(part => {
+    children.push(
+      new Paragraph({
+        children: [new TextRun({ text: part, size: 24, bold: true, color: "333333" })],
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 200, after: 200 },
+      })
+    );
+  });
+
+  children.push(new Paragraph({ children: [new PageBreak()] }));
+  children.push(new Paragraph({ text: "", spacing: { before: 400, after: 400 } }));
+
+  // Detailed Parts (Part 1 - 7)
+  // ===== PART 1: Supplier Profile =====
+  children.push(new Paragraph({
+    children: [new TextRun({ text: "Part 1", bold: true, size: 28 })],
+    alignment: AlignmentType.CENTER,
+    spacing: { before: 400, after: 100 },
+  }));
+  children.push(new Paragraph({
+    children: [new TextRun({ text: "A: Supplier profile", bold: true, size: 24 })],
+    alignment: AlignmentType.CENTER,
+    spacing: { before: 100, after: 300 },
+  }));
+
+  // Sub-section: General Information
+  const generalInfoRows = [
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 3,
+          shading: { fill: "E9ECEF" },
+          borders: tableBorders(),
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: "General information", bold: true, size: 22, color: "1F4E79" })],
+              spacing: { before: 80, after: 80 },
+            }),
+          ],
+        }),
+      ],
+    }),
+    ...[
+          ["1", "Date of foundation", data.supplierProfile?.dateOfFoundation],
+          ["2", "Legal status", data.supplierProfile?.legalStatus],
+          ["3", "Actual location", data.supplierProfile?.actualLocation],
+          ["4", "Location on business license", data.supplierProfile?.locationBusinessLicense],
+          ["5", "Location on export license", data.supplierProfile?.locationExportLicense],
+          ["6", "Location on bank information", data.supplierProfile?.locationBankInfo],
+          ["7", "Location on business card", data.supplierProfile?.locationBusinessCard],
+          ["8", "Area", data.supplierProfile?.area],
+          ["9", "Number of staff", data.supplierProfile?.numberOfStaff?.toString()],
+          ["10", "Corporate representative", data.supplierProfile?.corporateRepresentative],
+          ["11", "Main products", data.supplierProfile?.mainProducts],
+          ["12", "Main market", data.supplierProfile?.mainMarket],
+          ["13", "Business license", data.supplierProfile?.businessLicenseInfo],
+        ].map(([num, label, val]) =>
+          new TableRow({
+            children: [
+              new TableCell({
+                width: { size: 5, type: WidthType.PERCENTAGE },
+                borders: tableBorders(),
+                children: [new Paragraph({ children: [new TextRun({ text: num, bold: true })], alignment: AlignmentType.CENTER })],
+              }),
+              new TableCell({
+                width: { size: 35, type: WidthType.PERCENTAGE },
+                borders: tableBorders(),
+                children: [new Paragraph({ children: [new TextRun({ text: label, bold: true })] })],
+              }),
+              new TableCell({
+                width: { size: 60, type: WidthType.PERCENTAGE },
+                borders: tableBorders(),
+                children: [new Paragraph({ text: val || "" })],
+              }),
+            ],
+          })
+        ),
+        // Annual turnover row (spans)
+        new TableRow({
+          children: [
+            new TableCell({
+              width: { size: 5, type: WidthType.PERCENTAGE },
+              borders: tableBorders(),
+              verticalMerge: VerticalMergeType.RESTART,
+              children: [new Paragraph({ children: [new TextRun({ text: "14", bold: true })], alignment: AlignmentType.CENTER })],
+            }),
+            new TableCell({
+              width: { size: 35, type: WidthType.PERCENTAGE },
+              borders: tableBorders(),
+              verticalMerge: VerticalMergeType.RESTART,
+              children: [new Paragraph({ children: [new TextRun({ text: "Annual turnover for the past 3 years", bold: true })] })],
+            }),
+            new TableCell({
+              width: { size: 60, type: WidthType.PERCENTAGE },
+              borders: tableBorders(),
+              children: [new Paragraph({ text: `2018: ${data.supplierProfile?.turnover2018 || "N/A"}  |  2019: ${data.supplierProfile?.turnover2019 || "N/A"}  |  2020: ${data.supplierProfile?.turnover2020 || "N/A"}  |  Trend: ${data.supplierProfile?.turnoverTrend || "N/A"}` })],
+            }),
+          ],
+        }),
+      ];
+
+  children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: generalInfoRows }));
+  children.push(new Paragraph({ text: "", spacing: { after: 300 } }));
+
+  // Sub-section: Communication Infrastructures
+  const commRows = [
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 3,
+          shading: { fill: "E9ECEF" },
+          borders: tableBorders(),
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: "Communication infrastructures", bold: true, size: 22, color: "1F4E79" })],
+              spacing: { before: 80, after: 80 },
+            }),
+          ],
+        }),
+      ],
+    }),
+    ...[
+          ["1", "Telephone sets", data.communicationInfrastructure?.telephoneSets],
+          ["2", "Fax machines", data.communicationInfrastructure?.faxMachines],
+          ["3", "Computers", data.communicationInfrastructure?.computers],
+          ["4", "E-mail Domain", data.communicationInfrastructure?.emailDomain],
+        ].map(([num, label, val]) =>
+          new TableRow({
+            children: [
+              new TableCell({
+                width: { size: 5, type: WidthType.PERCENTAGE },
+                borders: tableBorders(),
+                children: [new Paragraph({ children: [new TextRun({ text: num })], alignment: AlignmentType.CENTER })],
+              }),
+              new TableCell({
+                width: { size: 35, type: WidthType.PERCENTAGE },
+                borders: tableBorders(),
+                children: [new Paragraph({ children: [new TextRun({ text: label, bold: true })] })],
+              }),
+              new TableCell({
+                width: { size: 60, type: WidthType.PERCENTAGE },
+                borders: tableBorders(),
+                children: [new Paragraph({ text: val || "" })],
+              }),
+            ],
+          })
+    ),
+  ];
+
+  children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: commRows }));
+  children.push(new Paragraph({ text: "", spacing: { after: 300 } }));
+
+  // Sub-section: Products / Markets
+  const pmRows = [
+    new TableRow({
+      children: [
+        new TableCell({ columnSpan: 4, shading: { fill: "E9ECEF" }, borders: tableBorders(),
+          children: [new Paragraph({ children: [new TextRun({ text: "Products / markets", bold: true, size: 22, color: "1F4E79" })], spacing: { before: 80, after: 80 } })],
+        }),
+      ],
+    }),
+    new TableRow({
+      children: [
+        createQtyCell("Product type", { bold: true, shaded: true }),
+        createQtyCell("Major customer name", { bold: true, shaded: true }),
+        createQtyCell("Market location", { bold: true, shaded: true }),
+        createQtyCell("Monthly Order Qty (pcs)", { bold: true, shaded: true }),
+      ],
+    }),
+  ];
+
+  if (data.productsMarkets && data.productsMarkets.length > 0) {
+    data.productsMarkets.forEach(pm => {
+      pmRows.push(new TableRow({
+        children: [
+          createQtyCell(pm.productType || ""),
+          createQtyCell(pm.customerName || ""),
+          createQtyCell(pm.marketLocation || ""),
+          createQtyCell(pm.monthlyQty || ""),
+        ],
+      }));
+    });
+  } else {
+    pmRows.push(new TableRow({ children: [createQtyCell("No data", { columnSpan: 4 })] }));
+  }
+
+  children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: pmRows }));
+  children.push(new Paragraph({ text: "", spacing: { after: 300 } }));
+
+  // Sub-section: Recommendations / Credentials
+  const recRows = [
+    new TableRow({
+      children: [
+        new TableCell({ columnSpan: 5, shading: { fill: "E9ECEF" }, borders: tableBorders(),
+          children: [new Paragraph({ children: [new TextRun({ text: "Recommendations / credentials", bold: true, size: 22, color: "1F4E79" })], spacing: { before: 80, after: 80 } })],
+        }),
+      ],
+    }),
+    new TableRow({
+      children: [
+        createQtyCell("Company name", { bold: true, shaded: true }),
+        createQtyCell("Country", { bold: true, shaded: true }),
+        createQtyCell("Contact", { bold: true, shaded: true }),
+        createQtyCell("Products", { bold: true, shaded: true }),
+        createQtyCell("Details", { bold: true, shaded: true }),
+      ],
+    }),
+  ];
+
+  if (data.recommendations && data.recommendations.length > 0) {
+    data.recommendations.forEach(rec => {
+      recRows.push(new TableRow({
+        children: [
+          createQtyCell(rec.companyName || ""),
+          createQtyCell(rec.country || ""),
+          createQtyCell(rec.contact || ""),
+          createQtyCell(rec.products || ""),
+          createQtyCell(rec.details || ""),
+        ],
+      }));
+    });
+  } else {
+    recRows.push(new TableRow({ children: [createQtyCell("Nil", { columnSpan: 5 })] }));
+  }
+
+  children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: recRows }));
+  children.push(new Paragraph({ text: "", spacing: { before: 200 } }));
+
+  // Related Pictures Section
+  const boPhotos = data.buildingOfficePhotos || [];
+  const boRows = [
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 2,
+          shading: { fill: "E9ECEF" },
+          borders: tableBorders(),
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: "Related pictures:", bold: true, size: 22, color: "1F4E79" })],
+              spacing: { before: 80, after: 80 },
+            }),
+          ],
+        }),
+      ],
+    }),
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 2,
+          shading: { fill: "E9ECEF" },
+          borders: tableBorders(),
+          children: [new Paragraph({ children: [new TextRun({ text: "Building and office viewing", bold: true, size: 22, color: "1F4E79" })], spacing: { before: 80, after: 80 } })],
+        }),
+      ],
+    }),
+  ];
+
+  for (let i = 0; i < boPhotos.length; i += 2) {
+    const p1 = boPhotos[i];
+    const p2 = boPhotos[i + 1];
+
+    boRows.push(
+      new TableRow({
+        children: [
+          new TableCell({
+            width: { size: 50, type: WidthType.PERCENTAGE },
+            borders: tableBorders(),
+            children: getPhotoContent(p1?.preview),
+          }),
+          new TableCell({
+            width: { size: 50, type: WidthType.PERCENTAGE },
+            borders: tableBorders(),
+            children: p2 ? getPhotoContent(p2?.preview) : [],
+          }),
+        ],
+      })
+    );
+
+    boRows.push(
+      new TableRow({
+        children: [
+          new TableCell({
+            width: { size: 50, type: WidthType.PERCENTAGE },
+            borders: tableBorders(),
+            children: [new Paragraph({ text: p1?.label || "", alignment: AlignmentType.CENTER })],
+          }),
+          new TableCell({
+            width: { size: 50, type: WidthType.PERCENTAGE },
+            borders: tableBorders(),
+            children: [new Paragraph({ text: p2?.label || "", alignment: AlignmentType.CENTER })],
+          }),
+        ],
+      })
+    );
+  }
+
+  if (boPhotos.length === 0) {
+    boRows.push(new TableRow({ children: [createQtyCell("No photos uploaded", { columnSpan: 2 })] }));
+  }
+
+  children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: boRows }));
+  children.push(new Paragraph({ children: [new PageBreak()] }));
+  children.push(new Paragraph({ text: "", spacing: { before: 400, after: 400 } }));
+
+  // 2. Building Certificate (Large)
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              shading: { fill: "E9ECEF" },
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: "Building Certificate (Proprietary or leasing Document)", bold: true, size: 22, color: "1F4E79" })], spacing: { before: 80, after: 80 } })],
+            }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            new TableCell({
+              borders: tableBorders(),
+              children: getPhotoContent(data.relatedPictures?.certPhoto), // Assuming this helper exists or I'll adjust size
+            }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            new TableCell({
+              borders: tableBorders(),
+              children: [new Paragraph({ text: data.relatedPictures?.certCaption || "Building Certificate Document", alignment: AlignmentType.CENTER })],
+            }),
+          ],
+        }),
+      ],
+    })
+  );
+  children.push(new Paragraph({ children: [new PageBreak()] }));
+  children.push(new Paragraph({ text: "", spacing: { before: 400, after: 400 } }));
+
+  // 3. License accreditation
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              shading: { fill: "E9ECEF" },
+              borders: tableBorders(),
+              children: [
+                new Paragraph({
+                  children: [new TextRun({ text: "License accreditation:", bold: true, size: 22, color: "1F4E79" })],
+                  spacing: { before: 80, after: 80 },
+                }),
+              ],
+            }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            new TableCell({
+              borders: tableBorders(),
+              children: getPhotoContent(data.relatedPictures?.licensePhoto),
+            }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            new TableCell({
+              borders: tableBorders(),
+              children: [
+                new Paragraph({ text: `Certificate No: ${data.relatedPictures?.licenseCertNo || ""}` }),
+                new Paragraph({ text: `Date issued: ${data.relatedPictures?.licenseDateIssued || ""}` }),
+                new Paragraph({ text: `Expiration: ${data.relatedPictures?.licenseExpiration || ""}` }),
+              ],
+            }),
+          ],
+        }),
+      ],
+    })
+  );
+  children.push(new Paragraph({ children: [new PageBreak()] }));
+  children.push(new Paragraph({ text: "", spacing: { before: 400, after: 400 } }));
+
+  // 4. Export license
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              shading: { fill: "E9ECEF" },
+              borders: tableBorders(),
+              children: [
+                new Paragraph({
+                  children: [new TextRun({ text: "Export license:", bold: true, size: 22, color: "1F4E79" })],
+                  spacing: { before: 80, after: 80 },
+                }),
+              ],
+            }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            new TableCell({
+              borders: tableBorders(),
+              children: getPhotoContent(data.relatedPictures?.exportPhoto),
+            }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            new TableCell({
+              borders: tableBorders(),
+              children: [
+                new Paragraph({ text: `Certificate No: ${data.relatedPictures?.exportCertNo || ""}` }),
+                new Paragraph({ text: `Date issued: ${data.relatedPictures?.exportDateIssued || ""}` }),
+              ],
+            }),
+          ],
+        }),
+      ],
+    })
+  );
+  children.push(new Paragraph({ children: [new PageBreak()] }));
+  children.push(new Paragraph({ text: "", spacing: { before: 400, after: 400 } }));
+
+  // 5. Bank information
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              shading: { fill: "E9ECEF" },
+              borders: tableBorders(),
+              children: [
+                new Paragraph({
+                  children: [new TextRun({ text: "Bank information:", bold: true, size: 22, color: "1F4E79" })],
+                  spacing: { before: 80, after: 80 },
+                }),
+              ],
+            }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            new TableCell({
+              borders: tableBorders(),
+              children: getPhotoContent(data.relatedPictures?.bankPhoto),
+            }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            new TableCell({
+              borders: tableBorders(),
+              children: [
+                new Paragraph({ text: `Certificate No: ${data.relatedPictures?.bankCertNo || ""}` }),
+                new Paragraph({ text: `Date issued: ${data.relatedPictures?.bankDateIssued || ""}` }),
+                new Paragraph({ text: `USD Bank account number: ${data.relatedPictures?.bankAccountNumber || ""}` }),
+              ],
+            }),
+          ],
+        }),
+      ],
+    })
+  );
+  children.push(new Paragraph({ text: "", spacing: { after: 300 } }));
+
+  // Part 1 Score Table
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              width: { size: 15, type: WidthType.PERCENTAGE },
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: "Score", bold: true, color: "FF0000", size: 28 })] })],
+            }),
+            ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => 
+              new TableCell({
+                width: { size: 8.5, type: WidthType.PERCENTAGE },
+                shading: { fill: data.part1Score === num ? "E9ECEF" : "FFFFFF" },
+                borders: tableBorders(),
+                children: [
+                  new Paragraph({ 
+                    children: [new TextRun({ text: num.toString(), bold: data.part1Score === num, color: data.part1Score === num ? "FF0000" : "000000" })], 
+                    alignment: AlignmentType.CENTER 
+                  })
+                ],
+              })
+            ),
+          ],
+        }),
+      ],
+    })
+  );
+
+  children.push(new Paragraph({ children: [new PageBreak()] }));
+  children.push(new Paragraph({ text: "", spacing: { before: 400, after: 400 } }));
+
+  // Part 2: Factory Organization
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              shading: { fill: "F2F2F2" },
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: "Part 2", bold: true, size: 24 })], alignment: AlignmentType.CENTER })],
+            }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            new TableCell({
+              shading: { fill: "F2F2F2" },
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: "Factory Organization", bold: true, size: 24 })], alignment: AlignmentType.CENTER })],
+            }),
+          ],
+        }),
+      ],
+    })
+  );
+
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              shading: { fill: "E9ECEF" },
+              borders: tableBorders(),
+              children: [
+                new Paragraph({
+                  children: [new TextRun({ text: "Factory organization chart", bold: true, size: 22, color: "1F4E79" })],
+                  spacing: { before: 80, after: 80 },
+                }),
+              ],
+            }),
+          ],
+        }),
+      ],
+    })
+  );
+
+  // Helper to get logo safely
+  const getSafeLogo = (width = 100, height = 40) => {
+    try {
+      if (fs.existsSync(LOGO_PATH)) {
+        return [new ImageRun({ data: fs.readFileSync(LOGO_PATH), transformation: { width, height } })];
+      }
+    } catch (e) {
+      console.error("Logo load error:", e);
+    }
+    return [new TextRun({ text: "" })]; // Return a blank TextRun instead of empty array
+  };
+
+  // Part 2 Header Table (Client, Inspection #, etc.)
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              width: { size: 25, type: WidthType.PERCENTAGE },
+              borders: tableBorders(),
+              children: [
+                new Paragraph({
+                  children: getSafeLogo(),
+                  alignment: AlignmentType.CENTER
+                })
+              ],
+              verticalMerge: VerticalMergeType.RESTART,
+            }),
+            new TableCell({
+              width: { size: 25, type: WidthType.PERCENTAGE },
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: "Client name (abbr.):", size: 18 })] })],
+            }),
+            new TableCell({
+              width: { size: 25, type: WidthType.PERCENTAGE },
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: sanitizeDocxText(data.client || data.generalInfo?.client || "-"), size: 18, bold: true })] })],
+            }),
+            new TableCell({
+              width: { size: 25, type: WidthType.PERCENTAGE },
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: "Conclusion", size: 18, bold: true })], alignment: AlignmentType.CENTER })],
+            }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            new TableCell({ borders: tableBorders(), children: [new Paragraph({ text: "" })], verticalMerge: VerticalMergeType.CONTINUE }),
+            new TableCell({
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: "Inspection number:", size: 18 })] })],
+            }),
+            new TableCell({
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: sanitizeDocxText(data.reportId || data.inspectionNumber || "-"), size: 18, bold: true })] })],
+            }),
+            new TableCell({
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: sanitizeDocxText(data.conclusion?.result || "PENDING"), size: 22, bold: true, color: "FF0000" })], alignment: AlignmentType.CENTER })],
+              verticalMerge: VerticalMergeType.RESTART,
+            }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            new TableCell({ borders: tableBorders(), children: [new Paragraph({ text: "" })], verticalMerge: VerticalMergeType.CONTINUE }),
+            new TableCell({
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: "Report Date:", size: 18 })] })],
+            }),
+            new TableCell({
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: sanitizeDocxText(data.auditDate || data.generalInfo?.auditDate || "-"), size: 18, bold: true })] })],
+            }),
+            new TableCell({ borders: tableBorders(), children: [new Paragraph({ text: "" })], verticalMerge: VerticalMergeType.CONTINUE }),
+          ],
+        }),
+      ],
+    })
+  );
+
+  // Org Chart Images
+  const orgPhotos = (data.orgChartPhotos || []).filter(p => p.preview);
+  orgPhotos.forEach(p => {
+    children.push(
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+          new TableRow({
+            children: [
+              new TableCell({
+                borders: tableBorders(),
+                children: getPhotoContent(p.preview, 450, 600), // Larger size for org chart
+              }),
+            ],
+          }),
+          new TableRow({
+            children: [
+              new TableCell({
+                borders: tableBorders(),
+                children: [new Paragraph({ text: p.label || "", alignment: AlignmentType.CENTER })],
+              }),
+            ],
+          }),
+        ],
+      })
+    );
+  });
+
+  if (orgPhotos.length === 0) {
+    children.push(new Paragraph({ text: "No organization chart uploaded", alignment: AlignmentType.CENTER, spacing: { before: 400, after: 400 } }));
+  }
+
+  // Part 2 Score Table
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              width: { size: 15, type: WidthType.PERCENTAGE },
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: "Score", bold: true, color: "FF0000", size: 28 })] })],
+            }),
+            ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => 
+              new TableCell({
+                width: { size: 8.5, type: WidthType.PERCENTAGE },
+                shading: { fill: data.part2Score === num ? "E9ECEF" : "FFFFFF" },
+                borders: tableBorders(),
+                children: [
+                  new Paragraph({ 
+                    children: [new TextRun({ text: num.toString(), bold: data.part2Score === num, color: data.part2Score === num ? "FF0000" : "000000" })], 
+                    alignment: AlignmentType.CENTER 
+                  })
+                ],
+              })
+            ),
+          ],
+        }),
+      ],
+    })
+  );
+
+  children.push(new Paragraph({ children: [new PageBreak()] }));
+  children.push(new Paragraph({ text: "", spacing: { before: 400, after: 400 } }));
+
+  // Part 3: Production lines / Capacity
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              shading: { fill: "F2F2F2" },
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: "Part 3", bold: true, size: 24 })], alignment: AlignmentType.CENTER })],
+            }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            new TableCell({
+              shading: { fill: "F2F2F2" },
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: "Production lines / Capacity", bold: true, size: 24 })], alignment: AlignmentType.CENTER })],
+            }),
+          ],
+        }),
+      ],
+    })
+  );
   children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
 
-  // 2. Audit Overview
-  children.push(createSectionHeader("II. AUDIT OVERVIEW"));
-  children.push(createDataTable([
-    ["Total Score", data.auditOverview?.totalScore?.toString()],
-    ["Percentage (%)", data.auditOverview?.percentage ? `${data.auditOverview.percentage}%` : "0%"],
-    ["Grade", data.auditOverview?.grade],
-  ]));
+  // Workflow Chart
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              shading: { fill: "E9ECEF" },
+              borders: tableBorders(),
+              children: [
+                new Paragraph({
+                  children: [new TextRun({ text: "Production workflow chart", bold: true, size: 22, color: "1F4E79" })],
+                  spacing: { before: 80, after: 80 },
+                }),
+              ],
+            }),
+          ],
+        }),
+      ],
+    })
+  );
+
+  const workflowPhotos = (data.productionWorkflowPhotos || []).filter(p => p.preview);
+  workflowPhotos.forEach(p => {
+    children.push(
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+          new TableRow({
+            children: [
+              new TableCell({
+                borders: tableBorders(),
+                children: getPhotoContent(p.preview, 450, 300),
+              }),
+            ],
+          }),
+        ],
+      })
+    );
+  });
+  if (workflowPhotos.length === 0) {
+    children.push(new Paragraph({ text: "No workflow chart uploaded", alignment: AlignmentType.CENTER, spacing: { before: 400, after: 400 } }));
+  }
+
+  children.push(new Paragraph({ children: [new PageBreak()] }));
   children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
 
-  // 3. Supplier Profile
-  children.push(createSectionHeader("III. SUPPLIER PROFILE"));
-  children.push(createDataTable([
-    ["Legal Status", data.supplierProfile?.legalStatus],
-    ["Year Established", data.supplierProfile?.yearEstablished],
-    ["Business Scope", data.supplierProfile?.businessScope],
-    ["Major Products", data.supplierProfile?.majorProducts],
-    ["Main Markets", data.supplierProfile?.mainMarkets],
-  ]));
+  // Production Process Table
+  const processRows = [
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 6,
+          shading: { fill: "E9ECEF" },
+          borders: tableBorders(),
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: "Production process", bold: true, size: 22, color: "1F4E79" })],
+              spacing: { before: 80, after: 80 },
+            }),
+          ],
+        }),
+      ],
+    }),
+    new TableRow({
+      children: [
+        createQtyCell("Operation Name", { bold: true, shaded: true, size: 18 }),
+        createQtyCell("Machine / Device Name", { bold: true, shaded: true, size: 18 }),
+        createQtyCell("Machine count", { bold: true, shaded: true, size: 18 }),
+        createQtyCell("Workers number", { bold: true, shaded: true, size: 18 }),
+        createQtyCell("Output (pcs/hour)", { bold: true, shaded: true, size: 18 }),
+        createQtyCell("Total Step Capacity (PCS per day)", { bold: true, shaded: true, size: 18 }),
+      ],
+    }),
+  ];
+
+  if (data.productionProcess && data.productionProcess.length > 0) {
+    data.productionProcess.forEach(p => {
+      processRows.push(new TableRow({
+        children: [
+          createQtyCell(p.operationName || ""),
+          createQtyCell(p.machineName || ""),
+          createQtyCell(p.machineCount?.toString() || ""),
+          createQtyCell(p.workersNumber?.toString() || ""),
+          createQtyCell(p.outputPerHour?.toString() || ""),
+          createQtyCell(p.dailyCapacity?.toString() || ""),
+        ]
+      }));
+    });
+  } else {
+    processRows.push(new TableRow({ children: [createQtyCell("No production processes listed", { columnSpan: 6 })] }));
+  }
+
+  // Overall Capacity Row
+  processRows.push(new TableRow({
+    children: [
+      new TableCell({
+        columnSpan: 5,
+        shading: { fill: "E9ECEF" },
+        borders: tableBorders(),
+        children: [
+          new Paragraph({
+            children: [new TextRun({ text: "Overall capacity = minimum step capacity (pcs per week):", bold: true, color: "1F4E79" })],
+            alignment: AlignmentType.LEFT,
+          })
+        ],
+      }),
+      new TableCell({
+        borders: tableBorders(),
+        children: [new Paragraph({ text: data.productionCapacity?.weeklyCapacity || "-", bold: true, alignment: AlignmentType.CENTER })],
+      })
+    ]
+  }));
+
+  children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: processRows }));
   children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
 
-  // 4. Production Capacity
-  children.push(createSectionHeader("IV. PRODUCTION CAPACITY"));
+  // Daily Output Check
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              columnSpan: 3,
+              shading: { fill: "E9ECEF" },
+              borders: tableBorders(),
+              children: [
+                new Paragraph({
+                  children: [new TextRun({ text: "Daily output check:", bold: true, size: 22, color: "1F4E79" })],
+                  spacing: { before: 80, after: 80 },
+                }),
+              ],
+            }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            new TableCell({
+              width: { size: 50, type: WidthType.PERCENTAGE },
+              borders: tableBorders(),
+              children: [new Paragraph({ text: "Is there a running production in the factory during the Audit?", bold: true })]
+            }),
+            new TableCell({
+              width: { size: 15, type: WidthType.PERCENTAGE },
+              borders: tableBorders(),
+              children: [new Paragraph({ text: data.dailyOutputCheck?.runningProduction || "Yes", alignment: AlignmentType.CENTER })]
+            }),
+            new TableCell({
+              width: { size: 35, type: WidthType.PERCENTAGE },
+              borders: tableBorders(),
+              children: [new Paragraph({ text: `Comment(s): ${data.dailyOutputCheck?.outputCheckComments || "-"}` })]
+            }),
+          ]
+        })
+      ]
+    })
+  );
+
+  // Daily Output Photos
+  const outputPhotos = (data.dailyOutputPhotos || []).filter(p => p.preview);
+  if (outputPhotos.length > 0) {
+    const photoRow = new TableRow({
+      children: [0, 1].map(idx => {
+        const p = outputPhotos[idx];
+        return new TableCell({
+          width: { size: 50, type: WidthType.PERCENTAGE },
+          borders: tableBorders(),
+          children: p ? [
+            ...getPhotoContent(p.preview, 240, 180),
+            new Paragraph({ text: p.label || "Product Storage", alignment: AlignmentType.CENTER })
+          ] : [new Paragraph({ text: "" })]
+        });
+      })
+    });
+    children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [photoRow] }));
+  }
+
+  // Timing Table
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              columnSpan: 3,
+              shading: { fill: "F2F2F2" },
+              borders: tableBorders(),
+              children: [new Paragraph({ text: `For ${data.dailyOutputCheck?.processLines || "-"} lines`, bold: true, alignment: AlignmentType.CENTER })]
+            })
+          ]
+        }),
+        new TableRow({
+          children: [
+            createQtyCell("Start time", { bold: true, shaded: true }),
+            createQtyCell("Finished time", { bold: true, shaded: true }),
+            createQtyCell("Total time", { bold: true, shaded: true }),
+          ]
+        }),
+        new TableRow({
+          children: [
+            createQtyCell(data.dailyOutputCheck?.startTime || ""),
+            createQtyCell(data.dailyOutputCheck?.finishedTime || ""),
+            createQtyCell(data.dailyOutputCheck?.totalTime || ""),
+          ]
+        }),
+        new TableRow({
+          children: [
+            createQtyCell("Finished products", { bold: true, shaded: true }),
+            createQtyCell("Finished products", { bold: true, shaded: true }),
+            createQtyCell("Output", { bold: true, shaded: true }),
+          ]
+        }),
+        new TableRow({
+          children: [
+            createQtyCell(data.dailyOutputCheck?.finishedProductsStart?.toString() || "0"),
+            createQtyCell(data.dailyOutputCheck?.finishedProductsEnd?.toString() || "0"),
+            createQtyCell(`${data.dailyOutputCheck?.outputPieces || "0"} pieces`),
+          ]
+        })
+      ]
+    })
+  );
+  children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
+
+  // Lead Times
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              columnSpan: 3,
+              shading: { fill: "E9ECEF" },
+              borders: tableBorders(),
+              children: [
+                new Paragraph({
+                  children: [new TextRun({ text: "Lead times for client’s production:", bold: true, size: 22, color: "1F4E79" })],
+                  spacing: { before: 80, after: 80 },
+                }),
+              ],
+            }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            createQtyCell("According to", { bold: true, shaded: true }),
+            createQtyCell("Factory", { bold: true, shaded: true }),
+            createQtyCell("Auditor check", { bold: true, shaded: true }),
+          ]
+        }),
+        new TableRow({
+          children: [
+            createQtyCell("Raw material supply capacity:"),
+            createQtyCell(data.leadTimes?.rawMaterialCapacityFactory || ""),
+            createQtyCell(data.leadTimes?.rawMaterialCapacityAuditor || ""),
+          ]
+        }),
+        new TableRow({
+          children: [
+            createQtyCell("Production weekly capacity:"),
+            createQtyCell(data.leadTimes?.weeklyCapacityFactory || ""),
+            createQtyCell(data.leadTimes?.weeklyCapacityAuditor || ""),
+          ]
+        })
+      ]
+    })
+  );
+  children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
+
+  // Bottlenecks
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              shading: { fill: "E9ECEF" },
+              borders: tableBorders(),
+              children: [
+                new Paragraph({
+                  children: [new TextRun({ text: "Sensitive points / bottlenecks", bold: true, size: 22, color: "1F4E79" })],
+                  spacing: { before: 80, after: 80 },
+                }),
+              ],
+            }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            new TableCell({
+              borders: tableBorders(),
+              children: [new Paragraph({ text: `According to auditor check: - ${data.bottlenecks?.bottleneckAuditorCheck || ""}` })]
+            })
+          ]
+        }),
+        new TableRow({
+          children: [
+            new TableCell({
+              borders: tableBorders(),
+              children: [new Paragraph({ text: `Comments: - ${data.bottlenecks?.bottleneckComments || ""}` })]
+            })
+          ]
+        })
+      ]
+    })
+  );
+  children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
+
+  // Score Row
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              width: { size: 15, type: WidthType.PERCENTAGE },
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: "Score", bold: true, color: "FF0000", size: 28 })] })],
+            }),
+            ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => 
+              new TableCell({
+                width: { size: 8.5, type: WidthType.PERCENTAGE },
+                shading: { fill: data.part3Score === num ? "E9ECEF" : "FFFFFF" },
+                borders: tableBorders(),
+                children: [
+                  new Paragraph({ 
+                    children: [new TextRun({ text: num.toString(), bold: data.part3Score === num, color: data.part3Score === num ? "FF0000" : "000000" })], 
+                    alignment: AlignmentType.CENTER 
+                  })
+                ],
+              })
+            ),
+          ],
+        }),
+      ],
+    })
+  );
+
+  children.push(new Paragraph({ children: [new PageBreak()] }));
+  children.push(new Paragraph({ text: "", spacing: { before: 400, after: 400 } }));
+
+  // 6. Production Capacity
   children.push(createDataTable([
     ["Total Employees", data.productionCapacity?.totalEmployees?.toString()],
     ["Production Staff", data.productionCapacity?.productionStaff?.toString()],
     ["QC Staff", data.productionCapacity?.qcStaff?.toString()],
     ["Monthly Capacity", data.productionCapacity?.monthlyCapacity],
     ["Lead Time", data.productionCapacity?.leadTime],
-  ]));
+  ], null, "VI. PRODUCTION CAPACITY"));
   children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
 
-  // 5. Machinery
-  children.push(createSectionHeader("V. MACHINERY LIST"));
+  // 7. Machinery
   const machineryRows = [
+    // Integrated Header Row
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 3,
+          shading: { fill: "E9ECEF" },
+          borders: tableBorders(),
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: "VII. MACHINERY LIST", bold: true, size: 22, color: "1F4E79" })],
+              alignment: AlignmentType.LEFT,
+              spacing: { before: 100, after: 100 },
+            }),
+          ],
+        }),
+      ],
+    }),
     new TableRow({
       children: [
         createQtyCell("Machine Name", { bold: true, shaded: true }),
@@ -295,52 +1933,49 @@ exports.createFAContent = (data) => {
   } else {
     machineryRows.push(
       new TableRow({
-        children: [createQtyCell("No machinery listed", { colSpan: 3 })],
+        children: [createQtyCell("No machinery listed", { columnSpan: 3 })],
       })
     );
   }
   children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: machineryRows }));
   children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
 
-  // 6. Warehouse
-  children.push(createSectionHeader("VI. WAREHOUSE & STORAGE"));
+  // 8. Warehouse
   children.push(createDataTable([
     ["Raw Materials", data.warehouse?.rawMaterials],
     ["Finished Goods", data.warehouse?.finishedGoods],
     ["Storage Conditions", data.warehouse?.storageConditions],
-  ]));
+  ], null, "VIII. WAREHOUSE & STORAGE"));
   children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
 
-  // 7. Quality Control
-  children.push(createSectionHeader("VII. QUALITY CONTROL"));
+  // 9. Quality Control
   children.push(createDataTable([
     ["QC Management", data.qualityControl?.qcManagement],
     ["Inspection Procedures", data.qualityControl?.inspectionProcedures],
     ["Equipment Calibration", data.qualityControl?.equipmentCalibration],
-  ]));
+  ], null, "IX. QUALITY CONTROL"));
   children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
 
-  // 8. R&D
-  children.push(createSectionHeader("VIII. RESEARCH & DEVELOPMENT"));
+  // 10. R&D
   children.push(createDataTable([
     ["R&D Staff", data.researchDevelopment?.rdStaff?.toString()],
     ["R&D Capabilities", data.researchDevelopment?.rdCapabilities],
     ["Patents", data.researchDevelopment?.patents],
-  ]));
+  ], null, "X. RESEARCH & DEVELOPMENT"));
   children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
 
-  // 9. Environment
-  children.push(createSectionHeader("IX. ENVIRONMENT & SAFETY"));
+  // 11. Environment
   children.push(createDataTable([
     ["Social Responsibility", data.environment?.socialResponsibility],
     ["Environmental Protection", data.environment?.environmentalProtection],
     ["Safety Conditions", data.environment?.safetyConditions],
-  ]));
+  ], null, "XI. ENVIRONMENT & SAFETY"));
   children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
 
-  // 10. Conclusion
-  children.push(createSectionHeader("X. FINAL CONCLUSION"));
-  const result = data.conclusion?.result || "PENDING";
+  // 12. Conclusion
+  children.push(new Paragraph({ children: [new PageBreak()] }));
+  children.push(new Paragraph({ text: "", spacing: { before: 400, after: 400 } }));
+  
   children.push(
     new Table({
       width: { size: 100, type: WidthType.PERCENTAGE },
@@ -348,24 +1983,65 @@ exports.createFAContent = (data) => {
         new TableRow({
           children: [
             new TableCell({
+              columnSpan: 2,
+              shading: { fill: "E9ECEF" },
               borders: tableBorders(),
               children: [
                 new Paragraph({
-                  children: [
-                    new TextRun({ text: "AUDIT RESULT: ", bold: true, size: 24 }),
-                    new TextRun({
-                      text: result.toUpperCase(),
-                      bold: true,
-                      size: 24,
-                      color: result.toUpperCase().includes("PASS") ? "228B22" : "CC0000",
-                    }),
-                  ],
-                  spacing: { before: 100, after: 100 },
+                  children: [new TextRun({ text: "XII. CONCLUSION", bold: true, size: 24, color: "1F4E79" })],
+                  alignment: AlignmentType.CENTER,
+                  spacing: { before: 120, after: 120 },
                 }),
-                new Paragraph({
-                  children: [new TextRun({ text: data.conclusion?.summary || "N/A" })],
-                  spacing: { before: 100, after: 100 },
-                }),
+              ],
+            }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            new TableCell({
+              width: { size: 30, type: WidthType.PERCENTAGE },
+              borders: tableBorders(),
+              shading: { fill: "F2F2F2" },
+              children: [new Paragraph({ children: [new TextRun({ text: "Audit Result:", bold: true })] })],
+            }),
+            new TableCell({
+              width: { size: 70, type: WidthType.PERCENTAGE },
+              borders: tableBorders(),
+              children: [
+                new Paragraph({ 
+                  children: [new TextRun({ 
+                    text: (data.conclusion?.result || "PENDING").toUpperCase(), 
+                    bold: true, 
+                    color: (data.conclusion?.result === "PASSED" ? "008000" : (data.conclusion?.result === "FAILED" ? "FF0000" : "F39C12"))
+                  })] 
+                })
+              ],
+            }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            new TableCell({
+              width: { size: 30, type: WidthType.PERCENTAGE },
+              borders: tableBorders(),
+              shading: { fill: "F2F2F2" },
+              children: [new Paragraph({ children: [new TextRun({ text: "Summary Statement:", bold: true })] })],
+            }),
+            new TableCell({
+              width: { size: 70, type: WidthType.PERCENTAGE },
+              borders: tableBorders(),
+              children: [new Paragraph({ text: sanitizeDocxText(data.conclusion?.summary || "-") })],
+            }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            new TableCell({
+              columnSpan: 2,
+              borders: tableBorders(),
+              children: [
+                new Paragraph({ text: "Signature / Summary Photo:", bold: true, spacing: { before: 100, after: 100 } }),
+                ...getPhotoContent(data.conclusion?.conclusionPhoto, 300, 200)
               ],
             }),
           ],
@@ -373,6 +2049,147 @@ exports.createFAContent = (data) => {
       ],
     })
   );
+  children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
+
+  // 13. Special Requirements
+  const srRows = [
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 3,
+          shading: { fill: "E9ECEF" },
+          borders: tableBorders(),
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: "XIII. SPECIAL REQUIREMENTS", bold: true, size: 22, color: "1F4E79" })],
+              alignment: AlignmentType.LEFT,
+              spacing: { before: 100, after: 100 },
+            }),
+          ],
+        }),
+      ],
+    }),
+    new TableRow({
+      children: [
+        createQtyCell("Requirement", { bold: true, shaded: true }),
+        createQtyCell("Result", { bold: true, shaded: true }),
+        createQtyCell("Remark", { bold: true, shaded: true }),
+      ],
+    }),
+  ];
+
+  if (data.specialRequirements && data.specialRequirements.length > 0) {
+    data.specialRequirements.forEach((sr) => {
+      srRows.push(
+        new TableRow({
+          children: [
+            createQtyCell(sr.requirement || ""),
+            createQtyCell(sr.result || ""),
+            createQtyCell(sr.remark || ""),
+          ],
+        })
+      );
+    });
+  } else {
+    srRows.push(new TableRow({ children: [createQtyCell("Nil", { columnSpan: 3 })] }));
+  }
+  children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: srRows }));
+
+  // --- PHOTO GALLERY ---
+  const photoGroups = data.reportPhotoGroups || [];
+  if (photoGroups.length > 0) {
+    children.push(new Paragraph({ children: [new PageBreak()] }));
+    children.push(new Paragraph({ text: "", spacing: { before: 400, after: 400 } }));
+    
+    children.push(
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+          new TableRow({
+            children: [
+              new TableCell({
+                shading: { fill: "E9ECEF" },
+                borders: tableBorders(),
+                children: [
+                  new Paragraph({
+                    children: [new TextRun({ text: "XIV. PHOTO GALLERY", bold: true, size: 24, color: "1F4E79" })],
+                    alignment: AlignmentType.CENTER,
+                    spacing: { before: 120, after: 120 },
+                  }),
+                ],
+              }),
+            ],
+          }),
+        ],
+      })
+    );
+
+    photoGroups.forEach((group) => {
+      if (!group.photos || group.photos.length === 0) return;
+
+      children.push(new Paragraph({ text: "", spacing: { before: 200 } }));
+      
+      // Group Header
+      children.push(
+        new Table({
+          width: { size: 100, type: WidthType.PERCENTAGE },
+          rows: [
+            new TableRow({
+              children: [
+                new TableCell({
+                  shading: { fill: "F2F2F2" },
+                  borders: tableBorders(),
+                  children: [new Paragraph({ children: [new TextRun({ text: group.description || "General Photos", bold: true })] })],
+                }),
+              ],
+            }),
+          ],
+        })
+      );
+
+      // Photos Grid
+      const rows = [];
+      for (let i = 0; i < group.photos.length; i += 2) {
+        const p1 = group.photos[i];
+        const p2 = group.photos[i + 1];
+
+        rows.push(
+          new TableRow({
+            children: [
+              new TableCell({
+                width: { size: 50, type: WidthType.PERCENTAGE },
+                borders: tableBorders(),
+                children: getPhotoContent(p1.preview, 240, 180),
+              }),
+              new TableCell({
+                width: { size: 50, type: WidthType.PERCENTAGE },
+                borders: tableBorders(),
+                children: p2 ? getPhotoContent(p2.preview, 240, 180) : [],
+              }),
+            ],
+          })
+        );
+
+        rows.push(
+          new TableRow({
+            children: [
+              new TableCell({
+                width: { size: 50, type: WidthType.PERCENTAGE },
+                borders: tableBorders(),
+                children: [new Paragraph({ text: p1.label || "", alignment: AlignmentType.CENTER, spacing: { after: 100 } })],
+              }),
+              new TableCell({
+                width: { size: 50, type: WidthType.PERCENTAGE },
+                borders: tableBorders(),
+                children: [new Paragraph({ text: p2?.label || "", alignment: AlignmentType.CENTER, spacing: { after: 100 } })],
+              }),
+            ],
+          })
+        );
+      }
+      children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows }));
+    });
+  }
 
   return children;
 };

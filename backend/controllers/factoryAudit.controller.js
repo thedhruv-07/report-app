@@ -1,6 +1,6 @@
 const FactoryAudit = require("../models/factoryAudit.model");
 const mongoose = require("mongoose");
-const { Document, Packer, Header, Paragraph, TextRun, PageNumber, Footer, convertInchesToTwip, AlignmentType } = require("docx");
+const { Document, Packer, Header, Paragraph, TextRun, PageNumber, Footer, Table, TableRow, TableCell, WidthType, BorderStyle, AlignmentType } = require("docx");
 const { createFAContent } = require("../services/faDocx.service");
 
 // Simple controller for Factory Audit
@@ -63,8 +63,11 @@ exports.generateReport = async (req, res) => {
     const userId = req.user.id || req.user._id;
     const format = req.query.format || "docx";
     
-    const report = await FactoryAudit.findOne({ _id: id, userId });
-    if (!report) return res.status(404).json({ error: "Report not found" });
+    const reportDoc = await FactoryAudit.findOne({ _id: id, userId });
+    if (!reportDoc) return res.status(404).json({ error: "Report not found" });
+
+    // Convert to plain object to avoid Mongoose internal issues during DOCX assembly
+    const report = reportDoc.toObject();
 
     const { createFAContent, createFAHeaderTable } = require("../services/faDocx.service");
 
@@ -78,15 +81,55 @@ exports.generateReport = async (req, res) => {
         footers: {
           default: new Footer({
             children: [
-              new Paragraph({
-                children: [
-                  new TextRun({ text: "Page ", size: 18 }),
-                  new TextRun({ children: [PageNumber.CURRENT], size: 18 }),
-                  new TextRun({ text: " of ", size: 18 }),
-                  new TextRun({ children: [PageNumber.TOTAL_PAGES], size: 18 }),
-                ],
-                alignment: AlignmentType.CENTER,
-              }),
+              new Table({
+                width: { size: 100, type: WidthType.PERCENTAGE },
+                borders: {
+                  top: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+                  bottom: { style: BorderStyle.NONE },
+                  left: { style: BorderStyle.NONE },
+                  right: { style: BorderStyle.NONE },
+                },
+                rows: [
+                  new TableRow({
+                    children: [
+                      new TableCell({
+                        width: { size: 60, type: WidthType.PERCENTAGE },
+                        borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
+                        children: [
+                          new Paragraph({
+                            children: [
+                              new TextRun({ text: "India    |    China    |    Bangladesh    |    Vietnam", size: 16, color: "333333" })
+                            ],
+                            alignment: AlignmentType.LEFT,
+                            spacing: { before: 100 }
+                          })
+                        ]
+                      }),
+                      new TableCell({
+                        width: { size: 40, type: WidthType.PERCENTAGE },
+                        borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
+                        children: [
+                          new Paragraph({
+                            children: [
+                              new TextRun({ text: "www.absoluteveritas.com", size: 16, color: "333333" })
+                            ],
+                            alignment: AlignmentType.RIGHT,
+                            spacing: { before: 100 }
+                          }),
+                          new Paragraph({
+                            children: [
+                              new TextRun({ text: "Absolute Veritas Copyright © All Rights Reserved", size: 16, color: "333333" })
+                            ],
+                            alignment: AlignmentType.RIGHT,
+                          })
+                        ]
+                      })
+                    ]
+                  }),
+                  // Optional: Add Page Number row below if needed, or keep it clean like the screenshot.
+                  // The screenshot doesn't show page numbers, so I'll omit them for a cleaner look unless requested.
+                ]
+              })
             ],
           }),
         },
@@ -108,7 +151,11 @@ exports.generateReport = async (req, res) => {
     res.setHeader("Content-Disposition", `attachment; filename=FactoryAudit-${id}.docx`);
     res.send(buffer);
   } catch (error) {
-    console.error("Factory Audit Generation Error:", error);
-    res.status(500).json({ error: "Failed to generate report" });
+    console.error("CRITICAL: Factory Audit Generation Error:", error);
+    res.status(500).json({ 
+      error: "Failed to generate report", 
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
