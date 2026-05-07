@@ -1880,30 +1880,46 @@ exports.createFAContent = (data) => {
   children.push(new Paragraph({ children: [new PageBreak()] }));
   children.push(new Paragraph({ text: "", spacing: { before: 400, after: 400 } }));
 
-  // 6. Production Capacity
-  children.push(createDataTable([
-    ["Total Employees", data.productionCapacity?.totalEmployees?.toString()],
-    ["Production Staff", data.productionCapacity?.productionStaff?.toString()],
-    ["QC Staff", data.productionCapacity?.qcStaff?.toString()],
-    ["Monthly Capacity", data.productionCapacity?.monthlyCapacity],
-    ["Lead Time", data.productionCapacity?.leadTime],
-  ], null, "VI. PRODUCTION CAPACITY"));
+  // Part 4: Factory Facilities / Machinery Conditions
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              shading: { fill: "F2F2F2" },
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: "Part 4", bold: true, size: 24 })], alignment: AlignmentType.CENTER })],
+            }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            new TableCell({
+              shading: { fill: "F2F2F2" },
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: "Factory Facilities / Machinery Conditions", bold: true, size: 24 })], alignment: AlignmentType.CENTER })],
+            }),
+          ],
+        }),
+      ],
+    })
+  );
   children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
 
-  // 7. Machinery
-  const machineryRows = [
-    // Integrated Header Row
+  // Machines for production
+  const machineHeaderRows = [
     new TableRow({
       children: [
         new TableCell({
-          columnSpan: 3,
+          columnSpan: 4,
           shading: { fill: "E9ECEF" },
           borders: tableBorders(),
           children: [
             new Paragraph({
-              children: [new TextRun({ text: "VII. MACHINERY LIST", bold: true, size: 22, color: "1F4E79" })],
-              alignment: AlignmentType.LEFT,
-              spacing: { before: 100, after: 100 },
+              children: [new TextRun({ text: "Machines for production", bold: true, size: 22, color: "1F4E79" })],
+              spacing: { before: 80, after: 80 },
             }),
           ],
         }),
@@ -1911,42 +1927,264 @@ exports.createFAContent = (data) => {
     }),
     new TableRow({
       children: [
-        createQtyCell("Machine Name", { bold: true, shaded: true }),
-        createQtyCell("Quantity", { bold: true, shaded: true }),
-        createQtyCell("Condition", { bold: true, shaded: true }),
+        createQtyCell("Machine Name/ Brand/Country of Origin", { bold: true, shaded: true }),
+        createQtyCell("Picture", { bold: true, shaded: true }),
+        createQtyCell("Count", { bold: true, shaded: true }),
+        createQtyCell("Comments (conditions and age)", { bold: true, shaded: true }),
       ],
     }),
   ];
 
-  if (data.machinery && data.machinery.length > 0) {
-    data.machinery.forEach((m) => {
-      machineryRows.push(
-        new TableRow({
-          children: [
-            createQtyCell(m.name || ""),
-            createQtyCell(m.quantity?.toString() || "0"),
-            createQtyCell(m.condition || ""),
-          ],
-        })
-      );
+  if (data.part4?.machineryConditions && data.part4.machineryConditions.length > 0) {
+    data.part4.machineryConditions.forEach(m => {
+      machineHeaderRows.push(new TableRow({
+        children: [
+          createQtyCell(m.machineName || ""),
+          new TableCell({
+            borders: tableBorders(),
+            children: m.picture ? getPhotoContent(m.picture, 120, 90) : [new Paragraph({ text: "No photo" })],
+          }),
+          createQtyCell(m.count?.toString() || "0"),
+          createQtyCell(m.comments || ""),
+        ]
+      }));
     });
   } else {
-    machineryRows.push(
-      new TableRow({
-        children: [createQtyCell("No machinery listed", { columnSpan: 3 })],
-      })
-    );
+    machineHeaderRows.push(new TableRow({ children: [createQtyCell("No machinery listed", { columnSpan: 4 })] }));
   }
-  children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: machineryRows }));
+  children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: machineHeaderRows }));
   children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
 
-  // 8. Warehouse
-  children.push(createDataTable([
-    ["Raw Materials", data.warehouse?.rawMaterials],
-    ["Finished Goods", data.warehouse?.finishedGoods],
-    ["Storage Conditions", data.warehouse?.storageConditions],
-  ], null, "VIII. WAREHOUSE & STORAGE"));
+  // Warehouse condition
+  const warehouseRows = [
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 2,
+          shading: { fill: "E9ECEF" },
+          borders: tableBorders(),
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: "Warehouse condition", bold: true, size: 22, color: "1F4E79" })],
+              spacing: { before: 80, after: 80 },
+            }),
+          ],
+        }),
+      ],
+    }),
+    ...[
+      ["Area of Warehouse (M²)", data.part4?.warehouseCondition?.warehouseArea || ""],
+      ["Materials clearly stocked in different areas?", data.part4?.warehouseCondition?.materialsStocked || ""],
+      ["Lab/Marking clearly indicated in different material?", data.part4?.warehouseCondition?.labMarking || ""],
+      ["Warehouse clean and tidy?", data.part4?.warehouseCondition?.warehouseClean || ""],
+      ["Equipment/Tools/Facilities Advanced?", data.part4?.warehouseCondition?.facilitiesAdvanced || ""],
+    ].map(([label, val]) => new TableRow({
+      children: [
+        new TableCell({ width: { size: 60, type: WidthType.PERCENTAGE }, borders: tableBorders(), children: [new Paragraph({ text: label, bold: true })] }),
+        new TableCell({ width: { size: 40, type: WidthType.PERCENTAGE }, borders: tableBorders(), children: [new Paragraph({ text: val, alignment: AlignmentType.CENTER })] }),
+      ]
+    }))
+  ];
+
+  // Warehouse Photos
+  const whPhotoRow = new TableRow({
+    children: [
+      new TableCell({
+        width: { size: 50, type: WidthType.PERCENTAGE },
+        borders: tableBorders(),
+        children: [
+          ...(data.part4?.warehousePhotos?.rawMaterials ? getPhotoContent(data.part4.warehousePhotos.rawMaterials, 240, 180) : []),
+          new Paragraph({ text: "Raw Materials Storage", alignment: AlignmentType.CENTER })
+        ]
+      }),
+      new TableCell({
+        width: { size: 50, type: WidthType.PERCENTAGE },
+        borders: tableBorders(),
+        children: [
+          ...(data.part4?.warehousePhotos?.finishedProducts ? getPhotoContent(data.part4.warehousePhotos.finishedProducts, 240, 180) : []),
+          new Paragraph({ text: "Finished products storage condition", alignment: AlignmentType.CENTER })
+        ]
+      }),
+    ]
+  });
+  warehouseRows.push(whPhotoRow);
+
+  // Capacity highlight row
+  warehouseRows.push(new TableRow({
+    children: [
+      new TableCell({
+        shading: { fill: "FF0000" },
+        borders: tableBorders(),
+        children: [new Paragraph({ children: [new TextRun({ text: "Estimated warehouse capacity:", bold: true, color: "FFFFFF" })], alignment: AlignmentType.RIGHT })],
+      }),
+      new TableCell({
+        borders: tableBorders(),
+        children: [new Paragraph({ text: data.part4?.warehouseCondition?.warehouseCapacity || "", bold: true, alignment: AlignmentType.CENTER })],
+      })
+    ]
+  }));
+
+  children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: warehouseRows }));
   children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
+
+  // Sample Room
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              columnSpan: 2,
+              shading: { fill: "E9ECEF" },
+              borders: tableBorders(),
+              children: [
+                new Paragraph({
+                  children: [new TextRun({ text: "Sample room condition", bold: true, size: 22, color: "1F4E79" })],
+                  spacing: { before: 80, after: 80 },
+                }),
+              ],
+            }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            new TableCell({ width: { size: 60, type: WidthType.PERCENTAGE }, borders: tableBorders(), children: [new Paragraph({ text: "Sample room clean and tidy?", bold: true })] }),
+            new TableCell({ width: { size: 40, type: WidthType.PERCENTAGE }, borders: tableBorders(), children: [new Paragraph({ text: data.part4?.sampleRoomCondition?.sampleRoomClean || "", alignment: AlignmentType.CENTER })] }),
+          ]
+        }),
+        new TableRow({
+          children: [
+            new TableCell({ width: { size: 60, type: WidthType.PERCENTAGE }, borders: tableBorders(), children: [new Paragraph({ text: "Sample complete disposed in Sample room?", bold: true })] }),
+            new TableCell({ width: { size: 40, type: WidthType.PERCENTAGE }, borders: tableBorders(), children: [new Paragraph({ text: data.part4?.sampleRoomCondition?.sampleDisposed || "", alignment: AlignmentType.CENTER })] }),
+          ]
+        })
+      ]
+    })
+  );
+  children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
+
+  // Public Power
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              columnSpan: 2,
+              shading: { fill: "E9ECEF" },
+              borders: tableBorders(),
+              children: [
+                new Paragraph({
+                  children: [new TextRun({ text: "Public power supply", bold: true, size: 22, color: "1F4E79" })],
+                  spacing: { before: 80, after: 80 },
+                }),
+              ],
+            }),
+          ],
+        }),
+        ...[
+          ["Public power Connected?", data.part4?.publicPowerSupply?.publicPowerConnected || ""],
+          ["Frequent Power Outage in the area?", data.part4?.publicPowerSupply?.frequentPowerOutage || ""],
+          ["Diesel Generator available?", data.part4?.publicPowerSupply?.dieselGenerator || ""],
+          ["If yes, Electric Power Generator Count:", data.part4?.publicPowerSupply?.generatorCount || ""],
+        ].map(([label, val]) => new TableRow({
+          children: [
+            new TableCell({ width: { size: 60, type: WidthType.PERCENTAGE }, borders: tableBorders(), children: [new Paragraph({ text: label, bold: true })] }),
+            new TableCell({ width: { size: 40, type: WidthType.PERCENTAGE }, borders: tableBorders(), children: [new Paragraph({ text: val, alignment: AlignmentType.CENTER })] }),
+          ]
+        }))
+      ]
+    })
+  );
+  children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
+
+  // Shipment Capabilities
+  const shipmentRows = [
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 2,
+          shading: { fill: "E9ECEF" },
+          borders: tableBorders(),
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: "Shipment capabilities", bold: true, size: 22, color: "1F4E79" })],
+              spacing: { before: 80, after: 80 },
+            }),
+          ],
+        }),
+      ],
+    }),
+    ...[
+      ["Capacity of shipping meets requirement of buyer?", data.part4?.shipmentCapabilities?.shippingMeetsRequirement || ""],
+      ["Over 4 containers can be loaded together?", data.part4?.shipmentCapabilities?.containersLoadedTogether || ""],
+      ["Protection for loading against bad weather?", data.part4?.shipmentCapabilities?.protectionBadWeather || ""],
+      ["Mechanical Loading Capacity disposed? (Fork,etc.)", data.part4?.shipmentCapabilities?.mechanicalLoadingDisposed || ""],
+    ].map(([label, val]) => new TableRow({
+      children: [
+        new TableCell({ width: { size: 60, type: WidthType.PERCENTAGE }, borders: tableBorders(), children: [new Paragraph({ text: label, bold: true })] }),
+        new TableCell({ width: { size: 40, type: WidthType.PERCENTAGE }, borders: tableBorders(), children: [new Paragraph({ text: val, alignment: AlignmentType.CENTER })] }),
+      ]
+    })),
+    new TableRow({
+      children: [
+        new TableCell({
+          width: { size: 50, type: WidthType.PERCENTAGE },
+          borders: tableBorders(),
+          children: [
+            ...(data.part4?.shipmentPhotos?.loadingPlace1 ? getPhotoContent(data.part4.shipmentPhotos.loadingPlace1, 240, 180) : []),
+            new Paragraph({ text: "Loading Place", alignment: AlignmentType.CENTER })
+          ]
+        }),
+        new TableCell({
+          width: { size: 50, type: WidthType.PERCENTAGE },
+          borders: tableBorders(),
+          children: [
+            ...(data.part4?.shipmentPhotos?.loadingPlace2 ? getPhotoContent(data.part4.shipmentPhotos.loadingPlace2, 240, 180) : []),
+            new Paragraph({ text: "Loading Place", alignment: AlignmentType.CENTER })
+          ]
+        }),
+      ]
+    })
+  ];
+  children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: shipmentRows }));
+  children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
+
+  // Part 4 Score Row
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              width: { size: 15, type: WidthType.PERCENTAGE },
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: "Score", bold: true, color: "FF0000", size: 28 })] })],
+            }),
+            ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => 
+              new TableCell({
+                width: { size: 8.5, type: WidthType.PERCENTAGE },
+                shading: { fill: data.part4?.part4Score === num ? "E9ECEF" : "FFFFFF" },
+                borders: tableBorders(),
+                children: [
+                  new Paragraph({ 
+                    children: [new TextRun({ text: num.toString(), bold: data.part4?.part4Score === num, color: data.part4?.part4Score === num ? "FF0000" : "000000" })], 
+                    alignment: AlignmentType.CENTER 
+                  })
+                ],
+              })
+            ),
+          ],
+        }),
+      ],
+    })
+  );
+
+  children.push(new Paragraph({ children: [new PageBreak()] }));
+  children.push(new Paragraph({ text: "", spacing: { before: 400, after: 400 } }));
 
   // 9. Quality Control
   children.push(createDataTable([

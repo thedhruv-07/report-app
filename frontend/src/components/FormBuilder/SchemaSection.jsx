@@ -112,6 +112,36 @@ export default function SchemaSection({ title, fields, formData, onChange, ai = 
                       style={{ width: "100%", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, padding: "8px", borderRadius: "6px", boxSizing: "border-box", fontSize: "14px" }}
                     />
                   )
+                ) : field.type === "radio" ? (
+                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                    {field.options.map(opt => {
+                      const isSelected = formData[field.name] === opt;
+                      const isYesNo = field.options.includes("Yes") && field.options.includes("No");
+                      const isYes = opt === "Yes";
+                      const isNo = opt === "No";
+                      
+                      return (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => onChange({ target: { name: field.name, value: opt } })}
+                          style={{
+                            display: "flex", alignItems: "center", gap: "8px",
+                            padding: "8px 16px", borderRadius: "8px",
+                            border: `2px solid ${isSelected ? (isYesNo ? (isYes ? colors.success : colors.danger) : colors.primary) : colors.border}`,
+                            background: isSelected ? (isYesNo ? (isYes ? "#f0fdf4" : "#fef2f2") : colors.primaryLight) : colors.surface,
+                            color: isSelected ? (isYesNo ? (isYes ? colors.success : colors.danger) : colors.primary) : colors.text,
+                            cursor: "pointer", fontWeight: "600", fontSize: "14px",
+                            transition: "all 0.2s", minWidth: "100px", justifyContent: "center"
+                          }}
+                        >
+                          {isYes && <span style={{ fontSize: "16px" }}>✓</span>}
+                          {isNo && <span style={{ fontSize: "16px" }}>✕</span>}
+                          {opt}
+                        </button>
+                      );
+                    })}
+                  </div>
                 ) : (
                   <input
                     type={field.type || "text"}

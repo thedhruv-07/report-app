@@ -207,5 +207,52 @@ export const faSchema = {
     score: [
       { name: "part3Score", label: "Part 3 Score (1-10)", type: "number", min: 1, max: 10 }
     ]
+  },
+  part4: {
+    machineryConditions: {
+      id: "machineryConditions",
+      label: "Machines for production",
+      columns: [
+        { name: "machineName", label: "Machine Name/ Brand/Country of Origin", type: "text" },
+        { name: "picture", label: "Picture", type: "photo" },
+        { name: "count", label: "Count", type: "number" },
+        { name: "comments", label: "Comments (conditions and age)", type: "textarea" },
+      ]
+    },
+    warehouseCondition: [
+      { name: "warehouseArea", label: "Area of Warehouse (M²)", type: "text" },
+      { name: "materialsStocked", label: "Materials clearly stocked in different areas?", type: "radio", options: ["Yes", "No"] },
+      { name: "labMarking", label: "Lab/Marking clearly indicated in different material?", type: "radio", options: ["Yes", "No"] },
+      { name: "warehouseClean", label: "Warehouse clean and tidy?", type: "radio", options: ["Yes", "No"] },
+      { name: "facilitiesAdvanced", label: "Equipment/Tools/Facilities Advanced?", type: "radio", options: ["Yes", "No"] },
+      { name: "warehouseCapacity", label: "Estimated warehouse capacity", type: "text" },
+    ],
+    warehousePhotos: {
+      rawMaterials: { id: "rawMaterialsStorage", label: "Raw Materials Storage", limit: 1 },
+      finishedProducts: { id: "finishedProductsStorage", label: "Finished products storage condition", limit: 1 },
+    },
+    sampleRoomCondition: [
+      { name: "sampleRoomClean", label: "Sample room clean and tidy?", type: "radio", options: ["Yes", "No"] },
+      { name: "sampleDisposed", label: "Sample complete disposed in Sample room?", type: "radio", options: ["Yes", "No"] },
+    ],
+    publicPowerSupply: [
+      { name: "publicPowerConnected", label: "Public power Connected?", type: "radio", options: ["Yes", "No"] },
+      { name: "frequentPowerOutage", label: "Frequent Power Outage in the area?", type: "radio", options: ["Yes", "No"] },
+      { name: "dieselGenerator", label: "Diesel Generator available?", type: "radio", options: ["Yes", "No"] },
+      { name: "generatorCount", label: "If yes, Electric Power Generator Count:", type: "text" },
+    ],
+    shipmentCapabilities: [
+      { name: "shippingMeetsRequirement", label: "Capacity of shipping meets requirement of buyer?", type: "radio", options: ["Yes", "No"] },
+      { name: "containersLoadedTogether", label: "Over 4 containers can be loaded together?", type: "radio", options: ["Yes", "No"] },
+      { name: "protectionBadWeather", label: "Protection for loading against bad weather?", type: "radio", options: ["Yes", "No"] },
+      { name: "mechanicalLoadingDisposed", label: "Mechanical Loading Capacity disposed? (Fork,etc.)", type: "radio", options: ["Yes", "No"] },
+    ],
+    shipmentPhotos: {
+      loadingPlace1: { id: "loadingPlace1", label: "Loading Place", limit: 1 },
+      loadingPlace2: { id: "loadingPlace2", label: "Loading Place", limit: 1 },
+    },
+    score: [
+      { name: "part4Score", label: "Part 4 Score (1-10)", type: "number", min: 1, max: 10 }
+    ]
   }
 };

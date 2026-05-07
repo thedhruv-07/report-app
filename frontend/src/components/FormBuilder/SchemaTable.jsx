@@ -1,9 +1,12 @@
 import { colors } from "../../styles";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, UploadCloud, X, Image as ImageIcon } from "lucide-react";
 import SmartTextarea from "../SmartTextarea";
+import { compressImage } from "../../utils/imageCompression";
+import { useState } from "react";
 
 export default function SchemaTable({ title, config, formData, onChange, dataKey, ai = true }) {
   const rows = Array.isArray(formData[dataKey]) ? formData[dataKey] : [];
+  const [isUploading, setIsUploading] = useState(null);
 
   const handleRowChange = (index, field, value) => {
     const newRows = [...rows];
@@ -11,8 +14,24 @@ export default function SchemaTable({ title, config, formData, onChange, dataKey
     onChange({ target: { name: dataKey, value: newRows } });
   };
 
+  const handlePhotoUpload = async (index, field, e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(`${index}_${field}`);
+      const compressed = await compressImage(file);
+      handleRowChange(index, field, compressed);
+    } catch (error) {
+      console.error("Upload failed:", error);
+      alert("Photo processing failed.");
+    } finally {
+      setIsUploading(null);
+    }
+  };
+
   const addRow = () => {
-    const emptyRow = config.columns.reduce((acc, col) => ({ ...acc, [col.key]: "" }), {});
+    const emptyRow = config.columns.reduce((acc, col) => ({ ...acc, [col.name]: "" }), {});
     onChange({ target: { name: dataKey, value: [...rows, emptyRow] } });
   };
 
@@ -39,35 +58,62 @@ export default function SchemaTable({ title, config, formData, onChange, dataKey
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ background: colors.surfaceAlt }}>
-              <th style={{ padding: "10px", textAlign: "center", borderBottom: `1px solid ${colors.border}`, width: "40px", color: colors.textMuted, fontSize: "12px" }}>#</th>
+              <th key="col-index" style={{ padding: "10px", textAlign: "center", borderBottom: `1px solid ${colors.border}`, width: "40px", color: colors.textMuted, fontSize: "12px" }}>#</th>
               {config.columns.map(col => (
-                <th key={col.key} style={{ padding: "10px", textAlign: "left", borderBottom: `1px solid ${colors.border}`, color: colors.textMuted, fontSize: "12px", fontWeight: "600" }}>
+                <th key={col.name} style={{ padding: "10px", textAlign: "left", borderBottom: `1px solid ${colors.border}`, color: colors.textMuted, fontSize: "12px", fontWeight: "600" }}>
                   {col.label}
                 </th>
               ))}
-              <th style={{ padding: "10px", textAlign: "center", borderBottom: `1px solid ${colors.border}`, width: "50px" }}></th>
+              <th key="col-actions" style={{ padding: "10px", textAlign: "center", borderBottom: `1px solid ${colors.border}`, width: "50px" }}></th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr>
-                <td colSpan={config.columns.length + 2} style={{ textAlign: "center", padding: "30px", color: colors.textMuted, fontSize: "14px" }}>
+              <tr key="no-rows">
+                <td key="empty-msg" colSpan={config.columns.length + 2} style={{ textAlign: "center", padding: "30px", color: colors.textMuted, fontSize: "14px" }}>
                   No rows added yet. Click "Add Row" to start.
                 </td>
               </tr>
             ) : (
               rows.map((row, index) => (
-                <tr key={index}>
-                  <td style={{ padding: "10px", textAlign: "center", borderBottom: `1px solid ${colors.border}`, color: colors.textMuted, fontSize: "13px", fontWeight: "600", background: colors.surfaceAlt }}>
+                <tr key={`row-${index}`}>
+                  <td key="cell-index" style={{ padding: "10px", textAlign: "center", borderBottom: `1px solid ${colors.border}`, color: colors.textMuted, fontSize: "13px", fontWeight: "600", background: colors.surfaceAlt }}>
                     {index + 1}
                   </td>
                   {config.columns.map(col => (
-                    <td key={col.key} style={{ padding: "6px", borderBottom: `1px solid ${colors.border}`, background: colors.surface }}>
-                      {ai ? (
+                    <td key={`cell-${col.name}`} style={{ padding: "6px", borderBottom: `1px solid ${colors.border}`, background: colors.surface }}>
+                      {col.type === "photo" ? (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "6px", alignItems: "center", minWidth: "100px" }}>
+                          {row[col.name] ? (
+                            <div style={{ position: "relative", width: "80px", height: "60px", border: `1px solid ${colors.border}`, borderRadius: "4px", overflow: "hidden" }}>
+                              <img src={row[col.name]} alt="Machine" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              <button
+                                onClick={() => handleRowChange(index, col.name, "")}
+                                style={{ position: "absolute", top: "2px", right: "2px", background: "#ef4444", color: "white", border: "none", borderRadius: "50%", width: "18px", height: "18px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                              >
+                                <X size={10} />
+                              </button>
+                            </div>
+                          ) : (
+                            <label style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "8px", border: `1px dashed ${colors.border}`, borderRadius: "4px", cursor: "pointer", background: colors.surfaceAlt, width: "80px", height: "60px", justifyContent: "center" }}>
+                              {isUploading === `${index}_${col.name}` ? <span style={{ fontSize: "10px", color: colors.primary }}>...</span> : <ImageIcon size={20} color={colors.textMuted} />}
+                              <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handlePhotoUpload(index, col.name, e)} disabled={!!isUploading} />
+                            </label>
+                          )}
+                        </div>
+                      ) : col.type === "number" ? (
+                        <input
+                          type="number"
+                          value={row[col.name] || ""}
+                          onChange={(e) => handleRowChange(index, col.name, e.target.value)}
+                          placeholder={`0`}
+                          style={{ width: "100%", border: `1px solid ${colors.border}`, padding: "8px", borderRadius: "4px", fontSize: "13px", boxSizing: "border-box", textAlign: "center" }}
+                        />
+                      ) : ai && col.type === "textarea" ? (
                         <SmartTextarea
-                          name={`${dataKey}_${index}_${col.key}`}
-                          value={row[col.key] || ""}
-                          onChange={(e) => handleRowChange(index, col.key, e.target.value)}
+                          name={`${dataKey}_${index}_${col.name}`}
+                          value={row[col.name] || ""}
+                          onChange={(e) => handleRowChange(index, col.name, e.target.value)}
                           placeholder={`Enter ${col.label.toLowerCase()}`}
                           minHeight={36}
                           style={{ width: "100%", border: `1px solid ${colors.border}`, padding: "6px", borderRadius: "4px", fontSize: "13px", boxSizing: "border-box" }}
@@ -75,15 +121,15 @@ export default function SchemaTable({ title, config, formData, onChange, dataKey
                       ) : (
                         <input
                           type={col.type || "text"}
-                          value={row[col.key] || ""}
-                          onChange={(e) => handleRowChange(index, col.key, e.target.value)}
+                          value={row[col.name] || ""}
+                          onChange={(e) => handleRowChange(index, col.name, e.target.value)}
                           placeholder={`Enter ${col.label.toLowerCase()}`}
                           style={{ width: "100%", border: `1px solid ${colors.border}`, padding: "8px", borderRadius: "4px", fontSize: "13px", boxSizing: "border-box" }}
                         />
                       )}
                     </td>
                   ))}
-                  <td style={{ padding: "10px", textAlign: "center", borderBottom: `1px solid ${colors.border}`, background: colors.surface }}>
+                  <td key="cell-actions" style={{ padding: "10px", textAlign: "center", borderBottom: `1px solid ${colors.border}`, background: colors.surface }}>
                     <button 
                       onClick={() => removeRow(index)}
                       style={{ background: "transparent", color: colors.danger, border: "none", cursor: "pointer", padding: "4px" }}

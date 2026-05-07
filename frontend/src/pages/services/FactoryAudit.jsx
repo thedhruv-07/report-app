@@ -293,6 +293,44 @@ export default function FactoryAudit() {
       };
       nestedData.part3Score = form.part3Score;
 
+      // Part 4: Factory Facilities / Machinery Conditions
+      nestedData.part4 = {
+        machineryConditions: form.machineryConditions || [],
+        warehouseCondition: {
+          warehouseArea: form.warehouseArea,
+          materialsStocked: form.materialsStocked,
+          labMarking: form.labMarking,
+          warehouseClean: form.warehouseClean,
+          facilitiesAdvanced: form.facilitiesAdvanced,
+          warehouseCapacity: form.warehouseCapacity
+        },
+        warehousePhotos: {
+          rawMaterials: form.rawMaterialsStorage,
+          finishedProducts: form.finishedProductsStorage
+        },
+        sampleRoomCondition: {
+          sampleRoomClean: form.sampleRoomClean,
+          sampleDisposed: form.sampleDisposed
+        },
+        publicPowerSupply: {
+          publicPowerConnected: form.publicPowerConnected,
+          frequentPowerOutage: form.frequentPowerOutage,
+          dieselGenerator: form.dieselGenerator,
+          generatorCount: form.generatorCount
+        },
+        shipmentCapabilities: {
+          shippingMeetsRequirement: form.shippingMeetsRequirement,
+          containersLoadedTogether: form.containersLoadedTogether,
+          protectionBadWeather: form.protectionBadWeather,
+          mechanicalLoadingDisposed: form.mechanicalLoadingDisposed
+        },
+        shipmentPhotos: {
+          loadingPlace1: form.loadingPlace1,
+          loadingPlace2: form.loadingPlace2
+        },
+        part4Score: form.part4Score
+      };
+
       // Handle individual certificate photos in relatedPictures
       nestedData.relatedPictures = {
         certPhoto: form.certPhoto,
@@ -668,11 +706,58 @@ export default function FactoryAudit() {
         </div>
       </div>
     ) },
-    { id: 8, label: "Machinery", component: (
-      <SchemaTable title="Machinery List" config={faSchema.machineryTable} dataKey="machinery" formData={form} onChange={handleChange} />
-    ) },
-    { id: 9, label: "Warehouse", component: (
-      <SchemaSection title="Warehouse & Storage" fields={faSchema.warehouse} formData={form} onChange={handleChange} />
+    { id: 8, label: "Part 4: Factory Facilities / Machinery Conditions", component: (
+      <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
+        <h3 style={{ fontSize: "20px", fontWeight: "800", color: colors.header, textAlign: "center", marginBottom: "5px" }}>
+          Part 4
+        </h3>
+        <h4 style={{ fontSize: "17px", fontWeight: "700", color: colors.header, textAlign: "center", marginBottom: "10px" }}>
+          Factory Facilities / Machinery Conditions
+        </h4>
+
+        <SchemaTable title="Machines for production" config={faSchema.part4.machineryConditions} dataKey="machineryConditions" formData={form} onChange={handleChange} />
+
+        <div style={{ background: colors.surfaceAlt, padding: "20px", borderRadius: "12px", border: `1px solid ${colors.border}` }}>
+          <SchemaSection title="Warehouse condition" fields={faSchema.part4.warehouseCondition} formData={form} onChange={handleChange} />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginTop: "20px" }}>
+            <SchemaPhotos config={{ groups: [faSchema.part4.warehousePhotos.rawMaterials] }} formData={form} onChange={handleChange} />
+            <SchemaPhotos config={{ groups: [faSchema.part4.warehousePhotos.finishedProducts] }} formData={form} onChange={handleChange} />
+          </div>
+        </div>
+
+        <SchemaSection title="Sample room condition" fields={faSchema.part4.sampleRoomCondition} formData={form} onChange={handleChange} />
+        
+        <SchemaSection title="Public power supply" fields={faSchema.part4.publicPowerSupply} formData={form} onChange={handleChange} />
+
+        <div style={{ background: colors.surfaceAlt, padding: "20px", borderRadius: "12px", border: `1px solid ${colors.border}` }}>
+          <SchemaSection title="Shipment capabilities" fields={faSchema.part4.shipmentCapabilities} formData={form} onChange={handleChange} />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginTop: "20px" }}>
+            <SchemaPhotos config={{ groups: [faSchema.part4.shipmentPhotos.loadingPlace1] }} formData={form} onChange={handleChange} />
+            <SchemaPhotos config={{ groups: [faSchema.part4.shipmentPhotos.loadingPlace2] }} formData={form} onChange={handleChange} />
+          </div>
+        </div>
+
+        <div style={{ marginTop: "20px", padding: "15px", backgroundColor: colors.surface, borderRadius: "8px", border: `1px solid ${colors.border}` }}>
+          <h4 style={{ fontSize: "16px", fontWeight: "700", color: colors.danger, marginBottom: "15px", textAlign: "center" }}>Part 4 Score</h4>
+          <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+              <button
+                key={num}
+                type="button"
+                onClick={() => setForm(prev => ({ ...prev, part4Score: num }))}
+                style={{
+                  width: "40px", height: "40px", borderRadius: "4px", border: `1px solid ${colors.border}`,
+                  backgroundColor: form.part4Score === num ? colors.danger : colors.surfaceAlt,
+                  color: form.part4Score === num ? "#fff" : colors.text,
+                  fontWeight: "bold", cursor: "pointer", transition: "all 0.2s"
+                }}
+              >
+                {num}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
     ) },
     { id: 10, label: "Quality Control", component: (
       <SchemaSection title="Quality Control" fields={faSchema.qualityControl} formData={form} onChange={handleChange} />

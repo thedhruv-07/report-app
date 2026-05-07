@@ -153,6 +153,48 @@ const FactoryAuditSchema = new mongoose.Schema({
   },
   part3Score: Number,
 
+  part4: {
+    machineryConditions: [{
+      machineName: String,
+      picture: String,
+      count: Number,
+      comments: String
+    }],
+    warehouseCondition: {
+      warehouseArea: String,
+      materialsStocked: String,
+      labMarking: String,
+      warehouseClean: String,
+      facilitiesAdvanced: String,
+      warehouseCapacity: String
+    },
+    warehousePhotos: {
+      rawMaterials: String,
+      finishedProducts: String
+    },
+    sampleRoomCondition: {
+      sampleRoomClean: String,
+      sampleDisposed: String
+    },
+    publicPowerSupply: {
+      publicPowerConnected: String,
+      frequentPowerOutage: String,
+      dieselGenerator: String,
+      generatorCount: String
+    },
+    shipmentCapabilities: {
+      shippingMeetsRequirement: String,
+      containersLoadedTogether: String,
+      protectionBadWeather: String,
+      mechanicalLoadingDisposed: String
+    },
+    shipmentPhotos: {
+      loadingPlace1: String,
+      loadingPlace2: String
+    },
+    part4Score: Number
+  },
+
   // Section 8: Machinery
   machinery: [
     { name: String, quantity: Number, condition: String }
