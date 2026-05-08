@@ -54,6 +54,26 @@ npm run dev
 ```
 The dashboard will be available on [http://localhost:5173](http://localhost:5173).
 
+## 🧪 Development (quick start)
+
+Run backend and frontend in separate terminals:
+
+```bash
+# Start backend (nodemon)
+npm --prefix backend run dev
+
+# Start frontend (Vite)
+npm --prefix frontend run dev
+```
+
+Run both together from the repository root (uses `concurrently`):
+
+```bash
+npm run dev:all
+```
+
+VS Code: open the Command Palette and run `Tasks: Run Task` → `Run Both (dev:all)` to start both servers inside the editor.
+
 ## 📄 Corporate Header Standards
 The generated report includes a unified single-table header containing:
 - Company Logo
