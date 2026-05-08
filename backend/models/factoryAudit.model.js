@@ -33,14 +33,6 @@ const FactoryAuditSchema = new mongoose.Schema({
   // Section 3: Remarks
   generalOverviewRemarks: [String],
   clientSpecialRemarks: [String],
-  suggestions: [String],
-
-  // Section 4: Special Requirements
-  specialRequirements: [
-    { requirement: String, result: String, remark: String }
-  ],
-  specialRequirementConclusion: String,
-
   // Part 1: Supplier Profile
   supplierProfile: {
     dateOfFoundation: String,
@@ -106,16 +98,6 @@ const FactoryAuditSchema = new mongoose.Schema({
       photos: [{ preview: String, label: String }]
     }
   ],
-
-  // Section 7: Production Capacity
-  productionCapacity: {
-    totalEmployees: Number,
-    productionStaff: Number,
-    qcStaff: Number,
-    monthlyCapacity: String,
-    weeklyCapacity: String,
-    leadTime: String
-  },
 
   // Part 3: Production lines / Capacity
   productionWorkflowPhotos: [{ preview: String, label: String }],
@@ -196,76 +178,95 @@ const FactoryAuditSchema = new mongoose.Schema({
   },
 
   part5: {
-    qcSystem: {
-      qcSystemAvailable: String,
-      qcPersonnelIndependent: String,
-      rawMaterialInspection: String,
-      inProcessInspection: String,
-      finalInspection: String,
-      qcRecordsMaintained: String
+    qualitySystemManagement: {
+      iso9001Status: String,
+      iso9001Comment: String,
+      internalQAManualStatus: String,
+      internalQAManualComment: String,
+      othersStatus: String,
+      othersComment: String,
+      qaStaffStatus: String,
+      qaStaffComment: String,
+      qaqcOffice: String,
+      qaqcChecking: String,
+      listCertificates: String
     },
-    testingEquipment: [{
-      equipmentName: String,
-      purpose: String,
-      calibrationDate: String,
-      status: String
-    }],
-    qaqcPhotos: {
-      qcDepartment: String,
-      testingProcess: String
+    inspectionTrackRecord: {
+      howOftenUpdated: String,
+      lastInspectionDate: String
+    },
+    qcStaffCount: Number,
+    onlineQC: {
+      isOnlineQC: String,
+      onlineQCManualAvailable: String,
+      onlineQCTestingEquipment: String,
+      onlineQCRecordsAvailable: String,
+      onlineQCRecord1: String,
+      onlineQCRecord2: String
+    },
+    finalQC: {
+      isFinalQC: String,
+      finalQCManualAvailable: String,
+      finalQCTestingEquipment: String,
+      finalQCRecordsAvailable: String,
+      finalQCLastResults: String
+    },
+    incomingQC: {
+      isIncomingQC: String,
+      incomingQCManualAvailable: String,
+      incomingQCTestingEquipment: String,
+      incomingQCRecordsAvailable: String,
+      rawMaterialQCRecord1: String,
+      rawMaterialQCRecord2: String
+    },
+    testEquipmentPhotos: {
+      testEquipment1: String,
+      testEquipment2: String
     },
     part5Score: Number
   },
 
-  // Section 8: Machinery
-  machinery: [
-    { name: String, quantity: Number, condition: String }
-  ],
-
-  // Section 9: Warehouse
-  warehouse: {
-    rawMaterials: String,
-    finishedGoods: String,
-    storageConditions: String
+  part6: {
+    rdSpecificStaffCount: Number,
+    rdSpecificFacilities: String,
+    sampleProductionProcess: String,
+    rdRecord: String,
+    approvalSampleLeadTime: String,
+    part6Score: Number
   },
 
-  // Section 10: Quality Control
-  qualityControl: {
-    qcManagement: String,
-    inspectionProcedures: String,
-    equipmentCalibration: String
-  },
-
-  // Section 11: R&D
-  researchDevelopment: {
-    rdStaff: Number,
-    rdCapabilities: String,
-    patents: String
-  },
-
-  // Section 12: Environment
-  environment: {
-    socialResponsibility: String,
-    environmentalProtection: String,
-    safetyConditions: String
-  },
-
-  // Section 13: Final Conclusion
-  conclusion: {
-    result: { type: String, enum: ["PASSED", "FAILED", "PENDING"], default: "PENDING" },
-    summary: String
-  },
-
-  // Photos
-  photos: [
-    {
-      id: String,
-      url: String,
-      key: String,
-      section: String,
+  part7: {
+    envManagement: {
+      iso14000Status: String,
+      iso14000Comment: String,
+      internalEnvStatus: String,
+      internalEnvComment: String,
+      envPolicyStatus: String,
+      envPolicyDescription: String,
+      envListCertificates: String
+    },
+    wastewaterReport: {
+      wastewaterStaffInCharge: String,
+      wastewaterPhoto1: String,
+      wastewaterPhoto2: String
+    },
+    controlTrackRecord: {
+      envControlRecordsStatus: String,
+      envUpdateFrequency: String,
+      envItemChecked: String,
+      envLastControlDate: String,
+      envFindings: String,
+      envStandard: String
+    },
+    preventiveActions: [{
+      actionDescription: String
+    }],
+    envPhotos: [{
+      photo: String,
       caption: String
-    }
-  ],
+    }],
+    part7Score: Number
+  },
 
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }

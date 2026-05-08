@@ -23,6 +23,7 @@ export const ENDPOINTS = {
   HEALTH: `${API_BASE_URL}/`,
   FACTORY_AUDIT: {
     BASE: `${API_BASE_URL}/api/factory-audit`,
-    GENERATE: (id) => `${API_BASE_URL}/api/factory-audit/${id}/generate`,
+    BY_ID: (id) => `${API_BASE_URL}/api/factory-audit/${encodeURIComponent(id)}`,
+    GENERATE: (id, format = "docx") => `${API_BASE_URL}/api/factory-audit/${encodeURIComponent(id)}/generate?format=${encodeURIComponent(format)}`,
   }
 };

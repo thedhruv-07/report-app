@@ -13,13 +13,13 @@ export const faSchema = {
   ],
   auditOverview: {
     sections: [
-      { id: "profile", label: "Supplier/Factory Profile", weight: 5 },
-      { id: "orgCharts", label: "Factory Organization Charts", weight: 3 },
-      { id: "lines", label: "Production Lines - Capacity", weight: 5 },
-      { id: "machinery", label: "Factory Facilities - machinery Conditions", weight: 5 },
-      { id: "qaqc", label: "Quality Assurance & Quality Control System", weight: 5 },
-      { id: "rd", label: "R&D – Sampling Capacity", weight: 3 },
-      { id: "environment", label: "Environment (optional)", weight: 3 },
+      { id: "profile", label: "Part 1: Supplier/Factory Profile", weight: 5 },
+      { id: "orgCharts", label: "Part 2: Factory Organization Charts", weight: 3 },
+      { id: "lines", label: "Part 3: Production Lines - Capacity", weight: 5 },
+      { id: "machinery", label: "Part 4: Factory Facilities - machinery Conditions", weight: 5 },
+      { id: "qaqc", label: "Part 5: Quality Assurance & Quality Control System", weight: 5 },
+      { id: "rd", label: "Part 6: R&D – Sampling Capacity", weight: 3 },
+      { id: "environment", label: "Part 7: Environment (optional)", weight: 3 },
     ]
   },
   supplierProfile: [
@@ -93,63 +93,6 @@ export const faSchema = {
     ],
     score: [
       { name: "part1Score", label: "Part 1 Score (1-10)", type: "number", min: 1, max: 10 }
-    ]
-  },
-  productionCapacity: [
-    { name: "totalEmployees", label: "Total Employees", type: "number" },
-    { name: "productionStaff", label: "Production Staff", type: "number" },
-    { name: "qcStaff", label: "QC Staff", type: "number" },
-    { name: "monthlyCapacity", label: "Monthly Capacity", type: "text" },
-    { name: "weeklyCapacity", label: "Weekly Capacity", type: "text" },
-    { name: "leadTime", label: "Lead Time", type: "text" },
-  ],
-  machineryTable: {
-    columns: [
-      { key: "name", label: "Machine Name", type: "text" },
-      { key: "quantity", label: "Quantity", type: "number" },
-      { key: "condition", label: "Condition", type: "text" },
-    ]
-  },
-  warehouse: [
-    { name: "rawMaterials", label: "Raw Materials Storage", type: "textarea" },
-    { name: "finishedGoods", label: "Finished Goods Storage", type: "textarea" },
-    { name: "storageConditions", label: "Storage Conditions", type: "textarea" },
-  ],
-  qualityControl: [
-    { name: "qcManagement", label: "QC Management", type: "textarea" },
-    { name: "inspectionProcedures", label: "Inspection Procedures", type: "textarea" },
-    { name: "equipmentCalibration", label: "Equipment Calibration", type: "textarea" },
-  ],
-  researchDevelopment: [
-    { name: "rdStaff", label: "R&D Staff Count", type: "number" },
-    { name: "rdCapabilities", label: "R&D Capabilities", type: "textarea" },
-    { name: "patents", label: "Patents / Innovations", type: "textarea" },
-  ],
-  environment: [
-    { name: "socialResponsibility", label: "Social Responsibility", type: "textarea" },
-    { name: "environmentalProtection", label: "Environmental Protection", type: "textarea" },
-    { name: "safetyConditions", label: "Safety Conditions", type: "textarea" },
-  ],
-  conclusion: [
-    { name: "result", label: "Audit Result", type: "select", options: ["PASSED", "FAILED", "PENDING"] },
-    { name: "summary", label: "Summary Statement", type: "textarea" },
-    { name: "conclusionPhoto", label: "Signature / Summary Photo", type: "photo" },
-  ],
-  specialRequirements: {
-    columns: [
-      { key: "requirement", label: "Requirement", type: "text" },
-      { key: "result", label: "Result", type: "text" },
-      { key: "remark", label: "Remark", type: "text" },
-    ]
-  },
-  photos: {
-    groups: [
-      { id: "generalPhotos", label: "General Photos" },
-      { id: "productionPhotos", label: "Production Line Photos" },
-      { id: "machineryPhotos", label: "Machinery Photos" },
-      { id: "warehousePhotos", label: "Warehouse Photos" },
-      { id: "qcPhotos", label: "QC Photos" },
-      { id: "environmentPhotos", label: "Environment & Safety Photos" },
     ]
   },
   part2: {
@@ -256,30 +199,125 @@ export const faSchema = {
     ]
   },
   part5: {
-    qcSystem: [
-      { name: "qcSystemAvailable", label: "Quality Assurance & Quality Control system available?", type: "radio", options: ["Yes", "No"] },
-      { name: "qcPersonnelIndependent", label: "QC personnel independent from production?", type: "radio", options: ["Yes", "No"] },
-      { name: "rawMaterialInspection", label: "Raw material inspection conducted?", type: "radio", options: ["Yes", "No"] },
-      { name: "inProcessInspection", label: "In-process quality control (IPQC) conducted?", type: "radio", options: ["Yes", "No"] },
-      { name: "finalInspection", label: "Final inspection conducted before shipment?", type: "radio", options: ["Yes", "No"] },
-      { name: "qcRecordsMaintained", label: "QC records maintained and retrievable?", type: "radio", options: ["Yes", "No"] },
+    qualitySystemManagement: [
+      { name: "iso9001Status", label: "Certificate: ISO 9001", type: "radio", options: ["Yes", "No"] },
+      { name: "iso9001Comment", label: "Comment", type: "textarea" },
+      { name: "internalQAManualStatus", label: "Internal QA manual", type: "radio", options: ["Yes", "No"] },
+      { name: "internalQAManualComment", label: "Comment", type: "textarea" },
+      { name: "othersStatus", label: "Others:", type: "radio", options: ["Yes", "No"] },
+      { name: "othersComment", label: "Comment", type: "textarea" },
+      { name: "qaStaffStatus", label: "QA staff", type: "radio", options: ["Yes", "No"] },
+      { name: "qaStaffComment", label: "Comment (QA: X, QC: Y)", type: "textarea" },
     ],
-    testingEquipment: {
-      id: "testingEquipment",
-      label: "Testing Equipment / Facilities",
-      columns: [
-        { name: "equipmentName", label: "Equipment Name", type: "text" },
-        { name: "purpose", label: "Purpose / Usage", type: "text" },
-        { name: "calibrationDate", label: "Last Calibration Date", type: "text" },
-        { name: "status", label: "Status (Working/Not Working)", type: "text" },
+    qualitySystemManagementPhotos: {
+      groups: [
+        { id: "qaqcOffice", label: "QA/QC office", limit: 1 },
+        { id: "qaqcChecking", label: "QA/QC checking", limit: 1 },
       ]
     },
-    qaqcPhotos: {
-      qcDepartment: { id: "qcDepartment", label: "QC Department / Testing Room", limit: 1 },
-      testingProcess: { id: "testingProcess", label: "Testing Process in action", limit: 1 },
+    certificatesList: [
+      { name: "listCertificates", label: "List of certificates available (with certification company details and dates)", type: "textarea" }
+    ],
+    inspectionTrackRecord: [
+      { name: "howOftenUpdated", label: "How often is it updated?", type: "text" },
+      { name: "lastInspectionDate", label: "Last inspection by QC company (date)", type: "date" },
+    ],
+    qcStaffCount: [
+      { name: "qcStaffCount", label: "QC staff count", type: "number" }
+    ],
+    onlineQC: [
+      { name: "isOnlineQC", label: "Is there on-line QC?", type: "radio", options: ["Yes", "No"] },
+      { name: "onlineQCManualAvailable", label: "QC manual available?", type: "radio", options: ["Yes", "No"] },
+      { name: "onlineQCTestingEquipment", label: "List of testing equipment", type: "textarea" },
+      { name: "onlineQCRecordsAvailable", label: "Record / reports available?", type: "radio", options: ["Yes", "No"] },
+    ],
+    onlineQCPhotos: {
+      groups: [
+        { id: "onlineQCRecord1", label: "On-Line QC Record", limit: 1 },
+        { id: "onlineQCRecord2", label: "On-Line QC Record", limit: 1 },
+      ]
+    },
+    finalQC: [
+      { name: "isFinalQC", label: "Is there Final QC?", type: "radio", options: ["Yes", "No"] },
+      { name: "finalQCManualAvailable", label: "QC manual available?", type: "radio", options: ["Yes", "No"] },
+      { name: "finalQCTestingEquipment", label: "List of testing equipment", type: "textarea" },
+      { name: "finalQCRecordsAvailable", label: "Record / reports available?", type: "radio", options: ["Yes", "No"] },
+      { name: "finalQCLastResults", label: "Last results / record", type: "radio", options: ["Yes", "No"] },
+    ],
+    incomingQC: [
+      { name: "isIncomingQC", label: "Is there an Incoming QC?", type: "radio", options: ["Yes", "No"] },
+      { name: "incomingQCManualAvailable", label: "QC manual available?", type: "radio", options: ["Yes", "No"] },
+      { name: "incomingQCTestingEquipment", label: "List of testing equipment", type: "textarea" },
+      { name: "incomingQCRecordsAvailable", label: "Record / reports available?", type: "radio", options: ["Yes", "No"] },
+    ],
+    incomingQCPhotos: {
+      groups: [
+        { id: "rawMaterialQCRecord1", label: "Raw Material QC record", limit: 1 },
+        { id: "rawMaterialQCRecord2", label: "Raw Material QC record", limit: 1 },
+      ]
+    },
+    testEquipmentPhotos: {
+      groups: [
+        { id: "testEquipment1", label: "Test Equipment", limit: 1 },
+        { id: "testEquipment2", label: "Test Equipment", limit: 1 },
+      ]
     },
     score: [
       { name: "part5Score", label: "Part 5 Score (1-10)", type: "number", min: 1, max: 10 }
+    ]
+  },
+  part6: {
+    rdFacilities: [
+      { name: "rdSpecificStaffCount", label: "Specific staff count:", type: "number" },
+      { name: "rdSpecificFacilities", label: "Specific facilities:", type: "text" },
+      { name: "sampleProductionProcess", label: "Sample Production Process Description", type: "textarea" },
+      { name: "rdRecord", label: "Record", type: "radio", options: ["Yes", "No"] },
+      { name: "approvalSampleLeadTime", label: "Approval sample lead time:", type: "text" },
+    ],
+    score: [
+      { name: "part6Score", label: "Part 6 Score (1-10)", type: "number", min: 1, max: 10 }
+    ]
+  },
+  part7: {
+    envManagement: [
+      { name: "iso14000Status", label: "ISO14000 series:", type: "radio", options: ["Yes", "No"] },
+      { name: "iso14000Comment", label: "Comment:", type: "text" },
+      { name: "internalEnvStatus", label: "Others:Internal Environment system", type: "radio", options: ["Yes", "No"] },
+      { name: "internalEnvComment", label: "Comment:", type: "text" },
+      { name: "envPolicyStatus", label: "Environment Policy Available", type: "radio", options: ["Yes", "No"] },
+      { name: "envPolicyDescription", label: "Description:", type: "text" },
+      { name: "envListCertificates", label: "List of certificates available", type: "textarea" },
+    ],
+    wastewaterReport: [
+      { name: "wastewaterStaffInCharge", label: "Staff in charge (name and mission)", type: "text" }
+    ],
+    wastewaterPhotos: {
+      groups: [
+        { id: "wastewaterPhoto1", label: "Wastewater test Report", limit: 1 },
+        { id: "wastewaterPhoto2", label: "Wastewater test Report", limit: 1 }
+      ]
+    },
+    controlTrackRecord: [
+      { name: "envControlRecordsStatus", label: "Control track record available?", type: "radio", options: ["Yes", "No"] },
+      { name: "envUpdateFrequency", label: "If yes, how often is it updated?", type: "radio", options: ["Yes", "No"] },
+      { name: "envItemChecked", label: "Item checked:", type: "text" },
+      { name: "envLastControlDate", label: "Last control date:", type: "text" },
+      { name: "envFindings", label: "Findings:", type: "text" },
+      { name: "envStandard", label: "Standard:", type: "text" },
+    ],
+    preventiveActions: {
+      columns: [
+        { key: "actionDescription", label: "Description of the action", type: "textarea" }
+      ]
+    },
+    envPhotos: {
+      columns: [
+        { name: "photo", label: "Photo", type: "photo" },
+        { name: "caption", label: "Caption", type: "text" }
+      ]
+    },
+    score: [
+      { name: "part7Score", label: "Part 7 Score (1-10)", type: "number", min: 1, max: 10 }
     ]
   }
 };
