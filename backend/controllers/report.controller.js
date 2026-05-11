@@ -506,10 +506,27 @@ const analyzePhoto = async (req, res) => {
   }
 };
 
+const getStats = async (req, res) => {
+  try {
+    const userId = req.user.id || req.user._id;
+    const total = await Report.countDocuments({ userId });
+    // For now, simulate active/completed split. 
+    // In a real app, you'd have a 'status' field.
+    const completed = total; 
+    const active = 0;
+    
+    res.json({ total, active, completed });
+  } catch (error) {
+    console.error("Get Stats Error:", error);
+    res.status(500).json({ error: "Failed to fetch stats" });
+  }
+};
+
 module.exports = {
   generateReport,
   getReports,
   getReportById,
   suggestText,
   analyzePhoto,
+  getStats,
 };

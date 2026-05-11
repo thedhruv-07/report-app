@@ -2,6 +2,8 @@ import { services } from "../shared/services";
 import ServiceCard from "../components/ServiceCard";
 import { FileText, Activity, CheckCircle, FilePlus } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
+import { ENDPOINTS } from "../config/api";
 
 const colorMap = {
   blue: { bg: "bg-blue-50/50", text: "text-blue-600", icon: "text-blue-500", border: "border-blue-100" },
@@ -13,6 +15,35 @@ export default function Dashboard() {
   // Simulating fetched data. Since this is an empty state, we start with null/empty.
   const [reportData, setReportData] = useState(null);
   const [recentReports, setRecentReports] = useState([]);
+  const { token } = useAuth();
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const statsRes = await fetch(ENDPOINTS.STATS, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (statsRes.ok) {
+          const stats = await statsRes.json();
+          setReportData(stats);
+        }
+
+        const reportsRes = await fetch(ENDPOINTS.REPORTS, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (reportsRes.ok) {
+          const data = await reportsRes.json();
+          setRecentReports(data.reports.slice(0, 5));
+        }
+      } catch (error) {
+        console.error("Dashboard fetch error:", error);
+      }
+    };
+
+    if (token) {
+      fetchDashboardData();
+    }
+  }, [token]);
 
   const stats = [
     { label: "Total Reports", value: reportData ? reportData.total : "—", icon: FileText, color: "blue" },

@@ -7,5 +7,6 @@ const { authMiddleware } = require("../middleware/auth.middleware");
 router.post("/generate", authMiddleware, upload.array("images"), reportController.generateReport);
 router.get("/reports", authMiddleware, reportController.getReports);
 router.get("/reports/:id", authMiddleware, reportController.getReportById);
+router.get("/stats", authMiddleware, reportController.getStats);
 
 module.exports = router;
