@@ -5,8 +5,8 @@ const upload = require("../middleware/upload.middleware");
 const { authMiddleware } = require("../middleware/auth.middleware");
 
 router.post("/generate", authMiddleware, upload.array("images"), reportController.generateReport);
-router.get("/reports", authMiddleware, reportController.getReports);
-router.get("/reports/:id", authMiddleware, reportController.getReportById);
+router.get("/", authMiddleware, reportController.getReports);
 router.get("/stats", authMiddleware, reportController.getStats);
+router.get("/:id", authMiddleware, reportController.getReportById);
 
 module.exports = router;
