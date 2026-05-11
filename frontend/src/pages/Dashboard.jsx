@@ -112,7 +112,35 @@ export default function Dashboard() {
 
         {recentReports.length > 0 ? (
           <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-            {/* Real reports would map here. For now, it's just the empty state. */}
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Report Details</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Product</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {recentReports.map((report) => (
+                  <tr key={report._id} className="hover:bg-slate-50 transition-colors group cursor-pointer">
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-800">{report.generalInfo?.client || "No Client"}</span>
+                        <span className="text-[11px] text-slate-400">ID: {report._id.slice(-8).toUpperCase()}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-slate-600">{report.generalInfo?.productName || "General Report"}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-slate-500">
+                        {new Date(report.createdAt).toLocaleDateString()}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center bg-white border border-dashed border-slate-300 rounded-2xl py-16 px-6 text-center shadow-sm">
