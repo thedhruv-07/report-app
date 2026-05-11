@@ -64,10 +64,6 @@ const createQtyCell = (text, options = {}) => {
     cellOptions.columnSpan = colSpan;
   }
 
-  if (typeof rowSpan === "number" && rowSpan > 1) {
-    cellOptions.rowSpan = rowSpan;
-  }
-
   return new TableCell(cellOptions);
 };
 

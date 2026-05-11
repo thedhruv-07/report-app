@@ -916,7 +916,7 @@ export default function FactoryAudit() {
   const currentStep = steps.find(s => s.id === step);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#f8fafc", fontFamily: "'Inter', sans-serif" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#f8fafc", fontFamily: "Arial, Helvetica, sans-serif" }}>
       <div style={{ background: colors.surface, borderBottom: `1px solid ${colors.border}`, padding: "10px", display: "flex", overflowX: "auto", gap: "8px", scrollbarWidth: "none" }}>
         {steps.map(s => (
           <button 

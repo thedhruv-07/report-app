@@ -16,7 +16,7 @@ export default function ProductConformityTable({ formData, onChange }) {
   };
 
   return (
-    <div style={{ marginBottom: "30px", border: `1px solid ${colors.border}`, overflow: "hidden", fontFamily: "'Inter', sans-serif", fontSize: "13px" }}>
+    <div style={{ marginBottom: "30px", border: `1px solid ${colors.border}`, overflow: "hidden", fontFamily: "Arial, Helvetica, sans-serif", fontSize: "13px" }}>
       {/* Title */}
       <div style={{ padding: "8px", background: colors.lightGray, borderBottom: `1px solid ${colors.border}` }}>
         <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "bold", color: "#1F4E79" }}>B. PRODUCT CONFORMITY</h3>

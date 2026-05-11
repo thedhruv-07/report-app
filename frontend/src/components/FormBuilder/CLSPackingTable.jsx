@@ -48,7 +48,7 @@ export default function CLSPackingTable({ formData, onChange }) {
   const inputStyle = { width: "100%", border: "none", outline: "none", background: "transparent", fontSize: "12px", textAlign: "center" };
 
   return (
-    <div style={{ marginBottom: "30px", border: `1px solid ${colors.border}`, overflow: "hidden", fontFamily: "'Inter', sans-serif", fontSize: "13px" }}>
+    <div style={{ marginBottom: "30px", border: `1px solid ${colors.border}`, overflow: "hidden", fontFamily: "Arial, Helvetica, sans-serif", fontSize: "13px" }}>
       {/* Header */}
       <div style={{ padding: "8px", background: sectionBg, borderBottom: `1px solid ${colors.border}` }}>
         <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "bold", color: headerColor }}>C. PACKING</h3>

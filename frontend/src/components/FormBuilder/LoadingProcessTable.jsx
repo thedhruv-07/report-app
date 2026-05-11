@@ -11,7 +11,7 @@ export default function LoadingProcessTable({ formData, onChange }) {
     width: "100%",
     borderCollapse: "collapse",
     border: "1px solid #999",
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: "Arial, Helvetica, sans-serif",
     fontSize: "12px",
     marginBottom: "20px"
   };

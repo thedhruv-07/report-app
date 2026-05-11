@@ -10,7 +10,7 @@ export default function AuthLayout({ children, title, subtitle }) {
       justifyContent: "center",
       background: colors.background,
       padding: "20px",
-      fontFamily: "'Inter', sans-serif"
+      fontFamily: "Arial, Helvetica, sans-serif"
     }}>
       <div style={{
         width: "100%",

@@ -18,7 +18,7 @@
   --surface: #ffffff;
   --border: #e2e8f0;
 
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

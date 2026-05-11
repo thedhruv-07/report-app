@@ -294,7 +294,7 @@ function App() {
     const styleTag = document.createElement("style");
     styleTag.innerHTML = `
       * {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-family: Arial, Helvetica, sans-serif;
       }
 
       body {
@@ -771,7 +771,7 @@ function App() {
       width: "100%",
       overflow: "hidden",
       background: "#f8fafc",
-      fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+      fontFamily: "Arial, Helvetica, sans-serif",
       boxSizing: "border-box",
       position: "relative"
     }}>
