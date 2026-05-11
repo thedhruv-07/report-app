@@ -1,2 +1,5 @@
-# Netlify Configuration
-# Headers removed to resolve postMessage block and console errors
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cross-Origin-Opener-Policy = "unsafe-none"
+    Cross-Origin-Embedder-Policy = "unsafe-none"
