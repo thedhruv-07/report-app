@@ -9,6 +9,7 @@ export default function Navbar({ onToggleSidebar }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -25,8 +26,12 @@ export default function Navbar({ onToggleSidebar }) {
     ? user.name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)
     : "U";
 
-  const handleLogout = () => {
+  const handleLogoutClick = () => {
     setDropdownOpen(false);
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
     logout();
     navigate("/login");
   };
@@ -106,12 +111,52 @@ export default function Navbar({ onToggleSidebar }) {
             <div className="h-px bg-slate-100 my-1 mx-2" />
             
             <button
-              onClick={handleLogout}
+              onClick={handleLogoutClick}
               className="w-[calc(100%-16px)] mx-auto flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
             >
               <LogOut className="w-4 h-4" />
               Log out
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Professional Logout Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
+            onClick={() => setShowLogoutModal(false)}
+          />
+          
+          {/* Modal Content */}
+          <div className="relative bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-sm p-8 transform transition-all animate-in fade-in zoom-in duration-200">
+            <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <LogOut className="w-8 h-8 text-red-500" />
+            </div>
+            
+            <h3 className="text-xl font-bold text-slate-800 text-center mb-2">
+              Ready to leave?
+            </h3>
+            <p className="text-slate-500 text-center text-sm mb-8 leading-relaxed">
+              Are you sure you want to log out? You will need to sign in again to access your reports.
+            </p>
+            
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={confirmLogout}
+                className="w-full py-3.5 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-red-200 transition-all active:scale-[0.98]"
+              >
+                Log Out
+              </button>
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="w-full py-3.5 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-2xl font-bold text-sm transition-all"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
