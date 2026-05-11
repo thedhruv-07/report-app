@@ -48,7 +48,7 @@ function createConclusionTable(data, isCls = false) {
     return new Table({
       width: { size: 100, type: "pct" },
       rows: [
-        new TableRow({ children: [new TableCell({ columnSpan: 1, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "IV. CONCLUSION", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+        new TableRow({ children: [new TableCell({ columnSpan: 1, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "IV. CONCLUSION", bold: true, size: 22, color: "1F4E79", font: "Arial" })] })] })] }),
         new TableRow({
           children: [
             new TableCell({
@@ -471,7 +471,7 @@ async function createReportContent(data, uploadedFiles) {
           shading: { fill: "FFFFFF" },
           borders: tableBorders(),
           children: [new Paragraph({
-            children: [new TextRun({ text: serviceTitle, bold: true, size: 28, color: "1F4E79" })],
+            children: [new TextRun({ text: serviceTitle, bold: true, size: 28, color: "1F4E79", font: "Arial" })],
             alignment: "center",
             spacing: { before: 120, after: 120 }
           })]
@@ -486,20 +486,20 @@ async function createReportContent(data, uploadedFiles) {
           shading: { fill: "E9ECEF" },
           borders: tableBorders(),
           children: [new Paragraph({
-            children: [new TextRun({ text: "I. GENERAL INFORMATION", bold: true, size: 22, color: "1F4E79" })],
+            children: [new TextRun({ text: "I. GENERAL INFORMATION", bold: true, size: 22, color: "1F4E79", font: "Arial" })],
             alignment: "left",
             spacing: { before: 80, after: 80 }
           })]
         })
       ]
     }),
-    // First Data Row with Photo (rowSpan)
+    // First Data Row with Photo (verticalMerge)
     new TableRow({
       children: [
         createQtyCell(generalData[0][0], { bold: true, align: "left", shaded: true, width: { size: 25, type: "pct" }, spacing: { before: 60, after: 60 } }),
         createQtyCell(blankIfEmpty(generalData[0][1]), { align: "left", width: { size: 35, type: "pct" }, spacing: { before: 60, after: 60 } }),
         new TableCell({
-          rowSpan: generalData.length,
+          verticalMerge: VerticalMergeType.RESTART,
           width: { size: 40, type: "pct" },
           borders: tableBorders(),
           verticalAlign: "center",
@@ -512,7 +512,12 @@ async function createReportContent(data, uploadedFiles) {
       new TableRow({
         children: [
           createQtyCell(label, { bold: true, align: "left", shaded: true, width: { size: 25, type: "pct" }, spacing: { before: 60, after: 60 } }),
-          createQtyCell(blankIfEmpty(val), { align: "left", width: { size: 35, type: "pct" }, spacing: { before: 60, after: 60 } })
+          createQtyCell(blankIfEmpty(val), { align: "left", width: { size: 35, type: "pct" }, spacing: { before: 60, after: 60 } }),
+          new TableCell({
+            verticalMerge: VerticalMergeType.CONTINUE,
+            borders: tableBorders(),
+            children: []
+          })
         ]
       })
     )
@@ -540,7 +545,7 @@ async function createReportContent(data, uploadedFiles) {
   ];
 
   const summaryRows = [
-    new TableRow({ children: [new TableCell({ columnSpan: 5, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "II. INSPECTION SUMMARY", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+    new TableRow({ children: [new TableCell({ columnSpan: 5, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "II. INSPECTION SUMMARY", bold: true, size: 22, color: "1F4E79", font: "Arial" })] })] })] }),
     new TableRow({
       children: [
         createQtyCell("", { shading: { fill: "E9ECEF" }, width: { size: 30, type: "pct" } }),
@@ -1126,7 +1131,7 @@ async function createReportContent(data, uploadedFiles) {
       // Sub-headers Row 1
       new TableRow({
         children: [
-          new TableCell({ rowSpan: 2, borders: tableBorders(), shading: { fill: "F2F2F2" }, children: [new Paragraph({ children: [new TextRun({ text: "Item No.", bold: true })], alignment: "center" })] }),
+          new TableCell({ verticalMerge: VerticalMergeType.RESTART, borders: tableBorders(), shading: { fill: "F2F2F2" }, children: [new Paragraph({ children: [new TextRun({ text: "Item No.", bold: true, font: "Arial" })], alignment: "center" })] }),
           createQtyCell("Qty / Carton", { bold: true, colSpan: 2, shaded: true }),
           createQtyCell("Carton Size L×W×H (cm)", { bold: true, colSpan: 2, shaded: true }),
           createQtyCell("Gross Weight (KG)", { bold: true, colSpan: 2, shaded: true }),
@@ -1136,6 +1141,7 @@ async function createReportContent(data, uploadedFiles) {
       // Sub-headers Row 2
       new TableRow({
         children: [
+          new TableCell({ verticalMerge: VerticalMergeType.CONTINUE, borders: tableBorders(), shading: { fill: "F2F2F2" }, children: [] }),
           createQtyCell("Marking", { shaded: true }), createQtyCell("Actual", { shaded: true }),
           createQtyCell("Marking", { shaded: true }), createQtyCell("Actual", { shaded: true }),
           createQtyCell("Marking", { shaded: true }), createQtyCell("Actual", { shaded: true }),
@@ -1474,7 +1480,7 @@ function createHighFidelityQuantityTable(data) {
           columnSpan: 2,
           shading: { fill: "E9ECEF" },
           borders: tableBorders(),
-          children: [new Paragraph({ children: [new TextRun({ text: "A. QUANTITY", bold: true, size: 22, color: "1F4E79" })] })]
+          children: [new Paragraph({ children: [new TextRun({ text: "A. QUANTITY", bold: true, size: 22, color: "1F4E79", font: "Arial" })] })]
         }),
         new TableCell({
           columnSpan: 5,
@@ -1487,11 +1493,11 @@ function createHighFidelityQuantityTable(data) {
     // Sub-header Row 1 (Main categories)
     new TableRow({
       children: [
-        new TableCell({ verticalMerge: VerticalMergeType.RESTART, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "P.O.", bold: true })], alignment: "center" })] }),
-        new TableCell({ verticalMerge: VerticalMergeType.RESTART, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Item", bold: true })], alignment: "center" })] }),
-        new TableCell({ columnSpan: 2, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Order Quantity", bold: true })], alignment: "center" })] }),
-        new TableCell({ columnSpan: 2, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Loaded Quantity", bold: true })], alignment: "center" })] }),
-        new TableCell({ verticalMerge: VerticalMergeType.RESTART, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Cartons Remain (After Loading)", bold: true })], alignment: "center" })] }),
+        new TableCell({ verticalMerge: VerticalMergeType.RESTART, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "P.O.", bold: true, font: "Arial" })], alignment: "center" })] }),
+        new TableCell({ verticalMerge: VerticalMergeType.RESTART, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Item", bold: true, font: "Arial" })], alignment: "center" })] }),
+        new TableCell({ columnSpan: 2, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Order Quantity", bold: true, font: "Arial" })], alignment: "center" })] }),
+        new TableCell({ columnSpan: 2, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Loaded Quantity", bold: true, font: "Arial" })], alignment: "center" })] }),
+        new TableCell({ verticalMerge: VerticalMergeType.RESTART, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Cartons Remain (After Loading)", bold: true, font: "Arial" })], alignment: "center" })] }),
       ]
     }),
     // Sub-header Row 2 (Sub categories)
@@ -1716,7 +1722,7 @@ function createProductConformityTable(data) {
           shading: { fill: "E9ECEF" },
           borders: tableBorders(),
           children: [new Paragraph({
-            children: [new TextRun({ text: "B. PRODUCT CONFORMITY", bold: true, size: 22, color: "1F4E79" })],
+            children: [new TextRun({ text: "B. PRODUCT CONFORMITY", bold: true, size: 22, color: "1F4E79", font: "Arial" })],
             alignment: "left"
           })]
         })
@@ -1870,7 +1876,7 @@ function createCLSPackingTable(data) {
           columnSpan: 8,
           shading: { fill: "E9ECEF" },
           borders: tableBorders(),
-          children: [new Paragraph({ children: [new TextRun({ text: "C. PACKING", bold: true, size: 22, color: "1F4E79" })] })]
+          children: [new Paragraph({ children: [new TextRun({ text: "C. PACKING", bold: true, size: 22, color: "1F4E79", font: "Arial" })] })]
         })
       ]
     }),
@@ -1880,7 +1886,7 @@ function createCLSPackingTable(data) {
         new TableCell({
           columnSpan: 6,
           borders: tableBorders(),
-          children: [new Paragraph({ children: [new TextRun({ text: "Package Details", bold: true })] })]
+          children: [new Paragraph({ children: [new TextRun({ text: "Package Details", bold: true, font: "Arial" })] })]
         }),
         new TableCell({
           columnSpan: 2,
@@ -1892,22 +1898,24 @@ function createCLSPackingTable(data) {
     // Sub-headers Row 1
     new TableRow({
       children: [
-        new TableCell({ rowSpan: 2, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Item No.", bold: true })], alignment: "center" })] }),
-        new TableCell({ columnSpan: 2, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Qty / Carton", bold: true })], alignment: "center" })] }),
-        new TableCell({ columnSpan: 2, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Qty / Inner Box", bold: true })], alignment: "center" })] }),
-        new TableCell({ columnSpan: 2, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Gross Weight (KG)", bold: true })], alignment: "center" })] }),
-        new TableCell({ rowSpan: 2, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Carton Size\n(L x W x H, cm)", bold: true })], alignment: "center" })] }),
+        new TableCell({ verticalMerge: VerticalMergeType.RESTART, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Item No.", bold: true, font: "Arial" })], alignment: "center" })] }),
+        new TableCell({ columnSpan: 2, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Qty / Carton", bold: true, font: "Arial" })], alignment: "center" })] }),
+        new TableCell({ columnSpan: 2, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Qty / Inner Box", bold: true, font: "Arial" })], alignment: "center" })] }),
+        new TableCell({ columnSpan: 2, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Gross Weight (KG)", bold: true, font: "Arial" })], alignment: "center" })] }),
+        new TableCell({ verticalMerge: VerticalMergeType.RESTART, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Carton Size\n(L x W x H, cm)", bold: true, font: "Arial" })], alignment: "center" })] }),
       ]
     }),
     // Sub-headers Row 2
     new TableRow({
       children: [
+        new TableCell({ verticalMerge: VerticalMergeType.CONTINUE, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [] }),
         createQtyCell("Marking", { bold: true, shaded: true }),
         createQtyCell("Actual", { bold: true, shaded: true }),
         createQtyCell("Marking", { bold: true, shaded: true }),
         createQtyCell("Actual", { bold: true, shaded: true }),
         createQtyCell("Marking", { bold: true, shaded: true }),
         createQtyCell("Actual", { bold: true, shaded: true }),
+        new TableCell({ verticalMerge: VerticalMergeType.CONTINUE, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [] }),
       ]
     }),
     // Dynamic packing items
@@ -2059,210 +2067,157 @@ function createCLSLoadingProcessTable(data) {
   const loadingCheck = Array.isArray(data.loadingCheck) ? data.loadingCheck : [];
   const containerClosing = Array.isArray(data.containerClosing) ? data.containerClosing : [];
   
-  const loadingAreaPhotos = (data.reportPhotoGroups || []).find(g => g.description?.toLowerCase().includes("loading area"))?.photos || [];
-  const warehousePhotos = (data.reportPhotoGroups || []).find(g => g.description?.toLowerCase().includes("warehouse"))?.photos || [];
-  const emptyPhotos = (data.reportPhotoGroups || []).find(g => g.description?.toLowerCase().includes("empty container"))?.photos || [];
-  const truckPhotos = (data.reportPhotoGroups || []).find(g => g.description?.toLowerCase().includes("truck check"))?.photos || [];
-  const loadingPhotos = (data.reportPhotoGroups || []).find(g => g.description?.toLowerCase().includes("loading process photos"))?.photos || [];
-  const closingPhotos = (data.reportPhotoGroups || []).find(g => g.description?.toLowerCase().includes("container closing photos"))?.photos || [];
-  const containerSealPhotos = (data.reportPhotoGroups || []).find(g => g.description?.toLowerCase().includes("container & seal photos"))?.photos || [];
-
-  const children = [
-    // Section Header
-    new Table({
-      width: { size: 100, type: "pct" },
-      rows: [
-        new TableRow({
-          children: [
-            new TableCell({
-              shading: { fill: "E9ECEF" },
-              borders: tableBorders(),
-              children: [new Paragraph({ children: [new TextRun({ text: "D. LOADING PROCESS", bold: true, size: 22, color: "1F4E79" })] })]
-            })
-          ]
+  const rows = [
+    // 1. Section Header
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 6,
+          shading: { fill: "E9ECEF" },
+          borders: tableBorders(),
+          children: [new Paragraph({ children: [new TextRun({ text: "D. LOADING PROCESS", bold: true, size: 22, color: "1F4E79", font: "Arial" })] })]
         })
       ]
     }),
-    new Paragraph({ children: [], spacing: { before: 100 } }),
 
-    // Container Table
-    new Table({
-      width: { size: 100, type: "pct" },
-      rows: [
-        new TableRow({
-          children: [
-            new TableCell({ columnSpan: 6, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Container:", bold: true })] })] })
-          ]
-        }),
-        new TableRow({
-          children: [
-            new TableCell({ rowSpan: 2, verticalMerge: "restart", shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Container Type", bold: true })], alignment: "center" })] }),
-            new TableCell({ rowSpan: 2, verticalMerge: "restart", shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Container No.", bold: true })], alignment: "center" })] }),
-            new TableCell({ rowSpan: 2, verticalMerge: "restart", shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Seal No.", bold: true })], alignment: "center" })] }),
-            new TableCell({ rowSpan: 2, verticalMerge: "restart", shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Seal No. (AV) If used", bold: true })], alignment: "center" })] }),
-            new TableCell({ columnSpan: 2, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Loaded Cargo", bold: true })], alignment: "center" })] }),
-          ]
-        }),
-        new TableRow({
-          children: [
-            new TableCell({ verticalMerge: "continue", shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [] }),
-            new TableCell({ verticalMerge: "continue", shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [] }),
-            new TableCell({ verticalMerge: "continue", shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [] }),
-            new TableCell({ verticalMerge: "continue", shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [] }),
-            createQtyCell("Item No.", { bold: true, shaded: true }),
-            createQtyCell("Loaded Carton", { bold: true, shaded: true }),
-          ]
-        }),
-        new TableRow({
-          children: [
-            createQtyCell(data.containerType || "/"),
-            createQtyCell(data.containerNo || "/"),
-            createQtyCell(data.sealNo || "/"),
-            createQtyCell(data.avSealNo || "/"),
-            createQtyCell(data.cargoBreakdown || "/"),
-            createQtyCell(data.loadedCarton || "/"),
-          ]
-        }),
+    // 2. Container Sub-section
+    new TableRow({
+      children: [
+        new TableCell({ columnSpan: 6, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Container:", bold: true, font: "Arial" })] })] })
       ]
     }),
-    new Paragraph({ children: [], spacing: { before: 100 } }),
-
-    // Loading Condition Table
-    new Table({
-      width: { size: 100, type: "pct" },
-      rows: [
-        new TableRow({
-          children: [
-            new TableCell({ columnSpan: 2, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Loading Condition", bold: true })] })] })
-          ]
-        }),
-        ...[
-          ["Loading Location:", data.location],
-          ["Weather:", data.weather],
-          ["Sheltered:", data.shelter],
-          ["Start Time:", data.loadingStartTime],
-          ["End Time:", data.loadingEndTime]
-        ].map(([l, v]) => new TableRow({
-          children: [
-            createQtyCell(l, { bold: true, align: "right", width: { size: 30, type: "pct" } }),
-            createQtyCell(blankIfEmpty(v), { align: "left" })
-          ]
-        }))
+    new TableRow({
+      children: [
+        new TableCell({ verticalMerge: VerticalMergeType.RESTART, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Container Type", bold: true, font: "Arial" })], alignment: "center" })] }),
+        new TableCell({ verticalMerge: VerticalMergeType.RESTART, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Container No.", bold: true, font: "Arial" })], alignment: "center" })] }),
+        new TableCell({ verticalMerge: VerticalMergeType.RESTART, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Seal No.", bold: true, font: "Arial" })], alignment: "center" })] }),
+        new TableCell({ verticalMerge: VerticalMergeType.RESTART, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Seal No. (AV) If used", bold: true, font: "Arial" })], alignment: "center" })] }),
+        new TableCell({ columnSpan: 2, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Loaded Cargo", bold: true, font: "Arial" })], alignment: "center" })] }),
       ]
     }),
-    new Paragraph({ children: [], spacing: { before: 100 } }),
-
-    new Paragraph({ children: [], spacing: { before: 100 } }),
-
-    // Empty Container Check Table
-    new Table({
-      width: { size: 100, type: "pct" },
-      rows: [
-        new TableRow({
-          children: [
-            new TableCell({ columnSpan: 3, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Empty Container Check", bold: true })] })] })
-          ]
-        }),
-        new TableRow({
-          children: [
-            createQtyCell("No.", { bold: true, shaded: true, width: { size: 10, type: "pct" } }),
-            createQtyCell("Requirement conditions", { bold: true, shaded: true, width: { size: 70, type: "pct" } }),
-            createQtyCell("Result", { bold: true, shaded: true, width: { size: 20, type: "pct" } }),
-          ]
-        }),
-        ...containerCheck.map((c, i) => new TableRow({
-          children: [
-            createQtyCell(String(i + 1)),
-            createQtyCell(c.label || "/", { align: "left" }),
-            createQtyCell(c.result || "N/A", { color: String(c.result || "").toLowerCase().includes("pass") || String(c.result || "").toLowerCase() === "yes" ? "228B22" : "CC0000" })
-          ]
-        }))
+    new TableRow({
+      children: [
+        new TableCell({ verticalMerge: VerticalMergeType.CONTINUE, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [] }),
+        new TableCell({ verticalMerge: VerticalMergeType.CONTINUE, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [] }),
+        new TableCell({ verticalMerge: VerticalMergeType.CONTINUE, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [] }),
+        new TableCell({ verticalMerge: VerticalMergeType.CONTINUE, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [] }),
+        createQtyCell("Item No.", { bold: true, shaded: true }),
+        createQtyCell("Loaded Carton", { bold: true, shaded: true }),
       ]
     }),
-    new Paragraph({ children: [], spacing: { before: 100 } }),
-    new Paragraph({ children: [], spacing: { before: 100 } }),
-
-    // Loading Check Table
-    new Table({
-      width: { size: 100, type: "pct" },
-      rows: [
-        new TableRow({
-          children: [
-            new TableCell({ columnSpan: 4, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Loading Check - 1/4 Full, 1/2 Full, 3/4 Full, Full container", bold: true })] })] })
-          ]
-        }),
-        new TableRow({
-          children: [
-            createQtyCell("No.", { bold: true, shaded: true, width: { size: 8, type: "pct" } }),
-            createQtyCell("Condition", { bold: true, shaded: true, width: { size: 52, type: "pct" } }),
-            createQtyCell("Result", { bold: true, shaded: true, width: { size: 15, type: "pct" } }),
-            createQtyCell("Findings and comments", { bold: true, shaded: true, width: { size: 25, type: "pct" } }),
-          ]
-        }),
-        ...loadingCheck.map((c, i) => new TableRow({
-          children: [
-            createQtyCell(String(i + 1)),
-            createQtyCell(c.label || "/", { align: "left" }),
-            createQtyCell(c.result || "N/A", { color: String(c.result || "").toLowerCase().includes("pass") || String(c.result || "").toLowerCase() === "yes" ? "228B22" : "CC0000" }),
-            createQtyCell(c.finding || "/")
-          ]
-        }))
+    new TableRow({
+      children: [
+        createQtyCell(data.containerType || "/"),
+        createQtyCell(data.containerNo || "/"),
+        createQtyCell(data.sealNo || "/"),
+        createQtyCell(data.avSealNo || "/"),
+        createQtyCell(data.cargoBreakdown || "/"),
+        createQtyCell(data.loadedCarton || "/"),
       ]
     }),
-    new Paragraph({ children: [], spacing: { before: 100 } }),
-    new Paragraph({ children: [], spacing: { before: 100 } }),
 
-    // Container Closing Table
-    new Table({
-      width: { size: 100, type: "pct" },
-      rows: [
-        new TableRow({
-          children: [
-            new TableCell({ columnSpan: 4, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Container Closing:", bold: true })] })] })
-          ]
-        }),
-        new TableRow({
-          children: [
-            createQtyCell("No.", { bold: true, shaded: true, width: { size: 8, type: "pct" } }),
-            createQtyCell("Condition", { bold: true, shaded: true, width: { size: 52, type: "pct" } }),
-            createQtyCell("Result", { bold: true, shaded: true, width: { size: 15, type: "pct" } }),
-            createQtyCell("Findings and comments", { bold: true, shaded: true, width: { size: 25, type: "pct" } }),
-          ]
-        }),
-        ...containerClosing.map((c, i) => new TableRow({
-          children: [
-            createQtyCell(String(i + 1)),
-            createQtyCell(c.label || "/", { align: "left" }),
-            createQtyCell(c.result || "N/A", { color: String(c.result || "").toLowerCase().includes("pass") || String(c.result || "").toLowerCase() === "yes" ? "228B22" : "CC0000" }),
-            createQtyCell(c.finding || "/")
-          ]
-        }))
+    // 3. Loading Condition Sub-section
+    new TableRow({
+      children: [
+        new TableCell({ columnSpan: 6, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Loading Condition", bold: true, font: "Arial" })] })] })
       ]
     }),
-    new Paragraph({ children: [], spacing: { before: 100 } }),
-    new Paragraph({ children: [], spacing: { before: 100 } }),
+    ...[
+      ["Loading Location:", data.location],
+      ["Weather:", data.weather],
+      ["Sheltered:", data.shelter],
+      ["Start Time:", data.loadingStartTime],
+      ["End Time:", data.loadingEndTime]
+    ].map(([l, v]) => new TableRow({
+      children: [
+        createQtyCell(l, { bold: true, align: "right", colSpan: 2 }),
+        createQtyCell(blankIfEmpty(v), { align: "left", colSpan: 4 })
+      ]
+    })),
 
-    // Result & Remark Table
-    new Table({
-      width: { size: 100, type: "pct" },
-      rows: [
-        new TableRow({
-          children: [
-            createQtyCell("Result:", { bold: true, width: { size: 15, type: "pct" }, shaded: true }),
-            createQtyCell(data.loadingProcessResult || "Passed", { align: "left", bold: true, color: String(data.loadingProcessResult || "").toLowerCase().includes("fail") ? "CC0000" : "228B22" })
-          ]
-        }),
-        new TableRow({
-          children: [
-            createQtyCell("Remark:", { bold: true, width: { size: 15, type: "pct" }, shaded: true }),
-            createQtyCell(data.remarks_loading || "N/A", { align: "left" })
-          ]
-        })
+    // 4. Empty Container Check Sub-section
+    new TableRow({
+      children: [
+        new TableCell({ columnSpan: 6, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Empty Container Check", bold: true, font: "Arial" })] })] })
+      ]
+    }),
+    new TableRow({
+      children: [
+        createQtyCell("No.", { bold: true, shaded: true }),
+        createQtyCell("Requirement conditions", { bold: true, shaded: true, colSpan: 4 }),
+        createQtyCell("Result", { bold: true, shaded: true }),
+      ]
+    }),
+    ...containerCheck.map((c, i) => new TableRow({
+      children: [
+        createQtyCell(String(i + 1)),
+        createQtyCell(c.label || "/", { align: "left", colSpan: 4 }),
+        createQtyCell(c.result || "N/A", { color: String(c.result || "").toLowerCase().includes("pass") || String(c.result || "").toLowerCase() === "yes" ? "228B22" : "CC0000" })
+      ]
+    })),
+
+    // 5. Loading Check Sub-section
+    new TableRow({
+      children: [
+        new TableCell({ columnSpan: 6, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Loading Check - 1/4 Full, 1/2 Full, 3/4 Full, Full container", bold: true, font: "Arial" })] })] })
+      ]
+    }),
+    new TableRow({
+      children: [
+        createQtyCell("No.", { bold: true, shaded: true }),
+        createQtyCell("Condition", { bold: true, shaded: true, colSpan: 3 }),
+        createQtyCell("Result", { bold: true, shaded: true }),
+        createQtyCell("Findings and comments", { bold: true, shaded: true }),
+      ]
+    }),
+    ...loadingCheck.map((c, i) => new TableRow({
+      children: [
+        createQtyCell(String(i + 1)),
+        createQtyCell(c.label || "/", { align: "left", colSpan: 3 }),
+        createQtyCell(c.result || "N/A", { color: String(c.result || "").toLowerCase().includes("pass") || String(c.result || "").toLowerCase() === "yes" ? "228B22" : "CC0000" }),
+        createQtyCell(c.finding || "/")
+      ]
+    })),
+
+    // 6. Container Closing Sub-section
+    new TableRow({
+      children: [
+        new TableCell({ columnSpan: 6, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Container Closing:", bold: true, font: "Arial" })] })] })
+      ]
+    }),
+    new TableRow({
+      children: [
+        createQtyCell("No.", { bold: true, shaded: true }),
+        createQtyCell("Condition", { bold: true, shaded: true, colSpan: 3 }),
+        createQtyCell("Result", { bold: true, shaded: true }),
+        createQtyCell("Findings and comments", { bold: true, shaded: true }),
+      ]
+    }),
+    ...containerClosing.map((c, i) => new TableRow({
+      children: [
+        createQtyCell(String(i + 1)),
+        createQtyCell(c.label || "/", { align: "left", colSpan: 3 }),
+        createQtyCell(c.result || "N/A", { color: String(c.result || "").toLowerCase().includes("pass") || String(c.result || "").toLowerCase() === "yes" ? "228B22" : "CC0000" }),
+        createQtyCell(c.finding || "/")
+      ]
+    })),
+
+    // 7. Result & Remark Sub-section
+    new TableRow({
+      children: [
+        createQtyCell("Result:", { bold: true, colSpan: 2, shaded: true }),
+        createQtyCell(data.loadingProcessResult || "Passed", { align: "left", bold: true, colSpan: 4, color: String(data.loadingProcessResult || "").toLowerCase().includes("fail") ? "CC0000" : "228B22" })
+      ]
+    }),
+    new TableRow({
+      children: [
+        createQtyCell("Remark:", { bold: true, colSpan: 2, shaded: true }),
+        createQtyCell(data.remarks_loading || "N/A", { align: "left", colSpan: 4 })
       ]
     })
   ];
 
-  return children;
+  return [new Table({ width: { size: 100, type: "pct" }, rows })];
 }
 
 function createCLSClientRequirementTable(data) {
@@ -2280,7 +2235,7 @@ function createCLSClientRequirementTable(data) {
               columnSpan: 3,
               shading: { fill: "E9ECEF" },
               borders: tableBorders(),
-              children: [new Paragraph({ children: [new TextRun({ text: "E. CLIENT SPECIAL REQUIREMENT", bold: true, size: 22, color: "1F4E79" })] })]
+              children: [new Paragraph({ children: [new TextRun({ text: "E. CLIENT SPECIAL REQUIREMENT", bold: true, size: 22, color: "1F4E79", font: "Arial" })] })]
             })
           ]
         }),
@@ -2345,7 +2300,7 @@ function createCLSFinalPhotosSection(data) {
             new TableCell({
               shading: { fill: "E9ECEF" },
               borders: tableBorders(),
-              children: [new Paragraph({ children: [new TextRun({ text: "F. PHOTOS", bold: true, size: 22, color: "1F4E79" })] })]
+              children: [new Paragraph({ children: [new TextRun({ text: "F. PHOTOS", bold: true, size: 22, color: "1F4E79", font: "Arial" })] })]
             })
           ]
         })
@@ -2384,7 +2339,7 @@ function createCLSFinalPhotosSection(data) {
             new TableCell({
               shading: { fill: "F2F2F2" },
               borders: tableBorders(),
-              children: [new Paragraph({ children: [new TextRun({ text: g.description || "Photos", bold: true })] })]
+              children: [new Paragraph({ children: [new TextRun({ text: g.description || "Photos", bold: true, font: "Arial" })] })]
             })
           ]
         })
@@ -2415,7 +2370,7 @@ function createEndOfReportSection() {
               },
               children: [
                 new Paragraph({
-                  children: [new TextRun({ text: "END OF REPORT", bold: true, size: 28, color: "1F4E79" })],
+                  children: [new TextRun({ text: "END OF REPORT", bold: true, size: 28, color: "1F4E79", font: "Arial" })],
                   alignment: "center",
                   spacing: { before: 200, after: 200 }
                 })

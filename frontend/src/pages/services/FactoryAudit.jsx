@@ -50,6 +50,7 @@ export default function FactoryAudit() {
 
   const [showSaveToast, setShowSaveToast] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [reportDownloaded, setReportDownloaded] = useState(false);
   const [isPhotoProcessing, setIsPhotoProcessing] = useState(false);
   const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
   const [reportId, setReportId] = useState(() => localStorage.getItem("faReportId") || "");
@@ -538,6 +539,7 @@ export default function FactoryAudit() {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
+      setReportDownloaded(true);
     } catch (error) {
       console.error("Submission error:", error);
       alert("Error generating report. Please try again.");
@@ -579,6 +581,16 @@ export default function FactoryAudit() {
       setForm(initialFormState);
       setReportId("");
     }
+  };
+  
+  const clearFormAfterDownload = () => {
+    localStorage.removeItem("faStep");
+    localStorage.removeItem("faForm");
+    localStorage.removeItem("faReportId");
+    setStep(1);
+    setForm(initialFormState);
+    setReportId("");
+    setReportDownloaded(false);
   };
 
   const handleChange = useCallback((e) => {
@@ -870,6 +882,43 @@ export default function FactoryAudit() {
           <p style={{ color: colors.textMuted, fontSize: "16px", marginBottom: "40px", lineHeight: "1.6" }}>
             Your factory audit report has been successfully compiled. You can now download it in DOCX or PDF format.
           </p>
+
+          {reportDownloaded && (
+            <div
+              style={{
+                marginBottom: "30px",
+                padding: "14px 16px",
+                border: `1px solid ${colors.success}`,
+                borderRadius: "8px",
+                background: "rgba(16, 185, 129, 0.08)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "12px",
+                flexWrap: "wrap",
+              }}
+            >
+              <span style={{ color: colors.text, fontWeight: "600", fontSize: "14px" }}>
+                Report downloaded successfully. Ready to start a new one?
+              </span>
+              <button
+                type="button"
+                onClick={clearFormAfterDownload}
+                style={{
+                  padding: "8px 16px",
+                  background: colors.danger,
+                  border: "none",
+                  borderRadius: "6px",
+                  color: "#fff",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  fontSize: "13px",
+                }}
+              >
+                Clear Form
+              </button>
+            </div>
+          )}
           
           <div style={{ display: "flex", gap: "15px", justifyContent: "center", flexWrap: "wrap" }}>
             <button 

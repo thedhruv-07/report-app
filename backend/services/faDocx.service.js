@@ -66,6 +66,7 @@ const createSectionHeader = (text) => {
                     bold: true,
                     size: 22,
                     color: "1F4E79",
+                    font: "Arial",
                   }),
                 ],
                 alignment: AlignmentType.LEFT,
@@ -94,7 +95,7 @@ const createDataTable = (dataArray, photoData = null, title = null) => {
             borders: tableBorders(),
             children: [
               new Paragraph({
-                children: [new TextRun({ text: title, bold: true, size: 22, color: "1F4E79" })],
+                children: [new TextRun({ text: title, bold: true, size: 22, color: "1F4E79", font: "Arial" })],
                 alignment: AlignmentType.LEFT,
                 spacing: { before: 100, after: 100 },
               }),
@@ -212,7 +213,8 @@ exports.createFAHeaderTable = (data) => {
                 bold: true, 
                 size: 40, 
                 color: conclusion.toUpperCase().includes("PASS") ? "008000" : 
-                       conclusion.toUpperCase().includes("PENDING") ? "F39C12" : "FF0000"
+                       conclusion.toUpperCase().includes("PENDING") ? "F39C12" : "FF0000",
+                font: "Arial"
               })], 
               alignment: AlignmentType.CENTER 
             })],
@@ -272,7 +274,7 @@ exports.createFAContent = (data) => {
           borders: tableBorders(),
           children: [
             new Paragraph({
-              children: [new TextRun({ text: "FACTORY AUDIT REPORT", bold: true, size: 36, color: "1F4E79" })],
+              children: [new TextRun({ text: "FACTORY AUDIT REPORT", bold: true, size: 36, color: "1F4E79", font: "Arial" })],
               alignment: AlignmentType.CENTER,
               spacing: { before: 400, after: 120 },
             }),
@@ -289,7 +291,7 @@ exports.createFAContent = (data) => {
           borders: tableBorders(),
           children: [
             new Paragraph({
-              children: [new TextRun({ text: "GENERAL INFORMATION", bold: true, size: 24, color: "1F4E79" })],
+              children: [new TextRun({ text: "GENERAL INFORMATION", bold: true, size: 24, color: "1F4E79", font: "Arial" })],
               alignment: AlignmentType.LEFT,
               spacing: { before: 80, after: 80 },
             }),

@@ -753,7 +753,7 @@ function App() {
     { id: 10, label: "Marking & Labeling" },
     { id: 11, label: "Client Requirement" },
     { id: 12, label: "Photos" },
-    { id: 13, label: "Submit" },
+    { id: 13, label: "Finalize & Download" },
   ];
 
   const goToStep = (targetStep) => {

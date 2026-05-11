@@ -72,6 +72,17 @@ exports.generateReport = async (req, res) => {
     const { createFAContent, createFAHeaderTable } = require("../services/faDocx.service");
 
     const doc = new Document({
+      styles: {
+        default: {
+          document: {
+            run: {
+              font: "Arial",
+              size: 18, // 9pt
+              color: "000000",
+            },
+          },
+        },
+      },
       sections: [{
         headers: {
           default: new Header({

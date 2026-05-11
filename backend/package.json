@@ -20,16 +20,13 @@
     "docx": "^9.6.1",
     "dotenv": "^16.4.5",
     "express": "^5.2.1",
-    "fs": "^0.0.1-security",
     "google-auth-library": "^10.6.2",
     "groq-sdk": "^0.15.0",
     "jsonwebtoken": "^9.0.3",
     "libreoffice-convert": "^1.8.1",
     "mongoose": "^9.4.1",
     "multer": "^2.1.1",
-    "multer-s3": "^3.0.1",
-    "nodemailer": "^8.0.5",
-    "path": "^0.12.7"
+    "nodemailer": "^8.0.5"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
