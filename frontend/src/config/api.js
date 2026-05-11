@@ -3,7 +3,7 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localho
 export const ENDPOINTS = {
   BASE_URL: API_BASE_URL,
   GENERATE: `${API_BASE_URL}/api/generate`,
-  REPORTS: `${API_BASE_URL}/api/reports`,
+  REPORTS: `${API_BASE_URL}/api/reports/`,
   STATS: `${API_BASE_URL}/api/reports/stats`,
   SUGGEST: `${API_BASE_URL}/api/suggest`,
   AI_DESCRIBE: `${API_BASE_URL}/api/ai-describe`,
