@@ -8,7 +8,8 @@ const bcrypt = require("bcryptjs");
 async function changeAdmin() {
   try {
     await mongoose.connect(MONGO_URI);
-    console.log("Connected to database.\n");
+    console.log("Connected to database:", MONGO_URI.split('@')[1].split('/')[0]); // Log host part for safety
+
 
     const args = process.argv.slice(2);
     const targetEmail = args[0];
