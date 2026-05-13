@@ -30,9 +30,11 @@ app.use(morgan("dev"));
 // CORS
 const allowedOrigins = [
   "http://localhost:5173",
+  "http://localhost:5174",
   "https://absolute-veritas.netlify.app",
   process.env.FRONTEND_URL
 ].filter(Boolean);
+
 
 app.use(cors({
   origin: function (origin, callback) {
