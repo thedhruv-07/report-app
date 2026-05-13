@@ -534,7 +534,8 @@ export default function FactoryAudit() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `FactoryAudit_${form.client || "Report"}.${format}`;
+      const dateStr = new Date().toISOString().split('T')[0];
+      a.download = `FactoryAudit-Report-${dateStr}.${format}`;
       document.body.appendChild(a);
       a.click();
       a.remove();

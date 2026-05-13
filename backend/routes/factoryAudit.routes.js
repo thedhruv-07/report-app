@@ -1,15 +1,17 @@
 const express = require("express");
 const router = express.Router();
 const factoryAuditController = require("../controllers/factoryAudit.controller");
-const { authMiddleware } = require("../middleware/auth.middleware");
+const { authMiddleware, roleCheck } = require("../middleware/auth.middleware");
+const roles = ["admin", "inspector"];
 
 // All routes are protected
 router.use(authMiddleware);
 
 router.get("/", factoryAuditController.getReports);
-router.post("/", factoryAuditController.createReport);
+router.post("/", roleCheck(roles), factoryAuditController.createReport);
 router.get("/:id", factoryAuditController.getReportById);
-router.put("/:id", factoryAuditController.updateReport);
-router.get("/:id/generate", factoryAuditController.generateReport);
+router.put("/:id", roleCheck(roles), factoryAuditController.updateReport);
+router.get("/:id/generate", roleCheck(roles), factoryAuditController.generateReport);
+router.delete("/:id", factoryAuditController.deleteReport);
 
 module.exports = router;

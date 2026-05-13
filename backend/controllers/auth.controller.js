@@ -35,7 +35,7 @@ const signup = async (req, res) => {
 
     res.status(201).json({
       message: "Account created successfully",
-      user: { id: user.id, name: user.name, email: user.email },
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
       token,
     });
   } catch (error) {
@@ -77,7 +77,7 @@ const login = async (req, res) => {
 
     res.json({
       message: "Login successful",
-      user: { id: user.id, name: user.name, email: user.email },
+      user: { id: user._id.toString(), name: user.name, email: user.email, role: user.role },
       token,
     });
   } catch (error) {
@@ -139,7 +139,7 @@ const resetPassword = async (req, res) => {
 
     res.json({
       message: "Password reset successful",
-      user: { id: user.id, name: user.name, email: user.email },
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
       token: authToken,
     });
   } catch (error) {
@@ -178,7 +178,7 @@ const googleAuth = async (req, res) => {
 
     res.json({
       message: "Google authentication successful",
-      user: { id: user.id, name: user.name, email: user.email, picture },
+      user: { id: user.id, name: user.name, email: user.email, picture, role: user.role },
       token,
     });
   } catch (error) {
@@ -190,16 +190,52 @@ const googleAuth = async (req, res) => {
 // ─── Get Current User (protected) ──────────────────────────────────────────────
 const getMe = async (req, res) => {
   try {
-    const user = await UserModel.findById(req.user.id);
+    const user = await UserModel.User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
     res.json({
-      user: { id: user._id.toString(), name: user.name, email: user.email, provider: user.provider },
+      user: { id: user._id.toString(), name: user.name, email: user.email, provider: user.provider, role: user.role },
     });
   } catch (error) {
     console.error("GetMe error:", error);
     res.status(500).json({ error: "Failed to fetch user profile." });
+  }
+};
+
+// ─── Update Profile (protected) ──────────────────────────────────────────────
+const updateProfile = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    const user = await UserModel.User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (name) user.name = name;
+    if (email) {
+      const existingUser = await UserModel.User.findOne({ email: email.toLowerCase(), _id: { $ne: user._id } });
+      if (existingUser) {
+        return res.status(400).json({ error: "Email already in use" });
+      }
+      user.email = email.toLowerCase();
+    }
+    if (password) {
+      const bcrypt = require("bcryptjs");
+      user.password = await bcrypt.hash(password, 12);
+      user.provider = "local";
+    }
+
+    await user.save();
+
+    res.json({
+      message: "Profile updated successfully",
+      user: { id: user._id.toString(), name: user.name, email: user.email, role: user.role }
+    });
+  } catch (error) {
+    console.error("Update profile error:", error);
+    res.status(500).json({ error: "Failed to update profile" });
   }
 };
 
@@ -210,4 +246,5 @@ module.exports = {
   resetPassword,
   googleAuth,
   getMe,
+  updateProfile,
 };

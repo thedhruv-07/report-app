@@ -1,30 +1,41 @@
 const fs = require("fs");
 const Groq = require("groq-sdk");
+const pLimit = require("p-limit");
 const { MEMORY_PATH, GROQ_API_KEY } = require("../config/config");
 
 const groq = GROQ_API_KEY ? new Groq({ apiKey: GROQ_API_KEY }) : null;
 
+// In-memory cache for learning to avoid blocking sync file I/O
+let localMemoryCache = [];
+try {
+  if (fs.existsSync(MEMORY_PATH)) {
+    localMemoryCache = JSON.parse(fs.readFileSync(MEMORY_PATH, "utf8"));
+  }
+} catch (e) {
+  console.error("Failed to load AI memory:", e);
+}
+
 const learnFromReport = (data) => {
   try {
-    const memory = JSON.parse(fs.readFileSync(MEMORY_PATH, "utf8"));
     const newEntries = [];
     if (Array.isArray(data.remarks)) {
       data.remarks.forEach(r => { if (typeof r === "string" && r.trim().length > 10) newEntries.push(r.trim()); });
     }
+
     if (typeof data.recommendationText === "string" && data.recommendationText.trim().length > 10) {
       newEntries.push(data.recommendationText.trim());
     }
-    const updatedMemory = Array.from(new Set([...(Array.isArray(memory) ? memory : []), ...newEntries])).slice(-1000);
-    fs.writeFileSync(MEMORY_PATH, JSON.stringify(updatedMemory, null, 2));
+    localMemoryCache = Array.from(new Set([...localMemoryCache, ...newEntries])).slice(-1000);
+    // Background write to keep cache in sync with disk without blocking
+    fs.writeFile(MEMORY_PATH, JSON.stringify(localMemoryCache, null, 2), () => {});
   } catch (e) { console.error("Local Learning Error:", e); }
 };
 
 const getAISuggestion = async (context, partialText = "") => {
   try {
-    // 1. Local Memory Match (only if partialText exists)
+    // 1. Local Memory Match (using cache)
     if (partialText) {
-      const memory = JSON.parse(fs.readFileSync(MEMORY_PATH, "utf8"));
-      const localMatch = memory.find(m => m.toLowerCase().startsWith(partialText.toLowerCase()));
+      const localMatch = localMemoryCache.find(m => m.toLowerCase().startsWith(partialText.toLowerCase()));
       if (localMatch && typeof localMatch === "string") return localMatch.slice(partialText.length);
     }
 
@@ -127,82 +138,73 @@ const analyzeIndividualPhotos = async (imageObjects) => {
       return imageObjects.map(() => "Inspection photo.");
     }
 
-    const results = [];
-    console.log(`📸 Analyzing ${imageObjects.length} photos with smart fallbacks...`);
+    console.log(`📸 Analyzing ${imageObjects.length} photos with parallel processing (limit 3)...`);
+    const limit = pLimit(3); // Process 3 photos at a time to avoid timeouts and rate limits
 
-    for (let i = 0; i < imageObjects.length; i++) {
+    const tasks = imageObjects.map((img, i) => limit(async () => {
+      const { data, fileName } = img;
+      try {
+        // --- LAYER 1: TRUE VISION ANALYSIS (Llama 4 Scout) ---
         try {
-            if (i > 0) await new Promise(resolve => setTimeout(resolve, 800)); // Slightly more delay for Scout model
-
-            const { data, fileName } = imageObjects[i];
-            
-            // --- LAYER 1: TRUE VISION ANALYSIS (Llama 4 Scout) ---
-            try {
-                const response = await groq.chat.completions.create({
-                    messages: [
-                        {
-                            role: "user",
-                            content: [
-                                { 
-                                    type: "text", 
-                                    text: "Describe exactly what is shown in this inspection photo in one professional, technical sentence. Focus on the physical item or document visible. No conversational filler." 
-                                },
-                                { 
-                                    type: "image_url", 
-                                    image_url: { url: data.startsWith("data:") ? data : `data:image/jpeg;base64,${data}` } 
-                                },
-                            ],
-                        },
-                    ],
-                    model: "meta-llama/llama-4-scout-17b-16e-instruct",
-                    max_tokens: 150,
-                    temperature: 0.2,
-                });
-
-                const content = response.choices[0]?.message?.content?.trim();
-                if (content && content.length > 5) {
-                    results.push(content);
-                    console.log(`✨ Llama 4 Vision Success for ${fileName}: ${content}`);
-                    continue; // Skip to next photo
-                }
-            } catch (vErr) {
-                console.warn(`Vision AI (Llama 4) unavailable or failed for ${fileName}: ${vErr.message}`);
-                // Proceed to next layer if this specifically fails
-            }
-
-            // --- LAYER 2: SMART METADATA FALLBACK (Llama 3.3) ---
-            const textResponse = await groq.chat.completions.create({
-                messages: [
-                    {
-                        role: "system",
-                        content: "You are a professional factory inspector. Generate a professional description for a photo based on its filename and the context of a factory inspection. Be descriptive but concise."
-                    },
-                    {
-                        role: "user",
-                        content: `Analyze this filename: "${fileName}". What is this photo documenting? Return ONLY the description.`
-                    }
+          const response = await groq.chat.completions.create({
+            messages: [
+              {
+                role: "user",
+                content: [
+                  { 
+                    type: "text", 
+                    text: "Describe exactly what is shown in this inspection photo in one professional, technical sentence. Focus on the physical item or document visible. No conversational filler." 
+                  },
+                  { 
+                    type: "image_url", 
+                    image_url: { url: data.startsWith("data:") ? data : `data:image/jpeg;base64,${data}` } 
+                  },
                 ],
-                model: "llama-3.3-70b-versatile",
-                max_tokens: 100,
-                temperature: 0.5,
-            });
+              },
+            ],
+            model: "meta-llama/llama-4-scout-17b-16e-instruct",
+            max_tokens: 150,
+            temperature: 0.2,
+          });
 
-            const textDesc = textResponse.choices[0]?.message?.content?.trim() || "Inspection photo.";
-            results.push(textDesc.replace(/^["']|["']$/g, ''));
-            console.log(`ℹ️ Text Fallback used for ${fileName}: ${textDesc}`);
-
-        } catch (err) {
-            console.error(`❌ Critical Error for photo ${i + 1}:`, err.message);
-            results.push("Inspection photo documentation.");
+          const content = response.choices[0]?.message?.content?.trim();
+          if (content && content.length > 5) return content;
+        } catch (vErr) {
+          console.warn(`Vision AI (Llama 4) failed for ${fileName}: ${vErr.message}`);
         }
-    }
 
-    return results;
+        // --- LAYER 2: SMART METADATA FALLBACK (Llama 3.3) ---
+        const textResponse = await groq.chat.completions.create({
+          messages: [
+            {
+              role: "system",
+              content: "You are a professional factory inspector. Generate a professional description for a photo based on its filename and the context of a factory inspection. Be descriptive but concise."
+            },
+            {
+              role: "user",
+              content: `Analyze this filename: "${fileName}". What is this photo documenting? Return ONLY the description.`
+            }
+          ],
+          model: "llama-3.3-70b-versatile",
+          max_tokens: 100,
+          temperature: 0.5,
+        });
+
+        const textDesc = textResponse.choices[0]?.message?.content?.trim() || "Inspection photo.";
+        return textDesc.replace(/^["']|["']$/g, '');
+      } catch (err) {
+        console.error(`❌ Error for photo ${i}:`, err.message);
+        return "Inspection photo documentation.";
+      }
+    }));
+
+    return await Promise.all(tasks);
   } catch (error) {
     console.error("Main AI Error:", error);
     return imageObjects.map(() => "Inspection photo.");
   }
 };
+
 
 module.exports = {
   learnFromReport,
@@ -210,3 +212,4 @@ module.exports = {
   analyzeVision,
   analyzeIndividualPhotos,
 };
+

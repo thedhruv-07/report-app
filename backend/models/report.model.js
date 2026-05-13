@@ -41,6 +41,17 @@ const reportSchema = new mongoose.Schema({
   comments: { type: mongoose.Schema.Types.ObjectId, ref: "Comments" },
   media: [{ type: mongoose.Schema.Types.ObjectId, ref: "Media" }],
   sectionStatuses: [{ type: mongoose.Schema.Types.ObjectId, ref: "SectionStatus" }],
+  
+  // Operations Workflow
+  operationStatus: {
+    type: String,
+    enum: ["draft", "submitted", "under_review", "approved", "rejected", "revision_required"],
+    default: "draft"
+  },
+  operationComment: { type: String, default: "" },
+  reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  reviewedAt: { type: Date },
+  submittedAt: { type: Date },
 }, { timestamps: true });
 
 const Report = mongoose.model("Report", reportSchema);

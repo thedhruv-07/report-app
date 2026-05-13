@@ -9,5 +9,6 @@ router.post("/forgot-password", authController.forgotPassword);
 router.post("/reset-password", authController.resetPassword);
 router.post("/google", authController.googleAuth);
 router.get("/me", authMiddleware, authController.getMe);
+router.patch("/update-profile", authMiddleware, authController.updateProfile);
 
 module.exports = router;

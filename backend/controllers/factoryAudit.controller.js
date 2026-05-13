@@ -9,7 +9,9 @@ exports.createReport = async (req, res) => {
     const userId = req.user.id || req.user._id;
     const report = new FactoryAudit({
       ...req.body,
-      userId
+      userId,
+      operationStatus: "submitted",
+      submittedAt: new Date()
     });
     await report.save();
     res.status(201).json({ status: "success", data: report });
@@ -22,7 +24,12 @@ exports.createReport = async (req, res) => {
 exports.getReports = async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
-    const reports = await FactoryAudit.find({ userId }).sort({ createdAt: -1 });
+    const isAdmin = req.user.role === "admin";
+    
+    // Admins see everything, others see only their own
+    const query = isAdmin ? {} : { userId };
+    
+    const reports = await FactoryAudit.find(query).sort({ createdAt: -1 });
     res.json({ status: "success", data: reports });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch reports" });
@@ -33,7 +40,11 @@ exports.getReportById = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id || req.user._id;
-    const report = await FactoryAudit.findOne({ _id: id, userId });
+    const isAdmin = req.user.role === "admin";
+    
+    const query = isAdmin ? { _id: id } : { _id: id, userId };
+    const report = await FactoryAudit.findOne(query);
+    
     if (!report) return res.status(404).json({ error: "Report not found" });
     res.json({ status: "success", data: report });
   } catch (error) {
@@ -45,9 +56,18 @@ exports.updateReport = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id || req.user._id;
+    const isAdmin = req.user.role === "admin";
+    
+    const updateData = { ...req.body, updatedAt: Date.now() };
+    if (req.body.status === "completed") {
+      updateData.operationStatus = "submitted";
+      updateData.submittedAt = new Date();
+    }
+    
+    const query = isAdmin ? { _id: id } : { _id: id, userId };
     const report = await FactoryAudit.findOneAndUpdate(
-      { _id: id, userId },
-      { ...req.body, updatedAt: Date.now() },
+      query,
+      updateData,
       { new: true }
     );
     if (!report) return res.status(404).json({ error: "Report not found" });
@@ -61,9 +81,11 @@ exports.generateReport = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id || req.user._id;
+    const isAdmin = req.user.role === "admin";
     const format = req.query.format || "docx";
     
-    const reportDoc = await FactoryAudit.findOne({ _id: id, userId });
+    const query = isAdmin ? { _id: id } : { _id: id, userId };
+    const reportDoc = await FactoryAudit.findOne(query);
     if (!reportDoc) return res.status(404).json({ error: "Report not found" });
 
     // Convert to plain object to avoid Mongoose internal issues during DOCX assembly
@@ -154,12 +176,14 @@ exports.generateReport = async (req, res) => {
       const { convertDocxToPdf } = require("../utils/pdf.utils");
       const pdfBuffer = await convertDocxToPdf(buffer);
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename=FactoryAudit-${id}.pdf`);
+      const dateStr = new Date().toISOString().split('T')[0];
+      res.setHeader("Content-Disposition", `attachment; filename=FactoryAudit-Report-${dateStr}.pdf`);
       return res.send(pdfBuffer);
     }
 
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-    res.setHeader("Content-Disposition", `attachment; filename=FactoryAudit-${id}.docx`);
+    const dateStr = new Date().toISOString().split('T')[0];
+    res.setHeader("Content-Disposition", `attachment; filename=FactoryAudit-Report-${dateStr}.docx`);
     res.send(buffer);
   } catch (error) {
     console.error("CRITICAL: Factory Audit Generation Error:", error);
@@ -168,5 +192,26 @@ exports.generateReport = async (req, res) => {
       details: error.message,
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
+  }
+};
+
+exports.deleteReport = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id || req.user._id;
+    
+    const report = await FactoryAudit.findOne({ _id: id });
+    if (!report) return res.status(404).json({ error: "Report not found" });
+
+    // Permissions: Owner or Admin
+    if (report.userId.toString() !== userId && req.user.role !== "admin") {
+      return res.status(403).json({ error: "Unauthorized to delete this report" });
+    }
+
+    await FactoryAudit.findByIdAndDelete(id);
+    res.json({ status: "success", message: "Report deleted successfully" });
+  } catch (error) {
+    console.error("Factory Audit Delete Error:", error);
+    res.status(500).json({ error: "Failed to delete report" });
   }
 };

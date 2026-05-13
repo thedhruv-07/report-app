@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Menu, LogOut, ChevronDown } from "lucide-react";
+import { Menu, LogOut, ChevronDown, UserCircle } from "lucide-react";
 import { services } from "../shared/services";
 
 export default function Navbar({ onToggleSidebar }) {
@@ -56,31 +56,51 @@ export default function Navbar({ onToggleSidebar }) {
           Dashboard
         </button>
 
-        <div className="relative group">
-          <button className={`flex items-center gap-1.5 text-sm font-semibold transition-colors ${location.pathname.startsWith("/dashboard/") ? "text-blue-600" : "text-slate-500 hover:text-slate-800"}`}>
-            Reports
-            <ChevronDown className="w-4 h-4 group-hover:rotate-180 transition-transform duration-200" />
+        {(user.role === "admin" || user.role === "operator") && (
+          <button 
+            onClick={() => navigate("/operations")}
+            className={`text-sm font-semibold transition-colors ${location.pathname.startsWith("/operations") ? "text-blue-600" : "text-slate-500 hover:text-slate-800"}`}
+          >
+            Operations
           </button>
-          
-          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[1002]">
-            {/* Invisible hover bridge */}
-            <div className="absolute -top-4 left-0 w-full h-4" />
-            <div className="bg-white rounded-xl shadow-xl shadow-slate-200/50 border border-slate-200 py-2">
-              <div className="px-3 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-1">
-                Inspection Services
+        )}
+
+        {user.role !== "operator" && (
+          <div className="relative group">
+            <button className={`flex items-center gap-1.5 text-sm font-semibold transition-colors ${location.pathname.startsWith("/dashboard/") ? "text-blue-600" : "text-slate-500 hover:text-slate-800"}`}>
+              Reports
+              <ChevronDown className="w-4 h-4 group-hover:rotate-180 transition-transform duration-200" />
+            </button>
+            
+            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[1002]">
+              {/* Invisible hover bridge */}
+              <div className="absolute -top-4 left-0 w-full h-4" />
+              <div className="bg-white rounded-xl shadow-xl shadow-slate-200/50 border border-slate-200 py-2">
+                <div className="px-3 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-1">
+                  Inspection Services
+                </div>
+                {services.map(service => (
+                  <button
+                    key={service.id}
+                    onClick={() => navigate(service.route)}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${location.pathname === service.route ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+                  >
+                    <span className="truncate">{service.name}</span>
+                  </button>
+                ))}
               </div>
-              {services.map(service => (
-                <button
-                  key={service.id}
-                  onClick={() => navigate(service.route)}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${location.pathname === service.route ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
-                >
-                  <span className="truncate">{service.name}</span>
-                </button>
-              ))}
             </div>
           </div>
-        </div>
+        )}
+
+        {user.role === "admin" && (
+          <button 
+            onClick={() => navigate("/admin")}
+            className={`text-sm font-semibold transition-colors ${location.pathname === "/admin" ? "text-purple-600" : "text-slate-500 hover:text-slate-800"}`}
+          >
+            Admin
+          </button>
+        )}
       </div>
       
       {/* Spacer for mobile */}
@@ -110,6 +130,17 @@ export default function Navbar({ onToggleSidebar }) {
             
             <div className="h-px bg-slate-100 my-1 mx-2" />
             
+            <button
+              onClick={() => {
+                setDropdownOpen(false);
+                navigate("/settings");
+              }}
+              className="w-[calc(100%-16px)] mx-auto flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+            >
+              <UserCircle className="w-4 h-4" />
+              My Profile
+            </button>
+
             <button
               onClick={handleLogoutClick}
               className="w-[calc(100%-16px)] mx-auto flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"

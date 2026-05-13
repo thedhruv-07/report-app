@@ -269,7 +269,18 @@ const FactoryAuditSchema = new mongoose.Schema({
   },
 
   createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
+  updatedAt: { type: Date, default: Date.now },
+
+  // Operations Workflow
+  operationStatus: {
+    type: String,
+    enum: ["draft", "submitted", "under_review", "approved", "rejected", "revision_required"],
+    default: "draft"
+  },
+  operationComment: { type: String, default: "" },
+  reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  reviewedAt: { type: Date },
+  submittedAt: { type: Date },
 }, { timestamps: true });
 
 module.exports = mongoose.model("FactoryAudit", FactoryAuditSchema);

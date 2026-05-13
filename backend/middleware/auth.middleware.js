@@ -1,11 +1,16 @@
 const jwt = require("jsonwebtoken");
 
-const JWT_SECRET = process.env.JWT_SECRET || "veritas-report-app-secret-key-2026";
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error("CRITICAL ERROR: JWT_SECRET is not defined in environment variables!");
+  process.exit(1);
+}
 const JWT_EXPIRES_IN = "7d";
+
 
 const generateToken = (user) => {
   return jwt.sign(
-    { id: user.id, email: user.email, name: user.name },
+    { id: user.id || user._id, email: user.email, name: user.name, role: user.role },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRES_IN }
   );
@@ -38,9 +43,23 @@ const authMiddleware = (req, res, next) => {
   next();
 };
 
+// Middleware to restrict access based on roles
+const roleCheck = (allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user || !allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ 
+        error: "Access Denied", 
+        message: "You do not have permission to perform this action." 
+      });
+    }
+    next();
+  };
+};
+
 module.exports = {
   JWT_SECRET,
   generateToken,
   verifyToken,
   authMiddleware,
+  roleCheck,
 };

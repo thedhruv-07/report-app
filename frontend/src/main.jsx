@@ -11,6 +11,10 @@ import Dashboard from './pages/Dashboard.jsx'
 import App from './App.jsx'
 import ContainerLoading from './pages/services/ContainerLoading.jsx'
 import FactoryAudit from './pages/services/FactoryAudit.jsx'
+import OperationsDashboard from './pages/operations/OperationsDashboard.jsx'
+import OperationsReportReview from './pages/operations/OperationsReportReview.jsx'
+import AdminDashboard from './pages/admin/AdminDashboard.jsx'
+import Settings from './pages/Settings.jsx'
 
 import Login from './pages/auth/Login.jsx'
 import Signup from './pages/auth/Signup.jsx'
@@ -35,9 +39,25 @@ createRoot(document.getElementById('root')).render(
             <Route element={<ProtectedRoute />}>
               <Route element={<DashboardLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/dashboard/pre-shipment" element={<App />} />
-                <Route path="/dashboard/container-loading" element={<ContainerLoading />} />
-                <Route path="/dashboard/factory-audit" element={<FactoryAudit />} />
+                <Route path="/settings" element={<Settings />} />
+                
+                {/* Inspection Routes (Restricted to Inspector/Admin) */}
+                <Route element={<ProtectedRoute allowedRoles={['admin', 'inspector']} />}>
+                  <Route path="/dashboard/pre-shipment" element={<App />} />
+                  <Route path="/dashboard/container-loading" element={<ContainerLoading />} />
+                  <Route path="/dashboard/factory-audit" element={<FactoryAudit />} />
+                </Route>
+                
+                {/* Operations Routes (Restricted to Operator/Admin) */}
+                <Route element={<ProtectedRoute allowedRoles={['admin', 'operator']} />}>
+                  <Route path="/operations" element={<OperationsDashboard />} />
+                  <Route path="/operations/review/:id" element={<OperationsReportReview />} />
+                </Route>
+
+                {/* Admin Routes (Restricted to Admin only) */}
+                <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+                  <Route path="/admin" element={<AdminDashboard />} />
+                </Route>
               </Route>
             </Route>
 

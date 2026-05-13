@@ -111,10 +111,15 @@ const generateReport = async (req, res) => {
         safetyChecks: Array.isArray(data.safetyChecks) ? data.safetyChecks : [],
       });
 
+      // Capture remarks (handles both PSI and CLS formats)
+      let combinedRemarks = Array.isArray(data.remarks) ? [...data.remarks] : [];
+      if (Array.isArray(data.problemRemarks)) combinedRemarks = [...combinedRemarks, ...data.problemRemarks];
+      if (Array.isArray(data.generalRemarks)) combinedRemarks = [...combinedRemarks, ...data.generalRemarks];
+      
       const commentsDoc = new Comments({
         reportId: reportId,
-        remarks: Array.isArray(data.remarks) ? data.remarks : [],
-        recommendations: data.recommendationText || "",
+        remarks: combinedRemarks,
+        recommendations: data.recommendationText || data.recommendations || "",
         factoryComments: data.factoryComments || "",
         inspectorOpinion: data.inspectorOpinion || "",
       });
@@ -165,6 +170,8 @@ const generateReport = async (req, res) => {
         comments: commentsDoc._id,
         media: mediaDocs.map(m => m._id),
         sectionStatuses: sectionStatuses.map(s => s._id),
+        operationStatus: "submitted",
+        submittedAt: new Date(),
       });
 
       reportV2 = new ReportV2({
@@ -224,6 +231,9 @@ const generateReport = async (req, res) => {
 
     if (data.reportPhotoGroups) data.reportPhotoGroups.forEach(g => collectFromList(g.photos));
     if (data.reportPhotos) collectFromList(data.reportPhotos);
+    if (data.generalPhoto && data.generalPhoto.preview && String(data.generalPhoto.preview).startsWith("data:image")) {
+      uploadQueue.push(data.generalPhoto);
+    }
 
     // 2. Upload everything in parallel
     if (uploadQueue.length > 0) {
@@ -422,7 +432,12 @@ const generateReport = async (req, res) => {
 const getReports = async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
-    const reports = await Report.find({ userId })
+    const isAdmin = req.user.role === "admin";
+    
+    // Admins see everything, others see only their own
+    const query = isAdmin ? {} : { userId };
+    
+    const reports = await Report.find(query)
       .sort({ createdAt: -1 })
       .select('-__v');
       
@@ -430,6 +445,44 @@ const getReports = async (req, res) => {
   } catch (error) {
     console.error("Get Reports Error:", error);
     res.status(500).json({ error: "Failed to fetch reports" });
+  }
+};
+
+const deleteReport = async (req, res) => {
+  try {
+    const report = await Report.findById(req.params.id);
+    if (!report) {
+      return res.status(404).json({ error: "Report not found" });
+    }
+
+    // Check permissions: Owner, Admin, or Operator can delete
+    if (report.userId.toString() !== req.user.id && req.user.role !== "admin" && req.user.role !== "operator") {
+      return res.status(403).json({ error: "Unauthorized to delete this report" });
+    }
+
+    // Delete linked sub-documents if they exist
+    const { GeneralInfo } = require("../models/sections/generalInfo.model");
+    const { Quantity } = require("../models/sections/quantity.model");
+    const { Workmanship } = require("../models/sections/workmanship.model");
+    const { Inspection } = require("../models/sections/inspection.model");
+    const { Materials } = require("../models/sections/materials.model");
+    const { Safety } = require("../models/sections/safety.model");
+    const { Comments } = require("../models/sections/comments.model");
+
+    if (report.generalInfo) await GeneralInfo.findByIdAndDelete(report.generalInfo);
+    if (report.quantityDetails) await Quantity.findByIdAndDelete(report.quantityDetails);
+    if (report.workmanship) await Workmanship.findByIdAndDelete(report.workmanship);
+    if (report.inspection) await Inspection.findByIdAndDelete(report.inspection);
+    if (report.materials) await Materials.findByIdAndDelete(report.materials);
+    if (report.safety) await Safety.findByIdAndDelete(report.safety);
+    if (report.comments) await Comments.findByIdAndDelete(report.comments);
+    
+    await Report.findByIdAndDelete(req.params.id);
+
+    res.json({ message: "Report deleted successfully" });
+  } catch (error) {
+    console.error("Delete error:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -529,4 +582,5 @@ module.exports = {
   suggestText,
   analyzePhoto,
   getStats,
+  deleteReport,
 };

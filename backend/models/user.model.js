@@ -31,7 +31,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ["user", "admin"],
+    enum: ["user", "admin", "operator"],
     default: "user",
   },
   resetToken: {
@@ -77,7 +77,7 @@ const createUser = async ({ name, email, password, provider = "local" }) => {
   });
 
   await user.save();
-  return { id: user._id.toString(), name: user.name, email: user.email, provider: user.provider };
+  return { id: user._id.toString(), name: user.name, email: user.email, provider: user.provider, role: user.role };
 };
 
 const verifyPassword = async (plainPassword, hashedPassword) => {
@@ -121,7 +121,7 @@ const resetPassword = async (token, newPassword) => {
 const findOrCreateGoogleUser = async ({ name, email, googleId }) => {
   let user = await findByEmail(email);
   if (user) {
-    return { id: user._id.toString(), name: user.name, email: user.email, provider: user.provider };
+    return { id: user._id.toString(), name: user.name, email: user.email, provider: user.provider, role: user.role };
   }
 
   const newUser = new User({
@@ -132,10 +132,11 @@ const findOrCreateGoogleUser = async ({ name, email, googleId }) => {
   });
 
   await newUser.save();
-  return { id: newUser._id.toString(), name: newUser.name, email: newUser.email, provider: newUser.provider };
+  return { id: newUser._id.toString(), name: newUser.name, email: newUser.email, provider: newUser.provider, role: newUser.role };
 };
 
 module.exports = {
+  User, // Export the model itself
   findByEmail,
   findById,
   createUser,

@@ -1,5 +1,8 @@
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
+const compression = require("compression");
+const morgan = require("morgan");
 const { authMiddleware } = require("./middleware/auth.middleware");
 const reportController = require("./controllers/report.controller");
 
@@ -11,8 +14,18 @@ const fileRoutes = require("./routes/fileRoutes");
 const reportV2Routes = require("./routes/v2/report.routes");
 const photoV2Routes = require("./routes/v2/photo.routes");
 const factoryAuditRoutes = require("./routes/factoryAudit.routes");
+const operationsRoutes = require("./routes/operations.routes");
+const adminRoutes = require("./routes/admin.routes");
 
 const app = express();
+
+// Security & Performance Middleware
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: false, // Disable CSP if it interferes with frontend loading
+}));
+app.use(compression());
+app.use(morgan("dev"));
 
 // CORS
 const allowedOrigins = [
@@ -36,13 +49,13 @@ app.use(cors({
 app.use((req, res, next) => {
   res.setHeader("Cross-Origin-Opener-Policy", "unsafe-none");
   res.setHeader("Cross-Origin-Embedder-Policy", "unsafe-none");
-  console.log(`📡 ${req.method} ${req.url}`);
   next();
 });
 
-// Body parser
-app.use(express.json({ limit: "500mb" }));
-app.use(express.urlencoded({ limit: "500mb", extended: true }));
+// Body parser - Reduced from 500mb to 50mb for security (prevents DoS)
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
 
 // Health check
 app.get("/", (req, res) => {
@@ -67,6 +80,8 @@ app.use("/api/reports", reportRoutes);
 app.use("/api/v2/reports", reportV2Routes);
 app.use("/api/v2/photos", photoV2Routes);
 app.use("/api/factory-audit", factoryAuditRoutes);
+app.use("/api/operations", operationsRoutes);
+app.use("/api/admin", adminRoutes);
 
 // 404 Handler
 app.use((req, res) => {

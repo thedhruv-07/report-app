@@ -14,6 +14,7 @@ export const ENDPOINTS = {
     FORGOT_PASSWORD: `${API_BASE_URL}/api/auth/forgot-password`,
     RESET_PASSWORD: `${API_BASE_URL}/api/auth/reset-password`,
     ME: `${API_BASE_URL}/api/auth/me`,
+    UPDATE_PROFILE: `${API_BASE_URL}/api/auth/update-profile`,
   },
   FILES: {
     UPLOAD: `${API_BASE_URL}/api/files/upload`,
@@ -26,5 +27,17 @@ export const ENDPOINTS = {
     BASE: `${API_BASE_URL}/api/factory-audit`,
     BY_ID: (id) => `${API_BASE_URL}/api/factory-audit/${encodeURIComponent(id)}`,
     GENERATE: (id, format = "docx") => `${API_BASE_URL}/api/factory-audit/${encodeURIComponent(id)}/generate?format=${encodeURIComponent(format)}`,
+  },
+  OPERATIONS: {
+    REPORTS: `${API_BASE_URL}/api/operations/reports`,
+    STATS: `${API_BASE_URL}/api/operations/stats`,
+    DETAILS: (id, type) => `${API_BASE_URL}/api/operations/reports/${id}?type=${encodeURIComponent(type)}`,
+    REVIEW: (id) => `${API_BASE_URL}/api/operations/reports/${id}/review`,
+    BULK_DELETE: `${API_BASE_URL}/api/operations/reports/bulk-delete`,
+  },
+  ADMIN: {
+    USERS: `${API_BASE_URL}/api/admin/users`,
+    UPDATE_ROLE: `${API_BASE_URL}/api/admin/users/role`,
+    STATS: `${API_BASE_URL}/api/admin/stats`,
   }
 };
