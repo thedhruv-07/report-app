@@ -35,7 +35,7 @@ async function changeAdmin() {
     }
 
     if (newPass) {
-      const salt = await bcrypt.genSalt(12);
+      const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(newPass, salt);
       user.provider = "local"; // Ensure they can login via local auth if they were Google
       console.log("✅ Password updated successfully.");

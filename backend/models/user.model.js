@@ -31,7 +31,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ["user", "admin", "operator"],
+    enum: ["user", "admin", "operator", "inspector"],
     default: "user",
   },
   resetToken: {
@@ -68,7 +68,7 @@ const createUser = async ({ name, email, password, provider = "local" }) => {
     throw new Error("User with this email already exists");
   }
 
-  const hashedPassword = password ? await bcrypt.hash(password, 12) : null;
+  const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
   const user = new User({
     name,
     email,
@@ -110,7 +110,7 @@ const resetPassword = async (token, newPassword) => {
   const user = await findByResetToken(token);
   if (!user) throw new Error("Invalid or expired reset token");
 
-  user.password = await bcrypt.hash(newPassword, 12);
+  user.password = await bcrypt.hash(newPassword, 10);
   user.resetToken = null;
   user.resetTokenExpiry = null;
   await user.save();

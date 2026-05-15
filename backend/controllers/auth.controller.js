@@ -223,7 +223,7 @@ const updateProfile = async (req, res) => {
     }
     if (password) {
       const bcrypt = require("bcryptjs");
-      user.password = await bcrypt.hash(password, 12);
+      user.password = await bcrypt.hash(password, 10);
       user.provider = "local";
     }
 

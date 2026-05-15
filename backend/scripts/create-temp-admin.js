@@ -12,7 +12,7 @@ async function createTempAdmin() {
 
     const email = "tempadmin@absoluteveritas.com";
     const password = "admin123";
-    const salt = await bcrypt.genSalt(12);
+    const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Delete if exists
