@@ -42,7 +42,7 @@ createRoot(document.getElementById('root')).render(
                 <Route path="/settings" element={<Settings />} />
                 
                 {/* Inspection Routes (Restricted to Inspector/Admin) */}
-                <Route element={<ProtectedRoute allowedRoles={['admin', 'inspector']} />}>
+                <Route element={<ProtectedRoute allowedRoles={['admin', 'inspector', 'user']} />}>
                   <Route path="/dashboard/pre-shipment" element={<App />} />
                   <Route path="/dashboard/container-loading" element={<ContainerLoading />} />
                   <Route path="/dashboard/factory-audit" element={<FactoryAudit />} />

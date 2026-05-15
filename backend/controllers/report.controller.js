@@ -562,11 +562,14 @@ const analyzePhoto = async (req, res) => {
 const getStats = async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
-    const total = await Report.countDocuments({ userId });
-    // For now, simulate active/completed split. 
-    // In a real app, you'd have a 'status' field.
-    const completed = total; 
-    const active = 0;
+    const isAdmin = req.user.role === "admin";
+    
+    // Admins see global stats, others see only their own
+    const query = isAdmin ? {} : { userId };
+    
+    const total = await Report.countDocuments(query);
+    const completed = await Report.countDocuments({ ...query, status: "completed" });
+    const active = await Report.countDocuments({ ...query, status: "draft" });
     
     res.json({ total, active, completed });
   } catch (error) {
