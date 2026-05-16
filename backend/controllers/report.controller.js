@@ -83,6 +83,7 @@ const generateReport = async (req, res) => {
         totalFoundMinor: data.totalFoundMinor || "",
         workmanshipResult: data.workmanshipResult || "",
         workmanshipRemark: data.workmanshipRemark || "",
+        defects: Array.isArray(data.workmanshipDefects) ? data.workmanshipDefects : [],
       });
 
       const inspectionDoc = new Inspection({
@@ -102,6 +103,7 @@ const generateReport = async (req, res) => {
         dimensionsData: data.dimensionsData || {},
         materialsUsed: data.materialsUsed || "",
         referenceSampleMatch: data.referenceSample || "",
+        specifications: Array.isArray(data.productSpecificationTable) ? data.productSpecificationTable : [],
       });
 
       const safetyDoc = new Safety({

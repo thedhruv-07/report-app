@@ -1,0 +1,1 @@
+export const STATUSES = { PENDING: 'pending_review', REVIEWING: 'under_review', CORRECTION: 'correction_requested', FINALIZED: 'finalized' };

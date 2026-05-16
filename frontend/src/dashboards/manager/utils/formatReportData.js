@@ -1,0 +1,1 @@
+export const formatReportData = (data) => data;

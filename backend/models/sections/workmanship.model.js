@@ -22,6 +22,16 @@ const workmanshipSchema = new mongoose.Schema({
   totalFoundMinor: { type: Number, default: 0 },
   workmanshipResult: { type: String, default: "" },
   workmanshipRemark: { type: String, default: "" },
+  defects: [
+    {
+      itemName: String,
+      description: String,
+      critical: { type: Number, default: 0 },
+      major: { type: Number, default: 0 },
+      minor: { type: Number, default: 0 },
+      sampleSize: String
+    }
+  ],
 }, { timestamps: true });
 
 const Workmanship = mongoose.model("Workmanship", workmanshipSchema);

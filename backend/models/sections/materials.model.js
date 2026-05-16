@@ -11,6 +11,14 @@ const materialsSchema = new mongoose.Schema({
   dimensionsData: { type: mongoose.Schema.Types.Mixed, default: {} },
   materialsUsed: { type: String, default: "" },
   referenceSampleMatch: { type: String, default: "" },
+  specifications: [
+    {
+      description: String,
+      requirement: String,
+      finding: String,
+      result: String
+    }
+  ]
 }, { timestamps: true });
 
 const Materials = mongoose.model("Materials", materialsSchema);
