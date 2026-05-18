@@ -88,13 +88,13 @@ const generateReport = async (req, res) => {
 
       const inspectionDoc = new Inspection({
         reportId: reportId,
-        quantityResult: data.quantity || "",
-        workmanshipResult: data.workmanship || "",
-        onSiteTestsResult: data.onSiteTests || "",
-        dimensionsResult: data.dimensions || "",
-        packingResult: data.packingResult || "",
-        markingResult: data.marking_result_final || "",
-        clientRequirementResult: data.client_requirement_result || "",
+        quantityResult: data.summaryQuantity || data.quantity || data.quantityResult || "",
+        workmanshipResult: data.summaryWorkmanship || data.workmanship || data.workmanshipResult || "",
+        onSiteTestsResult: data.summaryOnSiteTests || data.onSiteTests || data.onSiteTestResult || "",
+        dimensionsResult: data.summaryDimensions || data.dimensions || data.dimensionsResult || "",
+        packingResult: data.summaryPacking || data.packingResult || data.packing || "",
+        markingResult: data.summaryMarkingLabeling || data.marking_result_final || data.markingResult || data.marking || "",
+        clientRequirementResult: data.summaryClientRequirement || data.client_requirement_result || data.clientRequirement || data.client_requirement || "",
       });
 
       const materialsDoc = new Materials({

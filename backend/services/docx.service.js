@@ -533,47 +533,249 @@ async function createReportContent(data, uploadedFiles) {
 
   // II. INSPECTION SUMMARY
   const isCls = data.serviceType?.toLowerCase() === "cls";
+  const isDpi = data.serviceType?.toLowerCase() === "dpi";
   
-  const summaryResults = isCls ? [
-    { label: "A. Quantity", val: data.quantity },
-    { label: "B. Product Conformity", val: data.productConformity },
-    { label: "C. Packing", val: data.packing },
-    { label: "D. Loading Process", val: data.loadingProcess },
-    { label: "E. Client Requirement", val: data.clientRequirement },
-  ] : [
-    { label: "A. Quantity", val: data.quantity },
-    { label: "B. Workmanship", val: data.workmanship },
-    { label: "C. On-Site Tests", val: data.onSiteTests },
-    { label: "D. Dimensions", val: data.dimensions },
-    { label: "E. Packing", val: data.packingResult },
-    { label: "F. Marking & Labeling", val: data.marking_result_final },
-    { label: "G. Client Special Requirement", val: data.client_requirement_result },
-  ];
-
-  const summaryRows = [
-    new TableRow({ children: [new TableCell({ columnSpan: 5, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "II. INSPECTION SUMMARY", bold: true, size: 22, color: "1F4E79", font: "Arial" })] })] })] }),
-    new TableRow({
-      children: [
-        createQtyCell("", { shading: { fill: "E9ECEF" }, width: { size: 30, type: "pct" } }),
-        createQtyCell("Passed", { bold: true, color: "228B22", shaded: true }),
-        createQtyCell("Failed", { bold: true, color: "CC0000", shaded: true }),
-        createQtyCell("Pending", { bold: true, color: "F39C12", shaded: true }),
-        createQtyCell("N/A", { bold: true, shaded: true })
-      ]
-    }),
-    ...summaryResults.map(r => {
-      const n = String(r.val || "").toLowerCase();
-      return new TableRow({
+  let summaryRows = [];
+  
+  if (isCls) {
+    const summaryResults = [
+      { label: "A. Quantity", val: data.quantity },
+      { label: "B. Product Conformity", val: data.productConformity },
+      { label: "C. Packing", val: data.packing },
+      { label: "D. Loading Process", val: data.loadingProcess },
+      { label: "E. Client Requirement", val: data.clientRequirement },
+    ];
+    
+    summaryRows = [
+      new TableRow({ children: [new TableCell({ columnSpan: 5, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "II. INSPECTION SUMMARY", bold: true, size: 22, color: "1F4E79", font: "Arial" })] })] })] }),
+      new TableRow({
         children: [
-          createQtyCell(r.label, { align: "left" }),
-          createQtyCell(n.includes("pass") ? "\u2713" : "", { color: "228B22", bold: true }),
-          createQtyCell(n.includes("fail") ? "\u2713" : "", { color: "CC0000", bold: true }),
-          createQtyCell(n.includes("pending") ? "\u2713" : "", { color: "F39C12", bold: true }),
-          createQtyCell(!n.includes("pass") && !n.includes("fail") && !n.includes("pending") ? "\u2713" : "", { bold: true }),
+          createQtyCell("", { shading: { fill: "E9ECEF" }, width: { size: 30, type: "pct" } }),
+          createQtyCell("Passed", { bold: true, color: "228B22", shaded: true }),
+          createQtyCell("Failed", { bold: true, color: "CC0000", shaded: true }),
+          createQtyCell("Pending", { bold: true, color: "F39C12", shaded: true }),
+          createQtyCell("N/A", { bold: true, shaded: true })
         ]
-      });
-    })
-  ];
+      }),
+      ...summaryResults.map(r => {
+        const n = String(r.val || "").toLowerCase();
+        return new TableRow({
+          children: [
+            createQtyCell(r.label, { align: "left" }),
+            createQtyCell(n.includes("pass") ? "\u2713" : "", { color: "228B22", bold: true }),
+            createQtyCell(n.includes("fail") ? "\u2713" : "", { color: "CC0000", bold: true }),
+            createQtyCell(n.includes("pending") ? "\u2713" : "", { color: "F39C12", bold: true }),
+            createQtyCell(!n.includes("pass") && !n.includes("fail") && !n.includes("pending") ? "\u2713" : "", { bold: true }),
+          ]
+        });
+      })
+    ];
+  } else if (isDpi) {
+    const summaryResults = [
+      { label: "A. Quantity", val: data.summaryQuantity || data.quantity || data.quantityResult },
+      { label: "B. Workmanship", val: data.summaryWorkmanship || data.workmanship || data.workmanshipResult },
+      { label: "C. ON-SITE TESTS", val: data.summaryOnSiteTests || data.onSiteTests || data.onSiteTestResult },
+      { label: "D. Dimensions", val: data.summaryDimensions || data.dimensions || data.dimensionsResult },
+      { label: "E. Packing", val: data.summaryPacking || data.packingResult || data.packing },
+      { label: "F. Marking & Labeling", val: data.summaryMarkingLabeling || data.marking_result_final || data.markingResult || data.marking },
+      { label: "G. Product Conformity", val: data.summaryProductConformity || data.productConformity || data.productConformityResult },
+      { label: "H. Client Special Requirement", val: data.summaryClientRequirement || data.client_requirement_result || data.clientRequirement || data.client_requirement },
+    ];
+
+    const scheduleText = data.summaryProductionSchedule || data.productionScheduleText || "9000sets have been packed (300 cartons)";
+
+    summaryRows = [
+      new TableRow({
+        children: [
+          new TableCell({
+            columnSpan: 5,
+            shading: { fill: "F2F2F2" },
+            borders: tableBorders(),
+            children: [
+              new Paragraph({
+                children: [new TextRun({ text: "II. INSPECTION SUMMARY", bold: true, size: 22, color: "1F4E79", font: "Arial" })],
+                spacing: { before: 80, after: 80 }
+              })
+            ]
+          })
+        ]
+      }),
+      new TableRow({
+        children: [
+          createQtyCell("", { shading: { fill: "F2F2F2" }, width: { size: 40, type: "pct" } }),
+          new TableCell({
+            borders: tableBorders(),
+            shading: { fill: "F2F2F2" },
+            width: { size: 15, type: "pct" },
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [
+                  new TextRun({ text: "Passed", bold: true, color: "228B22", size: 18, font: "Arial" }),
+                  new TextRun({ text: " *", bold: true, color: "FF0000", size: 18, font: "Arial" })
+                ]
+              })
+            ]
+          }),
+          new TableCell({
+            borders: tableBorders(),
+            shading: { fill: "F2F2F2" },
+            width: { size: 15, type: "pct" },
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [new TextRun({ text: "Failed", bold: true, color: "CC0000", size: 18, font: "Arial" })]
+              })
+            ]
+          }),
+          new TableCell({
+            borders: tableBorders(),
+            shading: { fill: "F2F2F2" },
+            width: { size: 15, type: "pct" },
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [new TextRun({ text: "Pending", bold: true, color: "F39C12", size: 18, font: "Arial" })]
+              })
+            ]
+          }),
+          new TableCell({
+            borders: tableBorders(),
+            shading: { fill: "F2F2F2" },
+            width: { size: 15, type: "pct" },
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [new TextRun({ text: "N/A", bold: true, size: 18, font: "Arial" })]
+              })
+            ]
+          })
+        ]
+      }),
+      ...summaryResults.map(r => {
+        const n = String(r.val || "").toLowerCase();
+        const isPassed = n.includes("pass");
+        const isFailed = n.includes("fail");
+        const isPending = n.includes("pending");
+        const isNa = n.includes("n/a") || n.includes("na") || (!isPassed && !isFailed && !isPending && n.trim().length > 0);
+
+        return new TableRow({
+          children: [
+            new TableCell({
+              borders: tableBorders(),
+              children: [
+                new Paragraph({
+                  alignment: AlignmentType.LEFT,
+                  children: [new TextRun({ text: r.label, size: 18, font: "Arial" })],
+                  spacing: { before: 60, after: 60 }
+                })
+              ]
+            }),
+            new TableCell({
+              borders: tableBorders(),
+              children: [
+                new Paragraph({
+                  alignment: AlignmentType.CENTER,
+                  children: isPassed ? [new TextRun({ text: "✓", bold: true, color: "228B22", size: 22, font: "Arial" })] : [],
+                  spacing: { before: 60, after: 60 }
+                })
+              ]
+            }),
+            new TableCell({
+              borders: tableBorders(),
+              children: [
+                new Paragraph({
+                  alignment: AlignmentType.CENTER,
+                  children: isFailed ? [new TextRun({ text: "✓", bold: true, color: "CC0000", size: 22, font: "Arial" })] : [],
+                  spacing: { before: 60, after: 60 }
+                })
+              ]
+            }),
+            new TableCell({
+              borders: tableBorders(),
+              children: [
+                new Paragraph({
+                  alignment: AlignmentType.CENTER,
+                  children: isPending ? [new TextRun({ text: "✓", bold: true, color: "F39C12", size: 22, font: "Arial" })] : [],
+                  spacing: { before: 60, after: 60 }
+                })
+              ]
+            }),
+            new TableCell({
+              borders: tableBorders(),
+              children: [
+                new Paragraph({
+                  alignment: AlignmentType.CENTER,
+                  children: isNa ? [new TextRun({ text: "✓", bold: true, color: "000000", size: 22, font: "Arial" })] : [],
+                  spacing: { before: 60, after: 60 }
+                })
+              ]
+            })
+          ]
+        });
+      }),
+      new TableRow({
+        children: [
+          new TableCell({
+            borders: tableBorders(),
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.LEFT,
+                children: [new TextRun({ text: "I. Production Schedule", size: 18, font: "Arial" })],
+                spacing: { before: 60, after: 60 }
+              })
+            ]
+          }),
+          new TableCell({
+            columnSpan: 4,
+            borders: tableBorders(),
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [new TextRun({ text: sanitizeDocxText(scheduleText), size: 18, font: "Arial" })],
+                spacing: { before: 60, after: 60 }
+              })
+            ]
+          })
+        ]
+      })
+    ];
+  } else {
+    const summaryResults = [
+      { label: "A. Quantity", val: data.quantity },
+      { label: "B. Workmanship", val: data.workmanship },
+      { label: "C. On-Site Tests", val: data.onSiteTests },
+      { label: "D. Dimensions", val: data.dimensions },
+      { label: "E. Packing", val: data.packingResult },
+      { label: "F. Marking & Labeling", val: data.marking_result_final },
+      { label: "G. Client Special Requirement", val: data.client_requirement_result },
+    ];
+    
+    summaryRows = [
+      new TableRow({ children: [new TableCell({ columnSpan: 5, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "II. INSPECTION SUMMARY", bold: true, size: 22, color: "1F4E79", font: "Arial" })] })] })] }),
+      new TableRow({
+        children: [
+          createQtyCell("", { shading: { fill: "E9ECEF" }, width: { size: 30, type: "pct" } }),
+          createQtyCell("Passed", { bold: true, color: "228B22", shaded: true }),
+          createQtyCell("Failed", { bold: true, color: "CC0000", shaded: true }),
+          createQtyCell("Pending", { bold: true, color: "F39C12", shaded: true }),
+          createQtyCell("N/A", { bold: true, shaded: true })
+        ]
+      }),
+      ...summaryResults.map(r => {
+        const n = String(r.val || "").toLowerCase();
+        return new TableRow({
+          children: [
+            createQtyCell(r.label, { align: "left" }),
+            createQtyCell(n.includes("pass") ? "\u2713" : "", { color: "228B22", bold: true }),
+            createQtyCell(n.includes("fail") ? "\u2713" : "", { color: "CC0000", bold: true }),
+            createQtyCell(n.includes("pending") ? "\u2713" : "", { color: "F39C12", bold: true }),
+            createQtyCell(!n.includes("pass") && !n.includes("fail") && !n.includes("pending") ? "\u2713" : "", { bold: true }),
+          ]
+        });
+      })
+    ];
+  }
   children.push(new Table({ width: { size: 100, type: "pct" }, rows: summaryRows }));
   children.push(new Paragraph({ children: [], spacing: { before: 100, after: 100 } }));
 
