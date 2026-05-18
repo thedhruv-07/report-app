@@ -28,16 +28,20 @@ export const ENDPOINTS = {
     BY_ID: (id) => `${API_BASE_URL}/api/factory-audit/${encodeURIComponent(id)}`,
     GENERATE: (id, format = "docx") => `${API_BASE_URL}/api/factory-audit/${encodeURIComponent(id)}/generate?format=${encodeURIComponent(format)}`,
   },
-  OPERATIONS: {
-    REPORTS: `${API_BASE_URL}/api/operations/reports`,
-    STATS: `${API_BASE_URL}/api/operations/stats`,
-    DETAILS: (id, type) => `${API_BASE_URL}/api/operations/reports/${id}?type=${encodeURIComponent(type)}`,
-    REVIEW: (id) => `${API_BASE_URL}/api/operations/reports/${id}/review`,
-    BULK_DELETE: `${API_BASE_URL}/api/operations/reports/bulk-delete`,
+  INSPECTOR: {
+    SUMMARY: `${API_BASE_URL}/api/inspector/dashboard/summary`,
+    TASKS: `${API_BASE_URL}/api/inspector/tasks`,
+    TASK_BY_ID: (id) => `${API_BASE_URL}/api/inspector/tasks/${id}`,
+    ACCEPT_TASK: (id) => `${API_BASE_URL}/api/inspector/tasks/${id}/accept`,
+    NOTIFICATIONS: `${API_BASE_URL}/api/inspector/notifications`,
+    READ_NOTIFICATION: (id) => `${API_BASE_URL}/api/inspector/notifications/${id}/read`,
+    READ_ALL_NOTIFICATIONS: `${API_BASE_URL}/api/inspector/notifications/read-all`,
   },
-  ADMIN: {
-    USERS: `${API_BASE_URL}/api/admin/users`,
-    UPDATE_ROLE: `${API_BASE_URL}/api/admin/users/role`,
-    STATS: `${API_BASE_URL}/api/admin/stats`,
+  MANAGER: {
+    QUEUE: `${API_BASE_URL}/api/manager/queue`,
+    REPORT_DETAILS: (id) => `${API_BASE_URL}/api/manager/reports/${id}`,
+    SUBMIT_FEEDBACK: (id) => `${API_BASE_URL}/api/manager/reports/${id}/correction`,
+    FINALIZE: (id) => `${API_BASE_URL}/api/manager/reports/${id}/finalize`,
+    ADD_REMARK: (id) => `${API_BASE_URL}/api/manager/reports/${id}/remarks`,
   }
 };

@@ -5,15 +5,16 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import { AuthProvider } from './context/AuthContext'
 import './index.css'
 
-import ProtectedRoute from './routes/ProtectedRoute'
-import DashboardLayout from './components/DashboardLayout'
-import Dashboard from './pages/Dashboard.jsx'
-import App from './App.jsx'
-import ContainerLoading from './pages/services/ContainerLoading.jsx'
-import FactoryAudit from './pages/services/FactoryAudit.jsx'
-import OperationsDashboard from './pages/operations/OperationsDashboard.jsx'
-import OperationsReportReview from './pages/operations/OperationsReportReview.jsx'
-import AdminDashboard from './pages/admin/AdminDashboard.jsx'
+import ProtectedRoute from './components/auth/ProtectedRoute'
+import DashboardLayout from './components/layout/DashboardLayout'
+import Dashboard from './dashboards/inspector/InspectorDashboard.jsx'
+import TechnicalManagerDashboard from './dashboards/manager/TechnicalManagerDashboard.jsx'
+import AdminDashboard from './dashboards/admin/AdminDashboard.jsx'
+import DashboardHome from './pages/DashboardHome.jsx'
+import PSIForm from './reports/PSI/PSIForm.jsx'
+import ContainerLoading from './reports/CLS/CLSForm.jsx'
+import FactoryAudit from './reports/FactoryAudit/FactoryAuditForm.jsx'
+import DuringProductionInspection from './reports/DPI/DPIForm.jsx'
 import Settings from './pages/Settings.jsx'
 
 import Login from './pages/auth/Login.jsx'
@@ -38,25 +39,18 @@ createRoot(document.getElementById('root')).render(
             {/* Protected dashboard routes */}
             <Route element={<ProtectedRoute />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/dashboard" element={<DashboardHome />} />
+                <Route path="/dashboard/inspector" element={<Dashboard />} />
+                <Route path="/dashboard/manager" element={<TechnicalManagerDashboard />} />
+                <Route path="/dashboard/admin" element={<AdminDashboard />} />
                 <Route path="/settings" element={<Settings />} />
                 
-                {/* Inspection Routes (Restricted to Inspector/Admin) */}
-                <Route element={<ProtectedRoute allowedRoles={['admin', 'inspector', 'user']} />}>
-                  <Route path="/dashboard/pre-shipment" element={<App />} />
+                {/* Inspection Routes */}
+                <Route element={<ProtectedRoute allowedRoles={['admin', 'operator', 'inspector', 'user']} />}>
+                  <Route path="/dashboard/pre-shipment" element={<PSIForm />} />
                   <Route path="/dashboard/container-loading" element={<ContainerLoading />} />
                   <Route path="/dashboard/factory-audit" element={<FactoryAudit />} />
-                </Route>
-                
-                {/* Operations Routes (Restricted to Operator/Admin) */}
-                <Route element={<ProtectedRoute allowedRoles={['admin', 'operator']} />}>
-                  <Route path="/operations" element={<OperationsDashboard />} />
-                  <Route path="/operations/review/:id" element={<OperationsReportReview />} />
-                </Route>
-
-                {/* Admin Routes (Restricted to Admin only) */}
-                <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
-                  <Route path="/admin" element={<AdminDashboard />} />
+                  <Route path="/dashboard/during-production" element={<DuringProductionInspection />} />
                 </Route>
               </Route>
             </Route>

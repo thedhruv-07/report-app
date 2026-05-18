@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text } from '@react-pdf/renderer';
-import { pdfStyles } from '../styles';
+import { pdfStyles } from '../../styles';
 
 export default function Section({ title, children, break: breakProp, hideHeader = false }) {
   return (

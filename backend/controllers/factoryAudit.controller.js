@@ -24,10 +24,8 @@ exports.createReport = async (req, res) => {
 exports.getReports = async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
-    const isAdmin = req.user.role === "admin";
     
-    // Admins see everything, others see only their own
-    const query = isAdmin ? {} : { userId };
+    const query = { userId };
     
     const reports = await FactoryAudit.find(query).sort({ createdAt: -1 });
     res.json({ status: "success", data: reports });
@@ -40,9 +38,8 @@ exports.getReportById = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id || req.user._id;
-    const isAdmin = req.user.role === "admin";
     
-    const query = isAdmin ? { _id: id } : { _id: id, userId };
+    const query = { _id: id, userId };
     const report = await FactoryAudit.findOne(query);
     
     if (!report) return res.status(404).json({ error: "Report not found" });
@@ -56,7 +53,6 @@ exports.updateReport = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id || req.user._id;
-    const isAdmin = req.user.role === "admin";
     
     const updateData = { ...req.body, updatedAt: Date.now() };
     if (req.body.status === "completed") {
@@ -64,7 +60,7 @@ exports.updateReport = async (req, res) => {
       updateData.submittedAt = new Date();
     }
     
-    const query = isAdmin ? { _id: id } : { _id: id, userId };
+    const query = { _id: id, userId };
     const report = await FactoryAudit.findOneAndUpdate(
       query,
       updateData,
@@ -81,10 +77,9 @@ exports.generateReport = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id || req.user._id;
-    const isAdmin = req.user.role === "admin";
     const format = req.query.format || "docx";
     
-    const query = isAdmin ? { _id: id } : { _id: id, userId };
+    const query = { _id: id, userId };
     const reportDoc = await FactoryAudit.findOne(query);
     if (!reportDoc) return res.status(404).json({ error: "Report not found" });
 
@@ -203,8 +198,8 @@ exports.deleteReport = async (req, res) => {
     const report = await FactoryAudit.findOne({ _id: id });
     if (!report) return res.status(404).json({ error: "Report not found" });
 
-    // Permissions: Owner or Admin
-    if (report.userId.toString() !== userId && req.user.role !== "admin") {
+    // Permissions: Only the owner can delete
+    if (report.userId.toString() !== userId) {
       return res.status(403).json({ error: "Unauthorized to delete this report" });
     }
 

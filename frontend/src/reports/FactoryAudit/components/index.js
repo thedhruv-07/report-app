@@ -1,0 +1,11 @@
+export { default as GeneralInfo } from './GeneralInfo';
+export { default as AuditOverview } from './AuditOverview';
+export { default as RemarksAndSuggestions } from './RemarksAndSuggestions';
+export { default as SupplierProfile } from './SupplierProfile';
+export { default as OrganizationChart } from './OrganizationChart';
+export { default as ProductionLines } from './ProductionLines';
+export { default as Machinery } from './Machinery';
+export { default as QAQCSystem } from './QAQCSystem';
+export { default as RDCapacity } from './RDCapacity';
+export { default as Environment } from './Environment';
+export { default as FinalStep } from './FinalStep';

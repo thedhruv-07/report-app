@@ -9,6 +9,8 @@ export default function Navbar({ onToggleSidebar }) {
   const { user, logout, token } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -92,6 +94,11 @@ export default function Navbar({ onToggleSidebar }) {
     navigate("/login");
   };
 
+  // Hide the global shared Navbar when on the Manager or Admin Dashboard to allow its fully integrated premium top navbar to display exclusively.
+  if (location.pathname.startsWith("/dashboard/manager") || location.pathname.startsWith("/dashboard/admin")) {
+    return null;
+  }
+
   return (
     <header className="sticky top-0 z-[1001] h-16 bg-white border-b border-slate-200 flex items-center px-4 lg:px-6 shadow-sm flex-shrink-0">
       {/* Logo */}
@@ -106,8 +113,12 @@ export default function Navbar({ onToggleSidebar }) {
       {/* Center Navigation */}
       <div className="flex-1 flex justify-center items-center gap-6">
         <button 
-          onClick={() => navigate((user?.role === 'manager' || user?.role === 'admin') ? "/dashboard/manager" : "/dashboard")}
-          className={`text-sm font-semibold transition-colors ${location.pathname === "/dashboard" || location.pathname === "/dashboard/manager" ? "text-blue-600" : "text-slate-500 hover:text-slate-800"}`}
+          onClick={() => {
+            if (user?.role === 'admin') navigate("/dashboard/admin");
+            else if (user?.role === 'manager') navigate("/dashboard/manager");
+            else navigate("/dashboard");
+          }}
+          className={`text-sm font-semibold transition-colors ${location.pathname === "/dashboard" || location.pathname === "/dashboard/manager" || location.pathname === "/dashboard/admin" ? "text-blue-600" : "text-slate-500 hover:text-slate-800"}`}
         >
           Dashboard
         </button>

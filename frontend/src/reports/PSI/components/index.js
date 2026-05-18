@@ -1,0 +1,13 @@
+export { default as ClientSpecialRequirement } from './ClientSpecialRequirement';
+export { default as ConclusionStep } from './ConclusionStep';
+export { default as FinalDetails } from './FinalDetails';
+export { default as FinalStep } from './FinalStep';
+export { default as InspectionSummaryTable } from './InspectionSummaryTable';
+export { default as MarkingLabeling } from './MarkingLabeling';
+export { default as OnSiteTests } from './OnSiteTests';
+export { default as Photos } from './Photos';
+export { default as ProductSpecification } from './ProductSpecification';
+export { default as QuantityDetails } from './QuantityDetails';
+export { default as RemarksStep } from './RemarksStep';
+export { default as SectionA_Summary } from './SectionA_Summary';
+export { default as WorkmanshipDefects } from './WorkmanshipDefects';

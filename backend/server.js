@@ -11,6 +11,10 @@ mongoose.connect(MONGO_URI)
       console.log(`🚀 Server running on http://localhost:${PORT}`);
     });
 
+    // Initialize Socket.io
+    const { initSocket } = require("./socket");
+    initSocket(server);
+
     // Increase timeout for large file processing
     server.timeout = 300000; 
     server.keepAliveTimeout = 300000;

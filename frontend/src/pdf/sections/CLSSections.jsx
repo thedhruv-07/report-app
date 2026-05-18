@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Image } from '@react-pdf/renderer';
-import { pdfStyles, pdfColors } from '../styles';
+import { pdfStyles, pdfColors } from '../../styles';
 import { blankIfEmpty, getPassFailColor } from '../../utils/reportUtils';
 import { clsSchema } from '../../shared/formSchemas';
 

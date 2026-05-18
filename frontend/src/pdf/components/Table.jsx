@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text } from '@react-pdf/renderer';
-import { pdfStyles, pdfColors } from '../styles';
+import { pdfStyles, pdfColors } from '../../styles';
 import { blankIfEmpty } from '../../utils/reportUtils';
 
 export default function Table({ headers = [], data = [], columns = [] }) {

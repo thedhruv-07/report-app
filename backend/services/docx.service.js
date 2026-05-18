@@ -460,7 +460,13 @@ async function createReportContent(data, uploadedFiles) {
   ];
 
   const isClsReport = data.serviceType?.toLowerCase() === 'cls';
-  const serviceTitle = data.servicePerformed || (isClsReport ? "Container Loading Supervision (CLS)" : "Pre-Shipment Inspection Report");
+  const isDpiReport = data.serviceType?.toLowerCase() === 'dpi';
+  
+  const serviceTitle = data.servicePerformed || (
+    isClsReport ? "Container Loading Supervision (CLS)" : 
+    isDpiReport ? "During Production Inspection Report" : 
+    "Pre-Shipment Inspection Report"
+  );
   
   const infoRows = [
     // Service Title Row

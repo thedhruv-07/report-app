@@ -281,6 +281,21 @@ const FactoryAuditSchema = new mongoose.Schema({
   reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   reviewedAt: { type: Date },
   submittedAt: { type: Date },
+
+  // Technical Manager Review Fields
+  revisionRound: { type: Number, default: 1 },
+  correctionFeedback: [{
+    section: String,
+    comment: String,
+    priority: { type: String, enum: ["critical", "advisory"] },
+    addedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    addedAt: { type: Date, default: Date.now }
+  }],
+  tmRemarks: [{
+    text: String,
+    addedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    addedAt: { type: Date, default: Date.now }
+  }],
 }, { timestamps: true });
 
 module.exports = mongoose.model("FactoryAudit", FactoryAuditSchema);

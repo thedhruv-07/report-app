@@ -1,0 +1,15 @@
+export { default as GeneralInfo } from './GeneralInfo';
+export { default as InspectionSummary } from './InspectionSummary';
+export { default as Remarks } from './Remarks';
+export { default as Conclusion } from './Conclusion';
+export { default as QuantityDetails } from './QuantityDetails';
+export { default as Workmanship } from './Workmanship';
+export { default as OnSiteTests } from './OnSiteTests';
+export { default as Dimensions } from './Dimensions';
+export { default as Packing } from './Packing';
+export { default as Marking } from './Marking';
+export { default as ProductionLine } from './ProductionLine';
+export { default as ClientRequirement } from './ClientRequirement';
+export { default as ProductionSchedule } from './ProductionSchedule';
+export { default as Photos } from './Photos';
+export { default as FinalStep } from './FinalStep';

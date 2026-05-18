@@ -33,4 +33,13 @@ export const services = [
     icon: "🏭",
     route: "/dashboard/factory-audit",
   },
+  {
+    id: "dpi",
+    name: "During Production Inspection",
+    slug: "during-production",
+    description:
+      "Track in-progress production quality with workmanship checks, on-site tests, dimension verification, and production line monitoring.",
+    icon: "🔍",
+    route: "/dashboard/during-production",
+  },
 ];

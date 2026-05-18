@@ -14,8 +14,7 @@ const fileRoutes = require("./routes/fileRoutes");
 const reportV2Routes = require("./routes/v2/report.routes");
 const photoV2Routes = require("./routes/v2/photo.routes");
 const factoryAuditRoutes = require("./routes/factoryAudit.routes");
-const operationsRoutes = require("./routes/operations.routes");
-const adminRoutes = require("./routes/admin.routes");
+
 
 const app = express();
 
@@ -82,8 +81,15 @@ app.use("/api/reports", reportRoutes);
 app.use("/api/v2/reports", reportV2Routes);
 app.use("/api/v2/photos", photoV2Routes);
 app.use("/api/factory-audit", factoryAuditRoutes);
-app.use("/api/operations", operationsRoutes);
-app.use("/api/admin", adminRoutes);
+
+// Inspector Routes
+const inspectorRoutes = require("./routes/inspector.routes");
+app.use("/api/inspector", inspectorRoutes);
+
+// Manager Routes
+const managerRoutes = require("./routes/manager.routes");
+app.use("/api/manager", managerRoutes);
+
 
 // 404 Handler
 app.use((req, res) => {
