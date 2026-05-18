@@ -13,6 +13,7 @@ const {
   VerticalMergeType,
   WidthType,
   AlignmentType,
+  VerticalAlign,
   HeadingLevel,
   UnderlineType,
   CheckBox,
@@ -800,90 +801,151 @@ async function createReportContent(data, uploadedFiles) {
     children.push(...createCLSClientRequirementTable(data));
     children.push(...createCLSFinalPhotosSection(data));
   } else {
-    // PSI Only Sections (Workmanship, Factory Signs, etc.)
+    // PSI & DPI Only Sections (Workmanship, Factory Signs, etc.)
     const wmResult = String(data.workmanshipResult || "Passed");
     const wmResultText = wmResult.length > 0 ? (wmResult.charAt(0).toUpperCase() + wmResult.slice(1).toLowerCase()) : "Passed";
+
+    let wmResultColor = "228B22"; // default green
+    if (wmResultText.toUpperCase().includes("FAIL")) {
+      wmResultColor = "CC0000"; // red
+    } else if (wmResultText.toUpperCase().includes("PENDING")) {
+      wmResultColor = "F39C12"; // orange/amber
+    }
+
+    const createWorkmanshipCell = (text, options = {}) => {
+      const {
+        bold = false,
+        align = AlignmentType.CENTER,
+        colSpan,
+        shaded = false,
+        color,
+        fontSize = 18,
+        width,
+        verticalAlign = VerticalAlign.CENTER,
+        spacing = { before: 60, after: 60 },
+        font = "Arial",
+        verticalMerge
+      } = options;
+
+      const textRunOptions = {
+        text: sanitizeDocxText(text),
+        bold,
+        size: fontSize,
+        font
+      };
+      if (color) {
+        textRunOptions.color = color;
+      }
+
+      const paragraphOptions = {
+        children: [new TextRun(textRunOptions)],
+        alignment: align,
+        spacing
+      };
+
+      const cellOptions = {
+        children: [new Paragraph(paragraphOptions)],
+        borders: tableBorders(),
+        verticalAlign
+      };
+
+      if (width) {
+        if (typeof width === "number") {
+          cellOptions.width = { size: width, type: WidthType.PERCENTAGE };
+        } else {
+          cellOptions.width = width;
+        }
+      }
+      if (shaded) {
+        cellOptions.shading = { fill: "F2F2F2" };
+      }
+
+      if (typeof colSpan === "number" && colSpan > 1) {
+        cellOptions.columnSpan = colSpan;
+      }
+      
+      if (verticalMerge) {
+        cellOptions.verticalMerge = verticalMerge;
+      }
+
+      return new TableCell(cellOptions);
+    };
 
     const wmGridRows = [
       new TableRow({
         children: [
-          new TableCell({
-            columnSpan: 6,
-            shading: { fill: "E9ECEF" },
-            borders: tableBorders(),
-            children: [new Paragraph({ children: [new TextRun({ text: "Workmanship Summary (based on the finished products)", bold: true, size: 20, color: "1F4E79" })] })],
-          }),
+          createWorkmanshipCell("Workmanship Summary(based on the finished products)", {
+            bold: true,
+            align: AlignmentType.LEFT,
+            colSpan: 6,
+            shaded: true,
+            fontSize: 20,
+            color: "1F4E79"
+          })
         ],
       }),
       new TableRow({
         children: [
-          createQtyCell("Inspection Standard:", { bold: true, align: "left", shaded: true, width: { size: 25, type: "pct" } }),
-          createQtyCell(data.inspectionStandardWM || "ANSI/ASQ Z1.4 (ISO 2859-1)", { align: "left", colSpan: 2, width: { size: 39, type: "pct" } }),
-          createQtyCell("Critical", { bold: true, shaded: true, width: { size: 12, type: "pct" } }),
-          createQtyCell("Major", { bold: true, shaded: true, width: { size: 12, type: "pct" } }),
-          createQtyCell("Minor", { bold: true, shaded: true, width: { size: 12, type: "pct" } }),
+          createWorkmanshipCell("Inspection Standard:", { align: AlignmentType.LEFT, width: 20 }),
+          createWorkmanshipCell(data.inspectionStandardWM || "-", { align: AlignmentType.LEFT, width: 20 }),
+          createWorkmanshipCell("", { width: 15 }),
+          createWorkmanshipCell("Critical", { bold: true, align: AlignmentType.CENTER, width: 15, shaded: true }),
+          createWorkmanshipCell("Major", { bold: true, align: AlignmentType.CENTER, width: 15, shaded: true }),
+          createWorkmanshipCell("Minor", { bold: true, align: AlignmentType.CENTER, width: 15, shaded: true })
         ],
       }),
       new TableRow({
         children: [
-          createQtyCell("Sampling Plan:", { bold: true, align: "left", shaded: true }),
-          createQtyCell(data.samplingPlanWM || "Fixed Sample Size", { align: "left", width: { size: 25, type: "pct" } }),
-          createQtyCell("AQL:", { bold: true, shaded: true, width: { size: 14, type: "pct" } }),
-          createQtyCell(data.aqlCriticalWM || "Not Allowed"),
-          createQtyCell(data.aqlMajorWM || "2.5"),
-          createQtyCell(data.aqlMinorWM || "4.0"),
+          createWorkmanshipCell("Sampling Plan:", { align: AlignmentType.LEFT, width: 20 }),
+          createWorkmanshipCell(data.samplingPlanWM || "-", { align: AlignmentType.LEFT, width: 20 }),
+          createWorkmanshipCell("AQL:", { align: AlignmentType.LEFT, width: 15 }),
+          createWorkmanshipCell(data.aqlCriticalWM || "Not Allowed", { align: AlignmentType.CENTER, width: 15 }),
+          createWorkmanshipCell(data.aqlMajorWM || "2.5", { align: AlignmentType.CENTER, width: 15 }),
+          createWorkmanshipCell(data.aqlMinorWM || "4.0", { align: AlignmentType.CENTER, width: 15 })
         ],
       }),
       new TableRow({
         children: [
-          createQtyCell("Inspection Level:", { bold: true, align: "left", shaded: true }),
-          createQtyCell(data.inspectionLevelWM || "Level II", { align: "left" }),
-          createQtyCell("Accepted:", { bold: true, shaded: true }),
-          createQtyCell(data.acceptedCritical || "00"),
-          createQtyCell(data.acceptedMajor || "00"),
-          createQtyCell(data.acceptedMinor || "00"),
+          createWorkmanshipCell("Inspection Level:", { align: AlignmentType.LEFT, width: 20 }),
+          createWorkmanshipCell(data.inspectionLevelWM || "-", { align: AlignmentType.LEFT, width: 20 }),
+          createWorkmanshipCell("Accepted:", { align: AlignmentType.LEFT, width: 15 }),
+          createWorkmanshipCell(data.acceptedCritical || "00", { align: AlignmentType.CENTER, width: 15 }),
+          createWorkmanshipCell(data.acceptedMajor || "0", { align: AlignmentType.CENTER, width: 15 }),
+          createWorkmanshipCell(data.acceptedMinor || "0", { align: AlignmentType.CENTER, width: 15 })
         ],
       }),
       new TableRow({
         children: [
-          createQtyCell("Order Quantity:", { bold: true, align: "left", shaded: true }),
-          createQtyCell(data.orderQuantityWM || "1 Machine & 4 sets of Mould", { align: "left" }),
-          createQtyCell("Found:", { bold: true, shaded: true }),
-          createQtyCell(data.foundCriticalWM || "0"),
-          createQtyCell(data.foundMajorWM || "0"),
-          createQtyCell(data.foundMinorWM || "0"),
+          createWorkmanshipCell("Order Quantity:", { align: AlignmentType.LEFT, width: 20 }),
+          createWorkmanshipCell(data.orderQuantity || data.orderQuantityWM || "-", { align: AlignmentType.LEFT, width: 20 }),
+          createWorkmanshipCell("Found:", { align: AlignmentType.LEFT, width: 15 }),
+          createWorkmanshipCell(data.totalFoundCritical || data.foundCriticalWM || "00", { align: AlignmentType.CENTER, width: 15 }),
+          createWorkmanshipCell(data.totalFoundMajor || data.foundMajorWM || "0", { align: AlignmentType.CENTER, width: 15 }),
+          createWorkmanshipCell(data.totalFoundMinor || data.foundMinorWM || "0", { align: AlignmentType.CENTER, width: 15 })
         ],
       }),
       new TableRow({
         children: [
-          createQtyCell("Available Quantity:", { bold: true, align: "left", shaded: true }),
-          createQtyCell(data.availableQuantityWM || "1 Machine & 1 sets of Mould", { align: "left", color: "CC0000" }),
-          createQtyCell("Result:", { bold: true, shaded: true }),
-          new TableCell({
-            columnSpan: 3,
-            borders: tableBorders(),
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: wmResultText,
-                    bold: true,
-                    size: 24,
-                    color: String(wmResultText).toUpperCase().includes("FAIL") ? "CC0000" : "228B22",
-                  }),
-                ],
-                alignment: "center",
-              }),
-            ],
-            verticalAlign: "center",
-          }),
+          createWorkmanshipCell("Available Quantity:", { align: AlignmentType.LEFT, width: 20 }),
+          createWorkmanshipCell(data.availableQuantity || data.availableQuantityWM || "-", { align: AlignmentType.LEFT, width: 20 }),
+          createWorkmanshipCell("Result:", { bold: true, align: AlignmentType.LEFT, width: 15, verticalMerge: VerticalMergeType.RESTART }),
+          createWorkmanshipCell(wmResultText, {
+            bold: true,
+            align: AlignmentType.CENTER,
+            colSpan: 3,
+            width: 45,
+            color: wmResultColor,
+            fontSize: 22,
+            verticalMerge: VerticalMergeType.RESTART
+          })
         ],
       }),
       new TableRow({
         children: [
-          createQtyCell("Sample Size:", { bold: true, align: "left", shaded: true }),
-          createQtyCell(data.sampleSizeWM || "5 Sets", { align: "left", color: "CC0000" }),
-          createQtyCell("", { colSpan: 4, shaded: true }),
+          createWorkmanshipCell("Sample Size:", { align: AlignmentType.LEFT, width: 20 }),
+          createWorkmanshipCell(data.sampleSizeWM || "-", { align: AlignmentType.LEFT, width: 20 }),
+          createWorkmanshipCell("", { width: 15, verticalMerge: VerticalMergeType.CONTINUE }),
+          createWorkmanshipCell("", { colSpan: 3, width: 45, verticalMerge: VerticalMergeType.CONTINUE })
         ]
       })
     ];
@@ -900,8 +962,7 @@ async function createReportContent(data, uploadedFiles) {
               width: { size: 70, type: "pct" },
               borders: tableBorders(),
               children: [
-                new Paragraph({ children: [new TextRun({ text: "Factory Comments & Signature", bold: true })] }),
-                new Paragraph({ children: [new TextRun({ text: "工厂签名及盖章", italics: true, size: 14 })] })
+                new Paragraph({ children: [new TextRun({ text: "Factory Comments & Signature", bold: true })] })
               ]
             }),
             new TableCell({
@@ -915,24 +976,6 @@ async function createReportContent(data, uploadedFiles) {
         })
       ]
     }));
-
-    const disclaimers = [
-      "1. 本报告的结论在本次产品供应商签字后意见。任何情况下，供应商都要承担产品的品质、产品安全等方面的责任。",
-      "2. 产品供应商须对现阶段总结报告出的所有结论内容，并重新封装所有有开包装的产品。",
-      "3. 由于时间原因，本报告为草稿版本。若终稿以正式报告为准，最终结果以正式报告为准。",
-      "4. 该报告只代表产品在结果时的状态。",
-      "5. 工厂验货员本人若有任何对本次验货结论提出的质疑和供应商相关人员，以便工厂做出及时处理和响应。",
-      "6. 本报告只对样本（抽样）负责。",
-      "7. 本报告为完整内容，不得部分复制本报告。"
-    ];
-
-    disclaimers.forEach(text => {
-      children.push(new Paragraph({
-        children: [new TextRun({ text, size: 16 })],
-        alignment: "left",
-        spacing: { before: 160 }
-      }));
-    });
 
     children.push(new Paragraph({
       children: [
