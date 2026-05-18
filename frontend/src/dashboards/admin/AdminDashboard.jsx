@@ -20,9 +20,15 @@ export default function AdminDashboard() {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
 
-  // Global State
-  const [activeView, setActiveView] = useState('dashboard');
+  // Load and preserve active view across browser refreshes
+  const [activeView, setActiveView] = useState(() => {
+    return sessionStorage.getItem("adminActiveView") || "dashboard";
+  });
   const [notificationsPanelOpen, setNotificationsPanelOpen] = useState(false);
+
+  useEffect(() => {
+    sessionStorage.setItem("adminActiveView", activeView);
+  }, [activeView]);
 
   const handleLogout = async () => {
     try {

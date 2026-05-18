@@ -1,26 +1,27 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState } from "react";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  // Hydrate from localStorage on mount
-  useEffect(() => {
+  // Hydrate from localStorage synchronously during initialization to prevent any redirect race conditions on hard refresh
+  const [user, setUser] = useState(() => {
     try {
       const savedUser = localStorage.getItem("reportUser");
-      const savedToken = localStorage.getItem("reportToken");
-      if (savedUser && savedToken) {
-        setUser(JSON.parse(savedUser));
-        setToken(savedToken);
-      }
+      return savedUser ? JSON.parse(savedUser) : null;
     } catch {
-      // Ignore parse errors
+      return null;
     }
-    setLoading(false);
-  }, []);
+  });
+
+  const [token, setToken] = useState(() => {
+    try {
+      return localStorage.getItem("reportToken") || "";
+    } catch {
+      return "";
+    }
+  });
+
+  const [loading, setLoading] = useState(false);
 
   const login = (userData, tokenStr) => {
     setUser(userData);

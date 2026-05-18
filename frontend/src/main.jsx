@@ -22,44 +22,60 @@ import Signup from './pages/auth/Signup.jsx'
 import ForgotPassword from './pages/auth/ForgotPassword.jsx'
 import ResetPassword from './pages/auth/ResetPassword.jsx'
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "dummy-client-id";
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            {/* Public auth routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          {/* Public auth routes */}
+          <Route 
+            path="/login" 
+            element={
+              <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+                <Login />
+              </GoogleOAuthProvider>
+            } 
+          />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
-            {/* Protected dashboard routes */}
-            <Route element={<ProtectedRoute />}>
-              <Route element={<DashboardLayout />}>
-                <Route path="/dashboard" element={<DashboardHome />} />
-                <Route path="/dashboard/inspector" element={<Dashboard />} />
-                <Route path="/dashboard/manager" element={<TechnicalManagerDashboard />} />
+          {/* Protected dashboard routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<DashboardLayout />}>
+              <Route path="/dashboard" element={<DashboardHome />} />
+              
+              {/* Role-Protected Dashboard Views */}
+              <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
                 <Route path="/dashboard/admin" element={<AdminDashboard />} />
-                <Route path="/settings" element={<Settings />} />
-                
-                {/* Inspection Routes */}
-                <Route element={<ProtectedRoute allowedRoles={['admin', 'operator', 'inspector', 'user']} />}>
-                  <Route path="/dashboard/pre-shipment" element={<PSIForm />} />
-                  <Route path="/dashboard/container-loading" element={<ContainerLoading />} />
-                  <Route path="/dashboard/factory-audit" element={<FactoryAudit />} />
-                  <Route path="/dashboard/during-production" element={<DuringProductionInspection />} />
-                </Route>
+              </Route>
+              
+              <Route element={<ProtectedRoute allowedRoles={['manager', 'admin']} />}>
+                <Route path="/dashboard/manager" element={<TechnicalManagerDashboard />} />
+              </Route>
+              
+              <Route element={<ProtectedRoute allowedRoles={['inspector', 'admin', 'manager']} />}>
+                <Route path="/dashboard/inspector" element={<Dashboard />} />
+              </Route>
+              
+              <Route path="/settings" element={<Settings />} />
+              
+              {/* Inspection Routes */}
+              <Route element={<ProtectedRoute allowedRoles={['admin', 'operator', 'inspector', 'user']} />}>
+                <Route path="/dashboard/pre-shipment" element={<PSIForm />} />
+                <Route path="/dashboard/container-loading" element={<ContainerLoading />} />
+                <Route path="/dashboard/factory-audit" element={<FactoryAudit />} />
+                <Route path="/dashboard/during-production" element={<DuringProductionInspection />} />
               </Route>
             </Route>
+          </Route>
 
-            {/* Catch-all */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </GoogleOAuthProvider>
+          {/* Catch-all */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   </StrictMode>,
 )

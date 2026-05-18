@@ -240,8 +240,26 @@ export default function TechnicalManagerDashboard() {
   // State Management
   const [reports, setReports] = useState(SEED_REPORTS);
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
-  const [activeView, setActiveView] = useState("dashboard"); // dashboard | queue | notifications | profile
-  const [activeReportId, setActiveReportId] = useState(null); // active report in Review interface
+  
+  // Load and preserve active view and active report across browser refreshes
+  const [activeView, setActiveView] = useState(() => {
+    return sessionStorage.getItem("managerActiveView") || "dashboard";
+  });
+  const [activeReportId, setActiveReportId] = useState(() => {
+    return sessionStorage.getItem("managerActiveReportId") || null;
+  });
+
+  useEffect(() => {
+    sessionStorage.setItem("managerActiveView", activeView);
+  }, [activeView]);
+
+  useEffect(() => {
+    if (activeReportId) {
+      sessionStorage.setItem("managerActiveReportId", activeReportId);
+    } else {
+      sessionStorage.removeItem("managerActiveReportId");
+    }
+  }, [activeReportId]);
   
   // Navigation & UI States
   const [notificationsPanelOpen, setNotificationsPanelOpen] = useState(false);
