@@ -33,7 +33,7 @@ const {
 
 const { LOGO_PATH, PACKAGE_ICON_PATH } = require("../config/config");
 
-function createConclusionTable(data, isCls = false) {
+async function createConclusionTable(data, isCls = false) {
   const legend = [
     { label: "PASSED ", desc: ": Conform to Client's Requirement" },
     { label: "PASSED (Conditional): ", desc: "The Passed results will be valid only after the client notes and accepts the issues in the remarks" },
@@ -43,6 +43,16 @@ function createConclusionTable(data, isCls = false) {
 
   const conclusionResult = (data.reportHeader?.conclusion || "FAILED").toUpperCase();
   const isPass = conclusionResult.includes("PASS");
+
+  let inspectorBuffer = null;
+  if (data.conclusionPhotos?.[0]) {
+    try { inspectorBuffer = await getImageBuffer(data.conclusionPhotos[0]); } catch (e) { console.warn("Missing inspector signature"); }
+  }
+
+  let reviewerBuffer = null;
+  if (data.conclusionReviewerPhotos?.[0]) {
+    try { reviewerBuffer = await getImageBuffer(data.conclusionReviewerPhotos[0]); } catch (e) { console.warn("Missing reviewer signature"); }
+  }
 
   if (isCls) {
     // CLS Conclusion: Header, Large Result Box, Legend Box
@@ -129,11 +139,11 @@ function createConclusionTable(data, isCls = false) {
       children: [
         new TableCell({
           borders: tableBorders(),
-          children: data.conclusionPhotos?.[0] ? [
+          children: inspectorBuffer ? [
             new Paragraph({
               alignment: "center",
               children: [new ImageRun({
-                data: Buffer.from(data.conclusionPhotos[0].preview.split(",")[1], "base64"),
+                data: inspectorBuffer,
                 type: "png",
                 transformation: { width: 220, height: 160 }
               })],
@@ -143,11 +153,11 @@ function createConclusionTable(data, isCls = false) {
         }),
         new TableCell({
           borders: tableBorders(),
-          children: data.conclusionReviewerPhotos?.[0] ? [
+          children: reviewerBuffer ? [
             new Paragraph({
               alignment: "center",
               children: [new ImageRun({
-                data: Buffer.from(data.conclusionReviewerPhotos[0].preview.split(",")[1], "base64"),
+                data: reviewerBuffer,
                 type: "png",
                 transformation: { width: 220, height: 160 }
               })],
@@ -170,17 +180,22 @@ function createConclusionTable(data, isCls = false) {
   return new Table({ width: { size: 100, type: "pct" }, rows: conclRows });
 }
 
-function createRemarksTable(data) {
+async function createRemarksTable(data) {
   const isCls = data.serviceType === "cls";
   
+  // Find remark photos from groups
+  const remarkPhotosGroup = (data.reportPhotoGroups || []).find(g => g.id === "remarkPhotos" || g.description?.toLowerCase().includes("remark"));
+  const remarkPhotos = remarkPhotosGroup ? (remarkPhotosGroup.photos || []) : [];
+
+  // Remove remark photos from general queue so they don't print twice
+  if (data.reportPhotoGroups && remarkPhotosGroup) {
+      data.reportPhotoGroups = data.reportPhotoGroups.filter(g => g !== remarkPhotosGroup);
+  }
+
   if (isCls) {
     const problemRemarks = Array.isArray(data.problemRemarks) ? data.problemRemarks : ["-"];
     const generalRemarks = Array.isArray(data.generalRemarks) ? data.generalRemarks : ["-"];
     const sampleCollection = data.sampleCollection || "No Sample-Inspector didn't collected any sample from Factory.";
-    
-    // Find remark photos from groups
-    const remarkPhotosGroup = (data.reportPhotoGroups || []).find(g => g.id === "remarkPhotos" || g.description?.toLowerCase().includes("remark"));
-    const remarkPhotos = remarkPhotosGroup ? (remarkPhotosGroup.photos || []) : [];
 
     const rows = [
       // Main Header
@@ -217,20 +232,17 @@ function createRemarksTable(data) {
       new TableRow({ children: [new TableCell({ columnSpan: 2, shading: { fill: "D9D9D9" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Photos:", bold: true, size: 18 })] })] })] }),
     ];
 
-    const table = new Table({ width: { size: 100, type: "pct" }, rows });
-    
     if (remarkPhotos.length > 0) {
-      const photoGrid = createDefectPhotoGrid(remarkPhotos.map(p => ({ ...p, description: p.label })));
-      return [table, new Paragraph({ children: [], spacing: { before: 100 } }), photoGrid];
+      const photoRows = await createInlinePhotoGridRows(remarkPhotos.map(p => ({ ...p, description: p.label || "" })), { cellWidth: 320, cellHeight: 220, colSpan: 1 });
+      rows.push(...photoRows);
     }
     
+    const table = new Table({ width: { size: 100, type: "pct" }, rows });
     return [table];
   }
 
   // Legacy PSI Remarks Table
-  const psiRemarksTable = new Table({
-    width: { size: 100, type: "pct" },
-    rows: [
+  const psiRemarksRows = [
       new TableRow({ children: [new TableCell({ columnSpan: 4, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "III. REMARKS", bold: true, size: 22, color: "1F4E79" })] })] })] }),
       new TableRow({
         children: [
@@ -374,8 +386,30 @@ function createRemarksTable(data) {
             ]
           })
         ]
-      })
-    ]
+      }),
+      ...(remarkPhotos.length > 0 ? [
+        new TableRow({
+          children: [
+            createQtyCell("11.", { bold: true }),
+            new TableCell({
+              columnSpan: 3,
+              shading: { fill: "F2F2F2" },
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: "Photos:", bold: true })] })]
+            })
+          ]
+        })
+      ] : [])
+  ];
+
+  if (remarkPhotos.length > 0) {
+    const photoRows = await createInlinePhotoGridRows(remarkPhotos.map(p => ({ ...p, description: p.label || "" })), { cellWidth: 320, cellHeight: 220, colSpan: 2 });
+    psiRemarksRows.push(...photoRows);
+  }
+
+  const psiRemarksTable = new Table({
+    width: { size: 100, type: "pct" },
+    rows: psiRemarksRows
   });
 
   return [psiRemarksTable];
@@ -535,7 +569,100 @@ async function createReportContent(data, uploadedFiles) {
   // II. INSPECTION SUMMARY
   const isCls = data.serviceType?.toLowerCase() === "cls";
   const isDpi = data.serviceType?.toLowerCase() === "dpi";
-  
+
+  // ─── DPI FIELD ALIAS BLOCK ───────────────────────────────────────────────────
+  // DPI frontend sends array-based keys (dpiSchema.js); map them to the flat
+  // keys the DOCX rendering code expects.
+  if (isDpi) {
+    // Array aliases
+    if (!data.workmanshipDefects && data.workmanshipDefectTable) {
+      data.workmanshipDefects = data.workmanshipDefectTable;
+    }
+    if (!data.clientRequirements && data.clientRequirementTable) {
+      data.clientRequirements = data.clientRequirementTable;
+    }
+
+    // Workmanship AQL field aliases (wmXxx → XxxWM / accepted / found)
+    data.inspectionStandardWM = data.inspectionStandardWM || data.wmInspectionStandard;
+    data.samplingPlanWM       = data.samplingPlanWM       || data.wmSamplingPlan;
+    data.inspectionLevelWM    = data.inspectionLevelWM    || data.wmInspectionLevel;
+    data.orderQuantityWM      = data.orderQuantityWM      || data.wmOrderQuantity;
+    data.availableQuantityWM  = data.availableQuantityWM  || data.wmAvailableQuantity;
+    data.sampleSizeWM         = data.sampleSizeWM         || data.wmSampleSize;
+    data.aqlCriticalWM        = data.aqlCriticalWM        || data.wmAqlCritical;
+    data.aqlMajorWM           = data.aqlMajorWM           || data.wmAqlMajor;
+    data.aqlMinorWM           = data.aqlMinorWM           || data.wmAqlMinor;
+    data.acceptedCritical     = data.acceptedCritical     || data.wmAcceptedCritical;
+    data.acceptedMajor        = data.acceptedMajor        || data.wmAcceptedMajor;
+    data.acceptedMinor        = data.acceptedMinor        || data.wmAcceptedMinor;
+    data.totalFoundCritical   = data.totalFoundCritical   || data.wmFoundCritical;
+    data.totalFoundMajor      = data.totalFoundMajor      || data.wmFoundMajor;
+    data.totalFoundMinor      = data.totalFoundMinor      || data.wmFoundMinor;
+    data.workmanshipResult    = data.workmanshipResult    || data.wmResult;
+
+    // On-site tests: expand array → flat keys (testDescN, testMethodN, ...)
+    if (Array.isArray(data.onSiteTestsTable)) {
+      data.onSiteTestsTable.forEach((row, i) => {
+        const n = i + 1;
+        if (!data[`testDesc${n}`])   data[`testDesc${n}`]   = row.description;
+        if (!data[`testMethod${n}`]) data[`testMethod${n}`] = row.method;
+        if (!data[`testSample${n}`]) data[`testSample${n}`] = row.sampleSize;
+        if (!data[`testResult${n}`]) data[`testResult${n}`] = row.resultReading;
+      });
+    }
+    if (!data.onSiteTestResult) data.onSiteTestResult = data.onSiteTestsTable?.[0]?.result;
+    if (!data.onSiteTestRemark) data.onSiteTestRemark = data.onSiteTestsRemark || "";
+
+    // Packing: expand array → flat keys
+    if (Array.isArray(data.packingTable)) {
+      data.packingTable.forEach((row, i) => {
+        const n = i + 1;
+        data[`packing_item_${n}`]                = data[`packing_item_${n}`]                || row.itemNo;
+        data[`packing_qty_carton_marking_${n}`]  = data[`packing_qty_carton_marking_${n}`]  || row.qtyPerCartonMarking;
+        data[`packing_qty_carton_actual_${n}`]   = data[`packing_qty_carton_actual_${n}`]   || row.qtyPerCartonActual;
+        data[`packing_carton_size_marking_${n}`] = data[`packing_carton_size_marking_${n}`] || row.cartonSizeMarking;
+        data[`packing_carton_size_actual_${n}`]  = data[`packing_carton_size_actual_${n}`]  || row.cartonSizeActual;
+        data[`packing_weight_marking_${n}`]      = data[`packing_weight_marking_${n}`]      || row.grossWeightMarking;
+        data[`packing_weight_actual_${n}`]       = data[`packing_weight_actual_${n}`]       || row.grossWeightActual;
+        data[`packing_qty_inner_marking_${n}`]   = data[`packing_qty_inner_marking_${n}`]   || row.qtyInnerBoxMarking;
+        data[`packing_qty_inner_actual_${n}`]    = data[`packing_qty_inner_actual_${n}`]    || row.qtyInnerBoxActual;
+      });
+    }
+    data.fastening_metal_staples = data.fastening_metal_staples || data.packFasteningMetalStaples;
+    data.nylon_band              = data.nylon_band              || data.packNylonBand;
+    data.material                = data.material                || data.packMaterial;
+    data.corrugated_paper_plies  = data.corrugated_paper_plies  || data.packCorrugatedPaperPlies;
+    data.packing_method          = data.packing_method          || data.packPackingMethod;
+    data.assortment_method       = data.assortment_method       || data.packAssortment;
+    data.packing_result          = data.packing_result          || data.packingResult;
+    data.packing_remark          = data.packing_remark          || data.packingRemark;
+
+    // Marking: take first row of markingTable for the barcode/label row
+    if (Array.isArray(data.markingTable) && data.markingTable.length > 0 && !data.barcode_name) {
+      const m = data.markingTable[0];
+      data.barcode_name     = m.name;
+      data.barcode_location = m.location;
+      data.barcode_result   = m.result;
+    }
+    data.marking_result_final = data.marking_result_final || data.markingResult;
+    data.marking_remark       = data.marking_remark       || data.markingRemark;
+    data.shipping_marks       = data.shipping_marks       || data.markingShippingMarks;
+    data.side_marks           = data.side_marks           || data.markingSideMarks;
+    data.inner_box_marks      = data.inner_box_marks      || data.markingInnerBoxMarks;
+
+    // Client requirement result/remark
+    data.client_requirement_result = data.client_requirement_result || data.clientRequirementResult;
+    data.client_requirement_remark = data.client_requirement_remark || data.clientRequirementRemark;
+
+    // Dimensions: store for DPI-specific Section D rendering
+    data._dpiDimensionsRows      = Array.isArray(data.dimensionsTable) ? data.dimensionsTable : [];
+    data._dpiDimensionsItemNo    = data.dimensionsItemNo || data.itemNo || "";
+    data._dpiDimensionsGroupName = data.dimensionsGroupName || "";
+    data.productResult           = data.productResult || data.dimensionsResult;
+    data.productRemark           = data.productRemark || data.dimensionsRemark;
+  }
+  // ─────────────────────────────────────────────────────────────────────────────
+
   let summaryRows = [];
   
   if (isCls) {
@@ -782,13 +909,13 @@ async function createReportContent(data, uploadedFiles) {
 
   // III. REMARKS (For CLS, it goes here)
   if (isCls) {
-    children.push(...createRemarksTable(data));
+    children.push(...(await createRemarksTable(data)));
     children.push(new Paragraph({ children: [] }));
   }
 
   if (isCls) {
     // For CLS, Conclusion comes right after Remarks
-    children.push(createConclusionTable(data, true));
+    children.push(await createConclusionTable(data, true));
     children.push(new Paragraph({ children: [new PageBreak()] }));
     children.push(createHighFidelityQuantityTable(data));
     children.push(new Paragraph({ children: [], spacing: { before: 200, after: 200 } }));
@@ -799,7 +926,7 @@ async function createReportContent(data, uploadedFiles) {
     children.push(...createCLSLoadingProcessTable(data));
     children.push(new Paragraph({ children: [], spacing: { before: 200, after: 200 } }));
     children.push(...createCLSClientRequirementTable(data));
-    children.push(...createCLSFinalPhotosSection(data));
+    children.push(...(await createCLSFinalPhotosSection(data)));
   } else {
     // PSI & DPI Only Sections (Workmanship, Factory Signs, etc.)
     const wmResult = String(data.workmanshipResult || "Passed");
@@ -952,49 +1079,13 @@ async function createReportContent(data, uploadedFiles) {
     children.push(new Table({ width: { size: 100, type: "pct" }, rows: wmGridRows }));
     children.push(new Paragraph({ children: [], spacing: { before: 100, after: 100 } }));
 
-    // Factory Signs
-    children.push(new Table({
-      width: { size: 100, type: "pct" },
-      rows: [
-        new TableRow({
-          children: [
-            new TableCell({
-              width: { size: 70, type: "pct" },
-              borders: tableBorders(),
-              children: [
-                new Paragraph({ children: [new TextRun({ text: "Factory Comments & Signature", bold: true })] })
-              ]
-            }),
-            new TableCell({
-              width: { size: 30, type: "pct" },
-              borders: tableBorders(),
-              children: [
-                new Paragraph({ children: [new TextRun({ text: sanitizeDocxText(data.factorySigner || "Yang He"), bold: true })] })
-              ]
-            })
-          ]
-        })
-      ]
-    }));
-
-    children.push(new Paragraph({
-      children: [
-        new TextRun({ text: "Inspector Signature & Chop : ", size: 18 }),
-        new TextRun({ text: "Inspector: " + (sanitizeDocxText(data.inspector || "Ronnie Zhu").replace("Inspector: ", "")), bold: true, underline: { type: UnderlineType.SINGLE }, size: 18 })
-      ],
-      alignment: "right",
-      spacing: { before: 600 }
-    }));
-
-
-
-    // For PSI, Remarks goes after signatures
-    children.push(...createRemarksTable(data));
-    children.push(new Paragraph({ children: [] }));
+    // For PSI, Remarks goes right after Workmanship Summary
+    children.push(...(await createRemarksTable(data)));
+    children.push(new Paragraph({ children: [], spacing: { before: 100, after: 100 } }));
   }
 
   if (!isCls) {
-    children.push(createConclusionTable(data, false));
+    children.push(await createConclusionTable(data, false));
     children.push(new Paragraph({ children: [] }));
 
     // Note Paragraph
@@ -1184,16 +1275,41 @@ async function createReportContent(data, uploadedFiles) {
         createQtyCell("Minor", { bold: true }),
       ]
     }),
-    // Dynamic Defects (from workmanshipDefects array)
-    ...(Array.isArray(data.workmanshipDefects) ? data.workmanshipDefects : []).map((defect, i) => new TableRow({
-      children: [
-        createQtyCell(String(i + 1) + "."),
-        createQtyCell(`For Item ${defect.itemName || "-"} \t Sample size: ${defect.sampleSize || "0"} Set \n ${defect.description || ""}`, { align: "left", colSpan: 3 }),
-        createQtyCell(defect.critical || "0"),
-        createQtyCell(defect.major || "0"),
-        createQtyCell(defect.minor || "0"),
-      ]
-    })),
+    // Dynamic Defects (grouped by item/sample size)
+    ...(() => {
+      const defects = Array.isArray(data.workmanshipDefects) ? data.workmanshipDefects : [];
+      const rows = [];
+      let currentItemHeader = null;
+      
+      defects.forEach((defect, i) => {
+        const headerKey = `${defect.itemName}_${defect.sampleSize}`;
+        
+        if (headerKey !== currentItemHeader) {
+          rows.push(new TableRow({
+            children: [
+              createQtyCell(`For Item ${defect.itemName || "-"}`, { align: "left", colSpan: 2 }),
+              createQtyCell(`Sample size: ${defect.sampleSize || "0"} Sets`, { align: "center", colSpan: 2 }),
+              createQtyCell(""),
+              createQtyCell(""),
+              createQtyCell(""),
+            ]
+          }));
+          currentItemHeader = headerKey;
+        }
+
+        rows.push(new TableRow({
+          children: [
+            createQtyCell(String(i + 1) + "."),
+            createQtyCell(defect.description || "", { align: "left", colSpan: 3 }),
+            createQtyCell(defect.critical || "0"),
+            createQtyCell(defect.major || "0"),
+            createQtyCell(defect.minor || "0"),
+          ]
+        }));
+      });
+
+      return rows;
+    })(),
     // Totals Section
     new TableRow({
       children: [
@@ -1224,24 +1340,34 @@ async function createReportContent(data, uploadedFiles) {
     new TableRow({ children: [createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(blankIfEmpty(data.workmanshipRemark || "No critical workmanship issues observed."), { colSpan: 6, align: "left" })] }),
     new TableRow({ children: [createQtyCell("Note:", { bold: true, shaded: true, align: "left" }), createQtyCell("A Defective is defined as a unit of product that contains one or more defects. A Defect is defined as any non-conformance of the inspected unit of product with specified requirements. A single defect is taken into account per each defective unit; only one most serious defect is taken into account per each defective unit.", { colSpan: 6, align: "left", size: 14 })] })
   ];
-  // Defect Photos (Now merged directly into the B table rows)
-  if (Array.isArray(data.workmanshipPhotos) && data.workmanshipPhotos.length > 0) {
-    bRows.push(new TableRow({ children: [new TableCell({ columnSpan: 7, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Workmanship Defect Photos:", bold: true })] })] })] }));
+  // Defect Photos — extract from reportPhotoGroups and merge into B table
+  const defectPhotosGroup = (data.reportPhotoGroups || []).find(g => g.id === "defectPhotos" || (g.description || "").toLowerCase().includes("defect"));
+  const defectPhotos = defectPhotosGroup ? (defectPhotosGroup.photos || []) : (Array.isArray(data.workmanshipPhotos) ? data.workmanshipPhotos : []);
 
-    const photos = data.workmanshipPhotos;
-    for (let i = 0; i < photos.length; i += 2) {
-      const p1 = photos[i];
-      const p2 = photos[i + 1];
+  // Remove from general queue to prevent duplication
+  if (data.reportPhotoGroups && defectPhotosGroup) {
+    data.reportPhotoGroups = data.reportPhotoGroups.filter(g => g !== defectPhotosGroup);
+  }
 
-      // 1. Image Row
+  if (defectPhotos.length > 0) {
+    bRows.push(new TableRow({ children: [new TableCell({ columnSpan: 7, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Defect photos of Item " + (data.itemNo || data.productName || "-"), bold: true })] })] })] }));
+
+    for (let i = 0; i < defectPhotos.length; i += 2) {
+      const p1 = defectPhotos[i];
+      const p2 = defectPhotos[i + 1];
+
+      // Image Row
+      const p1Buffer = p1 ? await getImageBuffer(p1) : null;
+      const p2Buffer = p2 ? await getImageBuffer(p2) : null;
+
       bRows.push(new TableRow({
         children: [
           new TableCell({
             columnSpan: 3,
             borders: tableBorders(),
             children: [
-              p1 && p1.preview ? new Paragraph({
-                children: [new ImageRun({ data: Buffer.from(p1.preview.split(",")[1], "base64"), type: "png", transformation: { width: 340, height: 230 } })],
+              p1Buffer ? new Paragraph({
+                children: [new ImageRun({ data: p1Buffer, type: "png", transformation: { width: 340, height: 230 } })],
                 alignment: "center",
                 spacing: { before: 100, after: 100 }
               }) : new Paragraph({ children: [] })
@@ -1251,8 +1377,8 @@ async function createReportContent(data, uploadedFiles) {
             columnSpan: 4,
             borders: tableBorders(),
             children: [
-              p2 && p2.preview ? new Paragraph({
-                children: [new ImageRun({ data: Buffer.from(p2.preview.split(",")[1], "base64"), type: "png", transformation: { width: 340, height: 230 } })],
+              p2Buffer ? new Paragraph({
+                children: [new ImageRun({ data: p2Buffer, type: "png", transformation: { width: 340, height: 230 } })],
                 alignment: "center",
                 spacing: { before: 100, after: 100 }
               }) : new Paragraph({ children: [] })
@@ -1261,11 +1387,11 @@ async function createReportContent(data, uploadedFiles) {
         ]
       }));
 
-      // 2. Description Row
+      // Description Row
       bRows.push(new TableRow({
         children: [
-          new TableCell({ columnSpan: 3, borders: tableBorders(), shading: { fill: "F9F9F9" }, children: [new Paragraph({ alignment: "center", children: [new TextRun({ text: p1?.description || "Defect details", bold: true, size: 18 })] })] }),
-          new TableCell({ columnSpan: 4, borders: tableBorders(), shading: { fill: "F9F9F9" }, children: [new Paragraph({ alignment: "center", children: [new TextRun({ text: p2?.description || (p2 ? "Defect details" : ""), bold: true, size: 18 })] })] }),
+          new TableCell({ columnSpan: 3, borders: tableBorders(), shading: { fill: "F9F9F9" }, children: [new Paragraph({ alignment: "center", children: [new TextRun({ text: p1?.label || p1?.description || "Defect photo", size: 18 })] })] }),
+          new TableCell({ columnSpan: 4, borders: tableBorders(), shading: { fill: "F9F9F9" }, children: [new Paragraph({ alignment: "center", children: [new TextRun({ text: p2?.label || p2?.description || (p2 ? "Defect photo" : ""), size: 18 })] })] }),
         ]
       }));
     }
@@ -1310,55 +1436,90 @@ async function createReportContent(data, uploadedFiles) {
     children.push(new Paragraph({ children: [], spacing: { after: 200 } })); // Separator gap
 
 
-    // D. PRODUCT SPECIFICATION (Separated table matching SS)
-    const prodRes = data.productResult || "Passed";
-    const specItems = [
-      new TableRow({ children: [new TableCell({ columnSpan: 6, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "D. PRODUCT SPECIFICATION", bold: true, size: 22, color: "1F4E79" })] })] })] }),
-      new TableRow({
-        children: [
-          createQtyCell(""),
-          createQtyCell("Client's Spec.", { bold: true, shaded: true }),
-          createQtyCell("Ref. Sample", { bold: true, shaded: true }),
-          createQtyCell("1# Sample", { bold: true, shaded: true }),
-          createQtyCell("2# Sample", { bold: true, shaded: true }),
-          createQtyCell("3# Sample", { bold: true, shaded: true }),
-        ]
-      }),
-      // Main Item
-      new TableRow({ children: [createQtyCell("Item No.:", { bold: true, shaded: true, align: "left" }), createQtyCell(data.productDescription || "30B nut forming machine (Model: 30B-6S-40)", { colSpan: 5, bold: true })] }),
-      new TableRow({
-        children: [
-          createQtyCell(data.blank_row_0 || "30B-6S-40", { align: "left" }),
-          createQtyCell(data.blank_row_c0 || "NA"),
-          createQtyCell(data.blank_row_c1 || "-"),
-          createQtyCell(data.blank_row_c2 || "676x294x238cm"),
-          createQtyCell(data.blank_row_c3 || "-"),
-          createQtyCell(data.blank_row_c4 || "-"),
-        ]
-      }),
-      // Dynamic Items (map matching frontend loop)
-      ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(id => {
-        const descKey = `item_${id}_desc`;
-        if (!data[descKey] && id > 1) return null;
-        return [
-          new TableRow({ children: [createQtyCell("Item No.:", { bold: true, shaded: true, align: "left" }), createQtyCell(data[descKey] || (id === 1 ? "Mould M10" : "-"), { colSpan: 5, bold: true })] }),
-          new TableRow({
-            children: [
-              createQtyCell(data[`item_${id}_name`] || (id === 1 ? "Mould M10" : "-"), { align: "left" }),
-              createQtyCell(data[`item_${id}_c0`] || "NA"),
-              createQtyCell(data[`item_${id}_c1`] || "-"),
-              createQtyCell(data[`item_${id}_c2`] || (id === 1 ? "10mm" : "-")),
-              createQtyCell(data[`item_${id}_c3`] || "-"),
-              createQtyCell(data[`item_${id}_c4`] || "-"),
-            ]
-          })
-        ];
-      }).filter(Boolean).flat(),
-      new TableRow({ children: [createQtyCell("Result:", { bold: true, shaded: true, align: "left" }), createQtyCell(prodRes, { colSpan: 5, align: "left", bold: true, color: String(prodRes).toLowerCase().includes("pass") ? "228B22" : "CC0000" })] }),
-      new TableRow({ children: [createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(data.productRemark || "N/A", { colSpan: 5, align: "left" })] })
-    ];
-    children.push(new Table({ width: { size: 100, type: "pct" }, rows: specItems }));
-    children.push(new Paragraph({ children: [], spacing: { after: 200 } })); // Gap instead of page break
+    // D. DIMENSIONS / PRODUCT SPECIFICATION
+    if (isDpi && data._dpiDimensionsRows && data._dpiDimensionsRows.length > 0) {
+      // DPI path: render dimensionsTable array from dpiSchema
+      const dpiProdRes = data.productResult || "Pending";
+      const dpiSpecRows = [
+        new TableRow({ children: [new TableCell({ columnSpan: 6, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "D. DIMENSIONS (PRODUCT SPECIFICATIONS)", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+        new TableRow({ children: [createQtyCell("Item No.:", { bold: true, shaded: true, align: "left" }), createQtyCell(data._dpiDimensionsItemNo || "-", { colSpan: 5, bold: true })] }),
+        ...(data._dpiDimensionsGroupName ? [
+          new TableRow({ children: [new TableCell({ columnSpan: 6, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: data._dpiDimensionsGroupName, bold: true })] })] })] })
+        ] : []),
+        new TableRow({
+          children: [
+            createQtyCell("", { shaded: true }),
+            createQtyCell("Client's Spec.", { bold: true, shaded: true }),
+            createQtyCell("Ref. Sample", { bold: true, shaded: true }),
+            createQtyCell("1# Sample", { bold: true, shaded: true }),
+            createQtyCell("2# Sample", { bold: true, shaded: true }),
+            createQtyCell("3# Sample", { bold: true, shaded: true }),
+          ]
+        }),
+        ...data._dpiDimensionsRows.map(row => new TableRow({
+          children: [
+            createQtyCell(row.parameter || "-", { align: "left" }),
+            createQtyCell(row.clientSpec || "-"),
+            createQtyCell(row.refSample || "-"),
+            createQtyCell(row.sample1 || "-"),
+            createQtyCell(row.sample2 || "-"),
+            createQtyCell(row.sample3 || "-"),
+          ]
+        })),
+        new TableRow({ children: [createQtyCell("Result:", { bold: true, shaded: true, align: "left" }), createQtyCell(dpiProdRes, { colSpan: 5, align: "left", bold: true, color: String(dpiProdRes).toLowerCase().includes("pass") ? "228B22" : "CC0000" })] }),
+        new TableRow({ children: [createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(data.productRemark || "N/A", { colSpan: 5, align: "left" })] }),
+      ];
+      children.push(new Table({ width: { size: 100, type: "pct" }, rows: dpiSpecRows }));
+      children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
+    } else {
+      // PSI path: existing flat-key rendering
+      const prodRes = data.productResult || "Passed";
+      const specItems = [
+        new TableRow({ children: [new TableCell({ columnSpan: 6, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "D. PRODUCT SPECIFICATION", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+        new TableRow({
+          children: [
+            createQtyCell(""),
+            createQtyCell("Client's Spec.", { bold: true, shaded: true }),
+            createQtyCell("Ref. Sample", { bold: true, shaded: true }),
+            createQtyCell("1# Sample", { bold: true, shaded: true }),
+            createQtyCell("2# Sample", { bold: true, shaded: true }),
+            createQtyCell("3# Sample", { bold: true, shaded: true }),
+          ]
+        }),
+        new TableRow({ children: [createQtyCell("Item No.:", { bold: true, shaded: true, align: "left" }), createQtyCell(data.productDescription || "30B nut forming machine (Model: 30B-6S-40)", { colSpan: 5, bold: true })] }),
+        new TableRow({
+          children: [
+            createQtyCell(data.blank_row_0 || "30B-6S-40", { align: "left" }),
+            createQtyCell(data.blank_row_c0 || "NA"),
+            createQtyCell(data.blank_row_c1 || "-"),
+            createQtyCell(data.blank_row_c2 || "676x294x238cm"),
+            createQtyCell(data.blank_row_c3 || "-"),
+            createQtyCell(data.blank_row_c4 || "-"),
+          ]
+        }),
+        ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(id => {
+          const descKey = `item_${id}_desc`;
+          if (!data[descKey] && id > 1) return null;
+          return [
+            new TableRow({ children: [createQtyCell("Item No.:", { bold: true, shaded: true, align: "left" }), createQtyCell(data[descKey] || (id === 1 ? "Mould M10" : "-"), { colSpan: 5, bold: true })] }),
+            new TableRow({
+              children: [
+                createQtyCell(data[`item_${id}_name`] || (id === 1 ? "Mould M10" : "-"), { align: "left" }),
+                createQtyCell(data[`item_${id}_c0`] || "NA"),
+                createQtyCell(data[`item_${id}_c1`] || "-"),
+                createQtyCell(data[`item_${id}_c2`] || (id === 1 ? "10mm" : "-")),
+                createQtyCell(data[`item_${id}_c3`] || "-"),
+                createQtyCell(data[`item_${id}_c4`] || "-"),
+              ]
+            })
+          ];
+        }).filter(Boolean).flat(),
+        new TableRow({ children: [createQtyCell("Result:", { bold: true, shaded: true, align: "left" }), createQtyCell(prodRes, { colSpan: 5, align: "left", bold: true, color: String(prodRes).toLowerCase().includes("pass") ? "228B22" : "CC0000" })] }),
+        new TableRow({ children: [createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(data.productRemark || "N/A", { colSpan: 5, align: "left" })] })
+      ];
+      children.push(new Table({ width: { size: 100, type: "pct" }, rows: specItems }));
+      children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
+    }
 
 
     // E. PACKING (Detailed implementation matching legacy SS)
@@ -1523,13 +1684,62 @@ async function createReportContent(data, uploadedFiles) {
     children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
 
 
-    // G. CLIENT SPECIAL REQUIREMENT (Single Unified Table)
+    // G. PRODUCTION LINE CHECKING (DPI only)
+    if (isDpi) {
+      const plSampleSize = data.productionLineSampleSize || "32";
+      const plResult = data.productionLineResult || "N/A";
+      const plRemark = data.productionLineRemark || "";
+      const plRowsData = Array.isArray(data.productionLineTable) ? data.productionLineTable : [];
+      const plTotal = plRowsData.reduce((sum, row) => {
+        const v = parseInt(row.samplingSize || row.sampleSize || 0);
+        return sum + (isNaN(v) ? 0 : v);
+      }, 0);
+
+      const plRows = [
+        new TableRow({ children: [new TableCell({ columnSpan: 5, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "G. PRODUCTION LINE CHECKING", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+        new TableRow({ children: [new TableCell({ columnSpan: 5, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: `Fixed Sample size: ${plSampleSize} pieces`, bold: true })] })] })] }),
+        new TableRow({
+          children: [
+            createQtyCell("Process / Accessory", { bold: true, shaded: true, align: "left" }),
+            createQtyCell("Sampling Size (pieces)", { bold: true, shaded: true }),
+            createQtyCell("Style & Color", { bold: true, shaded: true }),
+            createQtyCell("Problems / Defectives", { bold: true, shaded: true }),
+            createQtyCell("Number", { bold: true, shaded: true }),
+          ]
+        }),
+        ...(plRowsData.length > 0 ? plRowsData : [{ process: "-", samplingSize: "-", styleColor: "N/A", problems: "N/A", number: "0" }]).map(row => new TableRow({
+          children: [
+            createQtyCell(row.process || "-", { align: "left" }),
+            createQtyCell(String(row.samplingSize || row.sampleSize || "-")),
+            createQtyCell(row.styleColor || "N/A"),
+            createQtyCell(row.problems || "N/A"),
+            createQtyCell(String(row.number || "0")),
+          ]
+        })),
+        new TableRow({
+          children: [
+            createQtyCell("Total:", { bold: true, align: "right", shaded: true }),
+            createQtyCell(String(plTotal), { bold: true, shaded: true }),
+            createQtyCell("", { shaded: true }),
+            createQtyCell("", { shaded: true }),
+            createQtyCell("", { shaded: true }),
+          ]
+        }),
+        new TableRow({ children: [createQtyCell("Result:", { bold: true, shaded: true, align: "left" }), createQtyCell(plResult, { colSpan: 4, bold: true, color: plResult.toLowerCase().includes("pass") ? "228B22" : plResult.toLowerCase().includes("fail") ? "CC0000" : "E36C09" })] }),
+        new TableRow({ children: [createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(plRemark || "-", { colSpan: 4, align: "left" })] }),
+      ];
+      children.push(new Table({ width: { size: 100, type: "pct" }, rows: plRows }));
+      children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
+    }
+
+
+    // H. CLIENT SPECIAL REQUIREMENT (Single Unified Table) — was "G" pre-DPI
     const clientResult = data.client_requirement_result || "-";
     const clientReqs = Array.isArray(data.clientRequirements) ? data.clientRequirements : [];
 
     const gRows = [
       // Main Header
-      new TableRow({ children: [new TableCell({ columnSpan: 3, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "G. CLIENT SPECIAL REQUIREMENT", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+      new TableRow({ children: [new TableCell({ columnSpan: 3, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: isDpi ? "H. CLIENT SPECIAL REQUIREMENT" : "G. CLIENT SPECIAL REQUIREMENT", bold: true, size: 22, color: "1F4E79" })] })] })] }),
       // Sub-header
       new TableRow({ children: [new TableCell({ columnSpan: 3, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Client Requirements:", bold: true })] })] })] }),
       // Column Labels
@@ -1564,13 +1774,38 @@ async function createReportContent(data, uploadedFiles) {
       })
     ];
     children.push(new Table({ width: { size: 100, type: "pct" }, rows: gRows }));
+    children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
 
 
-    // H. PHOTOS — exclude remark photo groups since they're already rendered inside createRemarksTable
+    // I. PRODUCTION SCHEDULE (DPI only)
+    if (isDpi) {
+      const psFields = [
+        ["Production Lines Available for This Order", data.psLinesAvailable],
+        ["How Many Workers per Line?", data.psWorkersPerLine],
+        ["Output Rate per Line per Day", data.psOutputRatePerLine],
+        ["Maximum Output per Day", data.psMaxOutputPerDay],
+        ["Minimum Output per Day", data.psMinOutputPerDay],
+        ["Estimated Date for PSI Inspection", data.psEstimatedPSIDate || "NA"],
+        ["Estimated Date When Goods Finished & Packed", data.psEstimatedFinishDate || "NA"],
+      ];
+      const psRows = [
+        new TableRow({ children: [new TableCell({ columnSpan: 2, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "I. PRODUCTION SCHEDULE", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+        ...psFields.map(([label, val]) => new TableRow({
+          children: [
+            createQtyCell(label, { bold: true, shaded: true, align: "left", width: { size: 50, type: "pct" } }),
+            createQtyCell(String(val || "-"), { align: "left" }),
+          ]
+        })),
+      ];
+      children.push(new Table({ width: { size: 100, type: "pct" }, rows: psRows }));
+      children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
+    }
+
+
+    // J. PHOTOS (was H) — include all photo groups for PSI/DPI reports so none are lost
     const allPhotoGroups = Array.isArray(data.reportPhotoGroups) ? data.reportPhotoGroups : (Array.isArray(data.photoGroups) ? data.photoGroups : []);
     const finalPhotoGroups = allPhotoGroups.filter(g => {
-      const desc = (g.description || "").toLowerCase();
-      return g.id !== "remarkPhotos" && !desc.includes("remark") && !desc.includes("general");
+      return true;
     });
 
     if (finalPhotoGroups.length > 0) {
@@ -1584,7 +1819,7 @@ async function createReportContent(data, uploadedFiles) {
                 columnSpan: 2,
                 shading: { fill: "E8E8E8" },
                 borders: tableBorders(),
-                children: [new Paragraph({ children: [new TextRun({ text: "H. PHOTOS", bold: true, size: 22, color: "1F4E79" })] })]
+                children: [new Paragraph({ children: [new TextRun({ text: isDpi ? "J. PHOTOS" : "H. PHOTOS", bold: true, size: 22, color: "1F4E79" })] })]
               })
             ]
           })
@@ -1593,7 +1828,7 @@ async function createReportContent(data, uploadedFiles) {
 
       // 2. Individual Tables for each Group (Allows page breaks between groups)
       for (const group of finalPhotoGroups) {
-        const photos = (group.photos || []).filter(p => p.preview || p.wasabiKey);
+        const photos = (group.photos || []).filter(p => p.preview || p.wasabiKey || p.url);
         if (photos.length === 0) continue;
 
         const groupRows = [];
@@ -1818,18 +2053,59 @@ function createHighFidelityQuantityTable(data) {
 
 /**
  * Returns a Buffer of the image. 
- * Prioritizes cloud storage (Wasabi) if a key is present.
+ * Prioritizes cloud storage (Wasabi) if a key or url is present.
  */
 async function getImageBuffer(photoData) {
   if (!photoData) return null;
 
-  // 1. Try Wasabi Cloud Storage first
-  if (photoData.wasabiKey) {
+  // If photoData is a string, check if it's a base64 or URL directly
+  if (typeof photoData === "string") {
+    if (photoData.startsWith("data:image")) {
+      try {
+        const base64 = photoData.split(",")[1];
+        return Buffer.from(base64, "base64");
+      } catch (e) {
+        return null;
+      }
+    }
+    if (photoData.startsWith("http")) {
+      try {
+        console.log(`🌐 Fetching image from HTTP URL string: ${photoData}`);
+        const res = await fetch(photoData);
+        if (res.ok) {
+          const arrayBuffer = await res.arrayBuffer();
+          return Buffer.from(arrayBuffer);
+        }
+      } catch (e) {
+        console.warn(`HTTP string fetch failed for ${photoData}`, e.message);
+      }
+    }
+    return null;
+  }
+
+  // 1. Try fetching from URL first if it starts with http
+  if (photoData.url && typeof photoData.url === "string" && photoData.url.startsWith("http")) {
     try {
-      console.log(`☁️ Fetching image from Wasabi: ${photoData.wasabiKey}`);
+      console.log(`🌐 Fetching image from HTTP URL: ${photoData.url}`);
+      const res = await fetch(photoData.url);
+      if (res.ok) {
+        const arrayBuffer = await res.arrayBuffer();
+        return Buffer.from(arrayBuffer);
+      }
+      console.warn(`HTTP fetch failed for ${photoData.url} with status: ${res.status}`);
+    } catch (error) {
+      console.warn(`HTTP fetch failed for ${photoData.url}`, error.message);
+    }
+  }
+
+  // 2. Try Wasabi Cloud Storage if key is present
+  const wasabiKey = photoData.wasabiKey || (photoData.url && typeof photoData.url === "string" && photoData.url.includes("wasabisys.com/") ? photoData.url.split("wasabisys.com/")[1] : null);
+  if (wasabiKey) {
+    try {
+      console.log(`☁️ Fetching image from Wasabi: ${wasabiKey}`);
       const params = {
         Bucket: wasabiService.bucket,
-        Key: photoData.wasabiKey,
+        Key: wasabiKey,
       };
 
       const { Body } = await wasabiService.s3.send(new (require("@aws-sdk/client-s3").GetObjectCommand)(params));
@@ -1841,11 +2117,11 @@ async function getImageBuffer(photoData) {
       }
       return Buffer.concat(chunks);
     } catch (error) {
-      console.warn(`Wasabi fetch failed for ${photoData.wasabiKey}, falling back to local preview.`, error.message);
+      console.warn(`Wasabi fetch failed for ${wasabiKey}, falling back to local preview.`, error.message);
     }
   }
 
-  // 2. Fallback to local base64 preview
+  // 3. Fallback to local base64 preview
   if (photoData.preview && typeof photoData.preview === "string" && photoData.preview.includes(",")) {
     try {
       const base64 = photoData.preview.split(",")[1];
@@ -1931,30 +2207,38 @@ async function createPhotoCell(p) {
   } catch (e) { return new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Error loading photo" })] })] }); }
 }
 
-function createInlinePhotoGridTable(photos, opts = { cellWidth: 320, cellHeight: 220 }) {
+async function createInlinePhotoGridRows(photos, opts = { cellWidth: 320, cellHeight: 220 }) {
   const tableRows = [];
   for (let i = 0; i < photos.length; i += 2) {
     tableRows.push(new TableRow({
       children: [
-        createInlinePhotoCell(photos[i], opts),
-        photos[i + 1] ? createInlinePhotoCell(photos[i + 1], opts) : new TableCell({ children: [new Paragraph({ children: [] })] })
+        await createInlinePhotoCell(photos[i], opts),
+        photos[i + 1] ? await createInlinePhotoCell(photos[i + 1], opts) : new TableCell({ children: [new Paragraph({ children: [] })], borders: tableBorders(), columnSpan: opts.colSpan || 1 })
       ]
     }));
   }
+  return tableRows;
+}
+
+async function createInlinePhotoGridTable(photos, opts = { cellWidth: 320, cellHeight: 220 }) {
+  const tableRows = await createInlinePhotoGridRows(photos, opts);
   return new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: tableRows });
 }
 
-function createInlinePhotoCell(p, opts) {
+async function createInlinePhotoCell(p, opts) {
   try {
-    const base64 = p.preview.split(",")[1];
+    const imgBuffer = await getImageBuffer(p);
+    if (!imgBuffer) throw new Error("No image buffer");
+
     return new TableCell({
       borders: tableBorders(),
+      columnSpan: opts.colSpan || 1,
       children: [
-        new Paragraph({ children: [new ImageRun({ data: Buffer.from(base64, "base64"), type: "png", transformation: { width: opts.cellWidth, height: opts.cellHeight } })], alignment: "center" }),
+        new Paragraph({ children: [new ImageRun({ data: imgBuffer, type: "png", transformation: { width: opts.cellWidth, height: opts.cellHeight } })], alignment: "center" }),
         new Paragraph({ children: [new TextRun({ text: sanitizeDocxText(p.label || ""), size: 18 })], alignment: "center" })
       ]
     });
-  } catch (e) { return new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Error" })] })] }); }
+  } catch (e) { return new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Error loading photo" })] })], borders: tableBorders(), columnSpan: opts.colSpan || 1 }); }
 }
 
 // HELPER: Blank if empty
@@ -2535,10 +2819,11 @@ function createCLSClientRequirementTable(data) {
   return children;
 }
 
-function createCLSFinalPhotosSection(data) {
+async function createCLSFinalPhotosSection(data) {
   const photoGroups = (data.reportPhotoGroups || []).filter(g => {
     const desc = (g.description || "").toLowerCase();
-    return !desc.includes("remark") && !desc.includes("general");
+    // Exclude remark photos group only since it is already rendered in the remarks table to avoid duplication
+    return g.id !== "remarkPhotos" && !desc.includes("remark");
   });
   
   const children = [
@@ -2581,7 +2866,7 @@ function createCLSFinalPhotosSection(data) {
   ];
 
   // Actual Photo Groups
-  photoGroups.forEach(g => {
+  for (const g of photoGroups) {
     children.push(new Table({
       width: { size: 100, type: "pct" },
       rows: [
@@ -2597,9 +2882,9 @@ function createCLSFinalPhotosSection(data) {
       ]
     }));
     children.push(new Paragraph({ children: [], spacing: { before: 100 } }));
-    children.push(createInlinePhotoGridTable(g.photos || []));
+    children.push(await createInlinePhotoGridTable(g.photos || []));
     children.push(new Paragraph({ children: [], spacing: { before: 200 } }));
-  });
+  }
 
   return children;
 }
