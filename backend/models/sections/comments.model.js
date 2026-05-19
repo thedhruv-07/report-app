@@ -11,6 +11,25 @@ const commentsSchema = new mongoose.Schema({
   recommendations: { type: String, default: "" },
   factoryComments: { type: String, default: "" },
   inspectorOpinion: { type: String, default: "" },
+  approvedBy: { type: String, default: "" },
+  inspector: { type: String, default: "" },
+  reportReviewer: { type: String, default: "" },
+  conclusionPhotos: [{
+    id: String,
+    label: String,
+    fileName: String,
+    preview: String,
+    url: String,
+    originalName: String
+  }],
+  conclusionReviewerPhotos: [{
+    id: String,
+    label: String,
+    fileName: String,
+    preview: String,
+    url: String,
+    originalName: String
+  }],
 }, { timestamps: true });
 
 const Comments = mongoose.model("Comments", commentsSchema);

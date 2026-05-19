@@ -1463,7 +1463,7 @@ exports.createFAContent = (data) => {
   );
 
   // Org Chart Images
-  const orgPhotos = (data.orgChartPhotos || []).filter(p => p.preview);
+  const orgPhotos = (data.orgChartPhotos || []).filter(p => p.preview || p.url);
   orgPhotos.forEach(p => {
     children.push(
       new Table({
@@ -1579,7 +1579,7 @@ exports.createFAContent = (data) => {
     })
   );
 
-  const workflowPhotos = (data.productionWorkflowPhotos || []).filter(p => p.preview);
+  const workflowPhotos = (data.productionWorkflowPhotos || []).filter(p => p.preview || p.url);
   workflowPhotos.forEach(p => {
     children.push(
       new Table({
@@ -1718,7 +1718,7 @@ exports.createFAContent = (data) => {
   );
 
   // Daily Output Photos
-  const outputPhotos = (data.dailyOutputPhotos || []).filter(p => p.preview);
+  const outputPhotos = (data.dailyOutputPhotos || []).filter(p => p.preview || p.url);
   if (outputPhotos.length > 0) {
     const photoRow = new TableRow({
       children: [0, 1].map(idx => {

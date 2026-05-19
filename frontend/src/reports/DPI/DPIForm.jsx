@@ -132,7 +132,8 @@ export default function DuringProductionInspection() {
         { po: "PO-2024-001", item: "CH-001", orderQty: "500", qtyPerCarton: "1", cartons: "500", packed: "400", unpacked: "100", unfinished: "0", sampleSizePacked: "40", sampleSizeUnpacked: "10" }
       ],
       workmanshipDefectTable: [
-        { itemGroup: "Frame", description: "Minor scratch on base", critical: "0", major: "0", minor: "2" }
+        { itemName: "PD-6225-1", sampleSize: "80", description: "Scratches - minor", critical: "0", major: "0", minor: "2" },
+        { itemName: "PD-6225-1", sampleSize: "80", description: "Local shine", critical: "0", major: "0", minor: "1" }
       ],
       onSiteTestsTable: [
         { srNo: "1", description: "Function Test", method: "Load 100kg", sampleSize: "5", resultReading: "All Passed" }
@@ -215,6 +216,14 @@ export default function DuringProductionInspection() {
 
     Object.keys(form).forEach((key) => {
       const value = form[key];
+      if (key === "inspectorSignature" && value) {
+        formData.append("conclusionPhotos", JSON.stringify([{ id: Date.now().toString() + "_insp", preview: value, label: "Inspector Signature" }]));
+        return;
+      }
+      if (key === "reviewerSignature" && value) {
+        formData.append("conclusionReviewerPhotos", JSON.stringify([{ id: Date.now().toString() + "_rev", preview: value, label: "Reviewer Signature" }]));
+        return;
+      }
       if (value === undefined || value === null) { formData.append(key, ""); return; }
       if (Array.isArray(value) || (typeof value === "object" && value !== null)) {
         formData.append(key, JSON.stringify(value)); return;

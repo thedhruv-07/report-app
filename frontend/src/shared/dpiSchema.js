@@ -59,7 +59,9 @@ export const dpiSchema = {
     { name: "approvedByManager", label: "Approved by (Manager)", type: "text", placeholder: "Manager name" },
     { name: "approvedByReviewer", label: "Approved by (Technical Reviewer)", type: "text", placeholder: "Reviewer name" },
     { name: "inspectorName", label: "Inspector Name", type: "text", placeholder: "Inspector name" },
+    { name: "inspectorSignature", label: "Inspector Signature", type: "photo" },
     { name: "reportReviewer", label: "Report Reviewer", type: "text", placeholder: "Reviewer name" },
+    { name: "reviewerSignature", label: "Reviewer Signature", type: "photo" },
   ],
 
   // ─── SECTION A: QUANTITY ────────────────────────────────────────────────────
@@ -87,8 +89,9 @@ export const dpiSchema = {
   // ─── SECTION B: WORKMANSHIP ─────────────────────────────────────────────────
   workmanshipTable: {
     columns: [
-      { key: "itemGroup", label: "Item Group", type: "text" },
-      { key: "description", label: "Description", type: "text" },
+      { key: "itemName", label: "Item Name", type: "text" },
+      { key: "sampleSize", label: "Sample Size", type: "text" },
+      { key: "description", label: "Defect Description", type: "text" },
       { key: "critical", label: "Critical", type: "text" },
       { key: "major", label: "Major", type: "text" },
       { key: "minor", label: "Minor", type: "text" },

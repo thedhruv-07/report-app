@@ -124,6 +124,11 @@ const generateReport = async (req, res) => {
         recommendations: data.recommendationText || data.recommendations || "",
         factoryComments: data.factoryComments || "",
         inspectorOpinion: data.inspectorOpinion || "",
+        approvedBy: data.approvedByManager || data.approvedBy || "",
+        inspector: data.inspectorName || data.inspector || "",
+        reportReviewer: data.reportReviewer || "",
+        conclusionPhotos: data.conclusionPhotos || [],
+        conclusionReviewerPhotos: data.conclusionReviewerPhotos || []
       });
 
       // Track photo metadata for each section
@@ -147,6 +152,18 @@ const generateReport = async (req, res) => {
           mediaDocs.push(m);
           p.mediaId = m._id; // Attach ID
         });
+      });
+
+      (data.conclusionPhotos || []).forEach(p => {
+        const m = new Media({ reportId, sectionName: "Conclusion", description: p.label || "Inspector Signature" });
+        mediaDocs.push(m);
+        p.mediaId = m._id;
+      });
+
+      (data.conclusionReviewerPhotos || []).forEach(p => {
+        const m = new Media({ reportId, sectionName: "Reviewer", description: p.label || "Reviewer Signature" });
+        mediaDocs.push(m);
+        p.mediaId = m._id;
       });
 
       // Track status for each major section
@@ -233,6 +250,8 @@ const generateReport = async (req, res) => {
 
     if (data.reportPhotoGroups) data.reportPhotoGroups.forEach(g => collectFromList(g.photos));
     if (data.reportPhotos) collectFromList(data.reportPhotos);
+    if (data.conclusionPhotos) collectFromList(data.conclusionPhotos);
+    if (data.conclusionReviewerPhotos) collectFromList(data.conclusionReviewerPhotos);
     if (data.generalPhoto && data.generalPhoto.preview && String(data.generalPhoto.preview).startsWith("data:image")) {
       uploadQueue.push(data.generalPhoto);
     }
@@ -268,6 +287,16 @@ const generateReport = async (req, res) => {
                 { $set: { url: uploadRes.url, originalName: uploadRes.key } }
               );
             }
+
+            const { Comments } = require("../models/sections/comments.model");
+            await Comments.updateOne(
+              { reportId: dbReportId, "conclusionPhotos.id": p.id },
+              { $set: { "conclusionPhotos.$.url": uploadRes.url, "conclusionPhotos.$.originalName": uploadRes.key } }
+            );
+            await Comments.updateOne(
+              { reportId: dbReportId, "conclusionReviewerPhotos.id": p.id },
+              { $set: { "conclusionReviewerPhotos.$.url": uploadRes.url, "conclusionReviewerPhotos.$.originalName": uploadRes.key } }
+            );
 
             // 2. Save to the new architecture (Photo doc)
             const photoDoc = new Photo({
@@ -497,6 +526,7 @@ const getReportById = async (req, res) => {
       .populate('generalInfo')
       .populate('quantityDetails')
       .populate('workmanship')
+      .populate('comments')
       .select('-__v');
       
     if (!report) {

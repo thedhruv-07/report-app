@@ -86,6 +86,9 @@ exports.generateReport = async (req, res) => {
     // Convert to plain object to avoid Mongoose internal issues during DOCX assembly
     const report = reportDoc.toObject();
 
+    // Preload all cloud/url photos into base64 strings so they render synchronously
+    await preloadReportPhotos(report);
+
     const { createFAContent, createFAHeaderTable } = require("../services/faDocx.service");
 
     const doc = new Document({
@@ -208,5 +211,110 @@ exports.deleteReport = async (req, res) => {
   } catch (error) {
     console.error("Factory Audit Delete Error:", error);
     res.status(500).json({ error: "Failed to delete report" });
+  }
+};
+
+// Helper: Preload all cloud/url photos of a report into base64 data urls in-memory
+const preloadReportPhotos = async (obj) => {
+  if (!obj || typeof obj !== "object") return;
+
+  const wasabiService = require("../services/wasabiService");
+
+  // Helper to load buffer and return data URL
+  const loadAsBase64 = async (photoData) => {
+    if (!photoData) return null;
+
+    let url = null;
+    let wasabiKey = null;
+    let preview = null;
+
+    if (typeof photoData === "string") {
+      if (photoData.startsWith("data:image")) return photoData;
+      if (photoData.startsWith("http")) url = photoData;
+    } else if (typeof photoData === "object") {
+      preview = photoData.preview || photoData.picture || photoData.photo;
+      if (preview && preview.startsWith("data:image")) return preview;
+      url = photoData.url || photoData.preview;
+      wasabiKey = photoData.wasabiKey;
+    }
+
+    // Try fetching from URL first
+    if (url && typeof url === "string" && url.startsWith("http")) {
+      try {
+        console.log(`🌐 [FA Preload] Fetching image from HTTP URL: ${url}`);
+        const res = await fetch(url);
+        if (res.ok) {
+          const buffer = Buffer.from(await res.arrayBuffer());
+          const mime = res.headers.get("content-type") || "image/png";
+          return `data:${mime};base64,${buffer.toString("base64")}`;
+        }
+      } catch (error) {
+        console.warn(`[FA Preload] HTTP fetch failed for ${url}`, error.message);
+      }
+    }
+
+    // Try Wasabi direct
+    if (!wasabiKey && url && typeof url === "string" && url.includes("wasabisys.com/")) {
+      wasabiKey = url.split("wasabisys.com/")[1];
+    }
+    if (wasabiKey) {
+      try {
+        console.log(`☁️ [FA Preload] Fetching image from Wasabi: ${wasabiKey}`);
+        const params = { Bucket: wasabiService.bucket, Key: wasabiKey };
+        const { Body } = await wasabiService.s3.send(new (require("@aws-sdk/client-s3").GetObjectCommand)(params));
+        const chunks = [];
+        for await (const chunk of Body) chunks.push(chunk);
+        const buffer = Buffer.concat(chunks);
+        return `data:image/png;base64,${buffer.toString("base64")}`;
+      } catch (error) {
+        console.warn(`[FA Preload] Wasabi fetch failed for ${wasabiKey}`, error.message);
+      }
+    }
+
+    // If it is already a base64 string, return it
+    if (preview && preview.startsWith("data:image")) return preview;
+
+    return null;
+  };
+
+  // Traversal loop
+  for (const key of Object.keys(obj)) {
+    const val = obj[key];
+    if (!val) continue;
+
+    // Handle array of photo objects or raw elements
+    if (Array.isArray(val)) {
+      for (let i = 0; i < val.length; i++) {
+        const item = val[i];
+        if (item && typeof item === "object") {
+          if (item.preview !== undefined || item.photo !== undefined || item.picture !== undefined || item.url !== undefined) {
+            const loaded = await loadAsBase64(item);
+            if (loaded) {
+              if (item.preview !== undefined) item.preview = loaded;
+              if (item.photo !== undefined) item.photo = loaded;
+              if (item.picture !== undefined) item.picture = loaded;
+            }
+          } else {
+            await preloadReportPhotos(item);
+          }
+        } else if (typeof item === "string" && item.startsWith("http")) {
+          const loaded = await loadAsBase64(item);
+          if (loaded) val[i] = loaded;
+        }
+      }
+    }
+    // Handle nested objects
+    else if (typeof val === "object") {
+      await preloadReportPhotos(val);
+    }
+    // Handle single string photo fields (e.g., generalPhoto, certPhoto, etc.)
+    else if (typeof val === "string" && val.startsWith("http") && 
+             (key.toLowerCase().includes("photo") || key.toLowerCase().includes("picture") || 
+              key === "rawMaterials" || key === "finishedProducts" || key.startsWith("loadingPlace") || 
+              key === "qaqcOffice" || key === "qaqcChecking" || key.startsWith("onlineQCRecord") || 
+              key.startsWith("rawMaterialQCRecord") || key.startsWith("testEquipment") || key.startsWith("wastewaterPhoto"))) {
+      const loaded = await loadAsBase64(val);
+      if (loaded) obj[key] = loaded;
+    }
   }
 };
