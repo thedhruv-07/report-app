@@ -48,7 +48,15 @@ const submitAssessment = async (req, res) => {
     return res.status(400).json({ error: 'answers array is required' });
   }
   try {
+    const userCheck = await User.findById(req.user.id).select('onboarding');
+    if (!userCheck?.onboarding?.manualRead || !userCheck?.onboarding?.videosWatched) {
+      return res.status(403).json({ error: 'Complete steps 1 and 2 before taking the assessment.' });
+    }
+
     const questions = await OnboardingQuestion.find({ isActive: true });
+    if (questions.length === 0) {
+      return res.status(503).json({ error: 'Assessment unavailable. Please contact support.' });
+    }
     const questionMap = {};
     questions.forEach(q => { questionMap[q._id.toString()] = q; });
 

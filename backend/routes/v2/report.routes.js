@@ -2,9 +2,11 @@ const express = require("express");
 const router = express.Router();
 const reportController = require("../../controllers/v2/report.controller");
 const { authMiddleware } = require("../../middleware/auth.middleware");
+const { requireOnboardingComplete } = require("../../middleware/onboardingComplete.middleware");
 
 // All routes are protected
 router.use(authMiddleware);
+router.use(requireOnboardingComplete);
 
 router.post("/", reportController.createReport);
 router.get("/", reportController.getReports);
