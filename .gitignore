@@ -11,6 +11,7 @@ dist/
 # Backend specific
 /backend/data/*
 !/backend/data/.gitkeep
+!/backend/data/*.js
 /backend/uploads/*
 !/backend/uploads/.gitkeep
 /backend/.env
