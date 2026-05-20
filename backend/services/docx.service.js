@@ -31,6 +31,10 @@ const {
   createQtyCell
 } = require("../utils/docx.utils");
 
+// Helper: return empty string when value is missing — ensure DOCX only contains frontend data
+function asVal(v) { return (v === undefined || v === null) ? "" : v; }
+const san = (v) => sanitizeDocxText(asVal(v));
+
 const { LOGO_PATH, PACKAGE_ICON_PATH } = require("../config/config");
 
 async function createConclusionTable(data, isCls = false) {
@@ -479,9 +483,7 @@ function createHeaderValueCell(text) {
 async function createReportContent(data, uploadedFiles) {
   const children = [];
 
-  // Helper: return empty string when value is missing — ensure DOCX only contains frontend data
-  const asVal = (v) => (v === undefined || v === null) ? "" : v;
-  const san = (v) => sanitizeDocxText(asVal(v));
+  // (helpers `asVal` and `san` are defined at module level)
 
   // I. GENERAL INFORMATION & Pre-Title (Unified Table)
   const generalData = [
