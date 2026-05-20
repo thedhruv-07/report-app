@@ -41,7 +41,7 @@ async function createConclusionTable(data, isCls = false) {
     { label: "FAILED ", desc: ": Not Conform to Client's Requirement" }
   ];
 
-  const conclusionResult = (data.reportHeader?.conclusion || "FAILED").toUpperCase();
+  const conclusionResult = asVal(data.reportHeader?.conclusion).toUpperCase();
   const isPass = conclusionResult.includes("PASS");
 
   let inspectorBuffer = null;
@@ -125,7 +125,7 @@ async function createConclusionTable(data, isCls = false) {
             new Paragraph({
               children: [
                 new TextRun({ text: "Approved by : ", bold: true, size: 18 }),
-                new TextRun({ text: sanitizeDocxText(data.approvedBy || "Amyt, Manager of Report Reviewing"), bold: true, size: 18, underline: { type: UnderlineType.SINGLE } })
+                new TextRun({ text: san(data.approvedBy), bold: true, size: 18, underline: { type: UnderlineType.SINGLE } })
               ]
             }),
           ]
@@ -171,8 +171,8 @@ async function createConclusionTable(data, isCls = false) {
     // Label Row
     new TableRow({
       children: [
-        new TableCell({ borders: tableBorders(), shading: { fill: "F9F9F9" }, children: [new Paragraph({ alignment: "center", children: [new TextRun({ text: "Inspector(s): " + sanitizeDocxText(data.inspector || "-").replace("Inspector: ", ""), size: 18 })] })] }),
-        new TableCell({ borders: tableBorders(), shading: { fill: "F9F9F9" }, children: [new Paragraph({ alignment: "center", children: [new TextRun({ text: "Report Reviewer: " + sanitizeDocxText(data.reportReviewer || "-").replace("Report Reviewer: ", ""), size: 18 })] })] }),
+        new TableCell({ borders: tableBorders(), shading: { fill: "F9F9F9" }, children: [new Paragraph({ alignment: "center", children: [new TextRun({ text: "Inspector(s): " + san(data.inspector).replace("Inspector: ", ""), size: 18 })] })] }),
+        new TableCell({ borders: tableBorders(), shading: { fill: "F9F9F9" }, children: [new Paragraph({ alignment: "center", children: [new TextRun({ text: "Report Reviewer: " + san(data.reportReviewer).replace("Report Reviewer: ", ""), size: 18 })] })] }),
       ]
     })
   ];
@@ -195,7 +195,7 @@ async function createRemarksTable(data) {
   if (isCls) {
     const problemRemarks = Array.isArray(data.problemRemarks) ? data.problemRemarks : ["-"];
     const generalRemarks = Array.isArray(data.generalRemarks) ? data.generalRemarks : ["-"];
-    const sampleCollection = data.sampleCollection || "No Sample-Inspector didn't collected any sample from Factory.";
+    const sampleCollection = asVal(data.sampleCollection);
 
     const rows = [
       // Main Header
@@ -312,7 +312,7 @@ async function createRemarksTable(data) {
             borders: tableBorders(),
             children: [
               new Paragraph({ children: [new TextRun({ text: "Based on our finding of material/accessories/semi-finished/finished products and the observation of product line, we recommend the manufacturer to make improvement or pay attention on follow up mass production:", size: 16 })], spacing: { before: 40 } }),
-              new Paragraph({ children: [new TextRun({ text: blankIfEmpty(data.recommendationText || "Continue to maintain current quality controls for mass production."), color: "333333" })], spacing: { after: 40 } })
+              new Paragraph({ children: [new TextRun({ text: blankIfEmpty(asVal(data.recommendationText)), color: "333333" })], spacing: { after: 40 } })
             ]
           })
         ]
@@ -432,7 +432,7 @@ function createHeaderTable(data) {
         children: [
           new TableCell({ width: { size: 30, type: "pct" }, verticalMerge: VerticalMergeType.RESTART, borders: { top: { style: BorderStyle.SINGLE, size: 12 }, bottom: { style: BorderStyle.SINGLE, size: 12 }, left: { style: BorderStyle.SINGLE, size: 12 }, right: { style: BorderStyle.SINGLE, size: 12 } }, children: [logoRun ? new Paragraph({ children: [logoRun], alignment: "center" }) : new Paragraph({ children: [new TextRun("")] })], verticalAlign: "center" }),
           createHeaderLabelCell("Client Name (abbr.):"),
-          createHeaderValueCell(header.client || "-"),
+          createHeaderValueCell(asVal(header.client)),
           createHeaderLabelCell("Conclusion", { align: "center", bold: true }),
         ],
       }),
@@ -444,7 +444,7 @@ function createHeaderTable(data) {
           new TableCell({
             verticalMerge: VerticalMergeType.RESTART,
             borders: { top: { style: BorderStyle.SINGLE, size: 12 }, bottom: { style: BorderStyle.SINGLE, size: 12 }, left: { style: BorderStyle.SINGLE, size: 12 }, right: { style: BorderStyle.SINGLE, size: 12 } },
-            children: [new Paragraph({ children: [new TextRun({ text: sanitizeDocxText(header.conclusion || "Pending"), bold: true, size: 40, color: (header.conclusion || "").toUpperCase().includes("PASS") ? "008000" : "FF0000" })], alignment: "center" })],
+            children: [new Paragraph({ children: [new TextRun({ text: san(header.conclusion), bold: true, size: 40, color: asVal(header.conclusion).toUpperCase().includes("PASS") ? "008000" : "FF0000" })], alignment: "center" })],
             verticalAlign: "center",
           }),
         ],
@@ -478,6 +478,10 @@ function createHeaderValueCell(text) {
 
 async function createReportContent(data, uploadedFiles) {
   const children = [];
+
+  // Helper: return empty string when value is missing — ensure DOCX only contains frontend data
+  const asVal = (v) => (v === undefined || v === null) ? "" : v;
+  const san = (v) => sanitizeDocxText(asVal(v));
 
   // I. GENERAL INFORMATION & Pre-Title (Unified Table)
   const generalData = [
@@ -1181,8 +1185,8 @@ async function createReportContent(data, uploadedFiles) {
       new TableRow({ children: [new TableCell({ columnSpan: 10, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Selected Cartons:", bold: true })] })] })] }),
       new TableRow({
         children: [
-          createQtyCell(data.selectedCartonCount || "0"),
-          createQtyCell(data.selectedCartonStatement || "Cartons were selected randomly on site No. carton number in shipping mark.", { align: "left", colSpan: 9 })
+          createQtyCell(asVal(data.selectedCartonCount)),
+          createQtyCell(asVal(data.selectedCartonStatement), { align: "left", colSpan: 9 })
         ]
       }),
       new TableRow({
@@ -1194,7 +1198,7 @@ async function createReportContent(data, uploadedFiles) {
       new TableRow({
         children: [
           createQtyCell("Result:", { bold: true, shaded: true }),
-          createQtyCell(data.quantityResult || "Pending", { colSpan: 9, align: "left", bold: true, color: String(data.quantityResult).includes("Pass") ? "228B22" : "E36C09" })
+          createQtyCell(asVal(data.quantityResult), { colSpan: 9, align: "left", bold: true, color: String(asVal(data.quantityResult)).toLowerCase().includes("pass") ? "228B22" : "E36C09" })
         ]
       }),
       new TableRow({
@@ -1407,7 +1411,7 @@ async function createReportContent(data, uploadedFiles) {
 
   if (!isCls) {
     // C. ON-SITE TESTS (Separated table with exact colors)
-    const osResult = data.onSiteTestResult || "Pending";
+    const osResult = asVal(data.onSiteTestResult);
     const osRows = [
       new TableRow({ children: [new TableCell({ columnSpan: 5, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "C. ON-SITE TESTS", bold: true, size: 22, color: "1F4E79" })] })] })] }),
       new TableRow({
@@ -1425,15 +1429,15 @@ async function createReportContent(data, uploadedFiles) {
         return new TableRow({
           children: [
             createQtyCell(String(id)),
-            createQtyCell(desc || (id === 1 ? "Function test" : "-"), { align: "left" }),
-            createQtyCell(data[`testMethod${id}`] || (id === 1 ? "Check if the equipment can operate normally" : "-"), { align: "left" }),
-            createQtyCell(data[`testSample${id}`] || "1pc"),
-            createQtyCell(data[`testResult${id}`] || "pending", { bold: true, color: String(data[`testResult${id}`] || "pending").toLowerCase().includes("pass") ? "228B22" : "E36C09" }),
+            createQtyCell(asVal(desc), { align: "left" }),
+            createQtyCell(asVal(data[`testMethod${id}`]), { align: "left" }),
+            createQtyCell(asVal(data[`testSample${id}`])),
+            createQtyCell(asVal(data[`testResult${id}`]), { bold: true, color: String(asVal(data[`testResult${id}`])).toLowerCase().includes("pass") ? "228B22" : "E36C09" }),
           ]
         });
       }).filter(Boolean),
       new TableRow({ children: [createQtyCell("Result:", { bold: true, shaded: true, align: "left" }), createQtyCell(osResult, { colSpan: 4, align: "left", bold: true, color: String(osResult).toLowerCase().includes("pass") ? "228B22" : "E36C09" })] }),
-      new TableRow({ children: [createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(data.onSiteTestRemark || "The factory did not provide the equipment for other tests", { colSpan: 4, align: "left" })] })
+      new TableRow({ children: [createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(asVal(data.onSiteTestRemark), { colSpan: 4, align: "left" })] })
     ];
     children.push(new Table({ width: { size: 100, type: "pct" }, rows: osRows }));
     children.push(new Paragraph({ children: [], spacing: { after: 200 } })); // Separator gap
@@ -1470,13 +1474,13 @@ async function createReportContent(data, uploadedFiles) {
           ]
         })),
         new TableRow({ children: [createQtyCell("Result:", { bold: true, shaded: true, align: "left" }), createQtyCell(dpiProdRes, { colSpan: 5, align: "left", bold: true, color: String(dpiProdRes).toLowerCase().includes("pass") ? "228B22" : "CC0000" })] }),
-        new TableRow({ children: [createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(data.productRemark || "N/A", { colSpan: 5, align: "left" })] }),
+        new TableRow({ children: [createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(asVal(data.productRemark), { colSpan: 5, align: "left" })] }),
       ];
       children.push(new Table({ width: { size: 100, type: "pct" }, rows: dpiSpecRows }));
       children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
     } else {
       // PSI path: existing flat-key rendering
-      const prodRes = data.productResult || "Passed";
+      const prodRes = asVal(data.productResult);
       const specItems = [
         new TableRow({ children: [new TableCell({ columnSpan: 6, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "D. PRODUCT SPECIFICATION", bold: true, size: 22, color: "1F4E79" })] })] })] }),
         new TableRow({
@@ -1489,36 +1493,36 @@ async function createReportContent(data, uploadedFiles) {
             createQtyCell("3# Sample", { bold: true, shaded: true }),
           ]
         }),
-        new TableRow({ children: [createQtyCell("Item No.:", { bold: true, shaded: true, align: "left" }), createQtyCell(data.productDescription || "30B nut forming machine (Model: 30B-6S-40)", { colSpan: 5, bold: true })] }),
+        new TableRow({ children: [createQtyCell("Item No.:", { bold: true, shaded: true, align: "left" }), createQtyCell(asVal(data.productDescription), { colSpan: 5, bold: true })] }),
         new TableRow({
           children: [
-            createQtyCell(data.blank_row_0 || "30B-6S-40", { align: "left" }),
-            createQtyCell(data.blank_row_c0 || "NA"),
-            createQtyCell(data.blank_row_c1 || "-"),
-            createQtyCell(data.blank_row_c2 || "676x294x238cm"),
-            createQtyCell(data.blank_row_c3 || "-"),
-            createQtyCell(data.blank_row_c4 || "-"),
+            createQtyCell(asVal(data.blank_row_0), { align: "left" }),
+            createQtyCell(asVal(data.blank_row_c0)),
+            createQtyCell(asVal(data.blank_row_c1)),
+            createQtyCell(asVal(data.blank_row_c2)),
+            createQtyCell(asVal(data.blank_row_c3)),
+            createQtyCell(asVal(data.blank_row_c4)),
           ]
         }),
         ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(id => {
           const descKey = `item_${id}_desc`;
           if (!data[descKey] && id > 1) return null;
           return [
-            new TableRow({ children: [createQtyCell("Item No.:", { bold: true, shaded: true, align: "left" }), createQtyCell(data[descKey] || (id === 1 ? "Mould M10" : "-"), { colSpan: 5, bold: true })] }),
+            new TableRow({ children: [createQtyCell("Item No.:", { bold: true, shaded: true, align: "left" }), createQtyCell(asVal(data[descKey]), { colSpan: 5, bold: true })] }),
             new TableRow({
               children: [
-                createQtyCell(data[`item_${id}_name`] || (id === 1 ? "Mould M10" : "-"), { align: "left" }),
-                createQtyCell(data[`item_${id}_c0`] || "NA"),
-                createQtyCell(data[`item_${id}_c1`] || "-"),
-                createQtyCell(data[`item_${id}_c2`] || (id === 1 ? "10mm" : "-")),
-                createQtyCell(data[`item_${id}_c3`] || "-"),
-                createQtyCell(data[`item_${id}_c4`] || "-"),
+                createQtyCell(asVal(data[`item_${id}_name`]), { align: "left" }),
+                createQtyCell(asVal(data[`item_${id}_c0`])),
+                createQtyCell(asVal(data[`item_${id}_c1`])),
+                createQtyCell(asVal(data[`item_${id}_c2`])),
+                createQtyCell(asVal(data[`item_${id}_c3`])),
+                createQtyCell(asVal(data[`item_${id}_c4`])),
               ]
             })
           ];
         }).filter(Boolean).flat(),
         new TableRow({ children: [createQtyCell("Result:", { bold: true, shaded: true, align: "left" }), createQtyCell(prodRes, { colSpan: 5, align: "left", bold: true, color: String(prodRes).toLowerCase().includes("pass") ? "228B22" : "CC0000" })] }),
-        new TableRow({ children: [createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(data.productRemark || "N/A", { colSpan: 5, align: "left" })] })
+        new TableRow({ children: [createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(asVal(data.productRemark), { colSpan: 5, align: "left" })] })
       ];
       children.push(new Table({ width: { size: 100, type: "pct" }, rows: specItems }));
       children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
@@ -1689,9 +1693,9 @@ async function createReportContent(data, uploadedFiles) {
 
     // G. PRODUCTION LINE CHECKING (DPI only)
     if (isDpi) {
-      const plSampleSize = data.productionLineSampleSize || "32";
-      const plResult = data.productionLineResult || "N/A";
-      const plRemark = data.productionLineRemark || "";
+      const plSampleSize = asVal(data.productionLineSampleSize);
+      const plResult = asVal(data.productionLineResult);
+      const plRemark = asVal(data.productionLineRemark);
       const plRowsData = Array.isArray(data.productionLineTable) ? data.productionLineTable : [];
       const plTotal = plRowsData.reduce((sum, row) => {
         const v = parseInt(row.samplingSize || row.sampleSize || 0);
@@ -1710,13 +1714,13 @@ async function createReportContent(data, uploadedFiles) {
             createQtyCell("Number", { bold: true, shaded: true }),
           ]
         }),
-        ...(plRowsData.length > 0 ? plRowsData : [{ process: "-", samplingSize: "-", styleColor: "N/A", problems: "N/A", number: "0" }]).map(row => new TableRow({
+        ...(plRowsData.length > 0 ? plRowsData : []).map(row => new TableRow({
           children: [
-            createQtyCell(row.process || "-", { align: "left" }),
-            createQtyCell(String(row.samplingSize || row.sampleSize || "-")),
-            createQtyCell(row.styleColor || "N/A"),
-            createQtyCell(row.problems || "N/A"),
-            createQtyCell(String(row.number || "0")),
+            createQtyCell(asVal(row.process), { align: "left" }),
+            createQtyCell(String(asVal(row.samplingSize || row.sampleSize || ""))),
+            createQtyCell(asVal(row.styleColor)),
+            createQtyCell(asVal(row.problems)),
+            createQtyCell(String(asVal(row.number))),
           ]
         })),
         new TableRow({
@@ -2304,7 +2308,7 @@ function createProductConformityTable(data) {
     // Small Grid Row
     new TableRow({
       children: [
-        createQtyCell(data.productName || "Frozen Buffalo FQ Rolls", { width: { size: 25, type: "pct" } }),
+        createQtyCell(asVal(data.productName), { width: { size: 25, type: "pct" } }),
         ...Array(9).fill(0).map(() => createQtyCell("/", { align: "center", width: { size: 8, type: "pct" } }))
       ]
     }),
