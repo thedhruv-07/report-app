@@ -4,9 +4,9 @@ import { useAuth } from '../../context/AuthContext';
 import { 
   LayoutDashboard, ClipboardList, Users, Bell, LogOut
 } from 'lucide-react';
-import { 
-  MOCK_BOOKINGS, MOCK_INSPECTORS, MOCK_NOTIFICATIONS, 
-  STATUS_COLORS, INSPECTION_TYPES, ALL_STATUSES 
+import {
+  MOCK_BOOKINGS, MOCK_NOTIFICATIONS,
+  STATUS_COLORS, INSPECTION_TYPES, ALL_STATUSES
 } from './constants/adminMockData';
 
 // Modular Sub-components
@@ -242,9 +242,8 @@ export default function AdminDashboard() {
           />
 
           {/* Inspector Performance Cards */}
-          <InspectorDirectory 
+          <InspectorDirectory
             activeView={activeView}
-            MOCK_INSPECTORS={MOCK_INSPECTORS}
           />
 
         </main>
