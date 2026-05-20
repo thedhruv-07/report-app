@@ -64,25 +64,10 @@ export default function FinalStep({ reportDownloaded, clearFormAfterDownload, su
           >
             {isGenerating ? "Generating..." : "Download DOCX"}
           </button>
-          <button 
-            onClick={() => submit('pdf')} 
-            disabled={isGenerating} 
-            style={{ 
-              padding: "16px 32px", borderRadius: "12px", border: `2px solid ${colors.primary}`, 
-              background: "transparent", color: colors.primary, fontWeight: "700", 
-              cursor: isGenerating ? "not-allowed" : "pointer", fontSize: "15px",
-              display: "flex", alignItems: "center", gap: "10px",
-              transition: "transform 0.2s"
-            }}
-            onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
-            onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
-          >
-            {isGenerating ? "Preparing..." : "Download PDF"}
-          </button>
         </div>
         
         <p style={{ marginTop: "30px", fontSize: "13px", color: colors.textMuted }}>
-          Note: PDF generation may take a few seconds as it processes high-resolution images.
+          The Factory Audit export is available as DOCX.
         </p>
       </div>
     </div>
