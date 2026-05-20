@@ -7,7 +7,8 @@ const getStatus = async (req, res) => {
     const user = await User.findById(req.user.id).select('onboarding');
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json({ onboarding: user.onboarding || {} });
-  } catch {
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 };
@@ -25,7 +26,8 @@ const completeStep = async (req, res) => {
     );
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json({ onboarding: user.onboarding });
-  } catch {
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 };
@@ -34,7 +36,8 @@ const getQuestions = async (req, res) => {
   try {
     const questions = await OnboardingQuestion.find({ isActive: true }).select('-correctAnswer');
     res.json({ questions });
-  } catch {
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 };
@@ -79,10 +82,12 @@ const submitAssessment = async (req, res) => {
       update.$set['onboarding.completedAt'] = new Date();
     }
 
-    await User.findByIdAndUpdate(req.user.id, update);
+    const updated = await User.findByIdAndUpdate(req.user.id, update);
+    if (!updated) return res.status(404).json({ error: 'User not found' });
 
     res.json({ passed, score, correctCount, totalCount, categoryBreakdown });
-  } catch {
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 };
