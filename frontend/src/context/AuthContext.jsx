@@ -1,13 +1,14 @@
-import { createContext, useContext, useState } from "react";
+// frontend/src/context/AuthContext.jsx
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { ENDPOINTS } from "../config/api";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  // Hydrate from localStorage synchronously during initialization to prevent any redirect race conditions on hard refresh
   const [user, setUser] = useState(() => {
     try {
-      const savedUser = localStorage.getItem("reportUser");
-      return savedUser ? JSON.parse(savedUser) : null;
+      const saved = localStorage.getItem("reportUser");
+      return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
     }
@@ -23,6 +24,39 @@ export function AuthProvider({ children }) {
 
   const [loading, setLoading] = useState(false);
 
+  // null = still fetching, true = complete, false = incomplete
+  const [onboardingCompleted, setOnboardingCompleted] = useState(null);
+
+  const fetchOnboardingStatus = useCallback(async (currentToken) => {
+    if (!currentToken) return;
+    try {
+      const res = await fetch(ENDPOINTS.ONBOARDING.STATUS, {
+        headers: { Authorization: `Bearer ${currentToken}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setOnboardingCompleted(data.onboarding?.isCompleted ?? false);
+      } else {
+        setOnboardingCompleted(false);
+      }
+    } catch {
+      setOnboardingCompleted(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setOnboardingCompleted(null);
+      return;
+    }
+    if (user.role !== 'inspector') {
+      // Non-inspectors are always considered "complete" — no gate for them
+      setOnboardingCompleted(true);
+      return;
+    }
+    fetchOnboardingStatus(token);
+  }, [user, token, fetchOnboardingStatus]);
+
   const login = (userData, tokenStr) => {
     setUser(userData);
     setToken(tokenStr);
@@ -33,12 +67,17 @@ export function AuthProvider({ children }) {
   const logout = () => {
     setUser(null);
     setToken("");
+    setOnboardingCompleted(null);
     localStorage.removeItem("reportUser");
     localStorage.removeItem("reportToken");
   };
 
+  const refreshOnboarding = useCallback(() => {
+    return fetchOnboardingStatus(token);
+  }, [token, fetchOnboardingStatus]);
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, loading, onboardingCompleted, refreshOnboarding }}>
       {children}
     </AuthContext.Provider>
   );
