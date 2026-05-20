@@ -1,4 +1,5 @@
 // frontend/src/dashboards/admin/components/InspectorDirectory.jsx
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { Mail } from 'lucide-react';
 import { ENDPOINTS } from '../../../config/api';
@@ -37,6 +38,7 @@ export default function InspectorDirectory({ activeView }) {
   const [inspectors, setInspectors] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     if (activeView !== 'inspectors') return;
@@ -52,7 +54,7 @@ export default function InspectorDirectory({ activeView }) {
       .then(data => setInspectors(data.inspectors || []))
       .catch(() => setError('Failed to load inspector data. Please refresh.'))
       .finally(() => setLoading(false));
-  }, [activeView, token]);
+  }, [activeView, token, retryCount]);
 
   if (activeView !== 'inspectors') return null;
 
@@ -69,7 +71,7 @@ export default function InspectorDirectory({ activeView }) {
     return (
       <div className="text-center py-20">
         <p className="text-rose-600 font-medium">{error}</p>
-        <button onClick={() => setError(null)} className="mt-3 text-indigo-600 underline text-sm">Retry</button>
+        <button onClick={() => { setError(null); setRetryCount(c => c + 1); }} className="mt-3 text-indigo-600 underline text-sm">Retry</button>
       </div>
     );
   }
@@ -89,12 +91,12 @@ export default function InspectorDirectory({ activeView }) {
             <div className="flex items-start justify-between mb-4">
               <div className="flex gap-4 items-center">
                 <div className="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-100 to-blue-100 border border-indigo-200 flex items-center justify-center font-black text-indigo-700 text-xl">
-                  {inspector.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                  {(inspector.name || '?').split(' ').map(n => n[0] || '').join('').slice(0, 2) || '?'}
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-800 text-lg leading-tight">{inspector.name}</h3>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Joined {new Date(inspector.createdAt).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
+                    Joined {inspector.createdAt ? new Date(inspector.createdAt).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : 'Unknown'}
                   </p>
                 </div>
               </div>
