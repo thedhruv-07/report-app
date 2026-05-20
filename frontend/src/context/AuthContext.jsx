@@ -27,11 +27,12 @@ export function AuthProvider({ children }) {
   // null = still fetching, true = complete, false = incomplete
   const [onboardingCompleted, setOnboardingCompleted] = useState(null);
 
-  const fetchOnboardingStatus = useCallback(async (currentToken) => {
+  const fetchOnboardingStatus = useCallback(async (currentToken, signal) => {
     if (!currentToken) return;
     try {
       const res = await fetch(ENDPOINTS.ONBOARDING.STATUS, {
         headers: { Authorization: `Bearer ${currentToken}` },
+        signal,
       });
       if (res.ok) {
         const data = await res.json();
@@ -39,8 +40,8 @@ export function AuthProvider({ children }) {
       } else {
         setOnboardingCompleted(false);
       }
-    } catch {
-      setOnboardingCompleted(false);
+    } catch (err) {
+      if (err.name !== 'AbortError') setOnboardingCompleted(false);
     }
   }, []);
 
@@ -54,7 +55,9 @@ export function AuthProvider({ children }) {
       setOnboardingCompleted(true);
       return;
     }
-    fetchOnboardingStatus(token);
+    const controller = new AbortController();
+    fetchOnboardingStatus(token, controller.signal);
+    return () => controller.abort();
   }, [user, token, fetchOnboardingStatus]);
 
   const login = (userData, tokenStr) => {
