@@ -42,6 +42,15 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: null,
   },
+  onboarding: {
+    isCompleted:        { type: Boolean, default: false },
+    manualRead:         { type: Boolean, default: false },
+    videosWatched:      { type: Boolean, default: false },
+    assessmentScore:    { type: Number,  default: null },
+    assessmentPassed:   { type: Boolean, default: false },
+    assessmentAttempts: { type: Number,  default: 0 },
+    completedAt:        { type: Date,    default: null },
+  },
 }, { timestamps: true });
 
 // Check password
