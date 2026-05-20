@@ -2,9 +2,11 @@ const express = require("express");
 const router = express.Router();
 const inspectorController = require("../controllers/inspector.controller");
 const { authMiddleware } = require("../middleware/auth.middleware");
+const { requireOnboardingComplete } = require("../middleware/onboardingComplete.middleware");
 
-// All inspector routes should be protected
+// All inspector routes require auth + completed onboarding
 router.use(authMiddleware);
+router.use(requireOnboardingComplete);
 
 // Dashboard Summary
 router.get("/dashboard/summary", inspectorController.getSummary);
