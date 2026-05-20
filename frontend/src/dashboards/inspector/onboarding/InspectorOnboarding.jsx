@@ -1,5 +1,7 @@
 // frontend/src/dashboards/inspector/onboarding/InspectorOnboarding.jsx
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Sparkles, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { ENDPOINTS } from '../../../config/api';
 import StepIndicator from './StepIndicator';
@@ -9,12 +11,33 @@ import Step3Assessment from './steps/Step3Assessment';
 
 const STEP_LABELS = ['User Manual', 'Training Videos', 'Assessment'];
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.2 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+};
+
 export default function InspectorOnboarding() {
   const { user, token, refreshOnboarding } = useAuth();
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(() => {
+    // Restore from localStorage on initial load
+    const saved = localStorage.getItem('onboarding_current_step');
+    return saved ? parseInt(saved, 10) : 1;
+  });
+  const [loading, setLoading] = useState(true);
 
-  // On mount, determine the furthest unlocked step so returning
-  // inspectors resume where they left off rather than starting over
+  // Persist currentStep to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('onboarding_current_step', currentStep.toString());
+  }, [currentStep]);
+
   useEffect(() => {
     if (!token) return;
     const fetchStatus = async () => {
@@ -23,13 +46,11 @@ export default function InspectorOnboarding() {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) return;
-        const data = await res.json();
-        const ob = data.onboarding || {};
-        if (ob.videosWatched) setCurrentStep(3);
-        else if (ob.manualRead) setCurrentStep(2);
-        else setCurrentStep(1);
+        // Just verify status, don't auto-advance based on it
       } catch {
         // default stays at step 1
+      } finally {
+        setLoading(false);
       }
     };
     fetchStatus();
@@ -40,30 +61,178 @@ export default function InspectorOnboarding() {
     setCurrentStep(prev => Math.min(prev + 1, 3));
   };
 
+  const handleAssessmentComplete = async () => {
+    // Clear localStorage when onboarding is fully completed
+    localStorage.removeItem('onboarding_current_step');
+    await refreshOnboarding();
+  };
+
+  const handlePreviousStep = () => {
+    setCurrentStep(prev => Math.max(prev - 1, 1));
+  };
+
   const firstName = user?.name?.split(' ')[0] || 'Inspector';
+  const progressPercentage = Math.round((currentStep / 3) * 100);
+
+  // Animated background gradient
+  const bgShapes = [
+    { id: 1, top: '-10%', left: '-5%', size: '300px', delay: 0 },
+    { id: 2, top: '20%', right: '-10%', size: '250px', delay: 0.3 },
+    { id: 3, bottom: '10%', left: '10%', size: '200px', delay: 0.6 },
+  ];
+
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-indigo-50 to-blue-50">
+        <motion.div
+          animate={{ opacity: [0.6, 1, 0.6] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="flex flex-col items-center gap-4"
+        >
+          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+          <p className="text-slate-600 font-medium">Loading your onboarding...</p>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4">
-      <div className="max-w-5xl mx-auto">
-        {/* Welcome header */}
-        <div className="text-center mb-8">
-          <div className="inline-block px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-xs font-black text-indigo-600 uppercase tracking-widest mb-3">
-            Getting Started
-          </div>
-          <h1 className="text-3xl font-black text-slate-800">
-            Welcome, {firstName}!
-          </h1>
-          <p className="text-slate-500 mt-2 max-w-md mx-auto">
-            Complete the following 3 steps to unlock your Inspector Dashboard and start accepting assignments.
-          </p>
-        </div>
+    <div className="min-h-screen bg-white py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      {/* Animated background shapes */}
+      {bgShapes.map(shape => (
+        <motion.div
+          key={shape.id}
+          className="absolute rounded-full bg-slate-100/40 blur-3xl pointer-events-none"
+          style={{
+            width: shape.size,
+            height: shape.size,
+            top: shape.top,
+            left: shape.left,
+            right: shape.right,
+            bottom: shape.bottom,
+          }}
+          animate={{ y: [0, 30, 0], x: [0, 20, 0] }}
+          transition={{ duration: 8, delay: shape.delay, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      ))}
 
+      <motion.div
+        className="max-w-5xl mx-auto relative z-10"
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+      >
+        {/* Premium Hero Section */}
+        <motion.div className="text-center mb-12 sm:mb-16" variants={itemVariants}>
+          <motion.div
+            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg mb-4"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <span className="text-xs font-semibold text-slate-700 uppercase tracking-widest">Onboarding Progress</span>
+          </motion.div>
+
+          <motion.h1
+            className="text-5xl lg:text-6xl font-bold text-slate-900 mb-4"
+            variants={itemVariants}
+          >
+            Welcome, {firstName}
+          </motion.h1>
+
+          <motion.p
+            className="text-lg sm:text-xl text-slate-600 mb-8 max-w-2xl mx-auto leading-relaxed"
+            variants={itemVariants}
+          >
+            Complete these 3 steps to unlock your Inspector Dashboard and start accepting inspection assignments.
+          </motion.p>
+
+          {/* Progress Circle Card */}
+          <motion.div
+            className="inline-block bg-white border border-slate-300 rounded-xl px-8 py-6 shadow-sm"
+            variants={itemVariants}
+            whileHover={{ scale: 1.01 }}
+            transition={{ type: 'spring', stiffness: 300 }}
+          >
+            <div className="flex items-center gap-6">
+              <div className="relative w-24 h-24">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="45"
+                    fill="none"
+                    stroke="#e2e8f0"
+                    strokeWidth="8"
+                  />
+                  <motion.circle
+                    cx="50"
+                    cy="50"
+                    r="45"
+                    fill="none"
+                    stroke="url(#gradient)"
+                    strokeWidth="8"
+                    strokeDasharray={`${2 * Math.PI * 45}`}
+                    strokeDashoffset={`${2 * Math.PI * 45 * (1 - progressPercentage / 100)}`}
+                    strokeLinecap="round"
+                    transition={{ duration: 1, ease: 'easeInOut' }}
+                  />
+                  <defs>
+                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#1F4B7B" />
+                      <stop offset="100%" stopColor="#1F4B7B" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center">
+                    <p className="text-xl font-bold text-blue-900 leading-none">
+                      {progressPercentage}%
+                    </p>
+                    <p className="text-xs font-semibold text-slate-500 mt-1">Complete</p>
+                  </div>
+                </div>
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-semibold text-slate-700">
+                  Step {currentStep} of 3
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {currentStep === 1 && 'Read the user manual'}
+                  {currentStep === 2 && 'Watch training videos'}
+                  {currentStep === 3 && 'Complete assessment'}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+
+        {/* Step Indicator */}
         <StepIndicator currentStep={currentStep} steps={STEP_LABELS} />
 
-        {currentStep === 1 && <Step1Manual onComplete={handleStepComplete} />}
-        {currentStep === 2 && <Step2Videos onComplete={handleStepComplete} />}
-        {currentStep === 3 && <Step3Assessment onComplete={refreshOnboarding} />}
-      </div>
+        {/* Step Content - with page transitions */}
+        <motion.div
+          key={currentStep}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.4 }}
+        >
+          {currentStep === 1 && <Step1Manual onComplete={handleStepComplete} />}
+          {currentStep === 2 && <Step2Videos onComplete={handleStepComplete} onPrevious={handlePreviousStep} />}
+          {currentStep === 3 && <Step3Assessment onComplete={handleAssessmentComplete} onPrevious={handlePreviousStep} />}
+        </motion.div>
+
+        {/* Footer tip */}
+        <motion.p
+          className="text-center text-xs text-slate-500 mt-12 font-medium"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1 }}
+        >
+          You can return to continue your onboarding at any time
+        </motion.p>
+      </motion.div>
     </div>
   );
 }
