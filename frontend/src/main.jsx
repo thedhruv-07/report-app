@@ -8,6 +8,8 @@ import './index.css'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import DashboardLayout from './components/layout/DashboardLayout'
 import Dashboard from './dashboards/inspector/InspectorDashboard.jsx'
+import OnboardingGuard from './components/auth/OnboardingGuard'
+import InspectorOnboarding from './dashboards/inspector/onboarding/InspectorOnboarding.jsx'
 import TechnicalManagerDashboard from './dashboards/manager/TechnicalManagerDashboard.jsx'
 import AdminDashboard from './dashboards/admin/AdminDashboard.jsx'
 import DashboardHome from './pages/DashboardHome.jsx'
@@ -57,7 +59,12 @@ createRoot(document.getElementById('root')).render(
               </Route>
               
               <Route element={<ProtectedRoute allowedRoles={['inspector', 'admin', 'manager']} />}>
-                <Route path="/dashboard/inspector" element={<Dashboard />} />
+                {/* Onboarding page — accessible without OnboardingGuard (guard would cause redirect loop) */}
+                <Route path="/dashboard/inspector/onboarding" element={<InspectorOnboarding />} />
+                {/* All other inspector pages gated behind OnboardingGuard */}
+                <Route element={<OnboardingGuard />}>
+                  <Route path="/dashboard/inspector" element={<Dashboard />} />
+                </Route>
               </Route>
               
               <Route path="/settings" element={<Settings />} />
