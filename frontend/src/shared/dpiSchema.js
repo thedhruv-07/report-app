@@ -25,7 +25,7 @@ export const dpiSchema = {
     { name: "summaryQuantity", label: "A. Quantity", type: "select", options: ["Passed", "Failed", "Pending", "N/A"] },
     { name: "summaryWorkmanship", label: "B. Workmanship", type: "select", options: ["Passed", "Failed", "Pending", "N/A"] },
     { name: "summaryOnSiteTests", label: "C. On-Site Tests", type: "select", options: ["Passed", "Failed", "Pending", "N/A"] },
-    { name: "summaryDimensions", label: "D. Dimensions", type: "select", options: ["Passed", "Failed", "Pending", "N/A"] },
+    { name: "summaryDimensions", label: "D. Product Specification", type: "select", options: ["Passed", "Failed", "Pending", "N/A"] },
     { name: "summaryPacking", label: "E. Packing", type: "select", options: ["Passed", "Failed", "Pending", "N/A"] },
     { name: "summaryMarkingLabeling", label: "F. Marking & Labeling", type: "select", options: ["Passed", "Failed", "Pending", "N/A"] },
     { name: "summaryProductConformity", label: "G. Product Conformity", type: "select", options: ["Passed", "Failed", "Pending", "N/A"] },

@@ -288,7 +288,7 @@ export default function DuringProductionInspection() {
     { id: 5, label: "A. Quantity", component: <QuantityDetails form={formWithSchema} handleChange={handleChange} /> },
     { id: 6, label: "B. Workmanship", component: <Workmanship form={formWithSchema} handleChange={handleChange} /> },
     { id: 7, label: "C. On-Site Tests", component: <OnSiteTests form={formWithSchema} handleChange={handleChange} /> },
-    { id: 8, label: "D. Dimensions", component: <Dimensions form={formWithSchema} handleChange={handleChange} /> },
+    { id: 8, label: "D. Product Specification", component: <Dimensions form={formWithSchema} handleChange={handleChange} /> },
     { id: 9, label: "E. Packing", component: <Packing form={formWithSchema} handleChange={handleChange} /> },
     { id: 10, label: "F. Marking", component: <Marking form={formWithSchema} handleChange={handleChange} /> },
     { id: 11, label: "G. Production Line", component: <ProductionLine form={formWithSchema} handleChange={handleChange} /> },
