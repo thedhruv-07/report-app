@@ -141,6 +141,10 @@ export default function DuringProductionInspection() {
       dimensionsTable: [
         { parameter: "Seat Height", clientSpec: "45-55cm", refSample: "50cm", sample1: "50.5cm", sample2: "49.8cm", sample3: "50.2cm" }
       ],
+      // Backwards-compatible alias for new product specification naming
+      productSpecificationTable: [
+        { parameter: "Seat Height", clientSpec: "45-55cm", refSample: "50cm", sample1: "50.5cm", sample2: "49.8cm", sample3: "50.2cm" }
+      ],
       packingTable: [
         { itemNo: "CH-001", qtyPerCartonMarking: "1", qtyPerCartonActual: "1", cartonSizeMarking: "60x60x40", cartonSizeActual: "60x60x40", grossWeightMarking: "15kg", grossWeightActual: "15.2kg" }
       ],

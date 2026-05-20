@@ -148,6 +148,9 @@ export const dpiSchema = {
     ]
   },
 
+  // Backwards-compatible alias: productSpecificationTable is same structure as dimensionsTable
+  productSpecificationTable: null, // initialized at module load below
+
   // ─── SECTION E: PACKING ────────────────────────────────────────────────────
   packingTable: {
     columns: [
@@ -253,3 +256,6 @@ export const dpiSchema = {
     { name: "defectiveSamplesCount", label: "Defective Samples Collected", type: "text", defaultValue: "0" },
   ],
 };
+
+// Backwards-compatibility: productSpecificationTable mirrors dimensionsTable
+dpiSchema.productSpecificationTable = dpiSchema.dimensionsTable;

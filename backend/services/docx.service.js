@@ -654,12 +654,14 @@ async function createReportContent(data, uploadedFiles) {
     data.client_requirement_result = data.client_requirement_result || data.clientRequirementResult;
     data.client_requirement_remark = data.client_requirement_remark || data.clientRequirementRemark;
 
-    // Dimensions: store for DPI-specific Section D rendering
-    data._dpiDimensionsRows      = Array.isArray(data.dimensionsTable) ? data.dimensionsTable : [];
-    data._dpiDimensionsItemNo    = data.dimensionsItemNo || data.itemNo || "";
-    data._dpiDimensionsGroupName = data.dimensionsGroupName || "";
-    data.productResult           = data.productResult || data.dimensionsResult;
-    data.productRemark           = data.productRemark || data.dimensionsRemark;
+    // Dimensions / Product Specification: support DPI form key `productSpecificationTable` (preferred)
+    data._dpiDimensionsRows      = Array.isArray(data.productSpecificationTable)
+                                    ? data.productSpecificationTable
+                                    : (Array.isArray(data.dimensionsTable) ? data.dimensionsTable : []);
+    data._dpiDimensionsItemNo    = data.dimensionsItemNo || data.productItemNo || data.itemNo || "";
+    data._dpiDimensionsGroupName = data.dimensionsGroupName || data.productGroupName || "";
+    data.productResult           = data.productResult || data.dimensionsResult || data.productSpecificationResult;
+    data.productRemark           = data.productRemark || data.dimensionsRemark || data.productSpecificationRemark;
   }
   // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1282,12 +1284,13 @@ async function createReportContent(data, uploadedFiles) {
       let currentItemHeader = null;
       
       defects.forEach((defect, i) => {
-        const headerKey = `${defect.itemName}_${defect.sampleSize}`;
-        
+        const resolvedItemName = defect.itemName || defect.itemGroup;
+        const headerKey = `${resolvedItemName}_${defect.sampleSize}`;
+
         if (headerKey !== currentItemHeader) {
           rows.push(new TableRow({
             children: [
-              createQtyCell(`For Item ${defect.itemName || "-"}`, { align: "left", colSpan: 2 }),
+              createQtyCell(`For Item ${resolvedItemName || "-"}`, { align: "left", colSpan: 2 }),
               createQtyCell(`Sample size: ${defect.sampleSize || "0"} Sets`, { align: "center", colSpan: 2 }),
               createQtyCell(""),
               createQtyCell(""),
@@ -1441,7 +1444,7 @@ async function createReportContent(data, uploadedFiles) {
       // DPI path: render dimensionsTable array from dpiSchema
       const dpiProdRes = data.productResult || "Pending";
       const dpiSpecRows = [
-        new TableRow({ children: [new TableCell({ columnSpan: 6, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "D. DIMENSIONS (PRODUCT SPECIFICATIONS)", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+        new TableRow({ children: [new TableCell({ columnSpan: 6, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "D. PRODUCT SPECIFICATION", bold: true, size: 22, color: "1F4E79" })] })] })] }),
         new TableRow({ children: [createQtyCell("Item No.:", { bold: true, shaded: true, align: "left" }), createQtyCell(data._dpiDimensionsItemNo || "-", { colSpan: 5, bold: true })] }),
         ...(data._dpiDimensionsGroupName ? [
           new TableRow({ children: [new TableCell({ columnSpan: 6, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: data._dpiDimensionsGroupName, bold: true })] })] })] })
