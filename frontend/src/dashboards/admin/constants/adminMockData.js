@@ -84,12 +84,6 @@ export const MOCK_BOOKINGS = [
   },
 ];
 
-export const MOCK_INSPECTORS = [
-  { id: "INS-001", name: "Raj Mehta", email: "raj.mehta@rms.com", specialization: "PSI / DPI", activeJobs: 3, completedJobs: 47, rating: 4.8 },
-  { id: "INS-002", name: "Anita Sharma", email: "anita.sharma@rms.com", specialization: "CLS / PSI", activeJobs: 2, completedJobs: 39, rating: 4.9 },
-  { id: "INS-003", name: "Li Wei", email: "li.wei@rms.com", specialization: "Factory & Social Audit", activeJobs: 2, completedJobs: 52, rating: 4.7 },
-];
-
 export const MOCK_NOTIFICATIONS = [
   { id: 1, message: "Report RPT-002 finalized by TM Sarah Chen — Ready for client delivery", type: "success", timeAgo: "12 min ago", isRead: false, bookingId: "BK-002" },
   { id: 2, message: "Inspector Raj Mehta submitted report RPT-007 for TM review", type: "info", timeAgo: "45 min ago", isRead: false, bookingId: "BK-007" },

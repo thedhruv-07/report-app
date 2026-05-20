@@ -101,9 +101,21 @@ export default function InspectorDirectory({ activeView }) {
             </div>
 
             {/* Email */}
-            <div className="flex items-center gap-2 text-sm text-slate-600 mb-4">
+            <div className="flex items-center gap-2 text-sm text-slate-600 mb-3">
               <Mail className="w-4 h-4 text-slate-400 shrink-0" />
               <span className="truncate">{inspector.email}</span>
+            </div>
+
+            {/* Active jobs + rating */}
+            <div className="flex items-center gap-6 mb-4">
+              <div>
+                <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Active Jobs</p>
+                <p className="text-sm font-semibold text-slate-700 mt-0.5">{inspector.activeJobs ?? 0}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Rating</p>
+                <p className="text-sm font-semibold text-slate-700 mt-0.5">{inspector.rating ?? '—'}</p>
+              </div>
             </div>
 
             {/* Onboarding status */}
