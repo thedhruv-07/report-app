@@ -43,5 +43,14 @@ export const ENDPOINTS = {
     SUBMIT_FEEDBACK: (id) => `${API_BASE_URL}/api/manager/reports/${id}/correction`,
     FINALIZE: (id) => `${API_BASE_URL}/api/manager/reports/${id}/finalize`,
     ADD_REMARK: (id) => `${API_BASE_URL}/api/manager/reports/${id}/remarks`,
-  }
+  },
+  ONBOARDING: {
+    STATUS:        `${API_BASE_URL}/api/inspector/onboarding/status`,
+    COMPLETE_STEP: `${API_BASE_URL}/api/inspector/onboarding/complete-step`,
+    QUESTIONS:     `${API_BASE_URL}/api/inspector/onboarding/assessment-questions`,
+    SUBMIT:        `${API_BASE_URL}/api/inspector/onboarding/submit-assessment`,
+  },
+  ADMIN: {
+    INSPECTORS: `${API_BASE_URL}/api/admin/inspectors`,
+  },
 };
