@@ -82,6 +82,14 @@ app.use("/api/v2/reports", reportV2Routes);
 app.use("/api/v2/photos", photoV2Routes);
 app.use("/api/factory-audit", factoryAuditRoutes);
 
+// Onboarding Routes (must be mounted before /api/inspector to take priority)
+const onboardingRoutes = require('./routes/onboarding.routes');
+app.use('/api/inspector/onboarding', onboardingRoutes);
+
+// Admin Routes
+const adminRoutes = require('./routes/admin.routes');
+app.use('/api/admin', adminRoutes);
+
 // Inspector Routes
 const inspectorRoutes = require("./routes/inspector.routes");
 app.use("/api/inspector", inspectorRoutes);
