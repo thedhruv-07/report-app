@@ -2834,68 +2834,64 @@ async function createCLSFinalPhotosSection(data) {
     // Exclude remark photos group only since it is already rendered in the remarks table to avoid duplication
     return g.id !== "remarkPhotos" && !desc.includes("remark");
   });
-  
-  const children = [
-    // Section Header
-    new Table({
-      width: { size: 100, type: "pct" },
-      rows: [
-        new TableRow({
-          children: [
-            new TableCell({
-              shading: { fill: "E9ECEF" },
-              borders: tableBorders(),
-              children: [new Paragraph({ children: [new TextRun({ text: "F. PHOTOS", bold: true, size: 22, color: "1F4E79", font: "Arial" })] })]
-            })
-          ]
+
+  const rows = [
+    new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 2,
+          shading: { fill: "E9ECEF" },
+          borders: tableBorders(),
+          children: [new Paragraph({ children: [new TextRun({ text: "F. PHOTOS", bold: true, size: 22, color: "1F4E79", font: "Arial" })] })]
         })
       ]
     }),
-    new Paragraph({ children: [], spacing: { before: 100 } }),
-
-    // Photo Summary Table
-    new Table({
-      width: { size: 100, type: "pct" },
-      rows: [
-        new TableRow({
-          children: [
-            createQtyCell("No.", { bold: true, shaded: true, width: { size: 10, type: "pct" } }),
-            createQtyCell("Description", { bold: true, shaded: true, width: { size: 90, type: "pct" } }),
-          ]
-        }),
-        ...photoGroups.map((g, i) => new TableRow({
-          children: [
-            createQtyCell(String(i + 1)),
-            createQtyCell(g.description || "Inspection Photos", { align: "left" })
-          ]
-        }))
+    new TableRow({
+      children: [
+        createQtyCell("No.", { bold: true, shaded: true, width: { size: 10, type: "pct" } }),
+        createQtyCell("Description", { bold: true, shaded: true, width: { size: 90, type: "pct" } }),
       ]
-    }),
-    new Paragraph({ children: [], spacing: { before: 200 } }),
+    })
   ];
 
-  // Actual Photo Groups
-  for (const g of photoGroups) {
-    children.push(new Table({
-      width: { size: 100, type: "pct" },
-      rows: [
-        new TableRow({
-          children: [
-            new TableCell({
-              shading: { fill: "F2F2F2" },
-              borders: tableBorders(),
-              children: [new Paragraph({ children: [new TextRun({ text: g.description || "Photos", bold: true, font: "Arial" })] })]
-            })
-          ]
+  for (let i = 0; i < photoGroups.length; i++) {
+    const g = photoGroups[i];
+    const photos = (g.photos || []).filter(p => p.preview || p.wasabiKey || p.url);
+
+    rows.push(new TableRow({
+      children: [
+        createQtyCell(String(i + 1)),
+        createQtyCell(g.description || "Inspection Photos", { align: "left" })
+      ]
+    }));
+
+    rows.push(new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 2,
+          shading: { fill: "F2F2F2" },
+          borders: tableBorders(),
+          children: [new Paragraph({ children: [new TextRun({ text: g.description || "Photos", bold: true, font: "Arial" })] })]
         })
       ]
     }));
-    children.push(new Paragraph({ children: [], spacing: { before: 100 } }));
-    children.push(await createInlinePhotoGridTable(g.photos || []));
-    children.push(new Paragraph({ children: [], spacing: { before: 200 } }));
+
+    if (photos.length > 0) {
+      const photoRows = await createInlinePhotoGridRows(photos, { cellWidth: 320, cellHeight: 220, colSpan: 1 });
+      for (const row of photoRows) rows.push(row);
+    } else {
+      rows.push(new TableRow({
+        children: [
+          new TableCell({ children: [new Paragraph({ children: [] })], borders: tableBorders() }),
+          new TableCell({ children: [new Paragraph({ children: [] })], borders: tableBorders() })
+        ]
+      }));
+    }
   }
 
-  return children;
+  return [
+    new Table({ width: { size: 100, type: "pct" }, rows })
+  ];
 }
 
 function createEndOfReportSection() {
