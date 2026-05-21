@@ -1,8 +1,8 @@
-// backend/data/seedOnboardingQuestions.js
+// backend/data/resetOnboardingQuestions.js
+// Script to reset and reseed onboarding questions with difficulty levels
 require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 const mongoose = require('mongoose');
 const OnboardingQuestion = require('../models/onboardingQuestion.model');
-const { User } = require('../models/user.model');
 
 const QUESTIONS = [
   // PSI — 3 questions
@@ -118,27 +118,35 @@ const QUESTIONS = [
   },
 ];
 
-async function seed() {
-  await mongoose.connect(process.env.MONGO_URI);
-  console.log('Connected to MongoDB');
+async function reset() {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log('Connected to MongoDB');
 
-  const existing = await OnboardingQuestion.countDocuments();
-  if (existing === 0) {
-    await OnboardingQuestion.insertMany(QUESTIONS);
-    console.log(`Inserted ${QUESTIONS.length} onboarding questions`);
-  } else {
-    console.log(`Skipped question insert: ${existing} questions already exist`);
+    // Delete all existing questions
+    const deleteResult = await OnboardingQuestion.deleteMany({});
+    console.log(`Deleted ${deleteResult.deletedCount} existing questions`);
+
+    // Insert new questions with difficulty levels
+    const insertResult = await OnboardingQuestion.insertMany(QUESTIONS);
+    console.log(`Inserted ${insertResult.length} questions with difficulty levels`);
+
+    // Show difficulty breakdown
+    const breakdown = await OnboardingQuestion.aggregate([
+      { $group: { _id: '$difficulty', count: { $sum: 1 } } },
+      { $sort: { _id: 1 } }
+    ]);
+    console.log('\nDifficulty breakdown:');
+    breakdown.forEach(item => {
+      console.log(`  ${item._id}: ${item.count} questions`);
+    });
+
+    await mongoose.disconnect();
+    console.log('\nDone. Questions reset with difficulty levels.');
+  } catch (err) {
+    console.error('Error:', err);
+    process.exit(1);
   }
-
-  // Mark all existing inspectors as onboarding complete so they are not retroactively gated
-  const result = await User.updateMany(
-    { role: 'inspector', 'onboarding.isCompleted': { $ne: true } },
-    { $set: { 'onboarding.isCompleted': true, 'onboarding.completedAt': new Date() } }
-  );
-  console.log(`Migrated ${result.modifiedCount} existing inspector(s) → onboarding.isCompleted = true`);
-
-  await mongoose.disconnect();
-  console.log('Done.');
 }
 
-seed().catch(err => { console.error(err); process.exit(1); });
+reset();

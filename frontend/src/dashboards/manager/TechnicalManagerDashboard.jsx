@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useManagerNotifications } from './hooks/useManagerNotifications';
 import {
   LayoutDashboard,
   ClipboardList,
@@ -31,183 +32,11 @@ import {
   FileText
 } from 'lucide-react';
 
-// ==========================================
-// MOCK SEED DATA
-// ==========================================
-const SEED_REPORTS = [
-  {
-    id: "RPT-001",
-    clientName: "Sunrise Exports Ltd",
-    inspectionType: "PSI",
-    inspectorName: "Raj Mehta",
-    submissionDate: "2025-01-14",
-    status: "Pending Review",
-    revisionRound: 0,
-    correctionFeedback: [],
-    tmRemarks: "",
-    templateData: {
-      sectionA: { title: "Inspection Summary", fields: { clientName: "Sunrise Exports Ltd", supplierName: "Zhejiang Factory Co.", factoryAddress: "123 Industrial Road, Hangzhou, China", inspectionDate: "2025-01-13", orderNumber: "ORD-4421", productDescription: "Cotton T-Shirts", totalOrderQty: 5000, qtyInspected: 315, aqlLevel: "2.5" } },
-      sectionB: { title: "Product Workmanship", fields: { colour: "Pass", finish: "Pass", packaging: "Fail", labelling: "Pass", barcodes: "Pass", dimensions: "Fail" }, notes: "Packaging seams inconsistent on 12% of units." },
-      sectionC: { title: "Quantity Verification", fields: { cartonCount: 42, piecesPerCarton: 12, totalVerified: 504, discrepancies: "None" } },
-      sectionD: { title: "Measurement & Spec Check", fields: { measurements: [{ param: "Chest Width", spec: "52cm", actual: "51.5cm", result: "Pass" }, { param: "Body Length", spec: "70cm", actual: "68cm", result: "Fail" }] } },
-      sectionE: { title: "Function & Safety Tests", fields: { functionTest: "Pass", safetyCompliance: "CE Compliant", toolsUsed: "Measuring tape, colour chart" } },
-      sectionF: { title: "Defect Classification", fields: { major: 8, minor: 22, critical: 0, defectRate: "9.6%", overallResult: "Fail" } },
-      sectionG: { title: "Photo Gallery", photos: ["photo1.jpg","photo2.jpg","photo3.jpg"] },
-      sectionH: { title: "Inspector Declaration", fields: { inspectorName: "Raj Mehta", signatureDate: "2025-01-13", remarks: "Body length issue found across all sizes.", finalVerdict: "Fail" } }
-    }
-  },
-  {
-    id: "RPT-002",
-    clientName: "Global Apparel Inc",
-    inspectionType: "CLS",
-    inspectorName: "Anil Kumar",
-    submissionDate: "2025-01-14",
-    status: "Pending Review",
-    revisionRound: 0,
-    correctionFeedback: [],
-    tmRemarks: "",
-    templateData: {
-      sectionA: { title: "Inspection Summary", fields: { clientName: "Global Apparel Inc", supplierName: "Guangzhou Textile Ltd", factoryAddress: "456 Industrial Zone, Guangzhou, China", inspectionDate: "2025-01-14", orderNumber: "ORD-9912", productDescription: "Denim Jackets", totalOrderQty: 3000, qtyInspected: 200, aqlLevel: "1.5" } },
-      sectionB: { title: "Product Workmanship", fields: { colour: "Pass", finish: "Pass", packaging: "Pass", labelling: "Pass", barcodes: "Pass", dimensions: "Pass" }, notes: "Workmanship matches approved master sample perfectly." },
-      sectionC: { title: "Quantity Verification", fields: { cartonCount: 30, piecesPerCarton: 100, totalVerified: 3000, discrepancies: "None" } },
-      sectionD: { title: "Measurement & Spec Check", fields: { measurements: [{ param: "Sleeve Length", spec: "64cm", actual: "64cm", result: "Pass" }, { param: "Waist Width", spec: "48cm", actual: "48.2cm", result: "Pass" }] } },
-      sectionE: { title: "Function & Safety Tests", fields: { functionTest: "Pass", safetyCompliance: "REACH Compliant", toolsUsed: "Measuring tape, barcode scanner" } },
-      sectionF: { title: "Defect Classification", fields: { major: 1, minor: 4, critical: 0, defectRate: "2.5%", overallResult: "Pass" } },
-      sectionG: { title: "Photo Gallery", photos: ["cls_photo1.jpg","cls_photo2.jpg"] },
-      sectionH: { title: "Inspector Declaration", fields: { inspectorName: "Anil Kumar", signatureDate: "2025-01-14", remarks: "Quality is good. Container sealing witnessed.", finalVerdict: "Pass" } }
-    }
-  },
-  {
-    id: "RPT-003",
-    clientName: "MegaTech Industries",
-    inspectionType: "DPI",
-    inspectorName: "Raj Mehta",
-    submissionDate: "2025-01-13",
-    status: "Under Review",
-    revisionRound: 0,
-    correctionFeedback: [],
-    tmRemarks: "",
-    templateData: {
-      sectionA: { title: "Inspection Summary", fields: { clientName: "MegaTech Industries", supplierName: "Shenzhen Electronics Corp", factoryAddress: "88 Science & Technology Park, Nanshan, Shenzhen", inspectionDate: "2025-01-12", orderNumber: "ORD-7751", productDescription: "Wireless Charging Pads", totalOrderQty: 10000, qtyInspected: 125, aqlLevel: "2.5" } },
-      sectionB: { title: "Product Workmanship", fields: { colour: "Pass", finish: "Fail", packaging: "Pass", labelling: "Pass", barcodes: "Pass", dimensions: "Pass" }, notes: "Micro-scratches observed on the glossy acrylic rims of 5 units." },
-      sectionC: { title: "Quantity Verification", fields: { cartonCount: 100, piecesPerCarton: 100, totalVerified: 2500, discrepancies: "Production currently in progress" } },
-      sectionD: { title: "Measurement & Spec Check", fields: { measurements: [{ param: "Input Port alignment", spec: "0.2mm tolerance", actual: "0.1mm", result: "Pass" }] } },
-      sectionE: { title: "Function & Safety Tests", fields: { functionTest: "Pass", safetyCompliance: "FCC/CE Compliant", toolsUsed: "Multimeter, oscilloscope" } },
-      sectionF: { title: "Defect Classification", fields: { major: 5, minor: 12, critical: 0, defectRate: "13.6%", overallResult: "Fail" } },
-      sectionG: { title: "Photo Gallery", photos: ["dpi1.jpg","dpi2.jpg"] },
-      sectionH: { title: "Inspector Declaration", fields: { inspectorName: "Raj Mehta", signatureDate: "2025-01-12", remarks: "Molding line cleanup issues on rims.", finalVerdict: "Fail" } }
-    }
-  },
-  {
-    id: "RPT-004",
-    clientName: "Nova Leather Goods",
-    inspectionType: "Factory Audit",
-    inspectorName: "Anil Kumar",
-    submissionDate: "2025-01-12",
-    status: "Correction Requested (Round 1)",
-    revisionRound: 1,
-    correctionFeedback: [
-      { section: "sectionB", comment: "Please recheck the finish failure. The details about the edge coloring lack clarity.", priority: "Critical", addedAt: "2025-01-12 14:30" }
-    ],
-    tmRemarks: "Checked, awaiting inspector resubmission with clarifying notes on the coloring finish.",
-    templateData: {
-      sectionA: { title: "Inspection Summary", fields: { clientName: "Nova Leather Goods", supplierName: "Dongguan Handbag Maker", factoryAddress: "Industrial Sector 4, Dongguan, China", inspectionDate: "2025-01-11", orderNumber: "ORD-8812", productDescription: "Leather Crossbody Handbags", totalOrderQty: 2500, qtyInspected: 125, aqlLevel: "2.5" } },
-      sectionB: { title: "Product Workmanship", fields: { colour: "Pass", finish: "Fail", packaging: "Pass", labelling: "Pass", barcodes: "Pass", dimensions: "Pass" }, notes: "Edge painting is irregular and sticky on multiple handbag straps." },
-      sectionC: { title: "Quantity Verification", fields: { cartonCount: 25, piecesPerCarton: 100, totalVerified: 2500, discrepancies: "None" } },
-      sectionD: { title: "Measurement & Spec Check", fields: { measurements: [{ param: "Strap Length", spec: "120cm", actual: "119cm", result: "Pass" }] } },
-      sectionE: { title: "Function & Safety Tests", fields: { functionTest: "Pass", safetyCompliance: "ISO 9001", toolsUsed: "Calipers, light box" } },
-      sectionF: { title: "Defect Classification", fields: { major: 10, minor: 15, critical: 0, defectRate: "20.0%", overallResult: "Fail" } },
-      sectionG: { title: "Photo Gallery", photos: ["strap_defect.jpg","painting_sticky.jpg"] },
-      sectionH: { title: "Inspector Declaration", fields: { inspectorName: "Anil Kumar", signatureDate: "2025-01-11", remarks: "Strap painting issues are widespread.", finalVerdict: "Fail" } }
-    }
-  },
-  {
-    id: "RPT-005",
-    clientName: "Apex Footwear Co",
-    inspectionType: "Social Audit",
-    inspectorName: "Sarah Jenkins",
-    submissionDate: "2025-01-11",
-    status: "Correction Requested (Round 2)",
-    revisionRound: 2,
-    correctionFeedback: [
-      { section: "sectionH", comment: "The final verdict must match the social compliance grading sheet. Check why Fail is assigned.", priority: "Critical", addedAt: "2025-01-11 11:20" },
-      { section: "sectionE", comment: "Please list the environmental health and safety tools that were used during walkthrough.", priority: "Advisory", addedAt: "2025-01-11 11:25" }
-    ],
-    tmRemarks: "Requires strict verification of compliance logs and worker interview sample sheets.",
-    templateData: {
-      sectionA: { title: "Inspection Summary", fields: { clientName: "Apex Footwear Co", supplierName: "Vinh Long Shoe Joint Stock", factoryAddress: "Plot B, Song Co Industrial Park, Vietnam", inspectionDate: "2025-01-10", orderNumber: "ORD-0091", productDescription: "Running Shoes", totalOrderQty: 20000, qtyInspected: 500, aqlLevel: "Social Audit Standard" } },
-      sectionB: { title: "Product Workmanship", fields: { colour: "Pass", finish: "Pass", packaging: "Pass", labelling: "Pass", barcodes: "Pass", dimensions: "Pass" }, notes: "No major aesthetic issues found on safety wear production." },
-      sectionC: { title: "Quantity Verification", fields: { cartonCount: 833, piecesPerCarton: 24, totalVerified: 19992, discrepancies: "8 pieces short of total order" } },
-      sectionD: { title: "Measurement & Spec Check", fields: { measurements: [{ param: "Sole thickness", spec: "25mm", actual: "25mm", result: "Pass" }] } },
-      sectionE: { title: "Function & Safety Tests", fields: { functionTest: "Pass", safetyCompliance: "BSCI Grade C", toolsUsed: "Standard checklist" } },
-      sectionF: { title: "Defect Classification", fields: { major: 0, minor: 0, critical: 0, defectRate: "0.0%", overallResult: "Fail" } },
-      sectionG: { title: "Photo Gallery", photos: ["fire_exit.jpg","first_aid_station.jpg"] },
-      sectionH: { title: "Inspector Declaration", fields: { inspectorName: "Sarah Jenkins", signatureDate: "2025-01-10", remarks: "Missing fire drill documentation for Q4 2024.", finalVerdict: "Fail" } }
-    }
-  },
-  {
-    id: "RPT-006",
-    clientName: "Oceanic Food Products",
-    inspectionType: "PSI",
-    inspectorName: "Raj Mehta",
-    submissionDate: "2025-01-10",
-    status: "Finalized",
-    revisionRound: 1,
-    correctionFeedback: [
-      { section: "sectionC", comment: "Confirm correct labeling on boxes. Verified count looks good.", priority: "Advisory", addedAt: "2025-01-09 10:00" }
-    ],
-    tmRemarks: "Verified label markings on master carton photos. Confirmed and finalized.",
-    templateData: {
-      sectionA: { title: "Inspection Summary", fields: { clientName: "Oceanic Food Products", supplierName: "Qingdao Canning Ltd", factoryAddress: "77 Coastal Road, Qingdao, China", inspectionDate: "2025-01-09", orderNumber: "ORD-1150", productDescription: "Canned Mackerels in Brine", totalOrderQty: 50000, qtyInspected: 800, aqlLevel: "2.5" } },
-      sectionB: { title: "Product Workmanship", fields: { colour: "Pass", finish: "Pass", packaging: "Pass", labelling: "Pass", barcodes: "Pass", dimensions: "Pass" }, notes: "Dents checked on double seam integrity. None found." },
-      sectionC: { title: "Quantity Verification", fields: { cartonCount: 1041, piecesPerCarton: 48, totalVerified: 49968, discrepancies: "32 tins short" } },
-      sectionD: { title: "Measurement & Spec Check", fields: { measurements: [{ param: "Net Weight", spec: "425g", actual: "426g", result: "Pass" }] } },
-      sectionE: { title: "Function & Safety Tests", fields: { functionTest: "Pass", safetyCompliance: "FDA registered facility", toolsUsed: "Vacuum tester, digital scales" } },
-      sectionF: { title: "Defect Classification", fields: { major: 2, minor: 14, critical: 0, defectRate: "2.0%", overallResult: "Pass" } },
-      sectionG: { title: "Photo Gallery", photos: ["tin_vacuum_test.jpg","label_back.jpg"] },
-      sectionH: { title: "Inspector Declaration", fields: { inspectorName: "Raj Mehta", signatureDate: "2025-01-09", remarks: "Vacuum integrity test passes. Net weight average complies.", finalVerdict: "Pass" } }
-    }
-  }
-];
+import { useReportQueue } from './hooks/useReportQueue';
+import { useReportReview } from './hooks/useReportReview';
 
-const INITIAL_NOTIFICATIONS = [
-  {
-    id: "notif-1",
-    message: "New PSI report submitted by Raj Mehta for Sunrise Exports Ltd",
-    reportId: "RPT-001",
-    isRead: false,
-    createdAt: "2025-01-14T09:30:00Z",
-    timeAgo: "2 hours ago",
-    type: "new"
-  },
-  {
-    id: "notif-2",
-    message: "Revised report resubmitted by Anil Kumar — Round 2 for MegaTech Industries",
-    reportId: "RPT-003",
-    isRead: false,
-    createdAt: "2025-01-13T16:45:00Z",
-    timeAgo: "1 day ago",
-    type: "revision"
-  },
-  {
-    id: "notif-3",
-    message: "Report RPT-004 correction requested by Sarah Chen",
-    reportId: "RPT-004",
-    isRead: true,
-    createdAt: "2025-01-12T11:20:00Z",
-    timeAgo: "2 days ago",
-    type: "correction"
-  },
-  {
-    id: "notif-4",
-    message: "Report RPT-006 finalized by Sarah Chen",
-    reportId: "RPT-006",
-    isRead: true,
-    createdAt: "2025-01-10T15:00:00Z",
-    timeAgo: "4 days ago",
-    type: "finalize"
-  }
-];
+// ==========================================
+// MOCK SEED DATA REMOVED
 
 const SECTIONS_CONFIG = {
   sectionA: { label: "Section A — Inspection Summary", icon: Info },
@@ -237,16 +66,69 @@ export default function TechnicalManagerDashboard() {
     email: "sarah.chen@rms.com"
   };
 
-  // State Management
-  const [reports, setReports] = useState(SEED_REPORTS);
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
-  
-  // Load and preserve active view and active report across browser refreshes
+  // Queue view filters
+  const [queueFilters, setQueueFilters] = useState({
+    type: "All",
+    status: "All",
+    inspector: "All",
+    fromDate: "",
+    toDate: ""
+  });
+
+  // Fetch Reports list
+  const mapStatusToBackend = (status) => {
+    if (status === "Pending Review") return "submitted";
+    if (status === "Under Review") return "under_review";
+    if (status === "Correction Requested (Round 1)" || status === "Correction Requested (Round 2)") return "revision_required";
+    if (status === "Finalized") return "approved";
+    return "all";
+  };
+
+  const mapTypeToBackend = (type) => {
+    if (type === "Factory Audit") return "factory_audit";
+    if (type === "All") return "all";
+    return type;
+  };
+
+  const { reports: backendReports, stats: backendStats, refetch: refetchQueue } = useReportQueue({
+    status: mapStatusToBackend(queueFilters.status),
+    type: mapTypeToBackend(queueFilters.type)
+  });
+
+  // Active view management
   const [activeView, setActiveView] = useState(() => {
     return sessionStorage.getItem("managerActiveView") || "dashboard";
   });
   const [activeReportId, setActiveReportId] = useState(() => {
     return sessionStorage.getItem("managerActiveReportId") || null;
+  });
+
+  // Fetch Active Report Details
+  const { reportData, submitFeedback, finalizeReport, addRemark, refetch: refetchReport } = useReportReview(activeReportId);
+
+  // Map queue to expected UI format
+  const reports = (backendReports || []).map(r => ({
+    id: r.id, // For routing/fetching detailed
+    displayId: r.reportId,
+    clientName: r.clientName,
+    inspectionType: r.inspectionType,
+    inspectorName: r.inspectorName,
+    submissionDate: new Date(r.submittedAt).toLocaleDateString(),
+    status: r.status === "submitted" ? "Pending Review" :
+            r.status === "under_review" ? "Under Review" :
+            r.status === "revision_required" ? `Correction Requested (Round ${r.revisionRound})` :
+            r.status === "approved" ? "Finalized" : r.status,
+    revisionRound: r.revisionRound
+  }));
+
+  const [notifications, setNotifications] = useState([]);
+
+  // Wire real-time socket notifications from backend
+  useManagerNotifications((newNotif) => {
+    setNotifications(prev => [newNotif, ...prev]);
+    if (newNotif.type === 'submission' || newNotif.type === 'status') {
+      refetchQueue();
+    }
   });
 
   useEffect(() => {
@@ -284,17 +166,48 @@ export default function TechnicalManagerDashboard() {
   // Sidebar expanded / mobile state
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
 
-  // Queue view filters
-  const [queueFilters, setQueueFilters] = useState({
-    type: "All",
-    status: "All",
-    inspector: "All",
-    fromDate: "",
-    toDate: ""
-  });
 
-  // active report details
-  const activeReport = reports.find(r => r.id === activeReportId);
+
+  // Active report mapping for detailed view
+  let activeReport = null;
+  if (reportData && reportData.report) {
+    const r = reportData.report;
+    const isFactoryAudit = reportData.type === 'factoryAudit';
+    
+    // Map correction feedback properly
+    const mappedFeedback = (r.correctionFeedback || []).map(fb => ({
+      section: fb.section,
+      comment: fb.comment,
+      priority: fb.priority === "critical" ? "Critical" : "Advisory",
+      addedAt: new Date(fb.addedAt).toLocaleString()
+    }));
+
+    activeReport = {
+      id: r._id,
+      displayId: r.reportNumber || r._id,
+      clientName: r.generalInfo?.client || "Unknown",
+      inspectionType: isFactoryAudit ? "Factory Audit" : (r.title || "Inspection"),
+      inspectorName: r.userId?.name || "Unknown",
+      submissionDate: new Date(r.submittedAt || r.updatedAt).toLocaleDateString(),
+      status: r.operationStatus === "submitted" ? "Pending Review" :
+              r.operationStatus === "under_review" ? "Under Review" :
+              r.operationStatus === "revision_required" ? `Correction Requested (Round ${r.revisionRound || 1})` :
+              r.operationStatus === "approved" ? "Finalized" : r.operationStatus,
+      revisionRound: r.revisionRound || 1,
+      correctionFeedback: mappedFeedback,
+      tmRemarks: r.tmRemarks?.[r.tmRemarks.length - 1]?.text || "",
+      templateData: {
+        sectionA: { title: "Inspection Summary", fields: { clientName: r.generalInfo?.client || "Unknown", orderNumber: r.generalInfo?.order_number || "N/A", productDescription: r.generalInfo?.product_description || "N/A" } },
+        sectionB: { title: "Product Workmanship", fields: {}, notes: "Review workmanship data in full report" },
+        sectionC: { title: "Quantity Verification", fields: { cartonCount: r.quantityDetails?.carton_numbers || "N/A" } },
+        sectionD: { title: "Measurement & Spec Check", fields: { measurements: [] } },
+        sectionE: { title: "Function & Safety Tests", fields: {} },
+        sectionF: { title: "Defect Classification", fields: {} },
+        sectionG: { title: "Photo Gallery", photos: [] },
+        sectionH: { title: "Inspector Declaration", fields: { inspectorName: r.userId?.name } }
+      }
+    };
+  }
 
   // Section collapsible states
   const [collapsedSections, setCollapsedSections] = useState({
@@ -321,7 +234,7 @@ export default function TechnicalManagerDashboard() {
       });
       setCommentInputs(newCommentInputs);
     }
-  }, [activeReportId]);
+  }, [activeReportId, activeReport?.id]);
 
   // Toast adder helper
   const addToast = (message, type = 'info') => {
@@ -332,13 +245,14 @@ export default function TechnicalManagerDashboard() {
     }, 4000);
   };
 
-  // Status computation for stats
+  // Status computation for stats from backend
   const getStats = () => {
-    const total = reports.length;
-    const pending = reports.filter(r => r.status === "Pending Review" || r.status === "Under Review").length;
-    const correction = reports.filter(r => r.status.includes("Correction Requested")).length;
-    const finalized = reports.filter(r => r.status === "Finalized").length;
-    return { total, pending, correction, finalized };
+    return {
+      total: backendStats?.totalReports || 0,
+      pending: backendStats?.pendingReview || 0,
+      correction: backendStats?.sentForCorrection || 0,
+      finalized: backendStats?.finalizedToday || 0
+    };
   };
 
   const stats = getStats();
@@ -379,26 +293,40 @@ export default function TechnicalManagerDashboard() {
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   // Handle opening a report review interface
-  const handleOpenReport = (reportId) => {
+  const handleOpenReport = async (reportId) => {
     setActiveReportId(reportId);
     
-    // Automatically update Pending Review -> Under Review
-    const report = reports.find(r => r.id === reportId);
-    if (report && report.status === "Pending Review") {
-      setReports(prev => prev.map(r => r.id === reportId ? { ...r, status: "Under Review" } : r));
-      addToast(`Report ${reportId} is now marked as Under Review.`, "info");
-      
-      // Add notification
-      const newNotif = {
-        id: `notif-${Date.now()}`,
-        message: `Report ${reportId} opened by Technical Manager Sarah Chen. Status: Under Review`,
-        reportId: reportId,
-        isRead: false,
-        createdAt: new Date().toISOString(),
-        timeAgo: "Just now",
-        type: "review"
-      };
-      setNotifications(prev => [newNotif, ...prev]);
+    // The backend update status will be called if the report is newly opened
+    try {
+      const token = localStorage.getItem("reportToken");
+      const report = reports.find(r => r.id === reportId);
+      if (report && report.status === "Pending Review") {
+        await fetch(`http://localhost:5000/api/manager/reports/${reportId}/status`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ status: "under_review" })
+        });
+        
+        refetchQueue();
+        
+        // Add notification locally
+        const newNotif = {
+          id: `notif-${Date.now()}`,
+          message: `Report ${report.displayId} opened. Status: Under Review`,
+          reportId: reportId,
+          isRead: false,
+          createdAt: new Date().toISOString(),
+          timeAgo: "Just now",
+          type: "review"
+        };
+        setNotifications(prev => [newNotif, ...prev]);
+        addToast(`Report marked as Under Review.`, "info");
+      }
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -414,114 +342,96 @@ export default function TechnicalManagerDashboard() {
   };
 
   // Save section-specific comment
-  const saveSectionComment = (sectionKey) => {
+  const saveSectionComment = async (sectionKey) => {
     const input = commentInputs[sectionKey];
     if (!input.comment.trim()) {
       addToast("Comment field cannot be empty.", "error");
       return;
     }
 
-    setReports(prev => prev.map(r => {
-      if (r.id === activeReport.id) {
-        // Filter out existing feedback for same section to replace it
-        const cleanFeedback = r.correctionFeedback.filter(f => f.section !== sectionKey);
-        return {
-          ...r,
-          correctionFeedback: [
-            ...cleanFeedback,
-            {
-              section: sectionKey,
-              comment: input.comment.trim(),
-              priority: input.priority,
-              addedAt: new Date().toISOString().replace('T', ' ').slice(0, 16)
-            }
-          ]
-        };
-      }
-      return r;
-    }));
-
-    addToast(`Section ${sectionKey.slice(-1).toUpperCase()} comment saved successfully.`, "success");
+    try {
+      await submitFeedback(sectionKey, input.comment.trim(), input.priority.toLowerCase());
+      addToast(`Section ${sectionKey.slice(-1).toUpperCase()} comment saved successfully.`, "success");
+    } catch (e) {
+      addToast("Failed to save comment.", "error");
+    }
   };
 
-  // Clear section-specific comment
+  // Clear section-specific comment (local only until submitted)
   const clearSectionComment = (sectionKey) => {
     setCommentInputs(prev => ({
       ...prev,
       [sectionKey]: { comment: "", priority: "Critical" }
     }));
-
-    setReports(prev => prev.map(r => {
-      if (r.id === activeReport.id) {
-        return {
-          ...r,
-          correctionFeedback: r.correctionFeedback.filter(f => f.section !== sectionKey)
-        };
-      }
-      return r;
-    }));
-
-    addToast(`Section ${sectionKey.slice(-1).toUpperCase()} comment cleared.`, "info");
+    addToast(`Section ${sectionKey.slice(-1).toUpperCase()} comment cleared. Note: you still need to request correction.`, "info");
   };
 
   // Blur handler for overall remarks auto-save
-  const handleRemarksBlur = () => {
-    if (activeReport) {
-      setReports(prev => prev.map(r => r.id === activeReport.id ? { ...r, tmRemarks: overallRemarksInput } : r));
-      addToast("Remarks auto-saved.", "info");
+  const handleRemarksBlur = async () => {
+    if (activeReport && overallRemarksInput.trim()) {
+      try {
+        await addRemark(overallRemarksInput);
+        addToast("Remarks auto-saved.", "info");
+      } catch (e) {
+        // ignore
+      }
     }
   };
 
   // Save internal remarks (no correction cycle)
-  const saveInternalRemarksOnly = () => {
-    if (activeReport) {
-      setReports(prev => prev.map(r => r.id === activeReport.id ? { ...r, tmRemarks: overallRemarksInput } : r));
-      addToast("Internal remarks saved. Inspector has NOT been notified.", "info");
+  const saveInternalRemarksOnly = async () => {
+    if (activeReport && overallRemarksInput.trim()) {
+      try {
+        await addRemark(overallRemarksInput);
+        addToast("Internal remarks saved. Inspector has NOT been notified.", "info");
+      } catch (e) {
+        addToast("Failed to save remarks.", "error");
+      }
     }
   };
 
   // Action: Finalize Report
-  const confirmFinalizeReport = () => {
+  const confirmFinalizeReport = async () => {
     if (!activeReport) return;
     
-    setReports(prev => prev.map(r => r.id === activeReport.id ? { ...r, status: "Finalized" } : r));
-    addToast(`Report ${activeReport.id} has been finalized. Admin and Inspector have been notified.`, "success");
-    
-    // Add notification
-    const newNotif = {
-      id: `notif-${Date.now()}`,
-      message: `Report ${activeReport.id} finalized by Sarah Chen. Permanent state achieved.`,
-      reportId: activeReport.id,
-      isRead: false,
-      createdAt: new Date().toISOString(),
-      timeAgo: "Just now",
-      type: "finalize"
-    };
-    setNotifications(prev => [newNotif, ...prev]);
+    try {
+      await finalizeReport();
+      addToast(`Report has been finalized. Admin and Inspector have been notified.`, "success");
+      
+      // Add notification
+      const newNotif = {
+        id: `notif-${Date.now()}`,
+        message: `Report finalized successfully.`,
+        reportId: activeReport.id,
+        isRead: false,
+        createdAt: new Date().toISOString(),
+        timeAgo: "Just now",
+        type: "finalize"
+      };
+      setNotifications(prev => [newNotif, ...prev]);
 
-    setShowFinalizeModal(false);
-    setActiveReportId(null);
+      setShowFinalizeModal(false);
+      setActiveReportId(null);
+      refetchQueue();
+    } catch (e) {
+      addToast("Failed to finalize report.", "error");
+    }
   };
 
   // Action: Request Correction
-  const confirmRequestCorrection = () => {
+  const confirmRequestCorrection = async () => {
     if (!activeReport) return;
     
-    const newRound = activeReport.revisionRound + 1;
-    const newStatus = `Correction Requested (Round ${newRound})`;
+    // We already saved the feedback via saveSectionComment which hit submitFeedback API.
+    // The submitFeedback API automatically requests correction on the backend (sets status to revision_required).
+    // So we just need to ensure the user knows it's sent.
     
-    setReports(prev => prev.map(r => r.id === activeReport.id ? { 
-      ...r, 
-      status: newStatus,
-      revisionRound: newRound
-    } : r));
-
-    addToast(`Correction request sent to ${activeReport.inspectorName}. They have been notified.`, "warning");
+    addToast(`Correction request finalized. Inspector has been notified.`, "warning");
     
     // Add notification
     const newNotif = {
       id: `notif-${Date.now()}`,
-      message: `Correction cycle Round ${newRound} requested for ${activeReport.id} by Sarah Chen.`,
+      message: `Correction cycle requested.`,
       reportId: activeReport.id,
       isRead: false,
       createdAt: new Date().toISOString(),
@@ -532,6 +442,7 @@ export default function TechnicalManagerDashboard() {
 
     setShowCorrectionModal(false);
     setActiveReportId(null);
+    refetchQueue();
   };
 
   // Global Logout triggers
@@ -1089,7 +1000,7 @@ export default function TechnicalManagerDashboard() {
                           {activeReport.inspectionType}
                         </span>
                       </div>
-                      <h2 className="text-xl font-black text-slate-900 mt-1">{activeReport.id} — {activeReport.clientName}</h2>
+                      <h2 className="text-xl font-black text-slate-900 mt-1">{activeReport.displayId} — {activeReport.clientName}</h2>
                     </div>
 
                     <div className="flex items-center gap-2">

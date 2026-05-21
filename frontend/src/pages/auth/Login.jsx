@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../../context/AuthContext";
 import { ENDPOINTS } from "../../config/api";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
@@ -33,29 +32,6 @@ export default function Login() {
       }
     } catch {
       setError("Network error. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleSuccess = async (credentialResponse) => {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch(ENDPOINTS.AUTH.GOOGLE, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ credential: credentialResponse.credential }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        login(data.user, data.token);
-        navigate("/dashboard");
-      } else {
-        setError(data.error || "Google login failed");
-      }
-    } catch {
-      setError("Network error during Google login.");
     } finally {
       setLoading(false);
     }
@@ -129,24 +105,6 @@ export default function Login() {
               {loading ? "Logging in..." : "Log In"}
             </button>
           </form>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3 my-6">
-            <div className="flex-1 h-px bg-slate-200" />
-            <span className="text-xs font-semibold text-slate-400">OR</span>
-            <div className="flex-1 h-px bg-slate-200" />
-          </div>
-
-          <div className="flex justify-center">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={() => setError("Google Sign-In was unsuccessful.")}
-              useOneTap
-              width="100%"
-              theme="outline"
-              shape="rectangular"
-            />
-          </div>
 
           <p className="text-center mt-6 text-sm text-slate-500">
             Don't have an account?{" "}

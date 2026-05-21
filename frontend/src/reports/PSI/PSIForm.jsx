@@ -611,7 +611,7 @@ function App() {
   const next = () => setStep(step + 1);
   const prev = () => setStep(step - 1);
 
-  const submit = async (format = 'docx') => {
+  const submit = async (format = 'docx', notify = false) => {
     setIsGenerating(true);
     const formData = new FormData();
     formData.append("format", format);
@@ -693,7 +693,8 @@ function App() {
     formData.append("reportPhotos", JSON.stringify(reportPhotos));
     formData.append("reportPhotoGroups", JSON.stringify(reportPhotoGroups));
 
-    const res = await fetch(ENDPOINTS.GENERATE, {
+    const generateUrl = notify ? `${ENDPOINTS.GENERATE}?notify=true` : ENDPOINTS.GENERATE;
+    const res = await fetch(generateUrl, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${token}`

@@ -12,23 +12,19 @@ const FactoryAuditSchema = new mongoose.Schema({
     supplier: String,
     factory: String,
     factoryAddress: String,
+    supplierAddress: String,
     contactPerson: String,
     email: String,
     phone: String,
     auditDate: String,
     auditorName: String,
+    inspectionNo: String,
     servicePerformed: { type: String, default: "Factory Audit" }
   },
 
   // Section 2: Audit Overview (Scores/Weightage)
-  auditOverview: {
-    totalScore: Number,
-    percentage: Number,
-    grade: String,
-    scores: [
-      { section: String, score: Number, maxScore: Number, weight: Number }
-    ]
-  },
+  // Mixed type to allow per-section score keys (e.g. profile, orgCharts, profile_weight, etc.)
+  auditOverview: { type: mongoose.Schema.Types.Mixed, default: {} },
 
   // Section 3: Remarks
   generalOverviewRemarks: [String],

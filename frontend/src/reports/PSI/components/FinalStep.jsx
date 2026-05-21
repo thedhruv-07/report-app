@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { colors, buttonStyle } from '../../../styles';
 
-const FinalStep = ({ form, onPrev, onSubmit, onClearAfterDownload, hasDownloaded, isGenerating, onToggleLoader }) => {
+const FinalStep = ({ form, onPrev, onSubmit, onClearAfterDownload, hasDownloaded, isGenerating, onToggleLoader, onSubmitForReview }) => {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -92,6 +92,27 @@ const FinalStep = ({ form, onPrev, onSubmit, onClearAfterDownload, hasDownloaded
         <p style={{ marginTop: "30px", fontSize: "13px", color: colors.textMuted }}>
           Note: PDF generation may take a few seconds as it processes high-resolution images.
         </p>
+
+        <div style={{ marginTop: "30px", paddingTop: "24px", borderTop: `1px solid ${colors.border}` }}>
+          <p style={{ fontSize: "13px", color: colors.textMuted, marginBottom: "12px" }}>
+            Ready to send for review? This will generate your report and notify the technical manager.
+          </p>
+          <button
+            onClick={() => onSubmit('docx', true)}
+            disabled={isGenerating}
+            style={{
+              padding: "14px 28px", borderRadius: "12px", border: `2px solid ${colors.header}`,
+              background: "transparent", color: colors.header, fontWeight: "700",
+              cursor: isGenerating ? "not-allowed" : "pointer", fontSize: "15px",
+              display: "inline-flex", alignItems: "center", gap: "8px",
+              transition: "transform 0.2s"
+            }}
+            onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
+            onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
+          >
+            {isGenerating ? "Submitting..." : "Submit for Review"}
+          </button>
+        </div>
 
         <div style={{ marginTop: "40px", paddingTop: "20px", borderTop: `1px solid ${colors.border}`, width: "100%", display: "flex", justifyContent: "flex-start" }}>
           <button 

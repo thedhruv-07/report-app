@@ -4,6 +4,7 @@ const { createHeaderTable, createReportContent } = require("../services/docx.ser
 const { learnFromReport } = require("../services/ai.service");
 const { enrichReportHeaderData, normalizePayload } = require("../utils/parser.utils");
 const mongoose = require("mongoose");
+const { getIO } = require("../socket");
 
 // Import Mongoose Models
 const { Report } = require("../models/report.model");
@@ -219,7 +220,21 @@ const generateReport = async (req, res) => {
       ]);
 
       console.log(`✅ Saved Granular Modular Report to MongoDB with ID: ${report._id}`);
-      
+
+      if (req.query.notify === "true") {
+        try {
+          getIO().to("manager_room").emit("new_report_submitted", {
+            reportId: report._id,
+            inspectorName: data.auditorName || req.user?.name || "Inspector",
+            client: data.client || "",
+            reportType: data.servicePerformed || "PSI",
+            submittedAt: new Date().toISOString(),
+          });
+        } catch (e) {
+          console.warn("Socket notification failed:", e.message);
+        }
+      }
+
     } catch (dbError) {
       console.error("❌ DATABASE SAVE ERROR:", dbError.message);
       if (dbError.errors) {
@@ -250,8 +265,14 @@ const generateReport = async (req, res) => {
 
     if (data.reportPhotoGroups) data.reportPhotoGroups.forEach(g => collectFromList(g.photos));
     if (data.reportPhotos) collectFromList(data.reportPhotos);
-    if (data.conclusionPhotos) collectFromList(data.conclusionPhotos);
-    if (data.conclusionReviewerPhotos) collectFromList(data.conclusionReviewerPhotos);
+    if (data.conclusionPhotos) {
+      data.conclusionPhotos.forEach(p => { p._section = "conclusionPhotos"; });
+      collectFromList(data.conclusionPhotos);
+    }
+    if (data.conclusionReviewerPhotos) {
+      data.conclusionReviewerPhotos.forEach(p => { p._section = "conclusionReviewerPhotos"; });
+      collectFromList(data.conclusionReviewerPhotos);
+    }
     if (data.generalPhoto && data.generalPhoto.preview && String(data.generalPhoto.preview).startsWith("data:image")) {
       uploadQueue.push(data.generalPhoto);
     }
@@ -288,15 +309,12 @@ const generateReport = async (req, res) => {
               );
             }
 
-            const { Comments } = require("../models/sections/comments.model");
-            await Comments.updateOne(
-              { reportId: dbReportId, "conclusionPhotos.id": p.id },
-              { $set: { "conclusionPhotos.$.url": uploadRes.url, "conclusionPhotos.$.originalName": uploadRes.key } }
-            );
-            await Comments.updateOne(
-              { reportId: dbReportId, "conclusionReviewerPhotos.id": p.id },
-              { $set: { "conclusionReviewerPhotos.$.url": uploadRes.url, "conclusionReviewerPhotos.$.originalName": uploadRes.key } }
-            );
+            if (p._section) {
+              await Comments.updateOne(
+                { reportId: dbReportId, [`${p._section}.id`]: p.id },
+                { $set: { [`${p._section}.$.url`]: uploadRes.url, [`${p._section}.$.originalName`]: uploadRes.key } }
+              );
+            }
 
             // 2. Save to the new architecture (Photo doc)
             const photoDoc = new Photo({

@@ -2842,7 +2842,13 @@ async function createCLSFinalPhotosSection(data) {
           columnSpan: 2,
           shading: { fill: "E9ECEF" },
           borders: tableBorders(),
-          children: [new Paragraph({ children: [new TextRun({ text: "F. PHOTOS", bold: true, size: 22, color: "1F4E79", font: "Arial" })] })]
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({ text: "F. PHOTOS", bold: true, size: 22, color: "1F4E79", font: "Arial" })
+              ]
+            })
+          ]
         })
       ]
     }),

@@ -17,6 +17,11 @@ const onboardingQuestionSchema = new mongoose.Schema({
     enum: ['PSI', 'CLS', 'DPI', 'General', 'Company Policy', 'Professional Conduct'],
     required: true,
   },
+  difficulty: {
+    type: String,
+    enum: ['easy', 'medium', 'hard'],
+    default: 'medium',
+  },
   isActive: { type: Boolean, default: true },
 }, { timestamps: true });
 

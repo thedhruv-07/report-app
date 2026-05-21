@@ -213,7 +213,7 @@ export default function ContainerLoading() {
     setForm(prev => ({ ...prev, generalPhoto: null, generalPhotoMeta: null }));
   };
 
-  const submit = async (format = 'docx') => {
+  const submit = async (format = 'docx', notify = false) => {
     setIsGenerating(true);
     const formData = new FormData();
     
@@ -250,7 +250,8 @@ export default function ContainerLoading() {
     }
 
     try {
-      const res = await fetch(ENDPOINTS.GENERATE, {
+      const generateUrl = notify ? `${ENDPOINTS.GENERATE}?notify=true` : ENDPOINTS.GENERATE;
+      const res = await fetch(generateUrl, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` },
         body: formData,

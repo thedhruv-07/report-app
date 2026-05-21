@@ -10,6 +10,7 @@ export const faSchema = {
     { name: "phone", label: "Phone", type: "text", placeholder: "Enter phone number" },
     { name: "auditDate", label: "Audit Date", type: "date" },
     { name: "auditorName", label: "Auditor Name", type: "text", placeholder: "Enter auditor name" },
+    { name: "inspectionNo", label: "Inspection Number", type: "text", placeholder: "e.g., AV-C20241001-FRIN" },
   ],
   auditOverview: {
     sections: [

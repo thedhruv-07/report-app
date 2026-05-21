@@ -12,6 +12,7 @@ router.get("/", factoryAuditController.getReports);
 router.post("/", requireOnboardingComplete, roleCheck(roles), factoryAuditController.createReport);
 router.get("/:id", factoryAuditController.getReportById);
 router.put("/:id", requireOnboardingComplete, roleCheck(roles), factoryAuditController.updateReport);
+router.post("/:id/submit", requireOnboardingComplete, roleCheck(roles), factoryAuditController.submitForReview);
 router.get("/:id/generate", requireOnboardingComplete, roleCheck(roles), factoryAuditController.generateReport);
 router.delete("/:id", factoryAuditController.deleteReport);
 

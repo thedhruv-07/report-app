@@ -20,11 +20,11 @@ const createQtyCell = (text, options = {}) => {
     rowSpan,
     shaded = false,
     color,
-    fontSize = 18,
+    fontSize = 20,
     width,
     verticalAlign = VerticalAlign.CENTER,
-    spacing = { before: 20, after: 20 },
-    font = "Arial"
+    spacing = { before: 40, after: 40 },
+    font = "Calibri"
   } = options;
 
   const textRunOptions = {
@@ -46,7 +46,8 @@ const createQtyCell = (text, options = {}) => {
   const cellOptions = {
     children: [new Paragraph(paragraphOptions)],
     borders: tableBorders(),
-    verticalAlign
+    verticalAlign,
+    margins: { top: 80, bottom: 80, left: 120, right: 120 },
   };
 
   if (width) {
@@ -57,7 +58,7 @@ const createQtyCell = (text, options = {}) => {
     }
   }
   if (shaded) {
-    cellOptions.shading = { fill: "E9ECEF" };
+    cellOptions.shading = { fill: "D9D9D9" };
   }
 
   if (typeof colSpan === "number" && colSpan > 1) {

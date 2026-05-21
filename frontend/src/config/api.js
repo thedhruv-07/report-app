@@ -27,6 +27,7 @@ export const ENDPOINTS = {
     BASE: `${API_BASE_URL}/api/factory-audit`,
     BY_ID: (id) => `${API_BASE_URL}/api/factory-audit/${encodeURIComponent(id)}`,
     GENERATE: (id, format = "docx") => `${API_BASE_URL}/api/factory-audit/${encodeURIComponent(id)}/generate?format=${encodeURIComponent(format)}`,
+    SUBMIT: (id) => `${API_BASE_URL}/api/factory-audit/${encodeURIComponent(id)}/submit`,
   },
   INSPECTOR: {
     SUMMARY: `${API_BASE_URL}/api/inspector/dashboard/summary`,

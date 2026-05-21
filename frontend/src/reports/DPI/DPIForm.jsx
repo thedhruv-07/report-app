@@ -212,7 +212,7 @@ export default function DuringProductionInspection() {
   const next = () => setStep(step + 1);
   const prev = () => setStep(step - 1);
 
-  const submit = async (format = 'docx') => {
+  const submit = async (format = 'docx', notify = false) => {
     setIsGenerating(true);
     const formData = new FormData();
     formData.append("serviceType", "dpi");
@@ -247,7 +247,8 @@ export default function DuringProductionInspection() {
     if (form.quantityTable) formData.append("items", JSON.stringify(form.quantityTable));
 
     try {
-      const res = await fetch(ENDPOINTS.GENERATE, {
+      const generateUrl = notify ? `${ENDPOINTS.GENERATE}?notify=true` : ENDPOINTS.GENERATE;
+      const res = await fetch(generateUrl, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` },
         body: formData,

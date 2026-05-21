@@ -271,6 +271,216 @@ export default function FactoryAudit() {
     }
   }, [token, navigate]);
 
+  const buildNestedData = (f) => ({
+    generalPhoto: f.generalPhoto,
+    generalOverviewRemarks: f.generalOverviewRemarks || [],
+    clientSpecialRemarks: f.clientSpecialRemarks || [],
+    suggestions: f.suggestions || [],
+    generalInfo: {
+      client: f.client,
+      supplier: f.supplier,
+      factory: f.factory,
+      factoryAddress: f.factoryAddress,
+      supplierAddress: f.supplierAddress,
+      contactPerson: f.contactPerson,
+      email: f.email,
+      phone: f.phone,
+      auditDate: f.auditDate,
+      auditorName: f.auditorName,
+      inspectionNo: f.inspectionNo
+    },
+    auditOverview: f.auditOverview || {},
+    supplierProfile: {
+      dateOfFoundation: f.dateOfFoundation,
+      legalStatus: f.legalStatus,
+      actualLocation: f.actualLocation,
+      locationBusinessLicense: f.locationBusinessLicense,
+      locationExportLicense: f.locationExportLicense,
+      locationBankInfo: f.locationBankInfo,
+      area: f.area,
+      numberOfStaff: f.numberOfStaff,
+      corporateRepresentative: f.corporateRepresentative,
+      mainProducts: f.mainProducts,
+      mainMarket: f.mainMarket,
+      businessLicenseInfo: f.businessLicenseInfo,
+      turnover2018: f.turnover2018,
+      turnover2019: f.turnover2019,
+      turnover2020: f.turnover2020,
+      turnoverTrend: f.turnoverTrend
+    },
+    communicationInfrastructure: {
+      telephoneSets: f.telephoneSets,
+      faxMachines: f.faxMachines,
+      computers: f.computers,
+      emailDomain: f.emailDomain
+    },
+    productsMarkets: f.productsMarkets || [],
+    recommendations: f.recommendations || [],
+    part1Score: f.part1Score,
+    buildingOfficePhotos: f.buildingOfficePhotos || [],
+    relatedPictures: {
+      certPhoto: f.certPhoto,
+      certCaption: f.certCaption,
+      licensePhoto: f.licensePhoto,
+      licenseCertNo: f.licenseCertNo,
+      licenseDateIssued: f.licenseDateIssued,
+      licenseExpiration: f.licenseExpiration,
+      exportPhoto: f.exportPhoto,
+      exportCertNo: f.exportCertNo,
+      exportDateIssued: f.exportDateIssued,
+      bankPhoto: f.bankPhoto,
+      bankCertNo: f.bankCertNo,
+      bankDateIssued: f.bankDateIssued,
+      bankAccountNumber: f.bankAccountNumber
+    },
+    orgChartPhotos: f.orgChartPhotos || [],
+    part2Score: f.part2Score,
+    productionWorkflowPhotos: f.productionWorkflowPhotos || [],
+    productionProcess: f.productionProcess || [],
+    dailyOutputCheck: {
+      runningProduction: f.runningProduction,
+      outputCheckComments: f.outputCheckComments,
+      processLines: f.processLines,
+      startTime: f.startTime,
+      finishedTime: f.finishedTime,
+      totalTime: f.totalTime,
+      finishedProductsStart: f.finishedProductsStart,
+      finishedProductsEnd: f.finishedProductsEnd,
+      outputPieces: f.outputPieces
+    },
+    dailyOutputPhotos: f.dailyOutputPhotos || [],
+    leadTimes: {
+      rawMaterialCapacityFactory: f.rawMaterialCapacityFactory,
+      rawMaterialCapacityAuditor: f.rawMaterialCapacityAuditor,
+      weeklyCapacityFactory: f.weeklyCapacityFactory,
+      weeklyCapacityAuditor: f.weeklyCapacityAuditor
+    },
+    bottlenecks: {
+      bottleneckAuditorCheck: f.bottleneckAuditorCheck,
+      bottleneckComments: f.bottleneckComments
+    },
+    part3Score: f.part3Score,
+    part4: {
+      machineryConditions: f.machineryConditions || [],
+      warehouseCondition: {
+        warehouseArea: f.warehouseArea,
+        materialsStocked: f.materialsStocked,
+        labMarking: f.labMarking,
+        warehouseClean: f.warehouseClean,
+        facilitiesAdvanced: f.facilitiesAdvanced,
+        warehouseCapacity: f.warehouseCapacity
+      },
+      warehousePhotos: {
+        rawMaterials: f.rawMaterialsStorage?.[0]?.preview || "",
+        finishedProducts: f.finishedProductsStorage?.[0]?.preview || ""
+      },
+      sampleRoomCondition: {
+        sampleRoomClean: f.sampleRoomClean,
+        sampleDisposed: f.sampleDisposed
+      },
+      publicPowerSupply: {
+        publicPowerConnected: f.publicPowerConnected,
+        frequentPowerOutage: f.frequentPowerOutage,
+        dieselGenerator: f.dieselGenerator,
+        generatorCount: f.generatorCount
+      },
+      shipmentCapabilities: {
+        shippingMeetsRequirement: f.shippingMeetsRequirement,
+        containersLoadedTogether: f.containersLoadedTogether,
+        protectionBadWeather: f.protectionBadWeather,
+        mechanicalLoadingDisposed: f.mechanicalLoadingDisposed
+      },
+      shipmentPhotos: {
+        loadingPlace1: f.loadingPlace1?.[0]?.preview || "",
+        loadingPlace2: f.loadingPlace2?.[0]?.preview || ""
+      },
+      part4Score: f.part4Score
+    },
+    part5: {
+      qualitySystemManagement: {
+        iso9001Status: f.iso9001Status,
+        iso9001Comment: f.iso9001Comment,
+        internalQAManualStatus: f.internalQAManualStatus,
+        internalQAManualComment: f.internalQAManualComment,
+        othersStatus: f.othersStatus,
+        othersComment: f.othersComment,
+        qaStaffStatus: f.qaStaffStatus,
+        qaStaffComment: f.qaStaffComment,
+        qaqcOffice: f.qaqcOffice?.[0]?.preview || "",
+        qaqcChecking: f.qaqcChecking?.[0]?.preview || "",
+        listCertificates: f.listCertificates
+      },
+      inspectionTrackRecord: {
+        howOftenUpdated: f.howOftenUpdated,
+        lastInspectionDate: f.lastInspectionDate
+      },
+      qcStaffCount: f.qcStaffCount,
+      onlineQC: {
+        isOnlineQC: f.isOnlineQC,
+        onlineQCManualAvailable: f.onlineQCManualAvailable,
+        onlineQCTestingEquipment: f.onlineQCTestingEquipment,
+        onlineQCRecordsAvailable: f.onlineQCRecordsAvailable,
+        onlineQCRecord1: f.onlineQCRecord1?.[0]?.preview || "",
+        onlineQCRecord2: f.onlineQCRecord2?.[0]?.preview || ""
+      },
+      finalQC: {
+        isFinalQC: f.isFinalQC,
+        finalQCManualAvailable: f.finalQCManualAvailable,
+        finalQCTestingEquipment: f.finalQCTestingEquipment,
+        finalQCRecordsAvailable: f.finalQCRecordsAvailable,
+        finalQCLastResults: f.finalQCLastResults
+      },
+      incomingQC: {
+        isIncomingQC: f.isIncomingQC,
+        incomingQCManualAvailable: f.incomingQCManualAvailable,
+        incomingQCTestingEquipment: f.incomingQCTestingEquipment,
+        incomingQCRecordsAvailable: f.incomingQCRecordsAvailable,
+        rawMaterialQCRecord1: f.rawMaterialQCRecord1?.[0]?.preview || "",
+        rawMaterialQCRecord2: f.rawMaterialQCRecord2?.[0]?.preview || ""
+      },
+      testEquipmentPhotos: {
+        testEquipment1: f.testEquipment1?.[0]?.preview || "",
+        testEquipment2: f.testEquipment2?.[0]?.preview || ""
+      },
+      part5Score: f.part5Score
+    },
+    part6: {
+      rdSpecificStaffCount: f.rdSpecificStaffCount,
+      rdSpecificFacilities: f.rdSpecificFacilities,
+      sampleProductionProcess: f.sampleProductionProcess,
+      rdRecord: f.rdRecord,
+      approvalSampleLeadTime: f.approvalSampleLeadTime,
+      part6Score: f.part6Score
+    },
+    part7: {
+      envManagement: {
+        iso14000Status: f.iso14000Status,
+        iso14000Comment: f.iso14000Comment,
+        internalEnvStatus: f.internalEnvStatus,
+        internalEnvComment: f.internalEnvComment,
+        envPolicyStatus: f.envPolicyStatus,
+        envPolicyDescription: f.envPolicyDescription,
+        envListCertificates: f.envListCertificates
+      },
+      wastewaterReport: {
+        wastewaterStaffInCharge: f.wastewaterStaffInCharge,
+        wastewaterPhoto1: f.wastewaterPhoto1?.[0]?.preview || "",
+        wastewaterPhoto2: f.wastewaterPhoto2?.[0]?.preview || ""
+      },
+      controlTrackRecord: {
+        envControlRecordsStatus: f.envControlRecordsStatus,
+        envUpdateFrequency: f.envUpdateFrequency,
+        envItemChecked: f.envItemChecked,
+        envLastControlDate: f.envLastControlDate,
+        envFindings: f.envFindings,
+        envStandard: f.envStandard
+      },
+      preventiveActions: f.preventiveActions || [],
+      envPhotos: f.envPhotos || [],
+      part7Score: f.part7Score
+    }
+  });
+
   const submit = async (format = 'docx') => {
     if (!token) {
       alert("Your session has expired. Please log in again.");
@@ -279,231 +489,9 @@ export default function FactoryAudit() {
     }
     setIsGenerating(true);
     try {
-      const nestedData = {
-        generalPhoto: form.generalPhoto,
-        generalOverviewRemarks: form.generalOverviewRemarks || [],
-        clientSpecialRemarks: form.clientSpecialRemarks || [],
-        suggestions: form.suggestions || [],
-        
-        generalInfo: {
-          client: form.client,
-          supplier: form.supplier,
-          factory: form.factory,
-          factoryAddress: form.factoryAddress,
-          contactPerson: form.contactPerson,
-          email: form.email,
-          phone: form.phone,
-          auditDate: form.auditDate,
-          auditorName: form.auditorName
-        },
+      const nestedData = buildNestedData(form);
 
-        auditOverview: {
-          totalScore: form.auditOverview?.totalScore || 0,
-          percentage: form.auditOverview?.percentage || 0,
-          grade: form.auditOverview?.grade || "PENDING"
-        },
-
-        supplierProfile: {
-          dateOfFoundation: form.dateOfFoundation,
-          legalStatus: form.legalStatus,
-          actualLocation: form.actualLocation,
-          locationBusinessLicense: form.locationBusinessLicense,
-          locationExportLicense: form.locationExportLicense,
-          locationBankInfo: form.locationBankInfo,
-          area: form.area,
-          numberOfStaff: form.numberOfStaff,
-          corporateRepresentative: form.corporateRepresentative,
-          mainProducts: form.mainProducts,
-          mainMarket: form.mainMarket,
-          businessLicenseInfo: form.businessLicenseInfo,
-          turnover2018: form.turnover2018,
-          turnover2019: form.turnover2019,
-          turnover2020: form.turnover2020,
-          turnoverTrend: form.turnoverTrend
-        },
-
-        communicationInfrastructure: {
-          telephoneSets: form.telephoneSets,
-          faxMachines: form.faxMachines,
-          computers: form.computers,
-          emailDomain: form.emailDomain
-        },
-
-        productsMarkets: form.productsMarkets || [],
-        recommendations: form.recommendations || [],
-        part1Score: form.part1Score,
-        
-        buildingOfficePhotos: form.buildingOfficePhotos || [],
-        relatedPictures: {
-          certPhoto: form.certPhoto,
-          certCaption: form.certCaption,
-          licensePhoto: form.licensePhoto,
-          licenseCertNo: form.licenseCertNo,
-          licenseDateIssued: form.licenseDateIssued,
-          licenseExpiration: form.licenseExpiration,
-          exportPhoto: form.exportPhoto,
-          exportCertNo: form.exportCertNo,
-          exportDateIssued: form.exportDateIssued,
-          bankPhoto: form.bankPhoto,
-          bankCertNo: form.bankCertNo,
-          bankDateIssued: form.bankDateIssued,
-          bankAccountNumber: form.bankAccountNumber
-        },
-
-        orgChartPhotos: form.orgChartPhotos || [],
-        part2Score: form.part2Score,
-
-        productionWorkflowPhotos: form.productionWorkflowPhotos || [],
-        productionProcess: form.productionProcess || [],
-        dailyOutputCheck: {
-          runningProduction: form.runningProduction,
-          outputCheckComments: form.outputCheckComments,
-          processLines: form.processLines,
-          startTime: form.startTime,
-          finishedTime: form.finishedTime,
-          totalTime: form.totalTime,
-          finishedProductsStart: form.finishedProductsStart,
-          finishedProductsEnd: form.finishedProductsEnd,
-          outputPieces: form.outputPieces
-        },
-        dailyOutputPhotos: form.dailyOutputPhotos || [],
-        leadTimes: {
-          rawMaterialCapacityFactory: form.rawMaterialCapacityFactory,
-          rawMaterialCapacityAuditor: form.rawMaterialCapacityAuditor,
-          weeklyCapacityFactory: form.weeklyCapacityFactory,
-          weeklyCapacityAuditor: form.weeklyCapacityAuditor
-        },
-        bottlenecks: {
-          bottleneckAuditorCheck: form.bottleneckAuditorCheck,
-          bottleneckComments: form.bottleneckComments
-        },
-        part3Score: form.part3Score,
-
-        part4: {
-          machineryConditions: form.machineryConditions || [],
-          warehouseCondition: {
-            warehouseArea: form.warehouseArea,
-            materialsStocked: form.materialsStocked,
-            labMarking: form.labMarking,
-            warehouseClean: form.warehouseClean,
-            facilitiesAdvanced: form.facilitiesAdvanced,
-            warehouseCapacity: form.warehouseCapacity
-          },
-          warehousePhotos: {
-            rawMaterials: form.rawMaterialsStorage?.[0]?.preview || "",
-            finishedProducts: form.finishedProductsStorage?.[0]?.preview || ""
-          },
-          sampleRoomCondition: {
-            sampleRoomClean: form.sampleRoomClean,
-            sampleDisposed: form.sampleDisposed
-          },
-          publicPowerSupply: {
-            publicPowerConnected: form.publicPowerConnected,
-            frequentPowerOutage: form.frequentPowerOutage,
-            dieselGenerator: form.dieselGenerator,
-            generatorCount: form.generatorCount
-          },
-          shipmentCapabilities: {
-            shippingMeetsRequirement: form.shippingMeetsRequirement,
-            containersLoadedTogether: form.containersLoadedTogether,
-            protectionBadWeather: form.protectionBadWeather,
-            mechanicalLoadingDisposed: form.mechanicalLoadingDisposed
-          },
-          shipmentPhotos: {
-            loadingPlace1: form.loadingPlace1?.[0]?.preview || "",
-            loadingPlace2: form.loadingPlace2?.[0]?.preview || ""
-          },
-          part4Score: form.part4Score
-        },
-
-        part5: {
-          qualitySystemManagement: {
-            iso9001Status: form.iso9001Status,
-            iso9001Comment: form.iso9001Comment,
-            internalQAManualStatus: form.internalQAManualStatus,
-            internalQAManualComment: form.internalQAManualComment,
-            othersStatus: form.othersStatus,
-            othersComment: form.othersComment,
-            qaStaffStatus: form.qaStaffStatus,
-            qaStaffComment: form.qaStaffComment,
-            qaqcOffice: form.qaqcOffice?.[0]?.preview || "",
-            qaqcChecking: form.qaqcChecking?.[0]?.preview || "",
-            listCertificates: form.listCertificates
-          },
-          inspectionTrackRecord: {
-            howOftenUpdated: form.howOftenUpdated,
-            lastInspectionDate: form.lastInspectionDate
-          },
-          qcStaffCount: form.qcStaffCount,
-          onlineQC: {
-            isOnlineQC: form.isOnlineQC,
-            onlineQCManualAvailable: form.onlineQCManualAvailable,
-            onlineQCTestingEquipment: form.onlineQCTestingEquipment,
-            onlineQCRecordsAvailable: form.onlineQCRecordsAvailable,
-            onlineQCRecord1: form.onlineQCRecord1?.[0]?.preview || "",
-            onlineQCRecord2: form.onlineQCRecord2?.[0]?.preview || ""
-          },
-          finalQC: {
-            isFinalQC: form.isFinalQC,
-            finalQCManualAvailable: form.finalQCManualAvailable,
-            finalQCTestingEquipment: form.finalQCTestingEquipment,
-            finalQCRecordsAvailable: form.finalQCRecordsAvailable,
-            finalQCLastResults: form.finalQCLastResults
-          },
-          incomingQC: {
-            isIncomingQC: form.isIncomingQC,
-            incomingQCManualAvailable: form.incomingQCManualAvailable,
-            incomingQCTestingEquipment: form.incomingQCTestingEquipment,
-            incomingQCRecordsAvailable: form.incomingQCRecordsAvailable,
-            rawMaterialQCRecord1: form.rawMaterialQCRecord1?.[0]?.preview || "",
-            rawMaterialQCRecord2: form.rawMaterialQCRecord2?.[0]?.preview || ""
-          },
-          testEquipmentPhotos: {
-            testEquipment1: form.testEquipment1?.[0]?.preview || "",
-            testEquipment2: form.testEquipment2?.[0]?.preview || ""
-          },
-          part5Score: form.part5Score
-        },
-
-        part6: {
-          rdSpecificStaffCount: form.rdSpecificStaffCount,
-          rdSpecificFacilities: form.rdSpecificFacilities,
-          sampleProductionProcess: form.sampleProductionProcess,
-          rdRecord: form.rdRecord,
-          approvalSampleLeadTime: form.approvalSampleLeadTime,
-          part6Score: form.part6Score
-        },
-
-        part7: {
-          envManagement: {
-            iso14000Status: form.iso14000Status,
-            iso14000Comment: form.iso14000Comment,
-            internalEnvStatus: form.internalEnvStatus,
-            internalEnvComment: form.internalEnvComment,
-            envPolicyStatus: form.envPolicyStatus,
-            envPolicyDescription: form.envPolicyDescription,
-            envListCertificates: form.envListCertificates
-          },
-          wastewaterReport: {
-            wastewaterStaffInCharge: form.wastewaterStaffInCharge,
-            wastewaterPhoto1: form.wastewaterPhoto1?.[0]?.preview || "",
-            wastewaterPhoto2: form.wastewaterPhoto2?.[0]?.preview || ""
-          },
-          controlTrackRecord: {
-            envControlRecordsStatus: form.envControlRecordsStatus,
-            envUpdateFrequency: form.envUpdateFrequency,
-            envItemChecked: form.envItemChecked,
-            envLastControlDate: form.envLastControlDate,
-            envFindings: form.envFindings,
-            envStandard: form.envStandard
-          },
-          preventiveActions: form.preventiveActions || [],
-          envPhotos: form.envPhotos || [],
-          part7Score: form.part7Score
-        }
-      };
-
-      const saveResponse = await fetch(
+      let saveResponse = await fetch(
         reportId ? `${ENDPOINTS.BASE_URL}/api/factory-audit/${reportId}` : `${ENDPOINTS.BASE_URL}/api/factory-audit`,
         {
           method: reportId ? "PUT" : "POST",
@@ -519,6 +507,24 @@ export default function FactoryAudit() {
         alert("Session expired. Please log in again.");
         navigate("/login");
         return;
+      }
+
+      if (saveResponse.status === 404 && reportId) {
+        console.warn(`⚠️ Report ID ${reportId} not found on server. Retrying as a new report creation...`);
+        localStorage.removeItem("faReportId");
+        setReportId("");
+        
+        saveResponse = await fetch(
+          `${ENDPOINTS.BASE_URL}/api/factory-audit`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ ...nestedData, status: "completed" }),
+          }
+        );
       }
 
       if (!saveResponse.ok) throw new Error("Failed to save factory audit report");
@@ -553,6 +559,46 @@ export default function FactoryAudit() {
     } catch (error) {
       console.error("Submission error:", error);
       alert("Error generating report. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const submitForReview = async () => {
+    if (!token) {
+      alert("Your session has expired. Please log in again.");
+      navigate("/login");
+      return;
+    }
+    setIsGenerating(true);
+    try {
+      let savedId = reportId;
+      if (savedId) {
+        const res = await fetch(ENDPOINTS.FACTORY_AUDIT.SUBMIT(savedId), {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({}),
+        });
+        if (res.status === 401) { navigate("/login"); return; }
+        if (!res.ok) throw new Error("Failed to submit for review");
+      } else {
+        // No saved ID yet — save the report first (createReport already emits notification)
+        const nestedData = buildNestedData(form);
+        const res = await fetch(ENDPOINTS.FACTORY_AUDIT.BASE, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ ...nestedData, status: "submitted" }),
+        });
+        if (res.status === 401) { navigate("/login"); return; }
+        if (!res.ok) throw new Error("Failed to submit for review");
+        const json = await res.json();
+        const newId = json?.data?._id || json?.data?.id;
+        if (newId) setReportId(newId);
+      }
+      alert("Report submitted for review. The technical manager has been notified.");
+    } catch (error) {
+      console.error("Submit for review error:", error);
+      alert("Error submitting report. Please try again.");
     } finally {
       setIsGenerating(false);
     }
@@ -631,11 +677,12 @@ export default function FactoryAudit() {
     { id: 9, label: "Part 6: R&D Capacity", component: <RDCapacity form={formWithSchema} handleChange={handleChange} setForm={setForm} /> },
     { id: 10, label: "Part 7: Environment", component: <Environment form={formWithSchema} handleChange={handleChange} setForm={setForm} /> },
     { id: 11, label: "Finalize & Download", component: (
-      <FinalStep 
-        reportDownloaded={reportDownloaded} 
-        clearFormAfterDownload={clearFormAfterDownload} 
-        submit={submit} 
-        isGenerating={isGenerating} 
+      <FinalStep
+        reportDownloaded={reportDownloaded}
+        clearFormAfterDownload={clearFormAfterDownload}
+        submit={submit}
+        isGenerating={isGenerating}
+        onSubmitForReview={submitForReview}
       />
     ) },
   ];

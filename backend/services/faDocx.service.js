@@ -1,5 +1,4 @@
 const fs = require("fs");
-const path = require("path");
 const { 
   Paragraph, TextRun, Table, TableRow, TableCell, 
   WidthType, AlignmentType, BorderStyle, VerticalMergeType,
@@ -16,26 +15,19 @@ const { LOGO_PATH } = require("../config/config");
 
 // Helper to get photo content safely with custom sizing
 const getPhotoContent = (photoData, width = 200, height = 150) => {
-  if (!photoData || typeof photoData !== 'string' || !photoData.startsWith("data:image")) {
+  if (!photoData || !photoData.startsWith("data:image")) {
     return [new Paragraph({ text: "No photo uploaded", alignment: AlignmentType.CENTER, spacing: { before: 400, after: 400 } })];
   }
   try {
     const parts = photoData.split(",");
     if (parts.length < 2) throw new Error("Invalid image data");
     const buffer = Buffer.from(parts[1], "base64");
-    if (!buffer || buffer.length === 0) throw new Error("Empty image buffer");
-
-    // Detect MIME type from data URL and set ImageRun type accordingly
-    const mime = parts[0].split(":")[1].split(";")[0] || "image/png";
-    const type = mime.includes("png") ? "png" : mime.includes("jpeg") || mime.includes("jpg") ? "jpeg" : "png";
-
     return [
       new Paragraph({
         alignment: AlignmentType.CENTER,
         children: [
           new ImageRun({
             data: buffer,
-            type,
             transformation: { width, height },
           }),
         ],
@@ -44,7 +36,7 @@ const getPhotoContent = (photoData, width = 200, height = 150) => {
     ];
   } catch (e) {
     console.error("Photo processing error:", e);
-    return [new Paragraph({ text: "Error processing photo", alignment: AlignmentType.CENTER })];
+    return [new Paragraph({ text: "Error loading photo", alignment: AlignmentType.CENTER })];
   }
 };
 
@@ -66,7 +58,6 @@ const createSectionHeader = (text) => {
                     bold: true,
                     size: 22,
                     color: "1F4E79",
-                    font: "Arial",
                   }),
                 ],
                 alignment: AlignmentType.LEFT,
@@ -95,7 +86,7 @@ const createDataTable = (dataArray, photoData = null, title = null) => {
             borders: tableBorders(),
             children: [
               new Paragraph({
-                children: [new TextRun({ text: title, bold: true, size: 22, color: "1F4E79", font: "Arial" })],
+                children: [new TextRun({ text: title, bold: true, size: 22, color: "1F4E79" })],
                 alignment: AlignmentType.LEFT,
                 spacing: { before: 100, after: 100 },
               }),
@@ -213,8 +204,7 @@ exports.createFAHeaderTable = (data) => {
                 bold: true, 
                 size: 40, 
                 color: conclusion.toUpperCase().includes("PASS") ? "008000" : 
-                       conclusion.toUpperCase().includes("PENDING") ? "F39C12" : "FF0000",
-                font: "Arial"
+                       conclusion.toUpperCase().includes("PENDING") ? "F39C12" : "FF0000"
               })], 
               alignment: AlignmentType.CENTER 
             })],
@@ -239,13 +229,11 @@ exports.createFAContent = (data) => {
   const children = [];
 
   // Get Logo for repeated headers
-  let logoBuffer = null;
-  let logoType = 'png';
+  let logoBase64 = null;
   try {
     if (fs.existsSync(LOGO_PATH)) {
-      logoBuffer = fs.readFileSync(LOGO_PATH);
-      const ext = path.extname(LOGO_PATH || '').toLowerCase();
-      logoType = ext === '.png' ? 'png' : (ext === '.jpg' || ext === '.jpeg' ? 'jpeg' : 'png');
+      const imgBuffer = fs.readFileSync(LOGO_PATH);
+      logoBase64 = `data:image/png;base64,${imgBuffer.toString("base64")}`;
     }
   } catch (e) {
     console.error("Error loading logo for repeated headers:", e);
@@ -274,7 +262,7 @@ exports.createFAContent = (data) => {
           borders: tableBorders(),
           children: [
             new Paragraph({
-              children: [new TextRun({ text: "FACTORY AUDIT REPORT", bold: true, size: 36, color: "1F4E79", font: "Arial" })],
+              children: [new TextRun({ text: "FACTORY AUDIT REPORT", bold: true, size: 36, color: "1F4E79" })],
               alignment: AlignmentType.CENTER,
               spacing: { before: 400, after: 120 },
             }),
@@ -291,7 +279,7 @@ exports.createFAContent = (data) => {
           borders: tableBorders(),
           children: [
             new Paragraph({
-              children: [new TextRun({ text: "GENERAL INFORMATION", bold: true, size: 24, color: "1F4E79", font: "Arial" })],
+              children: [new TextRun({ text: "GENERAL INFORMATION", bold: true, size: 24, color: "1F4E79" })],
               alignment: AlignmentType.LEFT,
               spacing: { before: 80, after: 80 },
             }),
@@ -904,11 +892,13 @@ exports.createFAContent = (data) => {
             new TableCell({
               width: { size: 5, type: WidthType.PERCENTAGE },
               borders: tableBorders(),
+              verticalMerge: VerticalMergeType.RESTART,
               children: [new Paragraph({ children: [new TextRun({ text: "14", bold: true })], alignment: AlignmentType.CENTER })],
             }),
             new TableCell({
               width: { size: 35, type: WidthType.PERCENTAGE },
               borders: tableBorders(),
+              verticalMerge: VerticalMergeType.RESTART,
               children: [new Paragraph({ children: [new TextRun({ text: "Annual turnover for the past 3 years", bold: true })] })],
             }),
             new TableCell({
@@ -1380,10 +1370,7 @@ exports.createFAContent = (data) => {
   const getSafeLogo = (width = 100, height = 40) => {
     try {
       if (typeof LOGO_PATH !== 'undefined' && fs.existsSync(LOGO_PATH)) {
-        const imgBuffer = fs.readFileSync(LOGO_PATH);
-        const ext = path.extname(LOGO_PATH || '').toLowerCase();
-        const type = ext === '.png' ? 'png' : (ext === '.jpg' || ext === '.jpeg' ? 'jpeg' : 'png');
-        return [new ImageRun({ data: imgBuffer, type, transformation: { width, height } })];
+        return [new ImageRun({ data: fs.readFileSync(LOGO_PATH), transformation: { width, height } })];
       }
     } catch (e) {
       console.error("Logo load error:", e);
@@ -1463,7 +1450,7 @@ exports.createFAContent = (data) => {
   );
 
   // Org Chart Images
-  const orgPhotos = (data.orgChartPhotos || []).filter(p => p.preview || p.url);
+  const orgPhotos = (data.orgChartPhotos || []).filter(p => p.preview);
   orgPhotos.forEach(p => {
     children.push(
       new Table({
@@ -1579,7 +1566,7 @@ exports.createFAContent = (data) => {
     })
   );
 
-  const workflowPhotos = (data.productionWorkflowPhotos || []).filter(p => p.preview || p.url);
+  const workflowPhotos = (data.productionWorkflowPhotos || []).filter(p => p.preview);
   workflowPhotos.forEach(p => {
     children.push(
       new Table({
@@ -1718,7 +1705,7 @@ exports.createFAContent = (data) => {
   );
 
   // Daily Output Photos
-  const outputPhotos = (data.dailyOutputPhotos || []).filter(p => p.preview || p.url);
+  const outputPhotos = (data.dailyOutputPhotos || []).filter(p => p.preview);
   if (outputPhotos.length > 0) {
     const photoRow = new TableRow({
       children: [0, 1].map(idx => {
@@ -2633,27 +2620,26 @@ exports.createFAContent = (data) => {
   // 8. WASTEWATER TEST REPORT
   children.push(new Paragraph({ children: [new PageBreak()] }));
   
-  // Repeated Header Table Generator (Logo and Client Info)
-  const getHeaderTableRows = () => [
+  // Repeated Header Table (Logo and Client Info)
+  const headerTableRows = [
     new TableRow({
       children: [
         new TableCell({
-          verticalMerge: VerticalMergeType.RESTART,
+          rowSpan: 3,
           width: { size: 25, type: WidthType.PERCENTAGE },
           borders: tableBorders(),
           children: [
-            ...(logoBuffer ? [
+            ...(logoBase64 ? [
               new Paragraph({
                 children: [
                   new ImageRun({
-                    data: logoBuffer,
-                    type: logoType,
+                    data: Buffer.from(logoBase64.split(",")[1], "base64"),
                     transformation: { width: 140, height: 45 },
                   }),
                 ],
                 alignment: AlignmentType.CENTER,
               }),
-            ] : [new Paragraph({ text: "" })]),
+            ] : []),
           ],
           verticalAlign: VerticalAlign.CENTER,
         }),
@@ -2676,7 +2662,6 @@ exports.createFAContent = (data) => {
     }),
     new TableRow({
       children: [
-        new TableCell({ verticalMerge: VerticalMergeType.CONTINUE, borders: tableBorders(), children: [new Paragraph({ text: "" })] }),
         new TableCell({
           borders: tableBorders(),
           children: [new Paragraph({ children: [new TextRun({ text: "Inspection number:", size: 18 })] })],
@@ -2686,11 +2671,11 @@ exports.createFAContent = (data) => {
           children: [new Paragraph({ children: [new TextRun({ text: data.generalInfo?.inspectionNo || "AV-C20211007-GEMUS", bold: true, size: 16 })], alignment: AlignmentType.CENTER })],
         }),
         new TableCell({
-          verticalMerge: VerticalMergeType.RESTART,
+          rowSpan: 2,
           borders: tableBorders(),
           children: [
             new Paragraph({
-              children: [new TextRun({ text: conclusionText, bold: true, color: "FF0000", size: 24 })],
+              children: [new TextRun({ text: "PENDING", bold: true, color: "FF0000", size: 24 })],
               alignment: AlignmentType.CENTER,
             }),
           ],
@@ -2700,7 +2685,6 @@ exports.createFAContent = (data) => {
     }),
     new TableRow({
       children: [
-        new TableCell({ verticalMerge: VerticalMergeType.CONTINUE, borders: tableBorders(), children: [new Paragraph({ text: "" })] }),
         new TableCell({
           borders: tableBorders(),
           children: [new Paragraph({ children: [new TextRun({ text: "Report Date:", size: 18 })] })],
@@ -2709,11 +2693,10 @@ exports.createFAContent = (data) => {
           borders: tableBorders(),
           children: [new Paragraph({ children: [new TextRun({ text: data.generalInfo?.auditDate || "08-Oct-2021", bold: true, size: 18 })], alignment: AlignmentType.CENTER })],
         }),
-        new TableCell({ verticalMerge: VerticalMergeType.CONTINUE, borders: tableBorders(), children: [new Paragraph({ text: "" })] }),
       ],
     }),
   ];
-  children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: getHeaderTableRows() }));
+  children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: headerTableRows }));
   children.push(new Paragraph({ text: "", spacing: { after: 100 } }));
 
   const ww = env.wastewaterReport || {};
@@ -2794,27 +2777,26 @@ exports.createFAContent = (data) => {
   // 9. PREVENTIVE/CORRECTIVE ACTIONS
   children.push(new Paragraph({ children: [new PageBreak()] }));
   
-  // Repeated Header Table Generator for Actions (Logo and Client Info)
-  const getHeaderTableRowsActions = () => [
+  // Repeated Header Table (Logo and Client Info)
+  const headerTableRowsActions = [
     new TableRow({
       children: [
         new TableCell({
-          verticalMerge: VerticalMergeType.RESTART,
+          rowSpan: 3,
           width: { size: 25, type: WidthType.PERCENTAGE },
           borders: tableBorders(),
           children: [
-            ...(logoBuffer ? [
+            ...(logoBase64 ? [
               new Paragraph({
                 children: [
                   new ImageRun({
-                    data: logoBuffer,
-                    type: logoType,
+                    data: Buffer.from(logoBase64.split(",")[1], "base64"),
                     transformation: { width: 140, height: 45 },
                   }),
                 ],
                 alignment: AlignmentType.CENTER,
               }),
-            ] : [new Paragraph({ text: "" })]),
+            ] : []),
           ],
           verticalAlign: VerticalAlign.CENTER,
         }),
@@ -2837,7 +2819,6 @@ exports.createFAContent = (data) => {
     }),
     new TableRow({
       children: [
-        new TableCell({ verticalMerge: VerticalMergeType.CONTINUE, borders: tableBorders(), children: [new Paragraph({ text: "" })] }),
         new TableCell({
           borders: tableBorders(),
           children: [new Paragraph({ children: [new TextRun({ text: "Inspection number:", size: 18 })] })],
@@ -2847,11 +2828,11 @@ exports.createFAContent = (data) => {
           children: [new Paragraph({ children: [new TextRun({ text: data.generalInfo?.inspectionNo || "AV-C20211007-GEMUS", bold: true, size: 16 })], alignment: AlignmentType.CENTER })],
         }),
         new TableCell({
-          verticalMerge: VerticalMergeType.RESTART,
+          rowSpan: 2,
           borders: tableBorders(),
           children: [
             new Paragraph({
-              children: [new TextRun({ text: conclusionText, bold: true, color: "FF0000", size: 24 })],
+              children: [new TextRun({ text: "PENDING", bold: true, color: "FF0000", size: 24 })],
               alignment: AlignmentType.CENTER,
             }),
           ],
@@ -2861,7 +2842,6 @@ exports.createFAContent = (data) => {
     }),
     new TableRow({
       children: [
-        new TableCell({ verticalMerge: VerticalMergeType.CONTINUE, borders: tableBorders(), children: [new Paragraph({ text: "" })] }),
         new TableCell({
           borders: tableBorders(),
           children: [new Paragraph({ children: [new TextRun({ text: "Report Date:", size: 18 })] })],
@@ -2870,11 +2850,10 @@ exports.createFAContent = (data) => {
           borders: tableBorders(),
           children: [new Paragraph({ children: [new TextRun({ text: data.generalInfo?.auditDate || "08-Oct-2021", bold: true, size: 18 })], alignment: AlignmentType.CENTER })],
         }),
-        new TableCell({ verticalMerge: VerticalMergeType.CONTINUE, borders: tableBorders(), children: [new Paragraph({ text: "" })] }),
       ],
     }),
   ];
-  children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: getHeaderTableRowsActions() }));
+  children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: headerTableRowsActions }));
   children.push(new Paragraph({ text: "", spacing: { after: 100 } }));
 
   // Preventive/corrective actions table

@@ -1,7 +1,24 @@
 const FactoryAudit = require("../models/factoryAudit.model");
 const mongoose = require("mongoose");
 const { Document, Packer, Header, Paragraph, TextRun, PageNumber, Footer, Table, TableRow, TableCell, WidthType, BorderStyle, AlignmentType } = require("docx");
-const { createFAContent } = require("../services/faDocx.service");
+const { createFAContent, createFAHeaderTable } = require("../services/faDocx.service");
+const wasabiService = require("../services/wasabiService");
+const { GetObjectCommand } = require("@aws-sdk/client-s3");
+const { getIO } = require("../socket");
+
+const emitReportSubmitted = (report, user) => {
+  try {
+    getIO().to("manager_room").emit("new_report_submitted", {
+      reportId: report._id,
+      inspectorName: user?.name || "Inspector",
+      client: report.generalInfo?.client || "",
+      reportType: "Factory Audit",
+      submittedAt: new Date().toISOString(),
+    });
+  } catch (e) {
+    console.warn("Socket notification failed:", e.message);
+  }
+};
 
 // Simple controller for Factory Audit
 exports.createReport = async (req, res) => {
@@ -14,6 +31,7 @@ exports.createReport = async (req, res) => {
       submittedAt: new Date()
     });
     await report.save();
+    emitReportSubmitted(report, req.user);
     res.status(201).json({ status: "success", data: report });
   } catch (error) {
     console.error("Factory Audit Create Error:", error);
@@ -21,11 +39,48 @@ exports.createReport = async (req, res) => {
   }
 };
 
+exports.submitForReview = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id || req.user._id;
+    const isAdmin = req.user.role === "admin";
+    const isManager = req.user.role === "manager";
+
+    const { formData } = req.body;
+    const query = (isAdmin || isManager) ? { _id: id } : { _id: id, userId };
+
+    const updatePayload = formData
+      ? { ...formData, operationStatus: "submitted", submittedAt: new Date() }
+      : { operationStatus: "submitted", submittedAt: new Date() };
+
+    let report = await FactoryAudit.findOneAndUpdate(query, updatePayload, { new: true, upsert: false });
+
+    if (!report) {
+      // First submission — create the record
+      report = new FactoryAudit({
+        ...(formData || {}),
+        userId,
+        operationStatus: "submitted",
+        submittedAt: new Date(),
+      });
+      await report.save();
+    }
+
+    emitReportSubmitted(report, req.user);
+    res.json({ status: "success", data: report });
+  } catch (error) {
+    console.error("FA Submit For Review Error:", error);
+    res.status(500).json({ error: "Failed to submit report", details: error.message });
+  }
+};
+
 exports.getReports = async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
+    const isAdmin = req.user.role === "admin";
+    const isManager = req.user.role === "manager";
     
-    const query = { userId };
+    const query = (isAdmin || isManager) ? {} : { userId };
     
     const reports = await FactoryAudit.find(query).sort({ createdAt: -1 });
     res.json({ status: "success", data: reports });
@@ -38,8 +93,10 @@ exports.getReportById = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id || req.user._id;
+    const isAdmin = req.user.role === "admin";
+    const isManager = req.user.role === "manager";
     
-    const query = { _id: id, userId };
+    const query = (isAdmin || isManager) ? { _id: id } : { _id: id, userId };
     const report = await FactoryAudit.findOne(query);
     
     if (!report) return res.status(404).json({ error: "Report not found" });
@@ -53,6 +110,8 @@ exports.updateReport = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id || req.user._id;
+    const isAdmin = req.user.role === "admin";
+    const isManager = req.user.role === "manager";
     
     const updateData = { ...req.body, updatedAt: Date.now() };
     if (req.body.status === "completed") {
@@ -60,7 +119,7 @@ exports.updateReport = async (req, res) => {
       updateData.submittedAt = new Date();
     }
     
-    const query = { _id: id, userId };
+    const query = (isAdmin || isManager) ? { _id: id } : { _id: id, userId };
     const report = await FactoryAudit.findOneAndUpdate(
       query,
       updateData,
@@ -77,9 +136,11 @@ exports.generateReport = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id || req.user._id;
+    const isAdmin = req.user.role === "admin";
+    const isManager = req.user.role === "manager";
     const format = req.query.format || "docx";
     
-    const query = { _id: id, userId };
+    const query = (isAdmin || isManager) ? { _id: id } : { _id: id, userId };
     const reportDoc = await FactoryAudit.findOne(query);
     if (!reportDoc) return res.status(404).json({ error: "Report not found" });
 
@@ -89,21 +150,29 @@ exports.generateReport = async (req, res) => {
     // Preload all cloud/url photos into base64 strings so they render synchronously
     await preloadReportPhotos(report);
 
-    const { createFAContent, createFAHeaderTable } = require("../services/faDocx.service");
-
     const doc = new Document({
       styles: {
         default: {
           document: {
             run: {
-              font: "Arial",
-              size: 18, // 9pt
+              font: "Calibri",
+              size: 20, // 10pt
               color: "000000",
             },
           },
         },
       },
       sections: [{
+        properties: {
+          page: {
+            margin: {
+              top: 720,
+              bottom: 720,
+              left: 900,
+              right: 900,
+            },
+          },
+        },
         headers: {
           default: new Header({
             children: [createFAHeaderTable(report)],
@@ -197,12 +266,14 @@ exports.deleteReport = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id || req.user._id;
+    const isAdmin = req.user.role === "admin";
+    const isManager = req.user.role === "manager";
     
     const report = await FactoryAudit.findOne({ _id: id });
     if (!report) return res.status(404).json({ error: "Report not found" });
 
-    // Permissions: Only the owner can delete
-    if (report.userId.toString() !== userId) {
+    // Permissions: Only the owner, admin or manager can delete
+    if (report.userId.toString() !== userId && !isAdmin && !isManager) {
       return res.status(403).json({ error: "Unauthorized to delete this report" });
     }
 
@@ -214,38 +285,53 @@ exports.deleteReport = async (req, res) => {
   }
 };
 
+const ALLOWED_IMAGE_HOSTS = ["wasabisys.com"];
+
+const isAllowedImageUrl = (url) => {
+  try {
+    const { hostname } = new URL(url);
+    return ALLOWED_IMAGE_HOSTS.some(h => hostname === h || hostname.endsWith(`.${h}`));
+  } catch {
+    return false;
+  }
+};
+
+const mimeFromKey = (key) => {
+  const ext = (key || "").split(".").pop().toLowerCase();
+  return { jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", gif: "image/gif" }[ext] || "image/png";
+};
+
 // Helper: Preload all cloud/url photos of a report into base64 data urls in-memory
 const preloadReportPhotos = async (obj) => {
   if (!obj || typeof obj !== "object") return;
 
-  const wasabiService = require("../services/wasabiService");
-
-  // Helper to load buffer and return data URL
   const loadAsBase64 = async (photoData) => {
     if (!photoData) return null;
 
     let url = null;
     let wasabiKey = null;
-    let preview = null;
 
     if (typeof photoData === "string") {
       if (photoData.startsWith("data:image")) return photoData;
-      if (photoData.startsWith("http")) url = photoData;
+      url = photoData.startsWith("http") ? photoData : null;
     } else if (typeof photoData === "object") {
-      preview = photoData.preview || photoData.picture || photoData.photo;
+      const preview = photoData.preview || photoData.picture || photoData.photo;
       if (preview && preview.startsWith("data:image")) return preview;
       url = photoData.url || photoData.preview;
       wasabiKey = photoData.wasabiKey;
     }
 
-    // Try fetching from URL first
     if (url && typeof url === "string" && url.startsWith("http")) {
+      if (!isAllowedImageUrl(url)) {
+        console.warn(`[FA Preload] Blocked fetch for disallowed host: ${url}`);
+        return null;
+      }
       try {
         console.log(`🌐 [FA Preload] Fetching image from HTTP URL: ${url}`);
-        const res = await fetch(url);
+        const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
         if (res.ok) {
           const buffer = Buffer.from(await res.arrayBuffer());
-          const mime = res.headers.get("content-type") || "image/png";
+          const mime = res.headers.get("content-type") || "image/jpeg";
           return `data:${mime};base64,${buffer.toString("base64")}`;
         }
       } catch (error) {
@@ -253,7 +339,6 @@ const preloadReportPhotos = async (obj) => {
       }
     }
 
-    // Try Wasabi direct
     if (!wasabiKey && url && typeof url === "string" && url.includes("wasabisys.com/")) {
       wasabiKey = url.split("wasabisys.com/")[1];
     }
@@ -261,31 +346,25 @@ const preloadReportPhotos = async (obj) => {
       try {
         console.log(`☁️ [FA Preload] Fetching image from Wasabi: ${wasabiKey}`);
         const params = { Bucket: wasabiService.bucket, Key: wasabiKey };
-        const { Body } = await wasabiService.s3.send(new (require("@aws-sdk/client-s3").GetObjectCommand)(params));
+        const { Body } = await wasabiService.s3.send(new GetObjectCommand(params));
         const chunks = [];
         for await (const chunk of Body) chunks.push(chunk);
         const buffer = Buffer.concat(chunks);
-        return `data:image/png;base64,${buffer.toString("base64")}`;
+        return `data:${mimeFromKey(wasabiKey)};base64,${buffer.toString("base64")}`;
       } catch (error) {
         console.warn(`[FA Preload] Wasabi fetch failed for ${wasabiKey}`, error.message);
       }
     }
 
-    // If it is already a base64 string, return it
-    if (preview && preview.startsWith("data:image")) return preview;
-
     return null;
   };
 
-  // Traversal loop
-  for (const key of Object.keys(obj)) {
+  await Promise.all(Object.keys(obj).map(async (key) => {
     const val = obj[key];
-    if (!val) continue;
+    if (!val) return;
 
-    // Handle array of photo objects or raw elements
     if (Array.isArray(val)) {
-      for (let i = 0; i < val.length; i++) {
-        const item = val[i];
+      await Promise.all(val.map(async (item, i) => {
         if (item && typeof item === "object") {
           if (item.preview !== undefined || item.photo !== undefined || item.picture !== undefined || item.url !== undefined) {
             const loaded = await loadAsBase64(item);
@@ -301,20 +380,16 @@ const preloadReportPhotos = async (obj) => {
           const loaded = await loadAsBase64(item);
           if (loaded) val[i] = loaded;
         }
-      }
-    }
-    // Handle nested objects
-    else if (typeof val === "object") {
+      }));
+    } else if (typeof val === "object") {
       await preloadReportPhotos(val);
-    }
-    // Handle single string photo fields (e.g., generalPhoto, certPhoto, etc.)
-    else if (typeof val === "string" && val.startsWith("http") && 
-             (key.toLowerCase().includes("photo") || key.toLowerCase().includes("picture") || 
-              key === "rawMaterials" || key === "finishedProducts" || key.startsWith("loadingPlace") || 
-              key === "qaqcOffice" || key === "qaqcChecking" || key.startsWith("onlineQCRecord") || 
-              key.startsWith("rawMaterialQCRecord") || key.startsWith("testEquipment") || key.startsWith("wastewaterPhoto"))) {
+    } else if (typeof val === "string" && val.startsWith("http") &&
+               (key.toLowerCase().includes("photo") || key.toLowerCase().includes("picture") ||
+                key === "rawMaterials" || key === "finishedProducts" || key.startsWith("loadingPlace") ||
+                key === "qaqcOffice" || key === "qaqcChecking" || key.startsWith("onlineQCRecord") ||
+                key.startsWith("rawMaterialQCRecord") || key.startsWith("testEquipment") || key.startsWith("wastewaterPhoto"))) {
       const loaded = await loadAsBase64(val);
       if (loaded) obj[key] = loaded;
     }
-  }
+  }));
 };

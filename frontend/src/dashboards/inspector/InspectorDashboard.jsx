@@ -13,64 +13,75 @@ import {
   AlertCircle,
   FileText,
   Search,
-  Filter,
   X,
   ChevronRight,
-  ChevronDown
+  RefreshCw,
+  TrendingUp,
 } from "lucide-react";
+
+const STATUS_FILTERS = [
+  { label: "All",                  value: "All" },
+  { label: "Pending Acceptance",   value: "Pending Acceptance" },
+  { label: "Awaiting Report",      value: "Awaiting Report" },
+  { label: "Report Submitted",     value: "Report Submitted" },
+  { label: "Under Review",         value: "Under Review" },
+  { label: "Correction Requested", value: "Correction Requested" },
+  { label: "Finalized",            value: "Finalized" },
+];
+
+const STAT_CARDS = (summary) => [
+  { label: "Total Assigned",    value: summary.totalTasks,       icon: ClipboardList, color: "text-blue-600",    bg: "bg-blue-50",    accent: "border-t-blue-500" },
+  { label: "Pending Actions",   value: summary.pendingTasks,     icon: Clock,         color: "text-amber-600",   bg: "bg-amber-50",   accent: "border-t-amber-500",   highlight: summary.pendingTasks > 0 },
+  { label: "Reports Submitted", value: summary.submittedReports, icon: Send,          color: "text-indigo-600",  bg: "bg-indigo-50",  accent: "border-t-indigo-500" },
+  { label: "Review / Finalized",value: summary.reviewFinalized,  icon: CheckCircle,   color: "text-emerald-600", bg: "bg-emerald-50", accent: "border-t-emerald-500" },
+];
+
+const STATUS_CONFIG = {
+  'Pending Acceptance':   { badge: 'bg-slate-100 text-slate-700 border-slate-200',   bar: 'bg-slate-400' },
+  'Accepted':             { badge: 'bg-amber-100 text-amber-700 border-amber-200',    bar: 'bg-amber-400' },
+  'Report Submitted':     { badge: 'bg-blue-100 text-blue-700 border-blue-200',       bar: 'bg-blue-500'  },
+  'Under Review':         { badge: 'bg-orange-100 text-orange-700 border-orange-200', bar: 'bg-orange-400' },
+  'Correction Requested': { badge: 'bg-red-100 text-red-700 border-red-200',          bar: 'bg-red-500'   },
+  'Finalized':            { badge: 'bg-emerald-100 text-emerald-700 border-emerald-200', bar: 'bg-emerald-500' },
+};
+
+const getStatusConfig = (status) => STATUS_CONFIG[status] || STATUS_CONFIG['Pending Acceptance'];
+const getDisplayStatus = (status) => status === "Accepted" ? "Awaiting Report" : status;
 
 export default function Dashboard() {
   const { token, user } = useAuth();
   const navigate = useNavigate();
-  
-  const [summary, setSummary] = useState({
-    totalTasks: 0,
-    pendingTasks: 0,
-    submittedReports: 0,
-    reviewFinalized: 0
-  });
+
+  const [summary, setSummary] = useState({ totalTasks: 0, pendingTasks: 0, submittedReports: 0, reviewFinalized: 0 });
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  // Filtering and Searching
+  const [error, setError] = useState(null);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  
-  // Modal State
+
   const [selectedTask, setSelectedTask] = useState(null);
   const [acceptingTaskId, setAcceptingTaskId] = useState(null);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-        // Fetch Summary
-        const summaryRes = await fetch(ENDPOINTS.INSPECTOR.SUMMARY, {
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-        if (summaryRes.ok) {
-          const data = await summaryRes.json();
-          setSummary(data);
-        }
-
-        // Fetch Tasks
-        const tasksRes = await fetch(ENDPOINTS.INSPECTOR.TASKS, {
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-        if (tasksRes.ok) {
-          const data = await tasksRes.json();
-          setTasks(data.tasks);
-        }
-      } catch (error) {
-        console.error("Dashboard fetch error:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (token) {
-      fetchDashboardData();
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const [summaryRes, tasksRes] = await Promise.all([
+        fetch(ENDPOINTS.INSPECTOR.SUMMARY, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(ENDPOINTS.INSPECTOR.TASKS,   { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+      if (summaryRes.ok) setSummary(await summaryRes.json());
+      if (tasksRes.ok)   setTasks((await tasksRes.json()).tasks);
+    } catch {
+      setError("Failed to load dashboard data. Please refresh.");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    if (token) fetchDashboardData();
   }, [token]);
 
   const handleAcceptTask = async (taskId) => {
@@ -78,253 +89,303 @@ export default function Dashboard() {
       setAcceptingTaskId(taskId);
       const res = await fetch(ENDPOINTS.INSPECTOR.ACCEPT_TASK(taskId), {
         method: "POST",
-        headers: { "Authorization": `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         const data = await res.json();
         setTasks(prev => prev.map(t => t._id === taskId ? data.task : t));
         setSelectedTask(data.task);
-        // Update summary counts locally
-        setSummary(prev => ({
-          ...prev,
-          pendingTasks: prev.pendingTasks - 1 // It's still in "Accepted" which might be counted as pending in our DB logic, but let's re-fetch or assume it's fine.
-        }));
+        setSummary(prev => ({ ...prev, pendingTasks: Math.max(0, prev.pendingTasks - 1) }));
       }
-    } catch (error) {
-      console.error("Accept task error:", error);
+    } catch (err) {
+      console.error("Accept task error:", err);
     } finally {
       setAcceptingTaskId(null);
     }
   };
 
-  const getStatusBadge = (status) => {
-    const map = {
-      'Pending Acceptance': 'bg-slate-100 text-slate-700 border-slate-200',
-      'Accepted': 'bg-amber-100 text-amber-700 border-amber-200',
-      'Report Submitted': 'bg-blue-100 text-blue-700 border-blue-200',
-      'Under Review': 'bg-orange-100 text-orange-700 border-orange-200',
-      'Correction Requested': 'bg-red-100 text-red-700 border-red-200',
-      'Finalized': 'bg-emerald-100 text-emerald-700 border-emerald-200',
-    };
-    return map[status] || 'bg-slate-100 text-slate-700 border-slate-200';
-  };
+  const getInspectionRoute = (type) => ({
+    'PSI': '/dashboard/pre-shipment',
+    'CLS': '/dashboard/container-loading',
+    'Factory Audit': '/dashboard/factory-audit',
+    'DPI': '/dashboard/during-production',
+    'Social Audit': '/dashboard/social-audit',
+  })[type] || '/dashboard/pre-shipment';
 
-  const getInspectionRoute = (type) => {
-    const map = {
-      'PSI': '/dashboard/pre-shipment',
-      'CLS': '/dashboard/container-loading',
-      'Factory Audit': '/dashboard/factory-audit',
-      'DPI': '/dashboard/during-production',
-      'Social Audit': '/dashboard/social-audit'
-    };
-    return map[type] || '/dashboard/pre-shipment';
-  };
-
-  const handleStartReport = (task) => {
-    const route = getInspectionRoute(task.inspectionType);
-    // Ideally we would pass task data as state so the form can pre-populate
-    navigate(route, { state: { task } });
-  };
+  const handleStartReport = (task) => navigate(getInspectionRoute(task.inspectionType), { state: { task } });
 
   const filteredTasks = tasks.filter(task => {
-    const matchesSearch = task.clientName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          task.factoryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          task.factoryAddress.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    // Status mapping for filter
-    let matchesStatus = true;
-    if (statusFilter !== "All") {
-      if (statusFilter === "Awaiting Report") {
-        matchesStatus = task.status === "Accepted";
-      } else {
-        matchesStatus = task.status === statusFilter;
-      }
-    }
+    const q = searchTerm.toLowerCase();
+    const matchesSearch = !q ||
+      task.clientName.toLowerCase().includes(q) ||
+      task.factoryName.toLowerCase().includes(q) ||
+      task.factoryAddress.toLowerCase().includes(q);
+    const matchesStatus = statusFilter === "All" ||
+      (statusFilter === "Awaiting Report" ? task.status === "Accepted" : task.status === statusFilter);
     return matchesSearch && matchesStatus;
   });
 
+  const filterCount = (filterValue) => filterValue === "All"
+    ? tasks.length
+    : tasks.filter(t => filterValue === "Awaiting Report" ? t.status === "Accepted" : t.status === filterValue).length;
+
+  const firstName = user?.name?.split(' ')[0] || 'Inspector';
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-8 bg-slate-50 min-h-screen">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-          Welcome back, {user?.name?.split(' ')[0] || 'Inspector'}
-        </h1>
-        <p className="mt-2 text-base text-slate-500 font-medium">
-          {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-        </p>
-      </div>
+    <div className="flex flex-col h-full">
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-slate-500">Total Assigned</h3>
-            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-              <ClipboardList className="w-5 h-5 text-blue-600" />
-            </div>
+      {/* ── Header: welcome + stat cards ── */}
+      <div className="bg-white border-b border-slate-200 px-8 pt-6 pb-5 shrink-0">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-0.5">{today}</p>
+            <h1 className="text-2xl font-bold text-slate-900">
+              Welcome back, <span className="text-blue-600">{firstName}</span>
+            </h1>
+            {summary.pendingTasks > 0 ? (
+              <p className="text-sm text-amber-600 font-medium mt-1 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" />
+                {summary.pendingTasks} pending action{summary.pendingTasks !== 1 ? 's' : ''} require your attention
+              </p>
+            ) : (
+              <p className="text-sm text-slate-400 mt-1 flex items-center gap-1.5">
+                <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+                All caught up — no pending actions
+              </p>
+            )}
           </div>
-          <p className="text-3xl font-bold text-slate-900">{summary.totalTasks}</p>
-        </div>
-        
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-slate-500">Pending Actions</h3>
-            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
-              <Clock className="w-5 h-5 text-amber-600" />
-            </div>
-          </div>
-          <p className="text-3xl font-bold text-slate-900">{summary.pendingTasks}</p>
-        </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-slate-500">Submitted</h3>
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
-              <Send className="w-5 h-5 text-indigo-600" />
-            </div>
-          </div>
-          <p className="text-3xl font-bold text-slate-900">{summary.submittedReports}</p>
+          <button
+            onClick={fetchDashboardData}
+            disabled={loading}
+            className="flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-xl transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-slate-500">Review / Finalized</h3>
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-              <CheckCircle className="w-5 h-5 text-emerald-600" />
-            </div>
-          </div>
-          <p className="text-3xl font-bold text-slate-900">{summary.reviewFinalized}</p>
-        </div>
-      </div>
-
-      {/* Task List Section */}
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-            Assigned Inspection Tasks
-          </h2>
-          
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input 
-                type="text"
-                placeholder="Search client or location..."
-                className="pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            
-            <div className="relative">
-              <Filter className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <select 
-                className="pl-9 pr-8 py-2 border border-slate-200 rounded-xl text-sm appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+        {/* Stat cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {STAT_CARDS(summary).map(card => {
+            const Icon = card.icon;
+            return (
+              <div
+                key={card.label}
+                className={`bg-white rounded-xl border ${card.highlight ? 'border-amber-200' : 'border-slate-200'} border-t-4 ${card.accent} p-4 shadow-sm`}
               >
-                <option value="All">All Statuses</option>
-                <option value="Pending Acceptance">Pending Acceptance</option>
-                <option value="Awaiting Report">Awaiting Report</option>
-                <option value="Report Submitted">Report Submitted</option>
-                <option value="Under Review">Under Review</option>
-                <option value="Correction Requested">Correction Requested</option>
-                <option value="Finalized">Finalized</option>
-              </select>
-              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
-          </div>
-        </div>
-
-        {loading ? (
-          <div className="py-12 flex justify-center">
-            <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
-          </div>
-        ) : filteredTasks.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredTasks.map(task => (
-              <div 
-                key={task._id} 
-                className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col group"
-              >
-                <div className="p-5 flex-1">
-                  <div className="flex justify-between items-start mb-3">
-                    <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold uppercase tracking-wide">
-                      {task.inspectionType}
-                    </span>
-                    <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${getStatusBadge(task.status)}`}>
-                      {task.status === "Accepted" ? "Awaiting Report" : task.status}
-                    </span>
-                  </div>
-                  
-                  <h3 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors line-clamp-1">
-                    {task.clientName}
-                  </h3>
-                  
-                  <div className="space-y-2 mt-4">
-                    <div className="flex items-start gap-2 text-sm text-slate-600">
-                      <Building className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-                      <span className="line-clamp-1">{task.factoryName}</span>
-                    </div>
-                    <div className="flex items-start gap-2 text-sm text-slate-600">
-                      <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-                      <span className="line-clamp-1">{task.factoryAddress}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                      <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
-                      <span>{new Date(task.scheduledDate).toLocaleDateString()}</span>
-                    </div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-semibold text-slate-500">{card.label}</p>
+                  <div className={`w-8 h-8 rounded-lg ${card.bg} flex items-center justify-center`}>
+                    <Icon className={`w-4 h-4 ${card.color}`} />
                   </div>
                 </div>
-                
-                <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
-                  <span className="text-xs text-slate-400 font-medium">ID: {task._id.slice(-6).toUpperCase()}</span>
-                  <button 
-                    onClick={() => setSelectedTask(task)}
-                    className="text-sm font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                  >
-                    {task.status === "Pending Acceptance" ? "Review & Accept" : 
-                     task.status === "Accepted" ? "Start Report" : "View Details"}
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
+                <p className={`text-3xl font-bold ${card.highlight ? 'text-amber-600' : 'text-slate-900'}`}>
+                  {card.value}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Scrollable content ── */}
+      <div className="flex-1 overflow-auto px-8 py-5 space-y-4 bg-slate-50">
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            {error}
+          </div>
+        )}
+
+        {/* Toolbar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-base font-bold text-slate-800">Inspection Tasks</h2>
+            {!loading && (
+              <span className="bg-slate-200 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-full">
+                {filteredTasks.length}
+              </span>
+            )}
+          </div>
+
+          {/* Search */}
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search client, factory or location…"
+              className="pl-9 pr-8 py-2 border border-slate-200 rounded-xl text-sm w-72 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Status pill filters */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {STATUS_FILTERS.map(f => {
+            const count = filterCount(f.value);
+            const active = statusFilter === f.value;
+            return (
+              <button
+                key={f.value}
+                onClick={() => setStatusFilter(f.value)}
+                className={`px-3.5 py-1.5 rounded-full text-sm font-semibold border transition-all ${
+                  active
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                {f.label}
+                {count > 0 && (
+                  <span className={`ml-1.5 text-xs font-bold ${active ? 'text-blue-200' : 'text-slate-400'}`}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Task grid */}
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl border border-slate-200 overflow-hidden animate-pulse">
+                <div className="h-1 bg-slate-100" />
+                <div className="p-5 space-y-4">
+                  <div className="flex justify-between">
+                    <div className="h-5 bg-slate-100 rounded-lg w-12" />
+                    <div className="h-5 bg-slate-100 rounded-lg w-24" />
+                  </div>
+                  <div className="h-5 bg-slate-100 rounded w-3/4" />
+                  <div className="space-y-2">
+                    <div className="h-4 bg-slate-100 rounded w-full" />
+                    <div className="h-4 bg-slate-100 rounded w-5/6" />
+                    <div className="h-4 bg-slate-100 rounded w-1/2" />
+                  </div>
+                </div>
+                <div className="px-5 py-3 border-t border-slate-100 bg-slate-50 flex justify-between">
+                  <div className="h-4 bg-slate-100 rounded w-12" />
+                  <div className="h-4 bg-slate-100 rounded w-20" />
                 </div>
               </div>
             ))}
           </div>
+        ) : filteredTasks.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {filteredTasks.map(task => {
+              const config = getStatusConfig(task.status);
+              return (
+                <div
+                  key={task._id}
+                  onClick={() => setSelectedTask(task)}
+                  className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col group cursor-pointer"
+                >
+                  {/* Status color bar */}
+                  <div className={`h-1 w-full ${config.bar}`} />
+
+                  <div className="p-5 flex-1">
+                    <div className="flex justify-between items-start mb-4">
+                      <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[11px] font-bold uppercase tracking-wider">
+                        {task.inspectionType}
+                      </span>
+                      <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border ${config.badge}`}>
+                        {getDisplayStatus(task.status)}
+                      </span>
+                    </div>
+
+                    <h3 className="text-base font-bold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors line-clamp-1">
+                      {task.clientName}
+                    </h3>
+
+                    <div className="space-y-2 mt-3">
+                      <div className="flex items-start gap-2 text-sm text-slate-500">
+                        <Building className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                        <span className="line-clamp-1 leading-tight">{task.factoryName}</span>
+                      </div>
+                      <div className="flex items-start gap-2 text-sm text-slate-500">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                        <span className="line-clamp-1 leading-tight">{task.factoryAddress}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-slate-500">
+                        <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span>
+                          {new Date(task.scheduledDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/80 flex items-center justify-between">
+                    <span className="text-[11px] text-slate-400 font-mono font-semibold">
+                      #{task._id.slice(-6).toUpperCase()}
+                    </span>
+                    <span className="text-sm font-semibold text-blue-600 flex items-center gap-0.5 group-hover:gap-1.5 transition-all duration-150">
+                      {task.status === "Pending Acceptance" ? "Review & Accept" :
+                       task.status === "Accepted"           ? "Start Report"    : "View Details"}
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         ) : (
-          <div className="bg-white border border-dashed border-slate-300 rounded-2xl py-16 px-6 text-center shadow-sm">
-            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <ClipboardList className="w-8 h-8 text-slate-400" />
+          <div className="bg-white border border-dashed border-slate-300 rounded-2xl py-20 text-center">
+            <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <ClipboardList className="w-7 h-7 text-slate-400" />
             </div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">No tasks found</h3>
-            <p className="text-sm text-slate-500 max-w-sm mx-auto">
-              There are no assigned inspection tasks matching your current filters.
+            <h3 className="text-base font-semibold text-slate-800 mb-1">No tasks found</h3>
+            <p className="text-sm text-slate-500 mb-4">
+              {searchTerm || statusFilter !== "All"
+                ? "No tasks match your current search or filter."
+                : "You have no assigned inspection tasks yet."}
             </p>
+            {(searchTerm || statusFilter !== "All") && (
+              <button
+                onClick={() => { setSearchTerm(""); setStatusFilter("All"); }}
+                className="text-sm font-semibold text-blue-600 hover:text-blue-700 underline underline-offset-2"
+              >
+                Clear filters
+              </button>
+            )}
           </div>
         )}
       </div>
 
-      {/* Task Details Modal */}
+      {/* ── Task Details Modal ── */}
       {selectedTask && (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 sm:p-6">
-          <div 
-            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
+          <div
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
             onClick={() => setSelectedTask(null)}
           />
-          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200">
+          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
+
             {/* Modal Header */}
-            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white rounded-t-3xl z-10">
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between rounded-t-3xl">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-blue-600" />
+                <div className={`w-10 h-10 rounded-xl ${getStatusConfig(selectedTask.status).badge.split(' ').find(c => c.startsWith('bg-'))} flex items-center justify-center`}>
+                  <FileText className="w-5 h-5 text-slate-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900 leading-tight">Task Details</h3>
-                  <p className="text-xs text-slate-500 font-medium">Ref: {selectedTask._id.toUpperCase()}</p>
+                  <h3 className="text-base font-bold text-slate-900 leading-tight">Task Details</h3>
+                  <p className="text-xs text-slate-400 font-mono">#{selectedTask._id.slice(-6).toUpperCase()}</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setSelectedTask(null)}
                 className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors"
               >
@@ -335,79 +396,71 @@ export default function Dashboard() {
             {/* Modal Body */}
             <div className="p-6 overflow-y-auto">
               <div className="flex items-center justify-between mb-6">
-                <span className={`px-3 py-1 rounded-lg text-sm font-bold border ${getStatusBadge(selectedTask.status)}`}>
-                  {selectedTask.status}
+                <span className={`px-3 py-1.5 rounded-lg text-sm font-bold border ${getStatusConfig(selectedTask.status).badge}`}>
+                  {getDisplayStatus(selectedTask.status)}
                 </span>
-                <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-lg text-sm font-bold uppercase tracking-wide">
+                <span className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-sm font-bold uppercase tracking-wide">
                   {selectedTask.inspectionType}
                 </span>
               </div>
 
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Client</p>
-                    <p className="text-base font-semibold text-slate-900">{selectedTask.clientName}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Scheduled Date</p>
-                    <p className="text-base font-semibold text-slate-900">
-                      {new Date(selectedTask.scheduledDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                    </p>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Factory Info</p>
-                    <p className="text-base font-semibold text-slate-900">{selectedTask.factoryName}</p>
-                    <p className="text-sm text-slate-600 mt-1">{selectedTask.factoryAddress}</p>
-                  </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Client</p>
+                  <p className="text-base font-semibold text-slate-900">{selectedTask.clientName}</p>
                 </div>
-
-                {selectedTask.adminInstructions && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <AlertCircle className="w-4 h-4 text-amber-600" />
-                      <p className="text-sm font-bold text-amber-800">Admin Instructions</p>
-                    </div>
-                    <p className="text-sm text-amber-700 leading-relaxed">
-                      {selectedTask.adminInstructions}
-                    </p>
-                  </div>
-                )}
-
-                {selectedTask.status === "Correction Requested" && selectedTask.correctionFeedback && (
-                  <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <AlertCircle className="w-4 h-4 text-red-600" />
-                      <p className="text-sm font-bold text-red-800">Correction Requested by TM</p>
-                    </div>
-                    <p className="text-sm text-red-700 leading-relaxed">
-                      {selectedTask.correctionFeedback}
-                    </p>
-                  </div>
-                )}
+                <div>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Scheduled Date</p>
+                  <p className="text-base font-semibold text-slate-900">
+                    {new Date(selectedTask.scheduledDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                  </p>
+                </div>
+                <div className="sm:col-span-2">
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Factory</p>
+                  <p className="text-base font-semibold text-slate-900">{selectedTask.factoryName}</p>
+                  <p className="text-sm text-slate-500 mt-0.5 flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 shrink-0" />
+                    {selectedTask.factoryAddress}
+                  </p>
+                </div>
               </div>
+
+              {selectedTask.adminInstructions && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <AlertCircle className="w-4 h-4 text-amber-600" />
+                    <p className="text-sm font-bold text-amber-800">Admin Instructions</p>
+                  </div>
+                  <p className="text-sm text-amber-700 leading-relaxed">{selectedTask.adminInstructions}</p>
+                </div>
+              )}
+
+              {selectedTask.status === "Correction Requested" && selectedTask.correctionFeedback && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <AlertCircle className="w-4 h-4 text-red-600" />
+                    <p className="text-sm font-bold text-red-800">Correction Requested by TM</p>
+                  </div>
+                  <p className="text-sm text-red-700 leading-relaxed">{selectedTask.correctionFeedback}</p>
+                </div>
+              )}
             </div>
 
-            {/* Modal Footer Actions */}
-            <div className="p-6 border-t border-slate-100 bg-slate-50 rounded-b-3xl flex justify-end gap-3">
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 rounded-b-3xl flex justify-end gap-3">
               {selectedTask.status === "Pending Acceptance" && (
                 <>
-                  <button 
-                    onClick={() => setSelectedTask(null)}
-                    className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 bg-slate-100 rounded-xl transition-colors"
-                  >
+                  <button onClick={() => setSelectedTask(null)} className="px-5 py-2.5 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
                     Close
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleAcceptTask(selectedTask._id)}
                     disabled={acceptingTaskId === selectedTask._id}
-                    className="px-6 py-2.5 text-sm font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-xl shadow-lg shadow-blue-200 transition-all disabled:opacity-70 flex items-center gap-2"
+                    className="px-6 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md shadow-blue-100 transition-all disabled:opacity-70 flex items-center gap-2"
                   >
-                    {acceptingTaskId === selectedTask._id ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <CheckCircle className="w-4 h-4" />
-                    )}
+                    {acceptingTaskId === selectedTask._id
+                      ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      : <CheckCircle className="w-4 h-4" />}
                     Accept Inspection
                   </button>
                 </>
@@ -415,15 +468,12 @@ export default function Dashboard() {
 
               {selectedTask.status === "Accepted" && (
                 <>
-                  <button 
-                    onClick={() => setSelectedTask(null)}
-                    className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 bg-slate-100 rounded-xl transition-colors"
-                  >
+                  <button onClick={() => setSelectedTask(null)} className="px-5 py-2.5 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
                     Close
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleStartReport(selectedTask)}
-                    className="px-6 py-2.5 text-sm font-bold text-white bg-[#36C5F0] hover:bg-sky-500 rounded-xl shadow-lg shadow-sky-200 transition-all flex items-center gap-2"
+                    className="px-6 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md shadow-blue-100 transition-all flex items-center gap-2"
                   >
                     <FileText className="w-4 h-4" />
                     Start Report
@@ -433,13 +483,10 @@ export default function Dashboard() {
 
               {(selectedTask.status === "Report Submitted" || selectedTask.status === "Under Review") && (
                 <>
-                  <div className="flex-1 text-sm text-slate-500 flex items-center">
+                  <p className="flex-1 text-sm text-slate-500 flex items-center">
                     Report submitted. Awaiting Technical Manager review.
-                  </div>
-                  <button 
-                    onClick={() => setSelectedTask(null)}
-                    className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 bg-slate-100 rounded-xl transition-colors"
-                  >
+                  </p>
+                  <button onClick={() => setSelectedTask(null)} className="px-5 py-2.5 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
                     Close
                   </button>
                 </>
@@ -447,16 +494,14 @@ export default function Dashboard() {
 
               {selectedTask.status === "Correction Requested" && (
                 <>
-                  <button 
-                    onClick={() => setSelectedTask(null)}
-                    className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 bg-slate-100 rounded-xl transition-colors"
-                  >
+                  <button onClick={() => setSelectedTask(null)} className="px-5 py-2.5 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
                     Close
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleStartReport(selectedTask)}
-                    className="px-6 py-2.5 text-sm font-bold text-white bg-[#AE2A19] hover:bg-red-700 rounded-xl shadow-lg shadow-red-200 transition-all flex items-center gap-2"
+                    className="px-6 py-2.5 text-sm font-bold text-white bg-red-700 hover:bg-red-800 rounded-xl shadow-md shadow-red-100 transition-all flex items-center gap-2"
                   >
+                    <FileText className="w-4 h-4" />
                     Edit Report
                   </button>
                 </>
@@ -464,14 +509,11 @@ export default function Dashboard() {
 
               {selectedTask.status === "Finalized" && (
                 <>
-                  <div className="flex-1 text-sm text-emerald-600 flex items-center font-medium gap-2">
+                  <p className="flex-1 text-sm text-emerald-600 flex items-center gap-1.5 font-medium">
                     <CheckCircle className="w-4 h-4" />
                     Report approved and finalized.
-                  </div>
-                  <button 
-                    onClick={() => setSelectedTask(null)}
-                    className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 bg-slate-100 rounded-xl transition-colors"
-                  >
+                  </p>
+                  <button onClick={() => setSelectedTask(null)} className="px-5 py-2.5 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
                     Close
                   </button>
                 </>
