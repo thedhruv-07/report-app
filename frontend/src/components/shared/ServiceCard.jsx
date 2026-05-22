@@ -14,7 +14,7 @@ export default function ServiceCard({ service }) {
       onClick={() => navigate(service.route)}
       className="
         group relative cursor-pointer
-        bg-gradient-to-br from-white to-slate-50
+        bg-linear-to-br from-white to-slate-50
         border border-slate-200/60
         rounded-3xl p-7
         shadow-sm hover:shadow-2xl hover:shadow-blue-500/10

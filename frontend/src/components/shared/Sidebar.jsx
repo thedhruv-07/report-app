@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { services } from '../../shared/services';
 import { LayoutDashboard, ClipboardCheck, Package, X, ChevronDown, FileStack } from "lucide-react";
@@ -11,14 +11,7 @@ const iconMap = {
 export default function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [reportsOpen, setReportsOpen] = useState(true);
-
-  // Auto-expand reports if we are on a report route
-  useEffect(() => {
-    if (location.pathname.startsWith("/dashboard/")) {
-      setReportsOpen(true);
-    }
-  }, [location.pathname]);
+  const [reportsOpen, setReportsOpen] = useState(() => location.pathname.startsWith("/dashboard/"));
 
   const handleNav = (path) => {
     navigate(path);

@@ -1,6 +1,6 @@
 // frontend/src/dashboards/inspector/onboarding/steps/Step1Manual.jsx
-import { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useRef } from 'react';
+import { motion as Motion } from 'framer-motion';
 import { CheckCircle2, Zap, Users, ClipboardCheck, Shield, Mail, Building2, Globe, Award } from 'lucide-react';
 import { ENDPOINTS } from '../../../../config/api';
 import { useAuth } from '../../../../context/AuthContext';
@@ -83,8 +83,8 @@ const MANUAL_SECTIONS = [
           'Maintain professional conduct at all supplier sites at all times',
           'Protect client confidentiality and inspection findings',
         ].map((item, idx) => (
-          <li key={idx} className="flex gap-3 text-slate-700">
-            <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-blue-900 mt-2" />
+            <li key={idx} className="flex gap-3 text-slate-700">
+            <div className="shrink-0 w-1.5 h-1.5 rounded-full bg-blue-900 mt-2" />
             <span>{item}</span>
           </li>
         ))}
@@ -104,14 +104,14 @@ const MANUAL_SECTIONS = [
           { type: 'Factory Audit', desc: "Comprehensive assessment of a supplier's manufacturing capabilities, quality management systems, and social compliance." },
           { type: 'Social Audit', desc: 'Evaluates supplier compliance with labour standards, worker safety, and ethical business practices.' },
         ].map(item => (
-          <motion.div
+          <Motion.div
             key={item.type}
             className="bg-white rounded-lg p-4 border border-slate-300 hover:border-blue-400 transition-colors shadow-sm"
             whileHover={{ y: -2 }}
           >
             <p className="font-semibold text-slate-900 text-sm mb-2">{item.type}</p>
             <p className="text-slate-600 text-sm leading-relaxed">{item.desc}</p>
-          </motion.div>
+          </Motion.div>
         ))}
       </div>
     ),
@@ -129,8 +129,8 @@ const MANUAL_SECTIONS = [
           'Defect descriptions must use objective, factual language',
           'Never share inspection results directly with the factory or supplier',
         ].map((item, idx) => (
-          <li key={idx} className="flex gap-3 text-slate-700">
-            <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-blue-600 mt-2" />
+            <li key={idx} className="flex gap-3 text-slate-700">
+            <div className="shrink-0 w-1.5 h-1.5 rounded-full bg-blue-600 mt-2" />
             <span>{item}</span>
           </li>
         ))}
@@ -150,8 +150,8 @@ const MANUAL_SECTIONS = [
           'Report any conflicts of interest to management before accepting an assignment',
           'Report misconduct by colleagues through the appropriate channels immediately',
         ].map((item, idx) => (
-          <li key={idx} className="flex gap-3 text-slate-700">
-            <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-orange-600 mt-2" />
+            <li key={idx} className="flex gap-3 text-slate-700">
+            <div className="shrink-0 w-1.5 h-1.5 rounded-full bg-orange-600 mt-2" />
             <span>{item}</span>
           </li>
         ))}
@@ -223,7 +223,7 @@ export default function Step1Manual({ onComplete }) {
   };
 
   return (
-    <motion.div
+    <Motion.div
       className="grid grid-cols-1 lg:grid-cols-4 gap-6"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -231,7 +231,7 @@ export default function Step1Manual({ onComplete }) {
     >
       {/* Sticky Sidebar Navigation */}
       <div className="lg:col-span-1">
-        <motion.div
+        <Motion.div
           className="sticky top-6 bg-white border border-slate-300 rounded-lg shadow-sm overflow-hidden"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -245,7 +245,7 @@ export default function Step1Manual({ onComplete }) {
               const IconComponent = section.icon;
               const isActive = activeSection === section.id;
               return (
-                <motion.button
+                <Motion.button
                   key={section.id}
                   onClick={() => handleSectionClick(section.id)}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
@@ -255,19 +255,19 @@ export default function Step1Manual({ onComplete }) {
                   }`}
                   whileHover={{ x: 4 }}
                 >
-                  <IconComponent className="w-4 h-4 flex-shrink-0" />
+                  <IconComponent className="w-4 h-4 shrink-0" />
                   <span className="text-left text-xs truncate">{section.title}</span>
-                </motion.button>
+                </Motion.button>
               );
             })}
           </nav>
-        </motion.div>
+        </Motion.div>
       </div>
 
       {/* Main Content Area */}
       <div className="lg:col-span-3">
         {/* Scroll Progress Bar */}
-        <motion.div
+        <Motion.div
           className="h-0.5 bg-slate-300 rounded-full mb-6 origin-left"
           initial={{ scaleX: 0 }}
           animate={{ scaleX: scrollProgress / 100 }}
@@ -275,7 +275,7 @@ export default function Step1Manual({ onComplete }) {
         />
 
         {/* Content Card */}
-        <motion.div
+        <Motion.div
           className="bg-white border border-slate-300 rounded-lg shadow-sm overflow-hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -295,56 +295,56 @@ export default function Step1Manual({ onComplete }) {
           >
             <div className="p-8 space-y-12">
               {MANUAL_SECTIONS.map((section, idx) => {
-                const IconComponent = section.icon;
-                return (
-                  <motion.section
-                    key={section.id}
-                    data-section={section.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: '-100px' }}
-                    transition={{ duration: 0.4 }}
-                  >
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-2.5 bg-slate-100 rounded-lg">
-                        <IconComponent className="w-5 h-5 text-blue-900" />
+                  const IconComponent = section.icon;
+                  return (
+                    <Motion.section
+                      key={section.id}
+                      data-section={section.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: '-100px' }}
+                      transition={{ duration: 0.4 }}
+                    >
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="p-2.5 bg-slate-100 rounded-lg">
+                          <IconComponent className="w-5 h-5 text-blue-900" />
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-900">{section.title}</h3>
                       </div>
-                      <h3 className="text-xl font-bold text-slate-900">{section.title}</h3>
-                    </div>
-                    <div className="ml-11 text-slate-700 leading-relaxed text-base">
-                      {section.content}
-                    </div>
-                    {idx < MANUAL_SECTIONS.length - 1 && (
-                      <div className="mt-8 pt-8 border-t border-slate-200" />
-                    )}
-                  </motion.section>
-                );
-              })}
+                      <div className="ml-11 text-slate-700 leading-relaxed text-base">
+                        {section.content}
+                      </div>
+                      {idx < MANUAL_SECTIONS.length - 1 && (
+                        <div className="mt-8 pt-8 border-t border-slate-200" />
+                      )}
+                    </Motion.section>
+                  );
+                })}
             </div>
           </div>
 
           {/* Footer with CTA */}
-          <motion.div
+          <Motion.div
             className="px-8 py-6 border-t border-slate-300 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-4 sticky bottom-0"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
             {error && (
-              <motion.p
-                className="text-rose-600 text-sm font-medium"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-              >
-                ❌ {error}
-              </motion.p>
-            )}
+                <Motion.p
+                  className="text-rose-600 text-sm font-medium"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                >
+                  ❌ {error}
+                </Motion.p>
+              )}
             {!error && (
               <p className="text-xs text-slate-500 font-medium">
                 📖 Scroll through the manual to understand your role
               </p>
             )}
-            <motion.button
+            <Motion.button
               onClick={handleConfirm}
               disabled={loading}
               className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold px-8 py-3 rounded-lg transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
@@ -362,9 +362,9 @@ export default function Step1Manual({ onComplete }) {
                   I Have Read & Understood
                 </>
               )}
-            </motion.button>
-          </motion.div>
-        </motion.div>
+            </Motion.button>
+          </Motion.div>
+        </Motion.div>
       </div>
 
       {/* Custom scrollbar styles */}
@@ -384,6 +384,6 @@ export default function Step1Manual({ onComplete }) {
           background: #162e48;
         }
       `}</style>
-    </motion.div>
+    </Motion.div>
   );
 }

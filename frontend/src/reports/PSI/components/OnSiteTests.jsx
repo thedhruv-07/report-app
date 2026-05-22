@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { colors, buttonStyle, sectionHeaderStyle } from '../../../styles';
+import React, { useState } from "react";
+import { colors, buttonStyle } from '../../../styles';
 import SmartTextarea from '../../../components/shared/SmartTextarea';
 
 const OnSiteTests = ({ form, handleChange, onPrev, onNext }) => {
@@ -31,7 +31,6 @@ const OnSiteTests = ({ form, handleChange, onPrev, onNext }) => {
   // Shared styles
   const borderColor = "#1F1F1F";
   const cellBorder = `1px solid ${borderColor}`;
-  const headerBg = "#1F4E79";
   const subHeaderBg = "#E9ECEF";
 
   return (

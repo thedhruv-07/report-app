@@ -50,6 +50,13 @@ const userSchema = new mongoose.Schema({
     assessmentPassed:   { type: Boolean, default: false },
     assessmentAttempts: { type: Number,  default: 0 },
     completedAt:        { type: Date,    default: null },
+    videoProgress: {
+      video1: { type: Boolean, default: false },
+      video2: { type: Boolean, default: false },
+      video3: { type: Boolean, default: false },
+      video4: { type: Boolean, default: false },
+      video5: { type: Boolean, default: false },
+    },
   },
 }, { timestamps: true });
 

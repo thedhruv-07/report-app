@@ -42,8 +42,11 @@ export default function InspectorDirectory({ activeView }) {
 
   useEffect(() => {
     if (activeView !== 'inspectors') return;
-    setLoading(true);
-    setError(null);
+    const t = setTimeout(() => {
+      setLoading(true);
+      setError(null);
+    }, 0);
+
     fetch(ENDPOINTS.ADMIN.INSPECTORS, {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -54,6 +57,8 @@ export default function InspectorDirectory({ activeView }) {
       .then(data => setInspectors(data.inspectors || []))
       .catch(() => setError('Failed to load inspector data. Please refresh.'))
       .finally(() => setLoading(false));
+
+    return () => clearTimeout(t);
   }, [activeView, token, retryCount]);
 
   if (activeView !== 'inspectors') return null;
@@ -90,7 +95,7 @@ export default function InspectorDirectory({ activeView }) {
             {/* Avatar + name */}
             <div className="flex items-start justify-between mb-4">
               <div className="flex gap-4 items-center">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-100 to-blue-100 border border-indigo-200 flex items-center justify-center font-black text-indigo-700 text-xl">
+                <div className="w-14 h-14 rounded-full bg-linear-to-br from-indigo-100 to-blue-100 border border-indigo-200 flex items-center justify-center font-black text-indigo-700 text-xl">
                   {(inspector.name || '?').split(' ').map(n => n[0] || '').join('').slice(0, 2) || '?'}
                 </div>
                 <div>

@@ -1,13 +1,14 @@
 // frontend/src/dashboards/inspector/onboarding/InspectorOnboarding.jsx
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, lazy, Suspense } from 'react';
+import { motion as Motion } from 'framer-motion';
 import { Sparkles, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { ENDPOINTS } from '../../../config/api';
 import StepIndicator from './StepIndicator';
-import Step1Manual from './steps/Step1Manual';
-import Step2Videos from './steps/Step2Videos';
-import Step3Assessment from './steps/Step3Assessment';
+
+const Step1Manual = lazy(() => import('./steps/Step1Manual'));
+const Step2Videos = lazy(() => import('./steps/Step2Videos'));
+const Step3Assessment = lazy(() => import('./steps/Step3Assessment'));
 
 const STEP_LABELS = ['User Manual', 'Training Videos', 'Assessment'];
 
@@ -83,15 +84,15 @@ export default function InspectorOnboarding() {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-indigo-50 to-blue-50">
-        <motion.div
+      <div className="h-screen flex items-center justify-center bg-linear-to-br from-slate-50 via-indigo-50 to-blue-50">
+        <Motion.div
           animate={{ opacity: [0.6, 1, 0.6] }}
           transition={{ duration: 2, repeat: Infinity }}
           className="flex flex-col items-center gap-4"
         >
           <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
           <p className="text-slate-600 font-medium">Loading your onboarding...</p>
-        </motion.div>
+        </Motion.div>
       </div>
     );
   }
@@ -100,7 +101,7 @@ export default function InspectorOnboarding() {
     <div className="min-h-screen bg-white py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       {/* Animated background shapes */}
       {bgShapes.map(shape => (
-        <motion.div
+        <Motion.div
           key={shape.id}
           className="absolute rounded-full bg-slate-100/40 blur-3xl pointer-events-none"
           style={{
@@ -116,39 +117,39 @@ export default function InspectorOnboarding() {
         />
       ))}
 
-      <motion.div
+      <Motion.div
         className="max-w-5xl mx-auto relative z-10"
         initial="hidden"
         animate="visible"
         variants={containerVariants}
       >
         {/* Premium Hero Section */}
-        <motion.div className="text-center mb-12 sm:mb-16" variants={itemVariants}>
-          <motion.div
+        <Motion.div className="text-center mb-12 sm:mb-16" variants={itemVariants}>
+          <Motion.div
             className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg mb-4"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
           >
             <span className="text-xs font-semibold text-slate-700 uppercase tracking-widest">Onboarding Progress</span>
-          </motion.div>
+          </Motion.div>
 
-          <motion.h1
+          <Motion.h1
             className="text-5xl lg:text-6xl font-bold text-slate-900 mb-4"
             variants={itemVariants}
           >
             Welcome, {firstName}
-          </motion.h1>
+          </Motion.h1>
 
-          <motion.p
+          <Motion.p
             className="text-lg sm:text-xl text-slate-600 mb-8 max-w-2xl mx-auto leading-relaxed"
             variants={itemVariants}
           >
             Complete these 3 steps to unlock your Inspector Dashboard and start accepting inspection assignments.
-          </motion.p>
+          </Motion.p>
 
           {/* Progress Circle Card */}
-          <motion.div
+          <Motion.div
             className="inline-block bg-white border border-slate-300 rounded-xl px-8 py-6 shadow-sm"
             variants={itemVariants}
             whileHover={{ scale: 1.01 }}
@@ -165,7 +166,7 @@ export default function InspectorOnboarding() {
                     stroke="#e2e8f0"
                     strokeWidth="8"
                   />
-                  <motion.circle
+                  <Motion.circle
                     cx="50"
                     cy="50"
                     r="45"
@@ -204,35 +205,37 @@ export default function InspectorOnboarding() {
                 </p>
               </div>
             </div>
-          </motion.div>
-        </motion.div>
+          </Motion.div>
+        </Motion.div>
 
         {/* Step Indicator */}
         <StepIndicator currentStep={currentStep} steps={STEP_LABELS} />
 
         {/* Step Content - with page transitions */}
-        <motion.div
+        <Motion.div
           key={currentStep}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.4 }}
         >
-          {currentStep === 1 && <Step1Manual onComplete={handleStepComplete} />}
-          {currentStep === 2 && <Step2Videos onComplete={handleStepComplete} onPrevious={handlePreviousStep} />}
-          {currentStep === 3 && <Step3Assessment onComplete={handleAssessmentComplete} onPrevious={handlePreviousStep} />}
-        </motion.div>
+          <Suspense fallback={<div className="max-w-6xl mx-auto min-h-128 bg-white border border-slate-200 rounded-3xl animate-pulse" />}>
+            {currentStep === 1 && <Step1Manual onComplete={handleStepComplete} />}
+            {currentStep === 2 && <Step2Videos onComplete={handleStepComplete} onPrevious={handlePreviousStep} />}
+            {currentStep === 3 && <Step3Assessment onComplete={handleAssessmentComplete} onPrevious={handlePreviousStep} />}
+          </Suspense>
+        </Motion.div>
 
         {/* Footer tip */}
-        <motion.p
+        <Motion.p
           className="text-center text-xs text-slate-500 mt-12 font-medium"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1 }}
         >
           You can return to continue your onboarding at any time
-        </motion.p>
-      </motion.div>
+        </Motion.p>
+      </Motion.div>
     </div>
   );
 }

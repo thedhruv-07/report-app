@@ -1,6 +1,5 @@
-import React, { useState } from "react";
+import React from "react";
 import { colors } from '../../../styles';
-import { clsSchema } from '../../../shared/formSchemas';
 import SmartTextarea from '../../../components/shared/SmartTextarea';
 
 const sectionBg = "#E9ECEF";
@@ -33,8 +32,6 @@ export default function CLSPackingTable({ formData, onChange }) {
 
   const packingItems = Array.isArray(formData.clsPackingItems) ? formData.clsPackingItems : [];
   const cartonConditions = Array.isArray(formData.clsCartonConditions) ? formData.clsCartonConditions : [];
-  const meta = clsSchema.clsPacking.metadata;
-
   const getResultColor = (val) => {
     if (!val) return colors.text;
     if (val.toLowerCase().includes("pass")) return colors.success || "#228B22";

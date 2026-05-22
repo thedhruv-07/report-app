@@ -11,7 +11,7 @@ export default function RemarksPanel({ onAddRemark, existingRemarks = [] }) {
       await onAddRemark(remark);
       setRemark('');
       alert('Remark saved');
-    } catch (error) {
+    } catch {
       alert('Failed to save remark');
     } finally {
       setSubmitting(false);

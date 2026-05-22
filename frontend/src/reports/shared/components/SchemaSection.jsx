@@ -69,7 +69,7 @@ export default function SchemaSection({ title, fields, formData, onChange, ai = 
                               try {
                                 const { preview } = await compressImage(file);
                                 onChange({ target: { name: field.name, value: preview } });
-                              } catch (err) {
+                              } catch {
                                 alert("Failed to process image");
                               }
                             }

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { colors, buttonStyle } from '../../../styles';
+import { colors } from '../../../styles';
 
-const FinalStep = ({ form, onPrev, onSubmit, onClearAfterDownload, hasDownloaded, isGenerating, onToggleLoader, onSubmitForReview }) => {
+const FinalStep = ({ form, onPrev, onSubmit, onClearAfterDownload, hasDownloaded, isGenerating }) => {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
+    const t = setTimeout(() => setIsClient(true), 0);
+    return () => clearTimeout(t);
   }, []);
 
   return (

@@ -70,7 +70,7 @@ export default function Settings() {
         {/* Left: Info Card */}
         <div className="md:col-span-1">
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col items-center text-center">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-3xl font-bold mb-4 shadow-lg shadow-blue-100">
+            <div className="w-24 h-24 rounded-full bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-3xl font-bold mb-4 shadow-lg shadow-blue-100">
               {user?.name?.charAt(0).toUpperCase() || "U"}
             </div>
             <h2 className="text-xl font-bold text-slate-800">{user?.name}</h2>

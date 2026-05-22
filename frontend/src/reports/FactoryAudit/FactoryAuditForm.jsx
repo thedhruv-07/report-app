@@ -88,7 +88,7 @@ export default function FactoryAudit() {
       localStorage.setItem("faStep", step.toString());
       setShowSaveToast(true);
       setTimeout(() => setShowSaveToast(false), 3000);
-    } catch (error) {
+    } catch {
       alert("Failed to save draft locally.");
     }
   };

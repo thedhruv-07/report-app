@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, Image } from '@react-pdf/renderer';
-import { pdfStyles } from '../../styles';
 
 export default function PhotoGrid({ photos = [] }) {
   if (!photos || photos.length === 0) {

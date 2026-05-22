@@ -13,7 +13,7 @@ export default function CorrectionForm({ sections, onSubmitFeedback }) {
       await onSubmitFeedback(section, comment, priority);
       setComment('');
       alert('Feedback added successfully');
-    } catch (error) {
+    } catch {
       alert('Failed to add feedback');
     } finally {
       setSubmitting(false);

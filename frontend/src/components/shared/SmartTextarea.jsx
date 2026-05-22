@@ -65,24 +65,13 @@ export default function SmartTextarea({
   // Double-click handle → reset to auto-grow
   const onDragDblClick = () => setManualHeight(null);
 
-  // ─── AI suggestion debounce ────────────────────────────────────────────────
-  useEffect(() => {
-    setSuggestion("");
-    if (!value || typeof value !== "string" || value.trim() === "" || /[.\n]$/.test(value)) return;
-
-    const timer = setTimeout(async () => {
-      fetchSuggestion(value);
-    }, 600);
-
-    return () => clearTimeout(timer);
-  }, [value, context]);
-
-  const fetchSuggestion = async (partialText = "") => {
+  // Suggestion fetcher (hoisted so useEffect can call it)
+  const fetchSuggestion = useCallback(async (partialText = "") => {
     try {
       const token = localStorage.getItem("token") || localStorage.getItem("reportToken");
       const res = await fetch(ENDPOINTS.SUGGEST, {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "Authorization": token ? `Bearer ${token}` : ""
         },
@@ -93,7 +82,16 @@ export default function SmartTextarea({
     } catch {
       // fail silently
     }
-  };
+  }, [context]);
+
+  // ─── AI suggestion debounce ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!value || typeof value !== "string" || value.trim() === "" || /[.\n]$/.test(value)) return;
+
+    const timer = setTimeout(() => fetchSuggestion(value), 600);
+
+    return () => clearTimeout(timer);
+  }, [value, fetchSuggestion]);
 
   const handleSuggestClick = () => {
     setSuggestion("Generating...");

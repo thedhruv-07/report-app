@@ -1,4 +1,5 @@
 // frontend/src/context/AuthContext.jsx
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { ENDPOINTS } from "../config/api";
 
@@ -22,13 +23,13 @@ export function AuthProvider({ children }) {
     }
   });
 
-  const [loading, setLoading] = useState(false);
+  // loading flag removed (unused)
 
   // null = still fetching, true = complete, false = incomplete
   const [onboardingCompleted, setOnboardingCompleted] = useState(null);
 
-  const fetchOnboardingStatus = useCallback(async (currentToken, signal) => {
-    if (!currentToken) return;
+  const getOnboardingStatus = useCallback(async (currentToken, signal) => {
+    if (!currentToken) return null;
     try {
       const res = await fetch(ENDPOINTS.ONBOARDING.STATUS, {
         headers: { Authorization: `Bearer ${currentToken}` },
@@ -36,31 +37,32 @@ export function AuthProvider({ children }) {
       });
       if (res.ok) {
         const data = await res.json();
-        setOnboardingCompleted(data.onboarding?.isCompleted ?? false);
-      } else {
-        setOnboardingCompleted(false);
+        return data.onboarding?.isCompleted ?? false;
       }
+      return false;
     } catch (err) {
-      if (err.name !== 'AbortError') setOnboardingCompleted(false);
+      if (err.name === 'AbortError') return null;
+      return false;
     }
   }, []);
 
   useEffect(() => {
-    if (!user) {
-      setOnboardingCompleted(null);
-      return;
-    }
+    if (!user) return;
     if (user.role !== 'inspector') {
       // Non-inspectors are always considered "complete" — no gate for them
-      setOnboardingCompleted(true);
+      setTimeout(() => setOnboardingCompleted(true), 0);
       return;
     }
     const controller = new AbortController();
-    fetchOnboardingStatus(token, controller.signal);
+    (async () => {
+      const val = await getOnboardingStatus(token, controller.signal);
+      if (val !== null) setOnboardingCompleted(val);
+    })();
     return () => controller.abort();
-  }, [user, token, fetchOnboardingStatus]);
+  }, [user, token, getOnboardingStatus]);
 
   const login = (userData, tokenStr) => {
+    sessionStorage.removeItem("notif_popup_shown");
     setUser(userData);
     setToken(tokenStr);
     localStorage.setItem("reportUser", JSON.stringify(userData));
@@ -73,14 +75,17 @@ export function AuthProvider({ children }) {
     setOnboardingCompleted(null);
     localStorage.removeItem("reportUser");
     localStorage.removeItem("reportToken");
+    sessionStorage.removeItem("notif_popup_shown");
   };
 
-  const refreshOnboarding = useCallback(() => {
-    return fetchOnboardingStatus(token);
-  }, [token, fetchOnboardingStatus]);
+  const refreshOnboarding = useCallback(async () => {
+    const val = await getOnboardingStatus(token);
+    if (val !== null) setOnboardingCompleted(val);
+    return val;
+  }, [token, getOnboardingStatus]);
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading, onboardingCompleted, refreshOnboarding }}>
+    <AuthContext.Provider value={{ user, token, login, logout, onboardingCompleted, refreshOnboarding }}>
       {children}
     </AuthContext.Provider>
   );

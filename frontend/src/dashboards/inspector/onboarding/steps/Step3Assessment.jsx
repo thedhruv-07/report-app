@@ -1,7 +1,7 @@
 // frontend/src/dashboards/inspector/onboarding/steps/Step3Assessment.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, ChevronLeft, ChevronRight, Trophy, RefreshCw, ArrowRight, AlertTriangle } from 'lucide-react';
 import { ENDPOINTS } from '../../../../config/api';
 import { useAuth } from '../../../../context/AuthContext';
@@ -80,59 +80,59 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
 
   if (loadingQuestions) {
     return (
-      <motion.div
+      <Motion.div
         className="flex flex-col items-center justify-center py-20 gap-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
-        <motion.div
+        <Motion.div
           className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full"
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
         />
         <p className="text-slate-600 font-semibold">Loading assessment...</p>
-      </motion.div>
+      </Motion.div>
     );
   }
 
   if (fetchError) {
     return (
-      <motion.div
+      <Motion.div
         className="max-w-md mx-auto text-center py-20"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <motion.div
+        <Motion.div
           className="w-16 h-16 bg-rose-100 rounded-2xl flex items-center justify-center mx-auto mb-5"
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ duration: 2, repeat: Infinity }}
         >
           <AlertCircle className="w-8 h-8 text-rose-600" />
-        </motion.div>
+        </Motion.div>
         <h3 className="text-slate-900 font-bold text-lg mb-2">Failed to Load Questions</h3>
         <p className="text-slate-600 text-sm mb-6">{fetchError}</p>
-        <motion.button
+        <Motion.button
           onClick={() => window.location.reload()}
           className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2.5 rounded-xl transition-colors"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
           Refresh Page
-        </motion.button>
-      </motion.div>
+        </Motion.button>
+      </Motion.div>
     );
   }
 
   if (questions.length === 0) {
     return (
-      <motion.div
+      <Motion.div
         className="text-center py-20"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
         <p className="text-slate-900 font-bold text-lg mb-2">No questions available</p>
         <p className="text-slate-600 text-sm">Please contact support to complete your onboarding.</p>
-      </motion.div>
+      </Motion.div>
     );
   }
 
@@ -143,7 +143,7 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
       : [];
 
     return (
-      <motion.div
+      <Motion.div
         className="max-w-lg mx-auto text-center py-8"
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -151,7 +151,7 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
       >
         {result.passed && <Confetti />}
 
-        <motion.div
+        <Motion.div
           className={`w-28 h-28 rounded-lg mx-auto flex items-center justify-center text-5xl font-bold mb-8 ${
             result.passed
               ? 'bg-orange-50 text-orange-600'
@@ -165,9 +165,9 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
           transition={{ duration: 0.6, type: 'spring', stiffness: 100 }}
         >
           {result.passed ? '✓' : '—'}
-        </motion.div>
+        </Motion.div>
 
-        <motion.h2
+        <Motion.h2
           className={`text-2xl font-bold mb-3 ${
             result.passed ? 'text-blue-900' : 'text-rose-700'
           }`}
@@ -176,10 +176,10 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
           transition={{ delay: 0.2 }}
         >
           {result.passed ? 'Assessment Passed' : 'Assessment Not Passed'}
-        </motion.h2>
+        </Motion.h2>
 
         {/* Score Card */}
-        <motion.div
+        <Motion.div
           className="bg-white border border-slate-300 rounded-lg p-8 mb-8 shadow-sm"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -187,7 +187,7 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
         >
           <div className="text-center mb-6">
             <p className="text-slate-600 text-sm font-semibold mb-2">Your Score</p>
-            <motion.p
+            <Motion.p
               className={`text-5xl font-bold ${
                 result.passed ? 'text-orange-600' : 'text-rose-600'
               }`}
@@ -196,7 +196,7 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
               transition={{ delay: 0.4, type: 'spring', stiffness: 200 }}
             >
               {result.score}%
-            </motion.p>
+            </Motion.p>
           </div>
 
           <div className="bg-slate-50 rounded-xl p-4 mb-6">
@@ -211,7 +211,7 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
           </div>
 
           {!result.passed && missedCategories.length > 0 && (
-            <motion.div
+            <Motion.div
               className="bg-rose-50 rounded-xl p-5 border border-rose-200"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -229,24 +229,24 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
                   </div>
                 ))}
               </div>
-            </motion.div>
+            </Motion.div>
           )}
-        </motion.div>
+        </Motion.div>
 
         {/* Success Message */}
         {result.passed && (
-          <motion.p
+          <Motion.p
             className="text-slate-700 mb-8 text-lg font-semibold"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
           >
             You now have full access to the Inspector Dashboard! 🎊
-          </motion.p>
+          </Motion.p>
         )}
 
         {/* CTA Buttons */}
-        <motion.div
+        <Motion.div
           className="flex flex-col sm:flex-row gap-4 justify-center"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -254,7 +254,7 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
         >
           {result.passed ? (
             <>
-              <motion.button
+              <Motion.button
                 onClick={() => navigate('/dashboard/inspector')}
                 className="flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold px-8 py-3 rounded-lg transition-colors"
                 whileHover={{ scale: 1.05, y: -2 }}
@@ -262,8 +262,8 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
               >
                 Go to Dashboard
                 <ArrowRight className="w-5 h-5" />
-              </motion.button>
-              <motion.button
+              </Motion.button>
+              <Motion.button
                 onClick={onPrevious}
                 className="flex items-center justify-center gap-2 bg-slate-300 hover:bg-slate-400 text-slate-700 font-semibold px-8 py-3 rounded-lg transition-colors"
                 whileHover={{ scale: 1.05, y: -2 }}
@@ -271,11 +271,11 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
               >
                 <ChevronLeft className="w-5 h-5" />
                 Back to Training Videos
-              </motion.button>
+              </Motion.button>
             </>
           ) : (
             <>
-              <motion.button
+              <Motion.button
                 onClick={handleRetry}
                 className="flex items-center justify-center gap-2 bg-blue-900 hover:bg-blue-800 text-white font-semibold px-8 py-3 rounded-lg transition-colors"
                 whileHover={{ scale: 1.05, y: -2 }}
@@ -283,8 +283,8 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
               >
                 <RefreshCw className="w-5 h-5" />
                 Retry Assessment
-              </motion.button>
-              <motion.button
+              </Motion.button>
+              <Motion.button
                 onClick={onPrevious}
                 className="flex items-center justify-center gap-2 bg-slate-300 hover:bg-slate-400 text-slate-700 font-semibold px-8 py-3 rounded-lg transition-colors"
                 whileHover={{ scale: 1.05, y: -2 }}
@@ -292,11 +292,11 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
               >
                 <ChevronLeft className="w-5 h-5" />
                 Back to Training Videos
-              </motion.button>
+              </Motion.button>
             </>
           )}
-        </motion.div>
-      </motion.div>
+        </Motion.div>
+      </Motion.div>
     );
   }
 
@@ -307,14 +307,14 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
   const progressPct = ((currentIndex + 1) / questions.length) * 100;
 
   return (
-    <motion.div
+    <Motion.div
       className="max-w-3xl mx-auto"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
     >
       {/* Back Navigation */}
-      <motion.button
+      <Motion.button
         onClick={onPrevious}
         className="mb-6 flex items-center gap-2 text-blue-900 hover:text-blue-800 font-semibold transition-colors"
         initial={{ opacity: 0, x: -20 }}
@@ -323,10 +323,10 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
       >
         <ChevronLeft className="w-5 h-5" />
         Back to Training Videos
-      </motion.button>
+      </Motion.button>
 
       {/* Progress Section */}
-      <motion.div
+      <Motion.div
         className="mb-8"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -348,18 +348,18 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
 
         {/* Progress Bar */}
         <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
-          <motion.div
+          <Motion.div
             className="bg-blue-900 h-full rounded-full"
             initial={{ width: 0 }}
             animate={{ width: `${progressPct}%` }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
           />
         </div>
-      </motion.div>
+      </Motion.div>
 
       {/* Question Card */}
       <AnimatePresence mode="wait">
-        <motion.div
+        <Motion.div
           key={currentIndex}
           className="bg-white border border-slate-300 rounded-lg shadow-sm p-8 mb-8"
           initial={{ opacity: 0, y: 20 }}
@@ -370,7 +370,7 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
           {/* Difficulty Badge */}
           <div className="flex items-center justify-between mb-4">
             <span className="text-xs text-slate-600 font-semibold uppercase tracking-wider">Question {currentIndex + 1} of {questions.length}</span>
-            <motion.div
+            <Motion.div
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-widest ${
                 question.difficulty === 'easy'
                   ? 'bg-blue-50 text-blue-700'
@@ -383,7 +383,7 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
               transition={{ delay: 0.15 }}
             >
               {question.difficulty}
-            </motion.div>
+            </Motion.div>
           </div>
 
           {/* Question Text */}
@@ -397,7 +397,7 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
               const isSelected = answers[question._id] === idx;
 
               return (
-                <motion.label
+                <Motion.label
                   key={idx}
                   className={`flex items-center gap-4 p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
                     isSelected
@@ -407,8 +407,8 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
                   whileHover={{ x: 4 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <motion.div
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                  <Motion.div
+                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
                       isSelected
                         ? 'border-orange-500 bg-orange-500'
                         : 'border-slate-300'
@@ -416,13 +416,13 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
                     animate={isSelected ? { scale: 1.1 } : { scale: 1 }}
                   >
                     {isSelected && (
-                      <motion.div
+                      <Motion.div
                         className="w-2 h-2 bg-white rounded-full"
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                       />
                     )}
-                  </motion.div>
+                  </Motion.div>
                   <input
                     type="radio"
                     name={`q-${question._id}`}
@@ -435,35 +435,35 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
                   }`}>
                     {option}
                   </span>
-                </motion.label>
+                </Motion.label>
               );
             })}
           </div>
-        </motion.div>
+        </Motion.div>
       </AnimatePresence>
 
       {/* Error Message */}
       <AnimatePresence>
         {submitError && (
-          <motion.div
+          <Motion.div
             className="mb-6 bg-rose-50 border border-rose-300 text-rose-700 px-5 py-4 rounded-xl text-sm font-medium"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
           >
             ❌ {submitError}
-          </motion.div>
+          </Motion.div>
         )}
       </AnimatePresence>
 
       {/* Navigation */}
-      <motion.div
+      <Motion.div
         className="flex items-center justify-between gap-4"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <motion.button
+        <Motion.button
           onClick={() => setCurrentIndex(i => i - 1)}
           disabled={currentIndex === 0}
           className="flex items-center gap-2 px-6 py-3 rounded-xl border-2 border-slate-200 text-slate-700 font-bold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
@@ -472,7 +472,7 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
         >
           <ChevronLeft className="w-5 h-5" />
           Previous
-        </motion.button>
+        </Motion.button>
 
         <div className="flex-1 text-center text-sm text-slate-600 font-medium">
           {answeredCount === questions.length
@@ -482,7 +482,7 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
         </div>
 
         {isLast ? (
-          <motion.button
+          <Motion.button
             onClick={handleSubmit}
             disabled={submitting || answeredCount < questions.length}
             title={answeredCount < questions.length ? `Answer all ${questions.length} questions to submit` : ''}
@@ -505,19 +505,19 @@ export default function Step3Assessment({ onComplete, onPrevious }) {
                 Submit Assessment
               </>
             )}
-          </motion.button>
+          </Motion.button>
         ) : (
-          <motion.button
+          <Motion.button
             onClick={() => setCurrentIndex(i => i + 1)}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-bold hover:shadow-lg transition-all"
+            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-linear-to-r from-indigo-600 to-blue-600 text-white font-bold hover:shadow-lg transition-all"
             whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.95 }}
           >
             Next
             <ChevronRight className="w-5 h-5" />
-          </motion.button>
+          </Motion.button>
         )}
-      </motion.div>
-    </motion.div>
+      </Motion.div>
+    </Motion.div>
   );
 }

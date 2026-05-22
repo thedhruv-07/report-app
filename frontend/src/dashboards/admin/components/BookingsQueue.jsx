@@ -5,7 +5,7 @@ import {
 
 export default function BookingsQueue({
   bookings,
-  stats,
+  /* stats removed (unused) */
   activeView,
   setActiveView,
   setActiveBooking,

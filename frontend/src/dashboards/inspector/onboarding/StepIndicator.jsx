@@ -1,5 +1,5 @@
 // frontend/src/dashboards/inspector/onboarding/StepIndicator.jsx
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { BookOpen, Play, CheckCircle2 } from 'lucide-react';
 
 const STEP_ICONS = [BookOpen, Play, CheckCircle2];
@@ -15,7 +15,7 @@ export default function StepIndicator({ currentStep, steps }) {
           const IconComponent = STEP_ICONS[index];
 
           return (
-            <motion.div
+                <Motion.div
               key={label}
               className="flex items-center flex-1"
               initial={{ opacity: 0 }}
@@ -24,7 +24,7 @@ export default function StepIndicator({ currentStep, steps }) {
             >
               {/* Step circle */}
               <div className="flex flex-col items-center relative z-10 w-full">
-                <motion.div
+                    <Motion.div
                   className={`w-14 h-14 rounded-lg flex items-center justify-center font-bold border-2 transition-all duration-300 shadow-sm relative ${
                     isCompleted
                       ? 'bg-orange-500 border-orange-500 text-white'
@@ -36,7 +36,7 @@ export default function StepIndicator({ currentStep, steps }) {
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                 >
                   {isCompleted ? (
-                    <motion.div
+                        <Motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
@@ -44,15 +44,12 @@ export default function StepIndicator({ currentStep, steps }) {
                       <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
-                    </motion.div>
+                        </Motion.div>
                   ) : (
                     <IconComponent className="w-6 h-6" />
                   )}
-                </motion.div>
-                <motion.span
-                  className={`text-xs font-bold uppercase tracking-wider mt-2 text-center px-2 transition-colors duration-300 ${
-                    isCompleted ? 'text-emerald-600' : isActive ? 'text-indigo-600' : 'text-slate-400'
-                  }`}
+                </Motion.div>
+                <Motion.span
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.15 }}
@@ -61,13 +58,13 @@ export default function StepIndicator({ currentStep, steps }) {
                   }`}
                 >
                   {label}
-                </motion.span>
+                </Motion.span>
               </div>
 
               {/* Connector line */}
               {index < steps.length - 1 && (
                 <div className="flex-1 h-0.5 mx-2 relative -top-8">
-                  <motion.div
+                      <Motion.div
                     className={`h-full rounded-full transition-colors duration-300 ${
                       isCompleted ? 'bg-orange-500' : 'bg-slate-300'
                     }`}
@@ -78,7 +75,7 @@ export default function StepIndicator({ currentStep, steps }) {
                   />
                 </div>
               )}
-            </motion.div>
+                </Motion.div>
           );
         })}
       </div>

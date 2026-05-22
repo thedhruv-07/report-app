@@ -1,32 +1,12 @@
 import React from 'react';
 import { View, Text, Image } from '@react-pdf/renderer';
 import { pdfStyles, pdfColors } from '../../styles';
-import { blankIfEmpty, getPassFailColor } from '../../utils/reportUtils';
+import { blankIfEmpty } from '../../utils/reportUtils';
 import { clsSchema } from '../../shared/formSchemas';
 
 import Section from '../components/Section';
 import Table from '../components/Table';
 import PhotoGrid from '../components/PhotoGrid';
-
-// Utility to render flat data as a 2-column table layout
-const renderFlatObject = (obj) => {
-  if (!obj || typeof obj !== 'object') return <Text style={{ fontStyle: 'italic', color: 'gray' }}>No data</Text>;
-  const keys = Object.keys(obj);
-  if (keys.length === 0) return <Text style={{ fontStyle: 'italic', color: 'gray' }}>No data</Text>;
-  
-  return (
-    <View style={pdfStyles.table}>
-      {keys.map((key, i) => (
-        <View key={i} style={pdfStyles.tableRow} wrap={false}>
-          <View style={[pdfStyles.tableCol, { width: '40%', backgroundColor: pdfColors.lightGray, padding: 5 }]}><Text style={pdfStyles.bold}>{key}:</Text></View>
-          <View style={[pdfStyles.tableCol, { width: '60%', padding: 5, borderRightWidth: 0 }]}>
-            <Text>{blankIfEmpty(obj[key])}</Text>
-          </View>
-        </View>
-      ))}
-    </View>
-  );
-};
 
 export default function CLSSections({ data }) {
   // Utility to get photos by group ID

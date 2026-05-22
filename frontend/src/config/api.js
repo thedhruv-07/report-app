@@ -46,10 +46,11 @@ export const ENDPOINTS = {
     ADD_REMARK: (id) => `${API_BASE_URL}/api/manager/reports/${id}/remarks`,
   },
   ONBOARDING: {
-    STATUS:        `${API_BASE_URL}/api/inspector/onboarding/status`,
-    COMPLETE_STEP: `${API_BASE_URL}/api/inspector/onboarding/complete-step`,
-    QUESTIONS:     `${API_BASE_URL}/api/inspector/onboarding/assessment-questions`,
-    SUBMIT:        `${API_BASE_URL}/api/inspector/onboarding/submit-assessment`,
+    STATUS:         `${API_BASE_URL}/api/inspector/onboarding/status`,
+    COMPLETE_STEP:  `${API_BASE_URL}/api/inspector/onboarding/complete-step`,
+    VIDEO_PROGRESS: `${API_BASE_URL}/api/inspector/onboarding/video-progress`,
+    QUESTIONS:      `${API_BASE_URL}/api/inspector/onboarding/assessment-questions`,
+    SUBMIT:         `${API_BASE_URL}/api/inspector/onboarding/submit-assessment`,
   },
   ADMIN: {
     INSPECTORS: `${API_BASE_URL}/api/admin/inspectors`,

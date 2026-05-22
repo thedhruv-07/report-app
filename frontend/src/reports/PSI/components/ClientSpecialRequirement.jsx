@@ -15,7 +15,6 @@ const normalizeRequirements = (value) => {
 };
 
 const ClientSpecialRequirement = ({ form, handleChange, onPrev, onNext, onRequirementsChange }) => {
-  const setField = (name, value) => handleChange({ target: { name, value } });
   const [requirements, setRequirements] = useState(() => normalizeRequirements(form.clientRequirements));
 
   const persistRequirements = (newRequirements) => {

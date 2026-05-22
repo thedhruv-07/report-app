@@ -57,7 +57,7 @@ export default function DuringProductionInspection() {
   // Persist state
   useEffect(() => { localStorage.setItem("dpiStep", step.toString()); }, [step]);
   useEffect(() => {
-    try { localStorage.setItem("dpiForm", JSON.stringify(form)); } catch {}
+    try { localStorage.setItem("dpiForm", JSON.stringify(form)); } catch { return; }
   }, [form]);
 
   const handleSaveDraft = () => {

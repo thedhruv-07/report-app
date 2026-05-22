@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ENDPOINTS } from '../../../config/api';
 
 export const useReportReview = (id) => {
@@ -6,7 +6,7 @@ export const useReportReview = (id) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchReport = async () => {
+  const fetchReport = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     try {
@@ -29,11 +29,11 @@ export const useReportReview = (id) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     fetchReport();
-  }, [id]);
+  }, [fetchReport]);
 
   const submitFeedback = async (section, comment, priority) => {
     const token = localStorage.getItem("reportToken");

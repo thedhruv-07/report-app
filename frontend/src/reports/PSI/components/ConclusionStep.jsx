@@ -1,7 +1,6 @@
 import { inputStyle, buttonStyle, colors, sectionHeaderStyle } from '../../../styles';
 import { compressImage, formatFileSize } from '../../../utils/imageCompression';
 import SmartTextarea from '../../../components/shared/SmartTextarea';
-import { useState } from "react";
 
 export default function ConclusionStep({ form, handleChange, onPrev, onNext }) {
   const setField = (name, value) => handleChange({ target: { name, value } });

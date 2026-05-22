@@ -1,5 +1,4 @@
 import React from "react";
-import { colors } from '../../../styles';
 import SchemaPhotos from "./SchemaPhotos";
 
 export default function LoadingProcessTable({ formData, onChange }) {

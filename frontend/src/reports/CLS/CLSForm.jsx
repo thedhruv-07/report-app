@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { ENDPOINTS } from "../../config/api";
 import { colors } from "../../styles";
@@ -27,7 +26,6 @@ const safeJsonParse = (value, fallback) => {
 };
 
 export default function ContainerLoading() {
-  const navigate = useNavigate();
   const { token } = useAuth();
 
   const [step, setStep] = useState(() => {
@@ -47,10 +45,7 @@ export default function ContainerLoading() {
 
   // Responsiveness
   const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
-  const [isClient, setIsClient] = useState(false);
-
   useEffect(() => {
-    setIsClient(true);
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -72,7 +67,7 @@ export default function ContainerLoading() {
       localStorage.setItem("clsStep", step.toString());
       setShowSaveToast(true);
       setTimeout(() => setShowSaveToast(false), 3000);
-    } catch (error) {
+    } catch {
       alert("Failed to save draft locally.");
     }
   };

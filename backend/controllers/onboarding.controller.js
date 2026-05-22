@@ -100,4 +100,29 @@ const submitAssessment = async (req, res) => {
   }
 };
 
-module.exports = { getStatus, completeStep, getQuestions, submitAssessment };
+const VALID_VIDEO_IDS = ['video1', 'video2', 'video3', 'video4', 'video5'];
+
+const saveVideoProgress = async (req, res) => {
+  const { videoId } = req.body;
+  if (!VALID_VIDEO_IDS.includes(videoId)) {
+    return res.status(400).json({ error: 'Invalid videoId. Must be video1–video5.' });
+  }
+  try {
+    const update = { $set: { [`onboarding.videoProgress.${videoId}`]: true } };
+    const user = await User.findByIdAndUpdate(req.user.id, update, { new: true, select: 'onboarding' });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const vp = user.onboarding?.videoProgress || {};
+    const allWatched = VALID_VIDEO_IDS.every(id => vp[id]);
+    if (allWatched && !user.onboarding?.videosWatched) {
+      await User.findByIdAndUpdate(req.user.id, { $set: { 'onboarding.videosWatched': true } });
+    }
+
+    res.json({ videoProgress: user.onboarding.videoProgress });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+module.exports = { getStatus, completeStep, getQuestions, submitAssessment, saveVideoProgress };

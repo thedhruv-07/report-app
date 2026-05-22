@@ -3,14 +3,12 @@ import { View, Text, Image } from '@react-pdf/renderer';
 import { pdfStyles, pdfColors } from '../../styles';
 import { getConclusionColor, blankIfEmpty } from '../../utils/reportUtils';
 
-export default function Header({ data, serviceType }) {
+export default function Header({ data }) {
   const header = data?.reportHeader || {};
   const conclusion = (header.conclusion || "PENDING").toUpperCase();
   const conclusionColor = getConclusionColor(conclusion);
   
-  const title = serviceType === 'cls' 
-    ? "Container Loading Supervision (CLS)" 
-    : "Pre-Shipment Inspection Report";
+  // title not needed here; left intentionally omitted
 
   return (
     <View style={{ marginBottom: 20 }}>

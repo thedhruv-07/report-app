@@ -24,7 +24,8 @@
     "graphify": "^1.0.0",
     "groq-sdk": "^0.15.0",
     "multer": "^2.1.1",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "puppeteer": "^25.0.4"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

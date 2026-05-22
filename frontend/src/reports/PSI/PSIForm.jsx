@@ -1,22 +1,22 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import GeneralInfo from './components/SectionA_Summary';
-import InspectionSummaryTable from "./components/InspectionSummaryTable";
-import RemarksStep from "./components/RemarksStep";
-import QuantityDetails from "./components/QuantityDetails";
-import ConclusionStep from "./components/ConclusionStep";
-import WorkmanshipDefects from "./components/WorkmanshipDefects";
-import OnSiteTests from "./components/OnSiteTests";
-import ProductSpecification from "./components/ProductSpecification";
-import Packing from "./components/FinalDetails";
-import MarkingLabeling from "./components/MarkingLabeling";
-import ClientSpecialRequirement from "./components/ClientSpecialRequirement";
-import Photos from "./components/Photos";
-import FinalStep from "./components/FinalStep";
+import { useState, useEffect, lazy, Suspense } from "react";
 import ReportLoader from '../../components/shared/ReportLoader';
 import { ENDPOINTS } from '../../config/api';
 import { colors } from '../../styles';
-import { compressImage, formatFileSize } from '../../utils/imageCompression';
+import { compressImage } from '../../utils/imageCompression';
+
+const GeneralInfo = lazy(() => import('./components/SectionA_Summary'));
+const InspectionSummaryTable = lazy(() => import('./components/InspectionSummaryTable'));
+const RemarksStep = lazy(() => import('./components/RemarksStep'));
+const QuantityDetails = lazy(() => import('./components/QuantityDetails'));
+const ConclusionStep = lazy(() => import('./components/ConclusionStep'));
+const WorkmanshipDefects = lazy(() => import('./components/WorkmanshipDefects'));
+const OnSiteTests = lazy(() => import('./components/OnSiteTests'));
+const ProductSpecification = lazy(() => import('./components/ProductSpecification'));
+const Packing = lazy(() => import('./components/FinalDetails'));
+const MarkingLabeling = lazy(() => import('./components/MarkingLabeling'));
+const ClientSpecialRequirement = lazy(() => import('./components/ClientSpecialRequirement'));
+const Photos = lazy(() => import('./components/Photos'));
+const FinalStep = lazy(() => import('./components/FinalStep'));
 
 // --- BACKEND KEEP-ALIVE ---
 function useBackendKeepAlive() {
@@ -140,7 +140,6 @@ const buildQuickFillItems = () => [
 
 function App() {
   useBackendKeepAlive();
-  const navigate = useNavigate();
 
   // Load initial state from localStorage
   const [step, setStep] = useState(() => {
@@ -219,7 +218,6 @@ function App() {
 
   // Responsiveness Support
   const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -399,11 +397,6 @@ function App() {
 
   const removeItem = (index) => {
     setItems(items.filter((_, i) => i !== index));
-  };
-
-  const handlePhotoLabelChange = (id, label) => {
-    const newPhotos = photos.map(p => p.id === id ? { ...p, label } : p);
-    setPhotos(newPhotos);
   };
 
   const handlePhotoGroupsChange = (updatedGroups) => {
@@ -760,7 +753,6 @@ function App() {
   const goToStep = (targetStep) => {
     if (targetStep < 1 || targetStep > 13) return;
     setStep(targetStep);
-    setMobileSidebarOpen(false);
   };
 
 
@@ -984,19 +976,21 @@ function App() {
           </div>
         )}
 
-        {step === 1 && <GeneralInfo form={form} handleChange={handleChange} onNext={next} generalPhoto={generalPhoto} generalPhotoData={generalPhotoData} onGeneralPhotoChange={handleGeneralPhotoChange} />}
-        {step === 2 && <InspectionSummaryTable form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
-        {step === 3 && <RemarksStep form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
-        {step === 4 && <ConclusionStep form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
-        {step === 5 && <QuantityDetails items={items} onItemChange={handleItemChange} onAddItem={addItem} onRemoveItem={removeItem} form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
-        {step === 6 && <WorkmanshipDefects form={form} handleChange={handleChange} onPrev={prev} onNext={next} onWorkmanshipDefectsChange={handleWorkmanshipDefectsChange} onWorkmanshipPhotosChange={handleWorkmanshipPhotosChange} items={items} />}
-        {step === 7 && <OnSiteTests form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
-        {step === 8 && <ProductSpecification form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
-        {step === 9 && <Packing form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
-        {step === 10 && <MarkingLabeling form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
-        {step === 11 && <ClientSpecialRequirement form={form} handleChange={handleChange} onPrev={prev} onNext={next} onRequirementsChange={handleClientRequirementsChange} />}
-        {step === 12 && <Photos photos={photos} photoGroups={photoGroups} onPhotoGroupsChange={handlePhotoGroupsChange} onPhotoFileChange={handlePhotoFileChange} onRemovePhoto={removePhoto} onPrev={prev} onNext={next} />}
-        {step === 13 && <FinalStep form={form} onPrev={prev} onSubmit={submit} onClearAfterDownload={clearFormAfterDownload} hasDownloaded={reportDownloaded} isGenerating={isGenerating} onToggleLoader={setIsGenerating} />}
+        <Suspense fallback={<ReportLoader />}> 
+          {step === 1 && <GeneralInfo form={form} handleChange={handleChange} onNext={next} generalPhoto={generalPhoto} generalPhotoData={generalPhotoData} onGeneralPhotoChange={handleGeneralPhotoChange} />}
+          {step === 2 && <InspectionSummaryTable form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
+          {step === 3 && <RemarksStep form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
+          {step === 4 && <ConclusionStep form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
+          {step === 5 && <QuantityDetails items={items} onItemChange={handleItemChange} onAddItem={addItem} onRemoveItem={removeItem} form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
+          {step === 6 && <WorkmanshipDefects form={form} handleChange={handleChange} onPrev={prev} onNext={next} onWorkmanshipDefectsChange={handleWorkmanshipDefectsChange} onWorkmanshipPhotosChange={handleWorkmanshipPhotosChange} items={items} />}
+          {step === 7 && <OnSiteTests form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
+          {step === 8 && <ProductSpecification form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
+          {step === 9 && <Packing form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
+          {step === 10 && <MarkingLabeling form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
+          {step === 11 && <ClientSpecialRequirement form={form} handleChange={handleChange} onPrev={prev} onNext={next} onRequirementsChange={handleClientRequirementsChange} />}
+          {step === 12 && <Photos photos={photos} photoGroups={photoGroups} onPhotoGroupsChange={handlePhotoGroupsChange} onPhotoFileChange={handlePhotoFileChange} onRemovePhoto={removePhoto} onPrev={prev} onNext={next} />}
+          {step === 13 && <FinalStep form={form} onPrev={prev} onSubmit={submit} onClearAfterDownload={clearFormAfterDownload} hasDownloaded={reportDownloaded} isGenerating={isGenerating} onToggleLoader={setIsGenerating} />}
+        </Suspense>
         
         </div>
       </div>

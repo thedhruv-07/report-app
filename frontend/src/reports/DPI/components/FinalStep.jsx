@@ -1,7 +1,7 @@
 import React from 'react';
 import { colors } from '../../../styles';
 
-export default function FinalStep({ reportDownloaded, clearFormAfterDownload, submit, isGenerating, onSubmitForReview }) {
+export default function FinalStep({ reportDownloaded, clearFormAfterDownload, submit, isGenerating }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px", alignItems: "center", padding: "60px 0" }}>
       <div style={{ textAlign: "center", maxWidth: "600px" }}>
