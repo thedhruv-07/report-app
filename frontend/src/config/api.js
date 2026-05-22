@@ -54,4 +54,14 @@ export const ENDPOINTS = {
   ADMIN: {
     INSPECTORS: `${API_BASE_URL}/api/admin/inspectors`,
   },
+  NOTIFICATIONS: {
+    MY: `${API_BASE_URL}/api/notifications/my-notifications`,
+    BELL_COUNT: `${API_BASE_URL}/api/notifications/bell-count`,
+    MARK_READ: `${API_BASE_URL}/api/notifications/mark-read`,
+    MARK_ALL_READ: `${API_BASE_URL}/api/notifications/mark-all-read`,
+    ALL: `${API_BASE_URL}/api/notifications/all`,
+    CREATE: `${API_BASE_URL}/api/notifications/create`,
+    UPDATE: (id) => `${API_BASE_URL}/api/notifications/${encodeURIComponent(id)}`,
+    DELETE: (id) => `${API_BASE_URL}/api/notifications/${encodeURIComponent(id)}`,
+  },
 };
