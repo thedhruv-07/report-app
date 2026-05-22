@@ -100,6 +100,9 @@ app.use("/api/inspector", inspectorRoutes);
 const managerRoutes = require("./routes/manager.routes");
 app.use("/api/manager", managerRoutes);
 
+// Notification Routes
+const notificationRoutes = require('./routes/notification.routes');
+app.use('/api/notifications', notificationRoutes);
 
 // 404 Handler
 app.use((req, res) => {
