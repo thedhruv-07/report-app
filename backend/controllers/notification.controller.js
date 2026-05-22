@@ -7,7 +7,7 @@ const buildUserQuery = (user) => {
   return {
     isActive: true,
     $or: [
-      { targetRoles: user.role },
+      { targetRoles: { $in: [user.role] } },
       { targetUsers: user.id }
     ],
     $and: [
@@ -49,9 +49,9 @@ const markAsRead = async (req, res) => {
       return res.status(400).json({ error: "notificationId is required" });
     }
 
-    const notification = await SystemNotification.findByIdAndUpdate(
-      notificationId,
-      { $addToSet: { readBy: { userId: req.user.id, readAt: new Date() } } },
+    const notification = await SystemNotification.findOneAndUpdate(
+      { _id: notificationId, "readBy.userId": { $ne: req.user.id } },
+      { $push: { readBy: { userId: req.user.id, readAt: new Date() } } },
       { new: true }
     );
 
@@ -75,8 +75,8 @@ const markAllRead = async (req, res) => {
     }
 
     await SystemNotification.updateMany(
-      { _id: { $in: notificationIds } },
-      { $addToSet: { readBy: { userId: req.user.id, readAt: new Date() } } }
+      { _id: { $in: notificationIds }, "readBy.userId": { $ne: req.user.id } },
+      { $push: { readBy: { userId: req.user.id, readAt: new Date() } } }
     );
 
     res.json({ success: true, message: "All marked as read" });
