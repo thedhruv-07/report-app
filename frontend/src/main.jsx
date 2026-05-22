@@ -19,6 +19,7 @@ import {
   FactoryAudit,
   DuringProductionInspection,
   Settings,
+  Notifications,
   Login,
   Signup,
   ForgotPassword,
@@ -63,7 +64,8 @@ createRoot(document.getElementById('root')).render(
                 </Route>
                 
                 <Route path="/settings" element={<Settings />} />
-                
+                <Route path="/notifications" element={<Notifications />} />
+
                 {/* Inspection Routes */}
                 <Route element={<ProtectedRoute allowedRoles={['admin', 'operator', 'inspector', 'user']} />}>
                   <Route path="/dashboard/pre-shipment" element={<PSIForm />} />
