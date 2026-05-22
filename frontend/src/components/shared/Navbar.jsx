@@ -156,25 +156,23 @@ export default function Navbar() {
                   <div className="px-4 py-8 text-center text-sm text-slate-500">No notifications</div>
                 ) : (
                   bellNotifications.map(n => (
-                    <div key={n._id} className={`px-4 py-3 border-b border-slate-50 hover:bg-slate-50 transition-colors flex gap-3 ${n.isRead ? 'opacity-70' : ''}`}>
+                    <div key={n._id} className="px-4 py-3 border-b border-slate-50 hover:bg-slate-50 transition-colors flex gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
-                        n.type === 'task' ? 'bg-blue-100 text-blue-600' :
-                        n.type === 'correction' ? 'bg-red-100 text-red-600' :
-                        n.type === 'approval' ? 'bg-emerald-100 text-emerald-600' :
-                        'bg-slate-100 text-slate-600'
+                        n.type === 'urgent' ? 'bg-red-100 text-red-600' :
+                        n.type === 'warning' ? 'bg-amber-100 text-amber-600' :
+                        n.type === 'success' ? 'bg-emerald-100 text-emerald-600' :
+                        'bg-blue-100 text-blue-600'
                       }`}>
                         <Bell className="w-4 h-4" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm ${n.isRead ? 'text-slate-700 font-medium' : 'text-slate-900 font-bold'} truncate`}>{n.title}</p>
+                        <p className="text-sm text-slate-900 font-bold truncate">{n.title}</p>
                         <p className="text-xs text-slate-500 line-clamp-2 mt-0.5">{n.message}</p>
                         <p className="text-[10px] text-slate-400 mt-1">{timeAgo(n.createdAt)}</p>
                       </div>
-                      {!n.isRead && (
-                        <button onClick={() => markAsRead(n._id)} className="shrink-0 self-center p-1 text-slate-300 hover:text-blue-600 transition-colors" title="Mark as read">
-                          <Check className="w-4 h-4" />
-                        </button>
-                      )}
+                      <button onClick={() => markAsRead(n._id)} className="shrink-0 self-center p-1 text-slate-300 hover:text-blue-600 transition-colors" title="Mark as read">
+                        <Check className="w-4 h-4" />
+                      </button>
                     </div>
                   ))
                 )}
@@ -224,6 +222,7 @@ export default function Navbar() {
                 <UserCircle className="w-4 h-4" />
                 My Profile
               </button>
+              
 
               <button
                 onClick={handleLogoutClick}
