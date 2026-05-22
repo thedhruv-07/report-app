@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { 
+import { useNotifications } from '../../context/NotificationContext';
+import { timeAgo } from '../../utils/timeAgo';
+import {
   LayoutDashboard, ClipboardList, Users, Bell, LogOut
 } from 'lucide-react';
 import {
@@ -15,9 +17,11 @@ import BookingsQueue from './components/BookingsQueue';
 import InspectorDirectory from './components/InspectorDirectory';
 import DeliveryConfirmationModal from './components/DeliveryConfirmationModal';
 import NotificationPanel from './components/NotificationPanel';
+import NotificationManager from './components/NotificationManager';
 
 export default function AdminDashboard() {
   const { logout, user } = useAuth();
+  const { bellNotifications, unreadCount: notifUnreadCount, markAllAsRead: markAllNotifRead } = useNotifications();
   const navigate = useNavigate();
 
   // Load and preserve active view across browser refreshes
@@ -171,18 +175,37 @@ export default function AdminDashboard() {
               <span>Inspectors</span>
             </div>
           </button>
+
+          <button
+            onClick={() => setActiveView("notifications")}
+            className={`px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200 cursor-pointer ${
+              activeView === "notifications" ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Bell className="w-4 h-4 shrink-0" />
+              <span>Notifications</span>
+              {notifUnreadCount > 0 && (
+                <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                  activeView === "notifications" ? 'bg-indigo-600 text-white' : 'bg-red-500 text-white'
+                }`}>
+                  {notifUnreadCount}
+                </span>
+              )}
+            </div>
+          </button>
         </nav>
 
         {/* Right: Notifications Bell, User Info & Logout */}
         <div className="flex items-center gap-4">
-          <button 
+          <button
             onClick={() => setNotificationsPanelOpen(!notificationsPanelOpen)}
             className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl relative transition-all duration-200 cursor-pointer"
           >
             <Bell className="w-5 h-5" />
-            {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold">
-                {unreadCount}
+            {notifUnreadCount > 0 && (
+              <span className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-rose-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold px-1">
+                {notifUnreadCount > 9 ? "9+" : notifUnreadCount}
               </span>
             )}
           </button>
@@ -190,7 +213,7 @@ export default function AdminDashboard() {
           <div className="h-6 w-px bg-slate-200 hidden sm:block"></div>
 
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-md text-xs">
+            <div className="w-8 h-8 rounded-full bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-md text-xs">
               AD
             </div>
             <div className="hidden sm:block text-left">
@@ -246,15 +269,17 @@ export default function AdminDashboard() {
             activeView={activeView}
           />
 
+          {activeView === 'notifications' && <NotificationManager />}
+
         </main>
 
         {/* Sliding Alerts Drawer */}
-        <NotificationPanel 
+        <NotificationPanel
           notificationsPanelOpen={notificationsPanelOpen}
           setNotificationsPanelOpen={setNotificationsPanelOpen}
-          notifications={notifications}
-          unreadCount={unreadCount}
-          handleMarkAllRead={handleMarkAllRead}
+          notifications={bellNotifications}
+          unreadCount={notifUnreadCount}
+          handleMarkAllRead={() => markAllNotifRead(bellNotifications.map(n => n._id))}
         />
 
       </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Bell, X } from 'lucide-react';
+import { timeAgo } from '../../../utils/timeAgo';
 
 export default function NotificationPanel({
   notificationsPanelOpen,
@@ -32,14 +33,14 @@ export default function NotificationPanel({
             <p className="text-center text-slate-500 text-sm py-8">No notifications</p>
           ) : (
             notifications.map(notif => (
-              <div key={notif.id} className={`p-4 rounded-xl border text-sm leading-relaxed transition-all ${
+              <div key={notif._id} className={`p-4 rounded-xl border text-sm leading-relaxed transition-all ${
                 notif.isRead ? 'bg-white border-slate-200 opacity-60' : 'bg-indigo-50/50 border-indigo-100 font-medium shadow-sm'
               }`}>
                 <div className="flex items-start gap-3">
                   <span className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${notif.isRead ? 'bg-slate-300' : 'bg-indigo-500'}`}></span>
                   <div>
                     <p className="text-slate-800">{notif.message}</p>
-                    <p className="text-[10px] text-slate-400 mt-1.5 font-bold uppercase">{notif.timeAgo}</p>
+                    <p className="text-[10px] text-slate-400 mt-1.5 font-bold uppercase">{timeAgo(notif.createdAt)}</p>
                   </div>
                 </div>
               </div>
