@@ -1,0 +1,52 @@
+name: E2E Smoke - Photos
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  e2e-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm --prefix frontend ci
+
+      - name: Build frontend
+        run: npm --prefix frontend run build
+
+      - name: Serve frontend dist
+        run: |
+          npx http-server frontend/dist -p 4173 -a 127.0.0.1 &
+          # wait for server to be ready
+          for i in {1..30}; do
+            if curl -sSf http://127.0.0.1:4173 >/dev/null; then break; fi
+            sleep 1
+          done
+        env:
+          CI: true
+
+      - name: Run E2E smoke script
+        run: |
+          PREVIEW_URL="http://127.0.0.1:4173" PUPPETEER_HEADLESS=true node scripts/e2e_smoke_puppeteer.js
+
+      - name: Upload E2E artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-smoke-artifacts
+          path: |
+            scripts/e2e_result.json
+            scripts/e2e_diagnostics.json
+            scripts/e2e_console_logs.json
+            scripts/e2e_photos_debug.png
+            scripts/e2e_photos_pane.html
