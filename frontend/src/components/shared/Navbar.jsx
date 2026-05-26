@@ -8,7 +8,7 @@ import { useNotifications } from '../../context/NotificationContext';
 import { timeAgo } from '../../utils/timeAgo';
 
 export default function Navbar() {
-  const { user, logout, token } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 

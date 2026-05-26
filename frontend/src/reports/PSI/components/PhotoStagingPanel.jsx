@@ -63,14 +63,14 @@ export default function PhotoStagingPanel({
           selectedPendingType: Object.prototype.toString.call(selectedPending),
           aiSuggestionsType: Object.prototype.toString.call(aiSuggestions),
         };
-        // eslint-disable-next-line no-console
         console.warn('PhotoStagingPanel: coerced props', info);
         // also emit an Error to capture a source-mapped stack trace in CI logs
-        // eslint-disable-next-line no-console
         console.error(new Error('PhotoStagingPanel: coerced props - see warning for details'));
-      } catch (e) {}
+      } catch (err) {
+        console.warn(err);
+      }
     }
-  }, []);
+  }, [pendingFiles, selectedPending, aiSuggestions]);
   return (
     <>
       <div

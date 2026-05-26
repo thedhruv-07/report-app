@@ -19,7 +19,9 @@ export default function BookingsQueue({
   filteredBookings,
   STATUS_COLORS,
   INSPECTION_TYPES,
-  ALL_STATUSES
+  ALL_STATUSES,
+  loading,
+  error
 }) {
   return (
     <>
@@ -54,7 +56,20 @@ export default function BookingsQueue({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {bookings.filter(b => b.status === 'Ready to Deliver').length === 0 ? (
+                {loading ? (
+                  <tr>
+                    <td colSpan="5" className="px-6 py-12 text-center text-slate-500">
+                      <p className="font-semibold text-slate-600 text-base">Loading bookings…</p>
+                    </td>
+                  </tr>
+                ) : error ? (
+                  <tr>
+                    <td colSpan="5" className="px-6 py-12 text-center text-rose-500">
+                      <p className="font-semibold text-base">Failed to load bookings</p>
+                      <p className="text-xs mt-1">Please refresh the page and try again.</p>
+                    </td>
+                  </tr>
+                ) : bookings.filter(b => b.status === 'Ready to Deliver').length === 0 ? (
                   <tr>
                     <td colSpan="5" className="px-6 py-12 text-center text-slate-500">
                       <CheckCircle className="w-12 h-12 text-slate-300 mx-auto mb-3" />

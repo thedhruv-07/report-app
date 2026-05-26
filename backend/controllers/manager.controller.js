@@ -179,6 +179,25 @@ exports.requestCorrection = async (req, res) => {
       revisionRound: report.revisionRound
     });
 
+    // Enqueue rejected email to inspector + admin
+    try {
+      const { enqueueEmail } = require('../services/email.queue');
+      const { renderTemplate } = require('../services/email.service');
+      const recipients = new Set();
+      if (report.userId && report.userId.email) recipients.add(report.userId.email);
+      const adminList = (process.env.NOTIFICATION_ADMIN_EMAILS || process.env.SMTP_USER || '').split(',').map(s=>s.trim()).filter(Boolean);
+      adminList.forEach(e=>recipients.add(e));
+      const html = renderTemplate('report-rejected.html', {
+        reportId: report._id,
+        rejectedBy: req.user?.name || 'Reviewer',
+        rejectedAt: new Date().toISOString(),
+        reason: (comment || '')
+      });
+      for (const r of Array.from(recipients)) enqueueEmail({ reportId: report._id, recipient: r, subject: `[ACTION REQUIRED] Report #${report._id} Rejected`, type: 'report_rejected', html });
+    } catch (err) {
+      console.warn('Failed to enqueue rejection emails:', err && err.message ? err.message : err);
+    }
+
     res.json({ message: "Correction requested successfully", report });
   } catch (error) {
     console.error("Error requesting correction:", error);
@@ -206,10 +225,76 @@ exports.finalizeReport = async (req, res) => {
       status: report.operationStatus
     });
 
+    // Enqueue approved email
+    try {
+      const { enqueueEmail } = require('../services/email.queue');
+      const { renderTemplate } = require('../services/email.service');
+      const recipients = new Set();
+      if (report.userId && report.userId.email) recipients.add(report.userId.email);
+      const adminList = (process.env.NOTIFICATION_ADMIN_EMAILS || process.env.SMTP_USER || '').split(',').map(s=>s.trim()).filter(Boolean);
+      adminList.forEach(e=>recipients.add(e));
+      const downloadUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reports/${report._id}`;
+      const html = renderTemplate('report-approved.html', {
+        reportId: report._id,
+        approvedBy: req.user?.name || 'Reviewer',
+        approvedAt: new Date().toISOString(),
+        finalRemarks: report.finalRemarks || '',
+        downloadUrl
+      });
+      for (const r of Array.from(recipients)) enqueueEmail({ reportId: report._id, recipient: r, subject: `[APPROVED] Report #${report._id} Approved Successfully`, type: 'report_approved', html });
+    } catch (err) {
+      console.warn('Failed to enqueue approval emails:', err && err.message ? err.message : err);
+    }
+
     res.json({ message: "Report finalized successfully", report });
   } catch (error) {
     console.error("Error finalizing report:", error);
     res.status(500).json({ error: "Failed to finalize report" });
+  }
+};
+
+// POST /reports/:id/deliver
+exports.deliverReport = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { deliveredTo } = req.body;
+
+    let report = await Report.findById(id);
+    if (!report) report = await FactoryAudit.findById(id);
+    if (!report) return res.status(404).json({ error: 'Report not found' });
+    if (report.populate) await report.populate('userId', 'name email');
+    if (report.populate) await report.populate('userId', 'name email');
+    if (report.populate) await report.populate('userId', 'name email');
+
+    report.delivery = report.delivery || {};
+    report.delivery.status = 'delivered';
+    report.delivery.deliveredAt = new Date();
+    report.delivery.deliveredTo = deliveredTo || '';
+    await report.save();
+
+    // Emit update
+    getIO().emit('report_status_changed', { reportId: report._id, status: report.delivery.status });
+
+    // Enqueue delivery email
+    try {
+      const { enqueueEmail } = require('../services/email.queue');
+      const { renderTemplate } = require('../services/email.service');
+      const recipients = new Set();
+      if (deliveredTo) recipients.add(deliveredTo);
+      if (report.userId && report.userId.email) recipients.add(report.userId.email);
+      const adminList = (process.env.NOTIFICATION_ADMIN_EMAILS || process.env.SMTP_USER || '').split(',').map(s=>s.trim()).filter(Boolean);
+      adminList.forEach(e=>recipients.add(e));
+      const viewUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reports/${report._id}`;
+      const html = renderTemplate('delivery-completed.html', { reportId: report._id, deliveredAt: report.delivery.deliveredAt, deliveredTo: deliveredTo || '', viewUrl });
+      for (const r of Array.from(recipients)) enqueueEmail({ reportId: report._id, recipient: r, subject: `[DELIVERED] Report #${report._id} Delivered Successfully`, type: 'delivery_completed', html });
+    } catch (err) {
+      console.warn('Failed to enqueue delivery emails:', err && err.message ? err.message : err);
+    }
+
+    res.json({ message: 'Report delivered', report });
+  } catch (err) {
+    console.error('Error delivering report:', err);
+    res.status(500).json({ error: 'Failed to mark report delivered' });
   }
 };
 

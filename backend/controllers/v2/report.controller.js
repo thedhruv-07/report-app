@@ -74,6 +74,31 @@ const updateReport = async (req, res) => {
       return res.status(404).json({ error: "Report not found" });
     }
 
+    try {
+      await report.populate('createdBy', 'name email');
+      const { enqueueEmail } = require('../../services/email.queue');
+      const { renderTemplate } = require('../../services/email.service');
+      const recipients = new Set();
+      if (report.createdBy && report.createdBy.email) recipients.add(report.createdBy.email);
+      const adminList = (process.env.NOTIFICATION_ADMIN_EMAILS || process.env.SMTP_USER || '').split(',').map(s=>s.trim()).filter(Boolean);
+      adminList.forEach(e => recipients.add(e));
+      const viewUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reports/${report._id}`;
+      const html = renderTemplate('report-submitted.html', {
+        reportId: report._id,
+        inspectorName: report.createdBy?.name || 'Inspector',
+        factory: report.title || '',
+        inspectionDate: new Date().toISOString(),
+        submittedAt: new Date().toISOString(),
+        summary: 'A report was updated.',
+        viewUrl
+      });
+      for (const r of Array.from(recipients)) {
+        await enqueueEmail({ reportId: report._id, recipient: r, subject: `[UPDATED] Report #${report._id} Updated`, type: 'report_updated', html });
+      }
+    } catch (err) {
+      console.warn('Failed to enqueue V2 report updated emails:', err && err.message ? err.message : err);
+    }
+
     res.json(report);
   } catch (error) {
     console.error("Update Report V2 Error:", error);

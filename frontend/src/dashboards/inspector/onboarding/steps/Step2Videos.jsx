@@ -129,7 +129,7 @@ export default function Step2Videos({ onComplete, onPrevious }) {
     }, 2000);
 
     return () => clearInterval(intervalId);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);  
 
   const handlePlay = (video) => {
     setLoaded(prev => ({ ...prev, [video.id]: true }));

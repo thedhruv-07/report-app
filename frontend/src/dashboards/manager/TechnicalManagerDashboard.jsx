@@ -66,7 +66,7 @@ export default function TechnicalManagerDashboard() {
     email: "sarah.chen@rms.com"
   };
 
-  const { bellNotifications: systemNotifs, unreadCount: systemUnreadCount, markAllAsRead: markSystemAllRead } = useNotifications();
+  const { unreadCount: systemUnreadCount } = useNotifications();
 
   // Queue view filters
   const [queueFilters, setQueueFilters] = useState({

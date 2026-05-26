@@ -1,62 +1,10 @@
-// backend/data/seedOnboardingQuestions.js
-require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 const mongoose = require('mongoose');
+require('dotenv').config();
+
 const OnboardingQuestion = require('../models/onboardingQuestion.model');
-const { User } = require('../models/user.model');
+const User = require('../models/user.model');
 
 const QUESTIONS = [
-  // PSI — 3 questions
-  {
-    question: 'What does PSI stand for in inspection terminology?',
-    options: ['Pre-Shipment Inspection', 'Post-Shipment Inspection', 'Product Safety Inspection', 'Primary Supplier Inspection'],
-    correctAnswer: 0,
-    category: 'PSI',
-    difficulty: 'easy',
-  },
-  {
-    question: 'During a PSI, at what minimum production completion percentage should goods be packed before the inspection begins?',
-    options: ['50%', '80%', '100% production, 80% packed', '100% production, 100% packed'],
-    correctAnswer: 2,
-    category: 'PSI',
-    difficulty: 'medium',
-  },
-  {
-    question: 'Which document must an inspector review before starting a Pre-Shipment Inspection?',
-    options: ['The shipping bill of lading', 'The purchase order and product specification sheet', "The factory's ISO certification", 'The customs declaration form'],
-    correctAnswer: 1,
-    category: 'PSI',
-    difficulty: 'hard',
-  },
-  // CLS — 3 questions
-  {
-    question: 'What does CLS stand for?',
-    options: ['Container Loading Survey', 'Cargo Logistics System', 'Client Loading Specification', 'Consolidated Load Statement'],
-    correctAnswer: 0,
-    category: 'CLS',
-    difficulty: 'easy',
-  },
-  {
-    question: 'During a Container Loading Survey, an inspector must primarily verify:',
-    options: ["The factory's production capacity", 'The quantity, condition, and loading pattern of goods', "The supplier's financial records", "The shipping company's license"],
-    correctAnswer: 1,
-    category: 'CLS',
-    difficulty: 'medium',
-  },
-  {
-    question: 'What should an inspector do if they observe significantly damaged cartons during a CLS?',
-    options: ['Proceed with loading and note it in the report later', 'Stop loading, photograph the damage, and report to supervisor immediately', 'Ask the factory to repack only the visibly damaged cartons', 'Accept loading if total damaged cartons are below 5%'],
-    correctAnswer: 1,
-    category: 'CLS',
-    difficulty: 'hard',
-  },
-  // DPI — 2 questions
-  {
-    question: 'What does DPI stand for?',
-    options: ['During Production Inspection', 'Delivered Product Inspection', 'Daily Process Index', 'Default Production Indicator'],
-    correctAnswer: 0,
-    category: 'DPI',
-    difficulty: 'easy',
-  },
   {
     question: 'At what production stage is a DPI typically conducted?',
     options: ['Before any production begins', 'After 100% of goods are produced', 'When approximately 20–40% of production is complete', 'During final shipment packaging only'],

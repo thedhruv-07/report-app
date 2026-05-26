@@ -5,6 +5,7 @@ const compression = require("compression");
 const morgan = require("morgan");
 const { authMiddleware } = require("./middleware/auth.middleware");
 const reportController = require("./controllers/report.controller");
+const { sendSelfTestEmail } = require("./controllers/email.controller");
 
 const reportRoutes = require("./routes/report.routes");
 const authRoutes = require("./routes/auth.routes");
@@ -103,6 +104,13 @@ app.use("/api/manager", managerRoutes);
 // Notification Routes
 const notificationRoutes = require('./routes/notification.routes');
 app.use('/api/notifications', notificationRoutes);
+
+// Email self-test route: any authenticated user can verify delivery to their own mailbox
+app.post('/api/emails/test-self', authMiddleware, sendSelfTestEmail);
+
+// Email logs & admin controls
+const emailRoutes = require('./routes/email.routes');
+app.use('/api/emails', emailRoutes);
 
 // 404 Handler
 app.use((req, res) => {

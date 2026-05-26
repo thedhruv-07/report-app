@@ -58,6 +58,16 @@ const userSchema = new mongoose.Schema({
       video5: { type: Boolean, default: false },
     },
   },
+  notificationPreferences: {
+    enabled: { type: Boolean, default: true },
+    reportSubmitted: { type: Boolean, default: true },
+    reportApproved: { type: Boolean, default: true },
+    reportRejected: { type: Boolean, default: true },
+    deliveryCompleted: { type: Boolean, default: true },
+    reportUpdated: { type: Boolean, default: true },
+    criticalAlerts: { type: Boolean, default: true },
+    frequency: { type: String, enum: ["instant", "daily", "weekly"], default: "instant" },
+  },
 }, { timestamps: true });
 
 // Check password

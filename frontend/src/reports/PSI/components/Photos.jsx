@@ -9,7 +9,7 @@ const PhotoGroupsDisplay = lazy(() => import('./PhotoGroupsDisplay'));
 function CleanupHook({ clear }) {
   useEffect(() => {
     return () => {
-      try { if (typeof clear === 'function') clear(); } catch (e) {}
+      try { if (typeof clear === 'function') clear(); } catch (err) { console.warn(err); }
     };
   }, [clear]);
   return null;
@@ -20,7 +20,8 @@ const Photos = ({ photos = [], photoGroups = [], onPhotoGroupsChange, onPhotoFil
     try {
       const s = typeof window !== 'undefined' ? localStorage.getItem('stagedPhotos') : null;
       return s ? JSON.parse(s) : [];
-    } catch {
+    } catch (err) {
+      console.warn('Photos: failed to parse stagedPhotos', err);
       return [];
     }
   })();
@@ -120,18 +121,12 @@ const Photos = ({ photos = [], photoGroups = [], onPhotoGroupsChange, onPhotoFil
       </Suspense>
 
       {/* Expose staging helpers for automated scripts (non-production only). Clean up on unmount. */}
-      {typeof window !== 'undefined' && (() => {
-        // Attach in a micro-effect so server-side rendering avoids touching window
-        try {
-          // Only expose in non-production builds to avoid global leaks in prod
-          if (process.env.NODE_ENV !== 'production') {
-            window.__stagePhotos = stagePreviews;
-            window.__clearStagedPhotos = () => { setPendingFiles([]); setPendingPreviews([]); setSelectedPending(new Set()); localStorage.removeItem('stagedPhotos'); };
-          }
-        } catch (e) {}
-        // provide a cleanup via a no-op return; actual cleanup handled in effect below
-        return null;
-      })()}
+      {typeof window !== 'undefined' && (() => null)()}
+
+      {/* Attach dev-only globals in an effect to avoid SSR and lint errors */}
+      {typeof window !== 'undefined' && (
+        <DevGlobalsHook setPendingFiles={setPendingFiles} setPendingPreviews={setPendingPreviews} setSelectedPending={setSelectedPending} stagePreviews={stagePreviews} />
+      )}
 
       {/* Ensure globals are removed on unmount (defensive cleanup) */}
       <CleanupHook clear={() => {
@@ -140,7 +135,9 @@ const Photos = ({ photos = [], photoGroups = [], onPhotoGroupsChange, onPhotoFil
             if (window.__stagePhotos && window.__stagePhotos === stagePreviews) delete window.__stagePhotos;
             if (window.__clearStagedPhotos) delete window.__clearStagedPhotos;
           }
-        } catch (e) {}
+        } catch (err) {
+          console.warn(err);
+        }
       }} />
 
       {photoGroups && photoGroups.length > 0 && (
@@ -204,3 +201,22 @@ const Photos = ({ photos = [], photoGroups = [], onPhotoGroupsChange, onPhotoFil
 };
 
 export default Photos;
+
+// Dev-only component to attach globals safely
+function DevGlobalsHook({ setPendingFiles, setPendingPreviews, setSelectedPending, stagePreviews }) {
+  const isDev = typeof import.meta !== 'undefined' ? (import.meta.env && import.meta.env.MODE) !== 'production' : false;
+  React.useEffect(() => {
+    if (!isDev || typeof window === 'undefined') return;
+    try {
+      window.__stagePhotos = stagePreviews;
+      window.__clearStagedPhotos = () => { setPendingFiles([]); setPendingPreviews([]); setSelectedPending(new Set()); localStorage.removeItem('stagedPhotos'); };
+    } catch (err) { console.warn(err); }
+    return () => {
+      try {
+        if (window.__stagePhotos && window.__stagePhotos === stagePreviews) delete window.__stagePhotos;
+        if (window.__clearStagedPhotos) delete window.__clearStagedPhotos;
+      } catch (err) { console.warn(err); }
+    };
+  }, [setPendingFiles, setPendingPreviews, setSelectedPending, stagePreviews, isDev]);
+  return null;
+}

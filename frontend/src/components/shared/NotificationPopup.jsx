@@ -26,7 +26,8 @@ export default function NotificationPopup() {
   useEffect(() => {
     const alreadyShown = sessionStorage.getItem("notif_popup_shown");
     if (!alreadyShown && popupNotifications.length > 0) {
-      setVisible(true);
+      // schedule state change to avoid synchronous setState during render/effect
+      requestAnimationFrame(() => setVisible(true));
       // Slight delay so the animation plays after mount
       requestAnimationFrame(() => setTimeout(() => setEntered(true), 50));
     }

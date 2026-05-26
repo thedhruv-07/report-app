@@ -32,6 +32,29 @@ exports.createReport = async (req, res) => {
     });
     await report.save();
     emitReportSubmitted(report, req.user);
+    // Enqueue email alert for submitted FA
+    try {
+      const { enqueueEmail } = require('../services/email.queue');
+      const { renderTemplate } = require('../services/email.service');
+      const adminList = (process.env.NOTIFICATION_ADMIN_EMAILS || process.env.SMTP_USER || '').split(',').map(s=>s.trim()).filter(Boolean);
+      const recipients = new Set(adminList);
+      if (req.user && req.user.email) recipients.add(req.user.email);
+      const viewUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/factory-audit/${report._id}`;
+      const html = renderTemplate('report-submitted.html', {
+        reportId: report._id,
+        inspectorName: req.user?.name || 'Inspector',
+        factory: report.generalInfo?.client || '',
+        inspectionDate: report.submittedAt || new Date().toISOString(),
+        submittedAt: new Date().toISOString(),
+        summary: report.title || '' ,
+        viewUrl
+      });
+      for (const r of Array.from(recipients)) {
+        enqueueEmail({ reportId: report._id, recipient: r, subject: `[NEW REPORT] Factory Audit Submitted - #${report._id}`, type: 'report_submitted', html });
+      }
+    } catch (err) {
+      console.warn('Failed to enqueue FA submitted emails:', err && err.message ? err.message : err);
+    }
     res.status(201).json({ status: "success", data: report });
   } catch (error) {
     console.error("Factory Audit Create Error:", error);
@@ -65,8 +88,29 @@ exports.submitForReview = async (req, res) => {
       });
       await report.save();
     }
-
     emitReportSubmitted(report, req.user);
+    try {
+      const { enqueueEmail } = require('../services/email.queue');
+      const { renderTemplate } = require('../services/email.service');
+      const adminList = (process.env.NOTIFICATION_ADMIN_EMAILS || process.env.SMTP_USER || '').split(',').map(s=>s.trim()).filter(Boolean);
+      const recipients = new Set(adminList);
+      if (req.user && req.user.email) recipients.add(req.user.email);
+      const viewUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/factory-audit/${report._id}`;
+      const html = renderTemplate('report-submitted.html', {
+        reportId: report._id,
+        inspectorName: req.user?.name || 'Inspector',
+        factory: report.generalInfo?.client || '',
+        inspectionDate: report.submittedAt || new Date().toISOString(),
+        submittedAt: new Date().toISOString(),
+        summary: report.title || '' ,
+        viewUrl
+      });
+      for (const r of Array.from(recipients)) {
+        enqueueEmail({ reportId: report._id, recipient: r, subject: `[NEW REPORT] Factory Audit Submitted - #${report._id}`, type: 'report_submitted', html });
+      }
+    } catch (err) {
+      console.warn('Failed to enqueue FA submitted emails:', err && err.message ? err.message : err);
+    }
     res.json({ status: "success", data: report });
   } catch (error) {
     console.error("FA Submit For Review Error:", error);
@@ -126,6 +170,32 @@ exports.updateReport = async (req, res) => {
       { new: true }
     );
     if (!report) return res.status(404).json({ error: "Report not found" });
+
+    // Enqueue report updated emails
+    try {
+      await report.populate('userId', 'name email');
+      const { enqueueEmail } = require('../services/email.queue');
+      const { renderTemplate } = require('../services/email.service');
+      const recipients = new Set();
+      if (report.userId && report.userId.email) recipients.add(report.userId.email);
+      const adminList = (process.env.NOTIFICATION_ADMIN_EMAILS || process.env.SMTP_USER || '').split(',').map(s=>s.trim()).filter(Boolean);
+      adminList.forEach(e => recipients.add(e));
+      const viewUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/factory-audit/${report._id}`;
+      const html = renderTemplate('report-submitted.html', {
+        reportId: report._id,
+        inspectorName: report.userId?.name || 'Inspector',
+        factory: report.generalInfo?.client || '',
+        inspectionDate: report.updatedAt || new Date().toISOString(),
+        submittedAt: new Date().toISOString(),
+        summary: 'A report update was saved.',
+        viewUrl
+      });
+      for (const r of Array.from(recipients)) {
+        await enqueueEmail({ reportId: report._id, recipient: r, subject: `[UPDATED] Report #${report._id} Updated`, type: 'report_updated', html });
+      }
+    } catch (err) {
+      console.warn('Failed to enqueue FA updated emails:', err && err.message ? err.message : err);
+    }
     res.json({ status: "success", data: report });
   } catch (error) {
     res.status(500).json({ error: "Failed to update report" });

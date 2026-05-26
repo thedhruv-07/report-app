@@ -15,6 +15,7 @@ router.get("/reports/:id", managerController.getReportDetails);
 router.patch("/reports/:id/status", managerController.updateStatus);
 router.post("/reports/:id/correction", managerController.requestCorrection);
 router.post("/reports/:id/finalize", managerController.finalizeReport);
+router.post("/reports/:id/deliver", managerController.deliverReport);
 router.post("/reports/:id/remarks", managerController.addRemarks);
 
 module.exports = router;

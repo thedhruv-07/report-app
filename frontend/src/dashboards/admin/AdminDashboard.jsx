@@ -2,14 +2,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
-import { timeAgo } from '../../utils/timeAgo';
+import { ENDPOINTS } from '../../config/api';
 import {
-  LayoutDashboard, ClipboardList, Users, Bell, LogOut
+  LayoutDashboard, ClipboardList, Users, Bell, Mail, LogOut
 } from 'lucide-react';
-import {
-  MOCK_BOOKINGS, MOCK_NOTIFICATIONS,
-  STATUS_COLORS, INSPECTION_TYPES, ALL_STATUSES
-} from './constants/adminMockData';
+import { useReportQueue } from '../manager/hooks/useReportQueue';
 
 // Modular Sub-components
 import SummaryCards from './components/SummaryCards';
@@ -18,11 +15,14 @@ import InspectorDirectory from './components/InspectorDirectory';
 import DeliveryConfirmationModal from './components/DeliveryConfirmationModal';
 import NotificationPanel from './components/NotificationPanel';
 import NotificationManager from './components/NotificationManager';
+import EmailMonitoringPanel from './components/EmailMonitoringPanel';
 
 export default function AdminDashboard() {
-  const { logout, user } = useAuth();
-  const { bellNotifications, unreadCount: notifUnreadCount, markAllAsRead: markAllNotifRead } = useNotifications();
+  const { logout, user, token } = useAuth();
+  const { bellNotifications, unreadCount: notifUnreadCount, markAllAsRead: markAllNotifRead, fetchNotifications } = useNotifications();
   const navigate = useNavigate();
+
+  const { reports: queueReports, loading: queueLoading, error: queueError } = useReportQueue();
 
   // Load and preserve active view across browser refreshes
   const [activeView, setActiveView] = useState(() => {
@@ -43,10 +43,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const [bookings, setBookings] = useState(MOCK_BOOKINGS);
-  const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
-  const [unreadCount, setUnreadCount] = useState(MOCK_NOTIFICATIONS.filter(n => !n.isRead).length);
-
   // Filters State for Bookings View
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -55,6 +51,39 @@ export default function AdminDashboard() {
   // Modals
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
   const [activeBooking, setActiveBooking] = useState(null);
+  const [deliveryOverrides, setDeliveryOverrides] = useState({});
+
+  const bookings = useMemo(() => {
+    return (queueReports || [])
+      .map(report => {
+        const id = String(report.id || report.reportId || '');
+        if (!id) return null;
+
+        const baseBooking = {
+          id,
+          clientName: report.clientName || 'Unknown Client',
+          inspectionType: report.inspectionType || 'Report',
+          factoryName: report.factoryName || '',
+          factoryLocation: report.factoryLocation || '',
+          inspectorName: report.inspectorName || 'Unknown Inspector',
+          createdDate: report.submittedAt ? new Date(report.submittedAt).toISOString().split('T')[0] : '',
+          status: report.status === 'approved'
+            ? 'Ready to Deliver'
+            : report.status === 'under_review'
+              ? 'Under TM Review'
+              : report.status === 'revision_required'
+                ? 'Correction Requested'
+                : 'Scheduled',
+          priority: report.priority || 'Normal',
+          poNumber: report.reportId || '',
+          reportId: report.reportId || '',
+          deliveredDate: null,
+        };
+
+        return deliveryOverrides[id] ? { ...baseBooking, ...deliveryOverrides[id] } : baseBooking;
+      })
+      .filter(Boolean);
+  }, [queueReports, deliveryOverrides]);
 
   // Derived Stats
   const stats = useMemo(() => {
@@ -80,31 +109,68 @@ export default function AdminDashboard() {
     });
   }, [bookings, searchTerm, statusFilter, typeFilter]);
 
-  // Handlers
-  const handleMarkAllRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-    setUnreadCount(0);
+  const inspectionTypes = useMemo(() => {
+    return Array.from(new Set(bookings.map(b => b.inspectionType).filter(Boolean))).sort();
+  }, [bookings]);
+
+  const statusOptions = useMemo(() => {
+    return Array.from(new Set(bookings.map(b => b.status).filter(Boolean))).sort();
+  }, [bookings]);
+
+  const STATUS_COLORS = {
+    'Scheduled': { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200' },
+    'Under TM Review': { bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-200' },
+    'Correction Requested': { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200' },
+    'Ready to Deliver': { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' },
+    'Delivered': { bg: 'bg-teal-50', text: 'text-teal-600', border: 'border-teal-200' },
   };
 
-  const handleDeliverReport = () => {
+  // Handlers
+
+  const handleDeliverReport = async () => {
     if (!activeBooking) return;
-    
-    // Update booking status
-    setBookings(prev => prev.map(b => 
-      b.id === activeBooking.id ? { ...b, status: 'Delivered', deliveredDate: new Date().toISOString().split('T')[0] } : b
-    ));
-    
-    // Add notification
-    const newNotif = {
-      id: Date.now(),
-      message: `Report for ${activeBooking.id} delivered to ${activeBooking.clientName}`,
-      type: 'success',
-      timeAgo: 'Just now',
-      isRead: false,
-      bookingId: activeBooking.id
-    };
-    setNotifications([newNotif, ...notifications]);
-    setUnreadCount(prev => prev + 1);
+
+    try {
+      const response = await fetch(ENDPOINTS.MANAGER.UPDATE_STATUS(activeBooking.id), {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token || ''}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: 'approved' })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update delivery status');
+      }
+
+      setDeliveryOverrides(prev => ({
+        ...prev,
+        [activeBooking.id]: {
+          status: 'Delivered',
+          deliveredDate: new Date().toISOString().split('T')[0]
+        }
+      }));
+
+      await fetch(ENDPOINTS.NOTIFICATIONS.CREATE, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token || ''}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          title: 'Report delivered',
+          message: `Report ${activeBooking.reportId || activeBooking.id} was delivered to ${activeBooking.clientName}.`,
+          type: 'success',
+          priority: 2,
+          targetRoles: ['admin'],
+          expiresAt: null
+        })
+      });
+      fetchNotifications?.();
+    } catch (err) {
+      console.error('Failed to create delivery notification:', err);
+    }
     
     setDeliveryModalOpen(false);
     setActiveBooking(null);
@@ -194,6 +260,18 @@ export default function AdminDashboard() {
               )}
             </div>
           </button>
+
+          <button
+            onClick={() => setActiveView("emails")}
+            className={`px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200 cursor-pointer ${
+              activeView === "emails" ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Mail className="w-4 h-4 shrink-0" />
+              <span>Email Logs</span>
+            </div>
+          </button>
         </nav>
 
         {/* Right: Notifications Bell, User Info & Logout */}
@@ -204,7 +282,7 @@ export default function AdminDashboard() {
           >
             <Bell className="w-5 h-5" />
             {notifUnreadCount > 0 && (
-              <span className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-rose-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold px-1">
+              <span className="absolute top-1 right-1 min-w-4.5 h-4.5 bg-rose-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold px-1">
                 {notifUnreadCount > 9 ? "9+" : notifUnreadCount}
               </span>
             )}
@@ -260,8 +338,10 @@ export default function AdminDashboard() {
             setTypeFilter={setTypeFilter}
             filteredBookings={filteredBookings}
             STATUS_COLORS={STATUS_COLORS}
-            INSPECTION_TYPES={INSPECTION_TYPES}
-            ALL_STATUSES={ALL_STATUSES}
+            INSPECTION_TYPES={inspectionTypes}
+            ALL_STATUSES={statusOptions}
+            loading={queueLoading}
+            error={queueError}
           />
 
           {/* Inspector Performance Cards */}
@@ -270,6 +350,7 @@ export default function AdminDashboard() {
           />
 
           {activeView === 'notifications' && <NotificationManager />}
+          {activeView === 'emails' && <EmailMonitoringPanel />}
 
         </main>
 

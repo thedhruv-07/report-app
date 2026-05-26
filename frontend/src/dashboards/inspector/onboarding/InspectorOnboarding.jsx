@@ -27,11 +27,7 @@ const itemVariants = {
 
 export default function InspectorOnboarding() {
   const { user, token, refreshOnboarding } = useAuth();
-  const [currentStep, setCurrentStep] = useState(() => {
-    // Restore from localStorage on initial load
-    const saved = localStorage.getItem('onboarding_current_step');
-    return saved ? parseInt(saved, 10) : 1;
-  });
+  const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(true);
 
   // Persist currentStep to localStorage whenever it changes
@@ -47,7 +43,17 @@ export default function InspectorOnboarding() {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) return;
-        // Just verify status, don't auto-advance based on it
+        const data = await res.json();
+        const onboarding = data.onboarding || {};
+        let nextStep = 1;
+        if (onboarding.manualRead && !onboarding.videosWatched) {
+          nextStep = 2;
+        } else if (onboarding.manualRead && onboarding.videosWatched && !onboarding.isCompleted) {
+          nextStep = 3;
+        } else if (onboarding.isCompleted) {
+          nextStep = 3;
+        }
+        setCurrentStep(nextStep);
       } catch {
         // default stays at step 1
       } finally {

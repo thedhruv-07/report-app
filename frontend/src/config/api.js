@@ -41,6 +41,7 @@ export const ENDPOINTS = {
   MANAGER: {
     QUEUE: `${API_BASE_URL}/api/manager/queue`,
     REPORT_DETAILS: (id) => `${API_BASE_URL}/api/manager/reports/${id}`,
+    UPDATE_STATUS: (id) => `${API_BASE_URL}/api/manager/reports/${id}/status`,
     SUBMIT_FEEDBACK: (id) => `${API_BASE_URL}/api/manager/reports/${id}/correction`,
     FINALIZE: (id) => `${API_BASE_URL}/api/manager/reports/${id}/finalize`,
     ADD_REMARK: (id) => `${API_BASE_URL}/api/manager/reports/${id}/remarks`,
@@ -64,5 +65,10 @@ export const ENDPOINTS = {
     CREATE: `${API_BASE_URL}/api/notifications/create`,
     UPDATE: (id) => `${API_BASE_URL}/api/notifications/${encodeURIComponent(id)}`,
     DELETE: (id) => `${API_BASE_URL}/api/notifications/${encodeURIComponent(id)}`,
+  },
+  EMAILS: {
+    LIST: `${API_BASE_URL}/api/emails`,
+    RETRY: (id) => `${API_BASE_URL}/api/emails/${encodeURIComponent(id)}/retry`,
+    TEST: `${API_BASE_URL}/api/emails/test`,
   },
 };

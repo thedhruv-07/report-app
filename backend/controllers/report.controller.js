@@ -218,7 +218,6 @@ const generateReport = async (req, res) => {
         ...sectionStatuses.map(s => s.save()),
         report.save()
       ]);
-
       console.log(`✅ Saved Granular Modular Report to MongoDB with ID: ${report._id}`);
 
       if (req.query.notify === "true") {
@@ -234,6 +233,57 @@ const generateReport = async (req, res) => {
           console.warn("Socket notification failed:", e.message);
         }
       }
+
+      // Enqueue email alerts (non-blocking)
+      try {
+        const { enqueueEmail } = require('../services/email.queue');
+        const { renderTemplate } = require('../services/email.service');
+
+        const recipients = new Set();
+        // Admin list via env (comma separated) or fallback to SMTP_USER
+        const adminList = (process.env.NOTIFICATION_ADMIN_EMAILS || process.env.SMTP_USER || '').split(',').map(s=>s.trim()).filter(Boolean);
+        adminList.forEach(e => recipients.add(e));
+        // Inspector (reporting user)
+        if (req.user && req.user.email) recipients.add(req.user.email);
+        // Optional client email from payload
+        if (data.clientEmail) recipients.add(data.clientEmail);
+
+        const viewUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reports/${report._id}`;
+        const html = renderTemplate('report-submitted.html', {
+          reportId: report._id,
+          inspectorName: data.auditorName || req.user?.name || 'Inspector',
+          factory: data.factory || data.client || '',
+          inspectionDate: data.inspectionDate || '',
+          submittedAt: new Date().toISOString(),
+          summary: (data.inspectorOpinion || '').slice(0, 400),
+          viewUrl
+        });
+
+        for (const r of Array.from(recipients)) {
+          if (!r) continue;
+          enqueueEmail({ reportId: report._id, recipient: r, subject: `[NEW REPORT] Inspection Report Submitted - #${report._id}`, type: 'report_submitted', html, metadata: { priority: data.priority || 'normal' } });
+        }
+      } catch (e) {
+        console.warn('Failed to enqueue report-submitted emails:', e && e.message ? e.message : e);
+      }
+
+        // If critical findings exist, send an urgent alert
+        try {
+          const criticalCount = parseInt(data.totalFoundCritical || data.totalCritical || 0, 10) || 0;
+          if (criticalCount > 0) {
+            const { enqueueEmail } = require('../services/email.queue');
+            const { renderTemplate } = require('../services/email.service');
+            const recipients = new Set();
+            const adminList = (process.env.NOTIFICATION_ADMIN_EMAILS || process.env.SMTP_USER || '').split(',').map(s=>s.trim()).filter(Boolean);
+            adminList.forEach(e=>recipients.add(e));
+            if (req.user && req.user.email) recipients.add(req.user.email);
+            const viewUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reports/${report._id}`;
+            const htmlCritical = renderTemplate('critical-alert.html', { reportId: report._id, severity: 'Critical', issueSummary: (data.inspectorOpinion || '').slice(0,400), viewUrl });
+            for (const r of Array.from(recipients)) enqueueEmail({ reportId: report._id, recipient: r, subject: `[URGENT] Critical Inspection Issue Detected - #${report._id}`, type: 'critical_alert', html: htmlCritical, metadata: { priority: 'high' } });
+          }
+        } catch (err) {
+          console.warn('Failed to enqueue critical alert emails:', err && err.message ? err.message : err);
+        }
 
     } catch (dbError) {
       console.error("❌ DATABASE SAVE ERROR:", dbError.message);

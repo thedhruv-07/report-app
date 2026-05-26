@@ -1,0 +1,30 @@
+<div style="font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; color:#0f172a; max-width:680px; margin:0 auto; padding:20px; background:#f8fafc;">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:680px;margin:0 auto;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #e6edf3;box-shadow:0 14px 35px rgba(15,23,42,0.08);">
+    <tr><td style="height:8px;background:linear-gradient(90deg,#f59e0b 0%,#ef7d00 28%,#dc2626 100%);"></td></tr>
+    <tr>
+      <td style="padding:22px 24px 10px;background:#ffffff;text-align:center;">
+        <div style="display:inline-block;padding:10px 16px;border:1px solid #dbe7f3;border-radius:12px;background:#fbfdff;">
+          <img src="cid:company-logo" alt="Absolute Veritas" style="height:44px;display:block;margin:0 auto;" />
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:28px 28px 8px;">
+        <h1 style="font-size:22px;line-height:1.25;margin:0 0 12px;color:#b91c1c;text-align:center;">Action Required — Report Rejected</h1>
+        <p style="margin:0 auto 18px;color:#475569;text-align:center;max-width:540px;line-height:1.6;">The report needs attention before it can move forward. Please review the reason below and resubmit when ready.</p>
+        <div style="background:#fff7f7;border:1px solid #fed7d7;border-radius:12px;padding:16px 18px;color:#334155;line-height:1.7;">
+          <div><strong>Report ID:</strong> {{reportId}}</div>
+          <div><strong>Rejected by:</strong> {{rejectedBy}} at {{rejectedAt}}</div>
+          <div style="margin-top:10px;font-weight:700;color:#b91c1c;">Reason</div>
+          <div>{{reason}}</div>
+        </div>
+        <div style="text-align:center;margin:26px 0 18px;">
+          <a href="{{resubmitUrl}}" style="display:inline-block;background:#dc2626;color:#fff;padding:13px 28px;border-radius:10px;text-decoration:none;font-weight:700;box-shadow:0 10px 22px rgba(220,38,38,0.20);">Resubmit Report</a>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:18px 24px 22px;background:#fbfdff;text-align:center;color:#94a3b8;font-size:12px;border-top:1px solid #eef2f7;">© {{year}} Absolute Veritas • <a href="mailto:cs@absoluteveritas.com" style="color:#1d4ed8;text-decoration:none;">cs@absoluteveritas.com</a></td>
+    </tr>
+  </table>
+</div>
