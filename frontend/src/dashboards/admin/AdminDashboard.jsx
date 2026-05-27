@@ -23,6 +23,14 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
 
   const { reports: queueReports, loading: queueLoading, error: queueError } = useReportQueue();
+  const [bookingInbox, setBookingInbox] = useState([]);
+  const [bookingInboxLoading, setBookingInboxLoading] = useState(false);
+  const [bookingInboxError, setBookingInboxError] = useState(null);
+  const [inspectors, setInspectors] = useState([]);
+  const [inspectorPickerOpen, setInspectorPickerOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [selectedInspectorId, setSelectedInspectorId] = useState('');
+  const [assigning, setAssigning] = useState(false);
 
   // Load and preserve active view across browser refreshes
   const [activeView, setActiveView] = useState(() => {
@@ -33,6 +41,44 @@ export default function AdminDashboard() {
   useEffect(() => {
     sessionStorage.setItem("adminActiveView", activeView);
   }, [activeView]);
+
+  const fetchBookingInbox = async () => {
+    if (!token) return;
+    setBookingInboxLoading(true);
+    setBookingInboxError(null);
+    try {
+      const response = await fetch(ENDPOINTS.BOOKINGS.ADMIN_LIST, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error('Failed to load bookings');
+      const data = await response.json();
+      setBookingInbox(data.bookings || []);
+    } catch (error) {
+      setBookingInboxError(error.message);
+    } finally {
+      setBookingInboxLoading(false);
+    }
+  };
+
+  const fetchInspectors = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch(ENDPOINTS.ADMIN.INSPECTORS, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error('Failed to load inspectors');
+      const data = await response.json();
+      setInspectors(data.inspectors || []);
+    } catch (error) {
+      console.error('Failed to load inspectors:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (!token) return;
+    fetchBookingInbox();
+    fetchInspectors();
+  }, [token]);
 
   const handleLogout = async () => {
     try {
@@ -85,6 +131,36 @@ export default function AdminDashboard() {
       .filter(Boolean);
   }, [queueReports, deliveryOverrides]);
 
+  const bookingRows = useMemo(() => {
+    return (bookingInbox || []).map((booking) => ({
+      id: String(booking.id || ''),
+      clientName: booking.clientName || 'Unknown Client',
+      clientEmail: booking.clientEmail || '',
+      inspectionType: booking.inspectionType || 'PSI',
+      inspectorName: booking.inspectorName || (booking.assignedInspectorId ? 'Assigned' : 'Unassigned'),
+      createdDate: booking.createdAt ? new Date(booking.createdAt).toISOString().split('T')[0] : '',
+      status: booking.status || 'new',
+      priority: booking.priority || 'Normal',
+      poNumber: booking.onlineBookingId || '',
+      reportId: booking.onlineBookingId || '',
+      assignedInspectorId: booking.assignedInspectorId || '',
+      factoryName: booking.factoryName || '',
+      factoryLocation: booking.factoryAddress || '',
+      scheduledDate: booking.scheduledDate || null,
+      specialInstructions: booking.specialInstructions || '',
+      paymentInfo: booking.paymentInfo || null,
+      deliveredDate: null,
+    }));
+  }, [bookingInbox]);
+
+  const bookingInspectionTypes = useMemo(() => {
+    return Array.from(new Set(bookingRows.map((booking) => booking.inspectionType).filter(Boolean))).sort();
+  }, [bookingRows]);
+
+  const bookingStatusOptions = useMemo(() => {
+    return Array.from(new Set(bookingRows.map((booking) => booking.status).filter(Boolean))).sort();
+  }, [bookingRows]);
+
   // Derived Stats
   const stats = useMemo(() => {
     return {
@@ -98,7 +174,7 @@ export default function AdminDashboard() {
 
   // Filtered Bookings
   const filteredBookings = useMemo(() => {
-    return bookings.filter(b => {
+    return bookingRows.filter(b => {
       const matchesSearch = 
         b.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
         b.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -107,7 +183,7 @@ export default function AdminDashboard() {
       const matchesType = typeFilter === 'All' || b.inspectionType === typeFilter;
       return matchesSearch && matchesStatus && matchesType;
     });
-  }, [bookings, searchTerm, statusFilter, typeFilter]);
+  }, [bookingRows, searchTerm, statusFilter, typeFilter]);
 
   const inspectionTypes = useMemo(() => {
     return Array.from(new Set(bookings.map(b => b.inspectionType).filter(Boolean))).sort();
@@ -123,6 +199,16 @@ export default function AdminDashboard() {
     'Correction Requested': { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200' },
     'Ready to Deliver': { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' },
     'Delivered': { bg: 'bg-teal-50', text: 'text-teal-600', border: 'border-teal-200' },
+    new: { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-200' },
+    assigned: { bg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-200' },
+    viewed: { bg: 'bg-cyan-50', text: 'text-cyan-600', border: 'border-cyan-200' },
+    accepted: { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' },
+    in_progress: { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200' },
+    submitted: { bg: 'bg-violet-50', text: 'text-violet-600', border: 'border-violet-200' },
+    under_review: { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200' },
+    correction_requested: { bg: 'bg-rose-50', text: 'text-rose-600', border: 'border-rose-200' },
+    finalized: { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' },
+    delivered: { bg: 'bg-teal-50', text: 'text-teal-600', border: 'border-teal-200' },
   };
 
   // Handlers
@@ -174,6 +260,43 @@ export default function AdminDashboard() {
     
     setDeliveryModalOpen(false);
     setActiveBooking(null);
+  };
+
+  const openAssignModal = (booking) => {
+    setSelectedBooking(booking);
+    setSelectedInspectorId(booking.assignedInspectorId || inspectors[0]?._id || '');
+    setInspectorPickerOpen(true);
+  };
+
+  const handleAssignBooking = async () => {
+    if (!selectedBooking || !selectedInspectorId) return;
+    setAssigning(true);
+    try {
+      const response = await fetch(ENDPOINTS.BOOKINGS.ASSIGN(selectedBooking.id), {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token || ''}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ assignedInspectorId: selectedInspectorId })
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to assign booking');
+      }
+
+      await fetchBookingInbox();
+      await fetchNotifications?.();
+      setInspectorPickerOpen(false);
+      setSelectedBooking(null);
+      setSelectedInspectorId('');
+    } catch (error) {
+      console.error('Failed to assign booking:', error);
+      alert(error.message);
+    } finally {
+      setAssigning(false);
+    }
   };
 
   return (
@@ -324,7 +447,8 @@ export default function AdminDashboard() {
 
           {/* Bookings Queue Layout */}
           <BookingsQueue 
-            bookings={bookings}
+            deliveryBookings={bookings}
+            bookingInbox={bookingRows}
             stats={stats}
             activeView={activeView}
             setActiveView={setActiveView}
@@ -338,10 +462,13 @@ export default function AdminDashboard() {
             setTypeFilter={setTypeFilter}
             filteredBookings={filteredBookings}
             STATUS_COLORS={STATUS_COLORS}
-            INSPECTION_TYPES={inspectionTypes}
-            ALL_STATUSES={statusOptions}
+            INSPECTION_TYPES={activeView === 'bookings' ? bookingInspectionTypes : inspectionTypes}
+            ALL_STATUSES={activeView === 'bookings' ? bookingStatusOptions : statusOptions}
             loading={queueLoading}
             error={queueError}
+            bookingInboxLoading={bookingInboxLoading}
+            bookingInboxError={bookingInboxError}
+            onAssignClick={openAssignModal}
           />
 
           {/* Inspector Performance Cards */}
@@ -372,6 +499,57 @@ export default function AdminDashboard() {
         activeBooking={activeBooking}
         handleDeliverReport={handleDeliverReport}
       />
+
+      {inspectorPickerOpen && selectedBooking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm px-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="p-5 border-b border-slate-200 flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-widest text-indigo-500 font-bold">Assign inspector</p>
+                <h3 className="text-lg font-bold text-slate-800">Booking {selectedBooking.id}</h3>
+              </div>
+              <button className="text-slate-400 hover:text-slate-600" onClick={() => setInspectorPickerOpen(false)}>✕</button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 text-sm text-slate-600">
+                <p className="font-semibold text-slate-700">{selectedBooking.clientName}</p>
+                <p>{selectedBooking.clientEmail}</p>
+                <p className="mt-1">Type: {selectedBooking.inspectionType}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Inspector</label>
+                <select
+                  value={selectedInspectorId}
+                  onChange={(e) => setSelectedInspectorId(e.target.value)}
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">Select inspector</option>
+                  {inspectors.map((inspector) => (
+                    <option key={inspector._id} value={inspector._id}>
+                      {inspector.name} ({inspector.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="p-5 border-t border-slate-200 flex justify-end gap-3">
+              <button
+                onClick={() => setInspectorPickerOpen(false)}
+                className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAssignBooking}
+                disabled={assigning || !selectedInspectorId}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold disabled:opacity-50"
+              >
+                Assign Booking
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

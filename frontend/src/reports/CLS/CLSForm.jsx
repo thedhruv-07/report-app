@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { ENDPOINTS } from "../../config/api";
 import { colors } from "../../styles";
@@ -27,6 +28,29 @@ const safeJsonParse = (value, fallback) => {
 
 export default function ContainerLoading() {
   const { token } = useAuth();
+  const location = useLocation();
+  const prefillData = location.state?.task?.prefillData ?? null;
+
+  const [prefillBannerDismissed, setPrefillBannerDismissed] = useState(false);
+
+  useEffect(() => {
+    if (!prefillData) return;
+    const factoryAddress = [
+      prefillData.factory?.address,
+      prefillData.factory?.city,
+      prefillData.factory?.country,
+    ].filter(Boolean).join(', ');
+    setForm(prev => ({
+      ...prev,
+      client:         prefillData.client?.name                                       || prev.client,
+      supplier:       prefillData.factory?.name                                      || prev.supplier,
+      factory:        prefillData.factory?.name                                      || prev.factory,
+      location:       factoryAddress                                                 || prev.location,
+      inspectionDate: prefillData.inspectionDate                                     || prev.inspectionDate,
+      productName:    prefillData.product?.name || prefillData.product?.description  || prev.productName,
+      orderQuantity:  String(prefillData.product?.quantity ?? prev.orderQuantity ?? ''),
+    }));
+  }, []); // run once on mount
 
   const [step, setStep] = useState(() => {
     const savedStep = localStorage.getItem("clsStep");
@@ -342,6 +366,41 @@ export default function ContainerLoading() {
             ⟲ Clear Form
           </button>
         </div>
+
+        {prefillData && !prefillBannerDismissed && (
+          <div style={{
+            marginBottom: "16px",
+            padding: "12px 16px",
+            background: "#dbeafe",
+            border: "1px solid #93c5fd",
+            borderRadius: "10px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "10px",
+          }}>
+            <span style={{ fontSize: "13px", color: "#1e40af", fontWeight: "600" }}>
+              Auto-filled from Online Booking — review all fields before submitting
+            </span>
+            <button
+              onClick={() => setPrefillBannerDismissed(true)}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "#1e40af",
+                fontSize: "18px",
+                lineHeight: "1",
+                padding: "2px 6px",
+                borderRadius: "4px",
+                flexShrink: 0,
+              }}
+              aria-label="Dismiss"
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         {/* Render Step */}
         <div style={{ animation: "fadeIn 0.3s ease-out" }}>

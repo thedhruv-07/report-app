@@ -1,4 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from "react";
+import { useLocation } from "react-router-dom";
 import ReportLoader from '../../components/shared/ReportLoader';
 import { ENDPOINTS } from '../../config/api';
 import { colors } from '../../styles';
@@ -215,6 +216,33 @@ function App() {
   const [showSaveToast, setShowSaveToast] = useState(false);
 
   const { token } = useAuth();
+  const location = useLocation();
+  const prefillData = location.state?.task?.prefillData ?? null;
+
+  const [prefillBannerDismissed, setPrefillBannerDismissed] = useState(false);
+
+  useEffect(() => {
+    if (!prefillData) return;
+    const factoryAddress = [
+      prefillData.factory?.address,
+      prefillData.factory?.city,
+      prefillData.factory?.country,
+    ].filter(Boolean).join(', ');
+    setForm(prev => ({
+      ...prev,
+      client:             prefillData.client?.name            || prev.client,
+      supplier:           prefillData.factory?.name           || prev.supplier,
+      factory:            prefillData.factory?.name           || prev.factory,
+      inspectionLocation: factoryAddress                      || prev.inspectionLocation,
+      inspectionDate:     prefillData.inspectionDate          || prev.inspectionDate,
+      productName:        prefillData.product?.description    || prev.productName,
+      orderQuantity:      String(prefillData.product?.quantity ?? prev.orderQuantity ?? ''),
+      inspectionLevel:    prefillData.aql?.inspectionLevel    || prev.inspectionLevel,
+      sampleSize:         String(prefillData.aql?.sampleSize  ?? prev.sampleSize ?? ''),
+      acceptPoint:        String(prefillData.aql?.acceptPoint ?? prev.acceptPoint ?? ''),
+      rejectPoint:        String(prefillData.aql?.rejectPoint ?? prev.rejectPoint ?? ''),
+    }));
+  }, []); // run once on mount
 
   // Responsiveness Support
   const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
@@ -976,7 +1004,42 @@ function App() {
           </div>
         )}
 
-        <Suspense fallback={<ReportLoader />}> 
+        {prefillData && !prefillBannerDismissed && (
+          <div style={{
+            marginBottom: "16px",
+            padding: "12px 16px",
+            background: "#dbeafe",
+            border: "1px solid #93c5fd",
+            borderRadius: "10px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "10px",
+          }}>
+            <span style={{ fontSize: "13px", color: "#1e40af", fontWeight: "600" }}>
+              Auto-filled from Online Booking — review all fields before submitting
+            </span>
+            <button
+              onClick={() => setPrefillBannerDismissed(true)}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "#1e40af",
+                fontSize: "18px",
+                lineHeight: "1",
+                padding: "2px 6px",
+                borderRadius: "4px",
+                flexShrink: 0,
+              }}
+              aria-label="Dismiss"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
+        <Suspense fallback={<ReportLoader />}>
           {step === 1 && <GeneralInfo form={form} handleChange={handleChange} onNext={next} generalPhoto={generalPhoto} generalPhotoData={generalPhotoData} onGeneralPhotoChange={handleGeneralPhotoChange} />}
           {step === 2 && <InspectionSummaryTable form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
           {step === 3 && <RemarksStep form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}

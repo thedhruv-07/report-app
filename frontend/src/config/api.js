@@ -56,6 +56,10 @@ export const ENDPOINTS = {
   ADMIN: {
     INSPECTORS: `${API_BASE_URL}/api/admin/inspectors`,
   },
+  BOOKINGS: {
+    ADMIN_LIST: `${API_BASE_URL}/api/bookings`,
+    ASSIGN: (id) => `${API_BASE_URL}/api/bookings/${encodeURIComponent(id)}/assign`,
+  },
   NOTIFICATIONS: {
     MY: `${API_BASE_URL}/api/notifications/my-notifications`,
     BELL_COUNT: `${API_BASE_URL}/api/notifications/bell-count`,

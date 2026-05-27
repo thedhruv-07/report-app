@@ -1,10 +1,11 @@
 import React from 'react';
 import { 
-  ClipboardList, Send, CheckCircle, Search, ChevronDown, Filter, Mail, ArrowRight 
+  ClipboardList, Send, CheckCircle, Search, ChevronDown, Filter, Mail, ArrowRight, UserPlus 
 } from 'lucide-react';
 
 export default function BookingsQueue({
-  bookings,
+  deliveryBookings,
+  bookingInbox,
   /* stats removed (unused) */
   activeView,
   setActiveView,
@@ -21,8 +22,17 @@ export default function BookingsQueue({
   INSPECTION_TYPES,
   ALL_STATUSES,
   loading,
-  error
+  error,
+  bookingInboxLoading,
+  bookingInboxError,
+  onAssignClick
 }) {
+  const statusStylesFor = (status) => STATUS_COLORS[status] || STATUS_COLORS.new || {
+    bg: 'bg-slate-100',
+    text: 'text-slate-700',
+    border: 'border-slate-200'
+  };
+
   return (
     <>
       {/* VIEW: DASHBOARD (Actionable Table) */}
@@ -69,7 +79,7 @@ export default function BookingsQueue({
                       <p className="text-xs mt-1">Please refresh the page and try again.</p>
                     </td>
                   </tr>
-                ) : bookings.filter(b => b.status === 'Ready to Deliver').length === 0 ? (
+                ) : deliveryBookings.filter(b => b.status === 'Ready to Deliver').length === 0 ? (
                   <tr>
                     <td colSpan="5" className="px-6 py-12 text-center text-slate-500">
                       <CheckCircle className="w-12 h-12 text-slate-300 mx-auto mb-3" />
@@ -78,7 +88,7 @@ export default function BookingsQueue({
                     </td>
                   </tr>
                 ) : (
-                  bookings.filter(b => b.status === 'Ready to Deliver').map(booking => (
+                  deliveryBookings.filter(b => b.status === 'Ready to Deliver').map(booking => (
                     <tr key={booking.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4 font-bold text-slate-800">{booking.id}</td>
                       <td className="px-6 py-4 font-semibold text-slate-600">{booking.clientName}</td>
@@ -162,7 +172,19 @@ export default function BookingsQueue({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredBookings.length === 0 ? (
+                  {bookingInboxLoading ? (
+                    <tr>
+                      <td colSpan="6" className="px-6 py-20 text-center text-slate-500">
+                        Loading bookings…
+                      </td>
+                    </tr>
+                  ) : bookingInboxError ? (
+                    <tr>
+                      <td colSpan="6" className="px-6 py-20 text-center text-rose-500">
+                        {bookingInboxError}
+                      </td>
+                    </tr>
+                  ) : filteredBookings.length === 0 ? (
                     <tr>
                       <td colSpan="6" className="px-6 py-20 text-center">
                         <Filter className="w-12 h-12 text-slate-300 mx-auto mb-4" />
@@ -199,12 +221,20 @@ export default function BookingsQueue({
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`px-3 py-1 rounded-full text-xs font-bold border ${STATUS_COLORS[booking.status].bg} ${STATUS_COLORS[booking.status].text} ${STATUS_COLORS[booking.status].border}`}>
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold border ${statusStylesFor(booking.status).bg} ${statusStylesFor(booking.status).text} ${statusStylesFor(booking.status).border}`}>
                             {booking.status}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          {booking.status === 'Ready to Deliver' ? (
+                          {booking.status === 'new' || booking.status === 'assigned' || booking.status === 'viewed' || booking.status === 'accepted' ? (
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); onAssignClick?.(booking); }}
+                              className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-sm transition-all cursor-pointer ml-auto"
+                            >
+                              <UserPlus className="w-4 h-4" />
+                              {booking.assignedInspectorId ? 'Reassign' : 'Assign Inspector'}
+                            </button>
+                          ) : booking.status === 'Ready to Deliver' ? (
                             <button 
                               onClick={(e) => { e.stopPropagation(); setActiveBooking(booking); setDeliveryModalOpen(true); }}
                               className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-sm shadow-emerald-200 transition-all animate-pulse hover:animate-none flex items-center gap-2 ml-auto cursor-pointer"
@@ -217,9 +247,13 @@ export default function BookingsQueue({
                               <CheckCircle className="w-4 h-4" /> Delivered {booking.deliveredDate}
                             </span>
                           ) : (
-                            <span className="text-slate-400 font-semibold text-xs inline-block">
-                              Processing
-                            </span>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); onAssignClick?.(booking); }}
+                              className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-sm transition-all cursor-pointer ml-auto"
+                            >
+                              <UserPlus className="w-4 h-4" />
+                              Assign Inspector
+                            </button>
                           )}
                         </td>
                       </tr>
