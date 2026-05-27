@@ -74,6 +74,27 @@ npm run dev:all
 
 VS Code: open the Command Palette and run `Tasks: Run Task` → `Run Both (dev:all)` to start both servers inside the editor.
 
+## 🔗 Booking Webhook
+
+The report app exposes a public booking webhook at `POST /api/webhooks/bookings` for booking and payment events.
+
+Example `curl` request:
+
+```bash
+curl -X POST http://localhost:5000/api/webhooks/bookings \
+  -H "Content-Type: application/json" \
+  -H "x-webhook-secret: your_shared_secret" \
+  -d '{
+    "eventType": "booking.payment.received",
+    "booking": { "id": "booking_123456", "service": { "selected": ["pre-shipment"] } },
+    "payment": { "id": "pay_001", "method": "bank_transfer", "status": "pending", "amount": 268, "receiptUrl": "http://example.com/receipt" },
+    "user": { "id": "user_001", "name": "Alex Chen", "email": "alex@example.com" },
+    "createdAt": "2026-05-27T12:00:00.000Z"
+  }'
+```
+
+If `REPORT_APP_WEBHOOK_SECRET` is empty or unset, the webhook accepts requests without the secret header. If it is set, the `x-webhook-secret` header must match.
+
 ## 📄 Corporate Header Standards
 The generated report includes a unified single-table header containing:
 - Company Logo

@@ -10,6 +10,8 @@ const { sendSelfTestEmail } = require("./controllers/email.controller");
 const reportRoutes = require("./routes/report.routes");
 const authRoutes = require("./routes/auth.routes");
 const fileRoutes = require("./routes/fileRoutes");
+const bookingRoutes = require("./routes/bookings");
+const webhookRoutes = require("./routes/webhooks.routes");
 
 // V2 Routes
 const reportV2Routes = require("./routes/v2/report.routes");
@@ -79,6 +81,8 @@ app.post("/generate", authMiddleware, upload.array("images"), reportController.g
 app.use("/api/auth", authRoutes);
 app.use("/api/files", fileRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/bookings", bookingRoutes);
+app.use("/api/webhooks", webhookRoutes);
 
 // V2 Route Groups
 app.use("/api/v2/reports", reportV2Routes);

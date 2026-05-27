@@ -20,7 +20,7 @@ const systemNotificationSchema = new mongoose.Schema({
     enum: ["admin", "manager", "inspector"]
   }],
   targetUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
   expiresAt: { type: Date, default: null },
   isActive: { type: Boolean, default: true },
   readBy: [readBySchema]
