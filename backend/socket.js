@@ -3,9 +3,24 @@ const { Server } = require("socket.io");
 let io;
 
 const initSocket = (server) => {
+  const allowedOrigins = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:4173",
+    "http://localhost:4174",
+    "https://absolute-veritas.netlify.app",
+    process.env.FRONTEND_URL,
+  ].filter(Boolean);
+
   io = new Server(server, {
     cors: {
-      origin: "*", // Adjust this for production
+      origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
       methods: ["GET", "POST"]
     }
   });

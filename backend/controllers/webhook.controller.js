@@ -1,7 +1,9 @@
 const crypto = require("crypto");
 const SystemNotification = require("../models/systemNotification.model");
+const Booking = require("../models/Booking");
 const { User } = require("../models/user.model");
 const { getIO } = require("../socket");
+const { sendImmediateEmail } = require("../services/email.service");
 
 const allowedEventTypes = new Set([
   "booking.payment.received",
@@ -115,14 +117,137 @@ const resolveCreatedBy = async () => {
   return admin?._id || null;
 };
 
+const resolveAdminRecipients = async () => {
+  const configured = (process.env.NOTIFICATION_ADMIN_EMAILS || process.env.SMTP_USER || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  const admins = await User.find({ role: "admin" }).select("email").lean();
+  const emails = new Set(configured);
+  admins.forEach((admin) => {
+    if (admin?.email) emails.add(admin.email);
+  });
+
+  return Array.from(emails);
+};
+
+const mapInspectionType = (serviceSelected = []) => {
+  const first = Array.isArray(serviceSelected) ? String(serviceSelected[0] || "") : "";
+  if (!first) return "PSI";
+  const normalized = first.toLowerCase().replace(/\s+/g, "_").replace(/-/g, "_");
+  if (normalized.includes("factory")) return "factory_audit";
+  if (normalized.includes("cls") || normalized.includes("container")) return "CLS";
+  if (normalized.includes("dpi") || normalized.includes("production")) return "DPI";
+  if (normalized.includes("social")) return "social_audit";
+  return "PSI";
+};
+
+const buildBookingSnapshot = (payload) => {
+  const booking = payload?.booking || {};
+  const user = payload?.user || {};
+  const payment = payload?.payment || {};
+  const selectedServices = Array.isArray(booking?.service?.selected) ? booking.service.selected : [];
+  const inspectionType = mapInspectionType(selectedServices);
+
+  const clientName = String(user?.name || booking?.client?.name || booking?.clientName || payment?.payerName || "").trim();
+  const clientEmail = String(user?.email || booking?.client?.email || booking?.clientEmail || payment?.payerEmail || "").trim().toLowerCase();
+
+  if (!clientName || !clientEmail) {
+    throw new Error("booking payload must include user.name and user.email (or equivalent client fields)");
+  }
+
+  return {
+    onlineBookingId: String(booking.id || "").trim(),
+    clientName,
+    clientEmail,
+    clientPhone: String(user?.phone || booking?.client?.phone || booking?.clientPhone || "").trim() || undefined,
+    inspectionType,
+    factoryName: String(booking?.factory?.name || booking?.factoryName || booking?.client?.factoryName || "").trim() || undefined,
+    factoryAddress: String([
+      booking?.factory?.address,
+      booking?.factory?.city,
+      booking?.factory?.country
+    ].filter(Boolean).join(", ") || booking?.factoryAddress || "").trim() || undefined,
+    scheduledDate: booking?.scheduledDate || payload?.createdAt || new Date().toISOString(),
+    scheduledTime: booking?.scheduledTime || undefined,
+    productDescription: String(booking?.product?.description || booking?.productDescription || "").trim() || undefined,
+    orderQuantity: Number(booking?.product?.quantity || booking?.orderQuantity || payment?.amount || 0) || undefined,
+    specialInstructions: String(booking?.specialInstructions || booking?.notes || "").trim() || undefined,
+    paymentInfo: payment && Object.keys(payment).length ? payment : undefined,
+    prefillData: payload,
+    status: "new"
+  };
+};
+
+const sendBookingSummaryEmail = async ({ bookingDoc, payload }) => {
+  const recipients = await resolveAdminRecipients();
+  if (recipients.length === 0) return { skipped: true };
+
+  const selectedServices = Array.isArray(payload?.booking?.service?.selected) ? payload.booking.service.selected : [];
+  const payment = payload?.payment || {};
+  const user = payload?.user || {};
+  const subject = `New booking received — ${bookingDoc.clientName}`;
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.5;color:#1e293b">
+      <h2 style="margin:0 0 12px">New booking received</h2>
+      <p style="margin:0 0 16px">A new booking has arrived from the booking app and is ready for assignment.</p>
+      <table cellpadding="8" cellspacing="0" style="border-collapse:collapse;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
+        <tr><td style="background:#f8fafc;font-weight:700">Booking ID</td><td>${bookingDoc._id}</td></tr>
+        <tr><td style="background:#f8fafc;font-weight:700">Client</td><td>${bookingDoc.clientName}</td></tr>
+        <tr><td style="background:#f8fafc;font-weight:700">Email</td><td>${bookingDoc.clientEmail}</td></tr>
+        <tr><td style="background:#f8fafc;font-weight:700">Service</td><td>${selectedServices.join(', ') || bookingDoc.inspectionType}</td></tr>
+        <tr><td style="background:#f8fafc;font-weight:700">Factory</td><td>${bookingDoc.factoryName || 'N/A'}</td></tr>
+        <tr><td style="background:#f8fafc;font-weight:700">Factory Address</td><td>${bookingDoc.factoryAddress || 'N/A'}</td></tr>
+        <tr><td style="background:#f8fafc;font-weight:700">Scheduled</td><td>${bookingDoc.scheduledDate ? new Date(bookingDoc.scheduledDate).toLocaleString() : 'N/A'}</td></tr>
+        <tr><td style="background:#f8fafc;font-weight:700">Payment</td><td>${payment.method || 'N/A'} · ${payment.status || 'N/A'} · ${payment.amount ?? 'N/A'}</td></tr>
+        <tr><td style="background:#f8fafc;font-weight:700">Submitted By</td><td>${user.name || 'N/A'} (${user.email || 'N/A'})</td></tr>
+      </table>
+      <p style="margin-top:16px;color:#475569">Open the Admin Console → All Bookings to assign an inspector.</p>
+    </div>
+  `;
+
+  const results = [];
+  for (const recipient of recipients) {
+    try {
+      const info = await sendImmediateEmail({
+        to: recipient,
+        subject,
+        html,
+        text: [
+          'New booking received',
+          `Booking ID: ${bookingDoc._id}`,
+          `Client: ${bookingDoc.clientName}`,
+          `Email: ${bookingDoc.clientEmail}`,
+          `Service: ${selectedServices.join(', ') || bookingDoc.inspectionType}`,
+          `Factory: ${bookingDoc.factoryName || 'N/A'}`,
+          `Factory Address: ${bookingDoc.factoryAddress || 'N/A'}`,
+          `Scheduled: ${bookingDoc.scheduledDate ? new Date(bookingDoc.scheduledDate).toISOString() : 'N/A'}`,
+          `Payment: ${payment.method || 'N/A'} / ${payment.status || 'N/A'} / ${payment.amount ?? 'N/A'}`,
+          `Submitted By: ${user.name || 'N/A'} (${user.email || 'N/A'})`
+        ].join('\n')
+      });
+      results.push({ recipient, messageId: info.messageId });
+    } catch (error) {
+      results.push({ recipient, error: error.message });
+    }
+  }
+
+  return { sent: results };
+};
+
 const handleBookingWebhook = async (req, res) => {
   const path = req.originalUrl || req.url || "/api/webhooks/bookings";
   console.info(`[webhook] ${req.method} ${path}`);
 
   try {
     const expectedSecret = normalizeSecret(process.env.REPORT_APP_WEBHOOK_SECRET);
-    const providedSecret = req.get("x-webhook-secret");
+    if (!expectedSecret) {
+      console.error("[webhook] REPORT_APP_WEBHOOK_SECRET is not configured — rejecting all requests");
+      return res.status(401).json({ error: "Unauthorized" });
+    }
 
+    const providedSecret = req.get("x-webhook-secret");
     if (!secretsMatch(expectedSecret, providedSecret)) {
       console.warn("[webhook] invalid secret for booking webhook");
       return res.status(401).json({ error: "Unauthorized" });
@@ -140,6 +265,22 @@ const handleBookingWebhook = async (req, res) => {
     const message = buildMessage(payload);
     const createdBy = await resolveCreatedBy();
 
+    const bookingSnapshot = buildBookingSnapshot(payload);
+    const existingBooking = await Booking.findOne({ onlineBookingId: bookingSnapshot.onlineBookingId });
+    const bookingDoc = existingBooking
+      ? await Booking.findByIdAndUpdate(
+          existingBooking._id,
+          {
+            ...bookingSnapshot,
+            adminId: createdBy
+          },
+          { new: true, runValidators: true }
+        )
+      : await Booking.create({
+          ...bookingSnapshot,
+          adminId: createdBy
+        });
+
     const notification = await SystemNotification.create({
       title,
       message,
@@ -147,8 +288,11 @@ const handleBookingWebhook = async (req, res) => {
       priority: meta.priority,
       targetRoles: ["admin", "manager"],
       createdBy,
+      targetUsers: [],
       isActive: true
     });
+
+    await sendBookingSummaryEmail({ bookingDoc, payload });
 
     try {
       const io = getIO();
@@ -164,7 +308,7 @@ const handleBookingWebhook = async (req, res) => {
       console.warn("[webhook] socket emit skipped:", socketError.message);
     }
 
-    return res.status(201).json({ success: true, notification: notification._id.toString() });
+    return res.status(201).json({ success: true, booking: bookingDoc._id.toString(), notification: notification._id.toString() });
   } catch (error) {
     console.error("[webhook] booking webhook failed:", error);
     return res.status(500).json({ error: "Server error" });

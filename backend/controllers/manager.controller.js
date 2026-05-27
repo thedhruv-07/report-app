@@ -138,8 +138,8 @@ exports.updateStatus = async (req, res) => {
     report.operationStatus = status;
     await report.save();
 
-    // Emit real-time update
-    getIO().emit("report_status_changed", {
+    // Emit real-time update to manager room only
+    getIO().to("manager_room").emit("report_status_changed", {
       reportId: report._id,
       status: report.operationStatus
     });
@@ -165,15 +165,15 @@ exports.requestCorrection = async (req, res) => {
       section,
       comment,
       priority,
-      addedBy: req.user._id
+      addedBy: req.user.id
     });
     // Increment revision round when sent for correction
     report.revisionRound += 1;
     
     await report.save();
 
-    // Emit real-time update
-    getIO().emit("report_status_changed", {
+    // Emit real-time update to manager room only
+    getIO().to("manager_room").emit("report_status_changed", {
       reportId: report._id,
       status: report.operationStatus,
       revisionRound: report.revisionRound
@@ -214,13 +214,13 @@ exports.finalizeReport = async (req, res) => {
     if (!report) return res.status(404).json({ error: "Report not found" });
 
     report.operationStatus = "approved";
-    report.reviewedBy = req.user._id;
+    report.reviewedBy = req.user.id;
     report.reviewedAt = new Date();
 
     await report.save();
 
-    // Emit real-time update
-    getIO().emit("report_status_changed", {
+    // Emit real-time update to manager room only
+    getIO().to("manager_room").emit("report_status_changed", {
       reportId: report._id,
       status: report.operationStatus
     });

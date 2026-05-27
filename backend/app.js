@@ -69,8 +69,8 @@ app.get("/", (req, res) => {
 });
 
 // AI Routes (called directly by frontend, not via /api/reports prefix)
-app.post("/api/ai-describe", reportController.analyzePhoto);
-app.post("/api/suggest", reportController.suggestText);
+app.post("/api/ai-describe", authMiddleware, reportController.analyzePhoto);
+app.post("/api/suggest", authMiddleware, reportController.suggestText);
 
 // Legacy Route Compatibility (Fixes 404 on generation)
 const upload = require("./middleware/upload.middleware");
