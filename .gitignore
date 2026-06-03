@@ -15,6 +15,7 @@ dist/
 /backend/uploads/*
 !/backend/uploads/.gitkeep
 /backend/.env
+/backend/temp/
 
 # Multimedia
 *.mp4

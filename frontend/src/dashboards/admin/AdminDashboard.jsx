@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
@@ -42,7 +42,7 @@ export default function AdminDashboard() {
     sessionStorage.setItem("adminActiveView", activeView);
   }, [activeView]);
 
-  const fetchBookingInbox = async () => {
+  const fetchBookingInbox = useCallback(async () => {
     if (!token) return;
     setBookingInboxLoading(true);
     setBookingInboxError(null);
@@ -58,9 +58,9 @@ export default function AdminDashboard() {
     } finally {
       setBookingInboxLoading(false);
     }
-  };
+  }, [token]);
 
-  const fetchInspectors = async () => {
+  const fetchInspectors = useCallback(async () => {
     if (!token) return;
     try {
       const response = await fetch(ENDPOINTS.ADMIN.INSPECTORS, {
@@ -72,13 +72,13 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Failed to load inspectors:', error);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     if (!token) return;
     fetchBookingInbox();
     fetchInspectors();
-  }, [token]);
+  }, [token, fetchBookingInbox, fetchInspectors]);
 
   const handleLogout = async () => {
     try {

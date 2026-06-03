@@ -10,7 +10,13 @@
       "Bash(node *)",
       "Bash(grep -n \"data\" .gitignore backend/.gitignore)",
       "Bash(grep -rn \"data\" .gitignore)",
-      "Bash(Remove-Item *)"
+      "Bash(Remove-Item *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Projects\\\\report-app-main\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(Test-Path *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Projects\\\\report-app-main\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(git check-ignore *)"
     ]
   }
 }

@@ -50,7 +50,7 @@ export default function ContainerLoading() {
       productName:    prefillData.product?.name || prefillData.product?.description  || prev.productName,
       orderQuantity:  String(prefillData.product?.quantity ?? prev.orderQuantity ?? ''),
     }));
-  }, []); // run once on mount
+  }, [prefillData]); // run when prefillData changes
 
   const [step, setStep] = useState(() => {
     const savedStep = localStorage.getItem("clsStep");

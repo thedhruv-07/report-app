@@ -228,6 +228,7 @@ function App() {
       prefillData.factory?.city,
       prefillData.factory?.country,
     ].filter(Boolean).join(', ');
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setForm(prev => ({
       ...prev,
       client:             prefillData.client?.name            || prev.client,
@@ -242,7 +243,7 @@ function App() {
       acceptPoint:        String(prefillData.aql?.acceptPoint ?? prev.acceptPoint ?? ''),
       rejectPoint:        String(prefillData.aql?.rejectPoint ?? prev.rejectPoint ?? ''),
     }));
-  }, []); // run once on mount
+  }, [prefillData]);
 
   // Responsiveness Support
   const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);

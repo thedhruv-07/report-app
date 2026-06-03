@@ -1,7 +1,7 @@
 import React from 'react';
 import { colors } from '../../../styles';
 
-export default function FinalStep({ reportDownloaded, clearFormAfterDownload, submit, isGenerating, onSubmitForReview }) {
+export default function FinalStep({ reportDownloaded, clearFormAfterDownload, submit, isGenerating, onSubmitForReview, generationError, onRetry }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px", alignItems: "center", padding: "60px 0" }}>
       <div style={{ textAlign: "center", maxWidth: "600px" }}>
@@ -81,9 +81,31 @@ export default function FinalStep({ reportDownloaded, clearFormAfterDownload, su
           </button>
         </div>
 
-        <p style={{ marginTop: "30px", fontSize: "13px", color: colors.textMuted }}>
-          Note: PDF generation may take a few seconds as it processes high-resolution images.
-        </p>
+        {generationError ? (
+          <div style={{ marginTop: "20px", padding: "12px", border: `1px solid ${colors.danger}`, borderRadius: "8px", background: "rgba(239,68,68,0.06)", color: colors.text }}>
+            <p style={{ margin: 0, fontWeight: 700, color: colors.danger }}>Report generation failed</p>
+            <p style={{ marginTop: "6px", color: colors.textMuted, fontSize: "13px" }}>{generationError}</p>
+            <div style={{ marginTop: "12px", display: "flex", gap: "8px", justifyContent: "center" }}>
+              <button
+                onClick={() => onRetry && onRetry('docx')}
+                disabled={isGenerating}
+                style={{ padding: "10px 18px", background: colors.primary, border: "none", color: "#fff", borderRadius: "8px", cursor: "pointer", fontWeight: 700 }}
+              >
+                Retry Download
+              </button>
+              <button
+                onClick={() => window.open(window.location.origin, '_blank')}
+                style={{ padding: "10px 18px", background: "transparent", border: `1px solid ${colors.border}`, color: colors.text, borderRadius: "8px", cursor: "pointer", fontWeight: 600 }}
+              >
+                Check Backend
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p style={{ marginTop: "30px", fontSize: "13px", color: colors.textMuted }}>
+            Note: PDF generation may take a few seconds as it processes high-resolution images.
+          </p>
+        )}
 
         <div style={{ marginTop: "30px", paddingTop: "24px", borderTop: `1px solid ${colors.border}` }}>
           <p style={{ fontSize: "13px", color: colors.textMuted, marginBottom: "12px" }}>

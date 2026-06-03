@@ -50,7 +50,7 @@ export default function FactoryAudit() {
       phone:          prefillData.contact?.phone  || prev.phone,
       auditDate:      prefillData.inspectionDate  || prev.auditDate,
     }));
-  }, []); // run once on mount
+  }, [prefillData]);
 
   const [step, setStep] = useState(() => {
     const savedStep = localStorage.getItem("faStep");
@@ -81,6 +81,7 @@ export default function FactoryAudit() {
 
   const [showSaveToast, setShowSaveToast] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState("");
   const [reportDownloaded, setReportDownloaded] = useState(false);
   const [isPhotoProcessing, setIsPhotoProcessing] = useState(false);
   const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
@@ -509,6 +510,7 @@ export default function FactoryAudit() {
       navigate("/login");
       return;
     }
+    setGenerationError("");
     setIsGenerating(true);
     try {
       const nestedData = buildNestedData(form);
@@ -578,9 +580,20 @@ export default function FactoryAudit() {
       a.remove();
       window.URL.revokeObjectURL(url);
       setReportDownloaded(true);
+      setGenerationError("");
     } catch (error) {
       console.error("Submission error:", error);
-      alert("Error generating report. Please try again.");
+      // Friendly messages for network/backend availability
+      try {
+        const msg = (error && error.message) ? error.message : String(error);
+        if (error instanceof TypeError || /failed to fetch|networkerror|network request|connection refused/i.test(msg)) {
+          setGenerationError(`Network error: Unable to reach the API at ${ENDPOINTS.BASE_URL}. Ensure the backend is running and try again.`);
+        } else {
+          setGenerationError(msg || 'Error generating report. Please try again.');
+        }
+      } catch {
+          setGenerationError('Error generating report. Please try again.');
+        }
     } finally {
       setIsGenerating(false);
     }
@@ -705,6 +718,8 @@ export default function FactoryAudit() {
         submit={submit}
         isGenerating={isGenerating}
         onSubmitForReview={submitForReview}
+        generationError={generationError}
+        onRetry={submit}
       />
     ) },
   ];

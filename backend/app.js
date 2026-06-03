@@ -69,8 +69,16 @@ app.get("/", (req, res) => {
 });
 
 // AI Routes (called directly by frontend, not via /api/reports prefix)
-app.post("/api/ai-describe", authMiddleware, reportController.analyzePhoto);
-app.post("/api/suggest", authMiddleware, reportController.suggestText);
+// Allow anonymous access to AI endpoints during local development.
+// - If ALLOW_ANON_AI is explicitly set to 'true' the endpoints are open.
+// - Otherwise, open the endpoints automatically when not in production
+//   (convenience for local dev only). In production, a valid token is
+//   required so AI endpoints remain protected.
+const allowAnonAI = process.env.ALLOW_ANON_AI === 'true' || process.env.NODE_ENV !== 'production';
+const aiAuth = allowAnonAI ? ((req, res, next) => next()) : authMiddleware;
+
+app.post("/api/ai-describe", aiAuth, reportController.analyzePhoto);
+app.post("/api/suggest", aiAuth, reportController.suggestText);
 
 // Legacy Route Compatibility (Fixes 404 on generation)
 const upload = require("./middleware/upload.middleware");

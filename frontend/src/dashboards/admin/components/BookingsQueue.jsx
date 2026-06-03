@@ -5,7 +5,6 @@ import {
 
 export default function BookingsQueue({
   deliveryBookings,
-  bookingInbox,
   /* stats removed (unused) */
   activeView,
   setActiveView,

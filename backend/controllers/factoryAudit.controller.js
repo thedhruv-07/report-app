@@ -1,6 +1,7 @@
 const FactoryAudit = require("../models/factoryAudit.model");
 const mongoose = require("mongoose");
 const { Document, Packer, Header, Paragraph, TextRun, PageNumber, Footer, Table, TableRow, TableCell, WidthType, BorderStyle, AlignmentType } = require("docx");
+const sharp = require('sharp');
 const { createFAContent, createFAHeaderTable } = require("../services/faDocx.service");
 const wasabiService = require("../services/wasabiService");
 const { GetObjectCommand } = require("@aws-sdk/client-s3");
@@ -218,6 +219,7 @@ exports.generateReport = async (req, res) => {
     const report = reportDoc.toObject();
 
     // Preload all cloud/url photos into base64 strings so they render synchronously
+    genDiagnostics.reset();
     await preloadReportPhotos(report);
 
     const doc = new Document({
@@ -236,10 +238,11 @@ exports.generateReport = async (req, res) => {
         properties: {
           page: {
             margin: {
-              top: 720,
+              top: 2160,    // 1.5 inch — keeps body below the 5-row header table
               bottom: 720,
               left: 900,
               right: 900,
+              header: 360,  // 0.25 inch from page edge to top of header
             },
           },
         },
@@ -309,6 +312,19 @@ exports.generateReport = async (req, res) => {
 
     const buffer = await Packer.toBuffer(doc);
 
+    // Attach diagnostics as a small JSON header for debugging (if not too large)
+    try {
+      const diag = {
+        convertedWebP: genDiagnostics.convertedWebP || 0,
+        fetchedImages: genDiagnostics.fetchedImages || 0,
+        wasabiImages: genDiagnostics.wasabiImages || 0,
+        skipped: genDiagnostics.skipped || 0,
+      };
+      res.setHeader('X-FA-DIAG', JSON.stringify(diag));
+    } catch (e) {
+      console.warn('Failed to set diag header', e.message);
+    }
+
     if (format === "pdf") {
       const { convertDocxToPdf } = require("../utils/pdf.utils");
       const pdfBuffer = await convertDocxToPdf(buffer);
@@ -371,6 +387,16 @@ const mimeFromKey = (key) => {
   return { jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", gif: "image/gif" }[ext] || "image/png";
 };
 
+// Diagnostic collector used during preload/generation
+const genDiagnostics = {
+  reset() {
+    this.convertedWebP = 0;
+    this.fetchedImages = 0;
+    this.wasabiImages = 0;
+    this.skipped = 0;
+  }
+};
+
 // Helper: Preload all cloud/url photos of a report into base64 data urls in-memory
 const preloadReportPhotos = async (obj) => {
   if (!obj || typeof obj !== "object") return;
@@ -382,11 +408,40 @@ const preloadReportPhotos = async (obj) => {
     let wasabiKey = null;
 
     if (typeof photoData === "string") {
-      if (photoData.startsWith("data:image")) return photoData;
+      if (photoData.startsWith("data:")) {
+        const mime = (photoData.split(";")[0].split(":")[1] || "").toLowerCase();
+        if (mime === "image/webp") {
+          try {
+            const b64 = photoData.split(",")[1];
+            const buf = Buffer.from(b64 || "", "base64");
+            const out = await sharp(buf).jpeg().toBuffer();
+            genDiagnostics.convertedWebP = (genDiagnostics.convertedWebP || 0) + 1;
+            return `data:image/jpeg;base64,${out.toString("base64")}`;
+          } catch (err) {
+            console.warn('[FA Preload] Failed to convert WebP data-uri to JPEG:', err.message);
+            return null;
+          }
+        }
+        return photoData;
+      }
       url = photoData.startsWith("http") ? photoData : null;
     } else if (typeof photoData === "object") {
       const preview = photoData.preview || photoData.picture || photoData.photo;
-      if (preview && preview.startsWith("data:image")) return preview;
+      if (preview && typeof preview === 'string' && preview.startsWith("data:")) {
+        const mime = (preview.split(";")[0].split(":")[1] || "").toLowerCase();
+        if (mime === "image/webp") {
+          try {
+            const b64 = preview.split(",")[1];
+            const buf = Buffer.from(b64 || "", "base64");
+            const out = await sharp(buf).jpeg().toBuffer();
+            return `data:image/jpeg;base64,${out.toString("base64")}`;
+          } catch (err) {
+            console.warn('[FA Preload] Failed to convert WebP preview to JPEG:', err.message);
+            return null;
+          }
+        }
+        return preview;
+      }
       url = photoData.url || photoData.preview;
       wasabiKey = photoData.wasabiKey;
     }
@@ -400,8 +455,22 @@ const preloadReportPhotos = async (obj) => {
         console.log(`🌐 [FA Preload] Fetching image from HTTP URL: ${url}`);
         const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
         if (res.ok) {
-          const buffer = Buffer.from(await res.arrayBuffer());
-          const mime = res.headers.get("content-type") || "image/jpeg";
+            genDiagnostics.fetchedImages = (genDiagnostics.fetchedImages || 0) + 1;
+            const buffer = Buffer.from(await res.arrayBuffer());
+            let mime = (res.headers.get("content-type") || "image/jpeg").toLowerCase();
+          // Convert webp to jpeg for docx compatibility
+          if (mime.includes("webp")) {
+            try {
+              const out = await sharp(buffer).jpeg().toBuffer();
+                genDiagnostics.convertedWebP = (genDiagnostics.convertedWebP || 0) + 1;
+                mime = "image/jpeg";
+                return `data:${mime};base64,${out.toString("base64")}`;
+            } catch (err) {
+              console.warn('[FA Preload] Failed to convert fetched WebP to JPEG:', err.message);
+                genDiagnostics.skipped = (genDiagnostics.skipped || 0) + 1;
+                return null;
+            }
+          }
           return `data:${mime};base64,${buffer.toString("base64")}`;
         }
       } catch (error) {
@@ -419,8 +488,22 @@ const preloadReportPhotos = async (obj) => {
         const { Body } = await wasabiService.s3.send(new GetObjectCommand(params));
         const chunks = [];
         for await (const chunk of Body) chunks.push(chunk);
+        genDiagnostics.wasabiImages = (genDiagnostics.wasabiImages || 0) + 1;
         const buffer = Buffer.concat(chunks);
-        return `data:${mimeFromKey(wasabiKey)};base64,${buffer.toString("base64")}`;
+        let mime = mimeFromKey(wasabiKey) || "image/jpeg";
+        if (mime.includes("webp")) {
+          try {
+            const out = await sharp(buffer).jpeg().toBuffer();
+            genDiagnostics.convertedWebP = (genDiagnostics.convertedWebP || 0) + 1;
+            mime = "image/jpeg";
+            return `data:${mime};base64,${out.toString("base64")}`;
+          } catch (err) {
+            console.warn('[FA Preload] Failed to convert Wasabi WebP to JPEG:', err.message);
+            genDiagnostics.skipped = (genDiagnostics.skipped || 0) + 1;
+            return null;
+          }
+        }
+        return `data:${mime};base64,${buffer.toString("base64")}`;
       } catch (error) {
         console.warn(`[FA Preload] Wasabi fetch failed for ${wasabiKey}`, error.message);
       }

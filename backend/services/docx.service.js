@@ -186,14 +186,14 @@ async function createConclusionTable(data, isCls = false) {
 
 async function createRemarksTable(data) {
   const isCls = data.serviceType === "cls";
-  
+
   // Find remark photos from groups
   const remarkPhotosGroup = (data.reportPhotoGroups || []).find(g => g.id === "remarkPhotos" || g.description?.toLowerCase().includes("remark"));
   const remarkPhotos = remarkPhotosGroup ? (remarkPhotosGroup.photos || []) : [];
 
   // Remove remark photos from general queue so they don't print twice
   if (data.reportPhotoGroups && remarkPhotosGroup) {
-      data.reportPhotoGroups = data.reportPhotoGroups.filter(g => g !== remarkPhotosGroup);
+    data.reportPhotoGroups = data.reportPhotoGroups.filter(g => g !== remarkPhotosGroup);
   }
 
   if (isCls) {
@@ -204,7 +204,7 @@ async function createRemarksTable(data) {
     const rows = [
       // Main Header
       new TableRow({ children: [new TableCell({ columnSpan: 2, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "III. REMARKS", bold: true, size: 22, color: "1F4E79" })] })] })] }),
-      
+
       // Problem Remarks Category
       new TableRow({ children: [new TableCell({ columnSpan: 2, shading: { fill: "D9D9D9" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Problem Remarks:", bold: true, size: 18 })] })] })] }),
       ...problemRemarks.map((text, i) => new TableRow({
@@ -240,170 +240,170 @@ async function createRemarksTable(data) {
       const photoRows = await createInlinePhotoGridRows(remarkPhotos.map(p => ({ ...p, description: p.label || "" })), { cellWidth: 320, cellHeight: 220, colSpan: 1 });
       rows.push(...photoRows);
     }
-    
+
     const table = new Table({ width: { size: 100, type: "pct" }, rows });
     return [table];
   }
 
   // Legacy PSI Remarks Table
   const psiRemarksRows = [
-      new TableRow({ children: [new TableCell({ columnSpan: 4, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "III. REMARKS", bold: true, size: 22, color: "1F4E79" })] })] })] }),
-      new TableRow({
-        children: [
-          new TableCell({ width: { size: 5, type: "pct" }, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [] })] }),
-          new TableCell({ columnSpan: 3, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Problem Remarks:", bold: true })] })] })
-        ]
-      }),
-      ...(Array.isArray(data.remarks) ? data.remarks : ["-"]).map((remarkText, i) => new TableRow({
-        children: [
-          createQtyCell(String(i + 1), { width: { size: 5, type: "pct" } }),
-          createQtyCell(remarkText, { align: "left", colSpan: 3 })
-        ]
-      })),
-      new TableRow({
-        children: [
-          new TableCell({ shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [] })] }),
-          new TableCell({ columnSpan: 3, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "General Remarks:", bold: true })] })] })
-        ]
-      }),
-      new TableRow({
-        children: [
-          new TableCell({ shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [] })] }),
-          new TableCell({ shading: { fill: "FFFFFF" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "We had checked mold potential about warehouse:", bold: true })] })] }),
-          new TableCell({ shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Yes", bold: true })], alignment: "center" })] }),
-          new TableCell({ shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "No", bold: true })], alignment: "center" })] })
-        ]
-      }),
-      ...[
-        { q: "Is there any leakage on the roofs and walls (including windows & doors)?", key: "remarkQ1" },
-        { q: "Is there any special-assigned person or department to be responsible for mold control?", key: "remarkQ2" },
-        { q: "Is there any record for mold control?", key: "remarkQ3" },
-        { q: "Do all cartons put on plastic pallets with min. 12cm height away from the floor, and at least 1.5 meters away from windows?", key: "remarkQ4" },
-        { q: "Is there anyone such as factory QC's or supervisors to verify the procedure daily?", key: "remarkQ5" },
-        { q: "Are the export cartons kept dry?", key: "remarkQ6" },
-        { q: "Are there any damaged or wet cartons used?", key: "remarkQ7" },
-      ].map((item, i) => new TableRow({
-        children: [
-          createQtyCell(String(i + 1)),
-          createQtyCell(item.q, { align: "left" }),
-          new TableCell({
-            borders: tableBorders(),
-            children: [new Paragraph({
-              children: [
-                new CheckBox({ checked: String(data[item.key] || "").toLowerCase() === "yes" }),
-                new TextRun({ text: " Yes", size: 14 })
-              ],
-              alignment: "left"
-            })]
-          }),
-          new TableCell({
-            borders: tableBorders(),
-            children: [new Paragraph({
-              children: [
-                new CheckBox({ checked: String(data[item.key] || "").toLowerCase() === "no" }),
-                new TextRun({ text: " No", size: 14 })
-              ],
-              alignment: "left"
-            })]
-          })
-        ]
-      })),
-      new TableRow({
-        children: [
-          createQtyCell("6.", { bold: true }),
-          new TableCell({
-            columnSpan: 3,
-            borders: tableBorders(),
+    new TableRow({ children: [new TableCell({ columnSpan: 4, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "III. REMARKS", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+    new TableRow({
+      children: [
+        new TableCell({ width: { size: 5, type: "pct" }, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [] })] }),
+        new TableCell({ columnSpan: 3, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Problem Remarks:", bold: true })] })] })
+      ]
+    }),
+    ...(Array.isArray(data.remarks) ? data.remarks : ["-"]).map((remarkText, i) => new TableRow({
+      children: [
+        createQtyCell(String(i + 1), { width: { size: 5, type: "pct" } }),
+        createQtyCell(remarkText, { align: "left", colSpan: 3 })
+      ]
+    })),
+    new TableRow({
+      children: [
+        new TableCell({ shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [] })] }),
+        new TableCell({ columnSpan: 3, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "General Remarks:", bold: true })] })] })
+      ]
+    }),
+    new TableRow({
+      children: [
+        new TableCell({ shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [] })] }),
+        new TableCell({ shading: { fill: "FFFFFF" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "We had checked mold potential about warehouse:", bold: true })] })] }),
+        new TableCell({ shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Yes", bold: true })], alignment: "center" })] }),
+        new TableCell({ shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "No", bold: true })], alignment: "center" })] })
+      ]
+    }),
+    ...[
+      { q: "Is there any leakage on the roofs and walls (including windows & doors)?", key: "remarkQ1" },
+      { q: "Is there any special-assigned person or department to be responsible for mold control?", key: "remarkQ2" },
+      { q: "Is there any record for mold control?", key: "remarkQ3" },
+      { q: "Do all cartons put on plastic pallets with min. 12cm height away from the floor, and at least 1.5 meters away from windows?", key: "remarkQ4" },
+      { q: "Is there anyone such as factory QC's or supervisors to verify the procedure daily?", key: "remarkQ5" },
+      { q: "Are the export cartons kept dry?", key: "remarkQ6" },
+      { q: "Are there any damaged or wet cartons used?", key: "remarkQ7" },
+    ].map((item, i) => new TableRow({
+      children: [
+        createQtyCell(String(i + 1)),
+        createQtyCell(item.q, { align: "left" }),
+        new TableCell({
+          borders: tableBorders(),
+          children: [new Paragraph({
             children: [
-              new Paragraph({ children: [new TextRun({ text: "Based on our finding of material/accessories/semi-finished/finished products and the observation of product line, we recommend the manufacturer to make improvement or pay attention on follow up mass production:", size: 16 })], spacing: { before: 40 } }),
-              new Paragraph({ children: [new TextRun({ text: blankIfEmpty(asVal(data.recommendationText)), color: "333333" })], spacing: { after: 40 } })
-            ]
-          })
-        ]
-      }),
-      new TableRow({
-        children: [
-          new TableCell({ shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [] })] }),
-          new TableCell({ columnSpan: 3, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Factory Information:", bold: true })] })] })
-        ]
-      }),
-      new TableRow({
-        children: [
-          createQtyCell("7.", { bold: true }),
-          new TableCell({
-            columnSpan: 3,
-            borders: tableBorders(),
+              new CheckBox({ checked: String(data[item.key] || "").toLowerCase() === "yes" }),
+              new TextRun({ text: " Yes", size: 14 })
+            ],
+            alignment: "left"
+          })]
+        }),
+        new TableCell({
+          borders: tableBorders(),
+          children: [new Paragraph({
             children: [
-              new Paragraph({ children: [new TextRun({ text: "Factory cooperation:", bold: true })] }),
-              new Paragraph({ children: [new CheckBox({ checked: data.factoryCooperation === "good" }), new TextRun({ text: " Good - Enough manpower to assist, and good cooperation." })] }),
-              new Paragraph({ children: [new CheckBox({ checked: data.factoryCooperation === "average" }), new TextRun({ text: " AVERAGE - Enough manpower to assist." })] }),
-              new Paragraph({ children: [new CheckBox({ checked: data.factoryCooperation === "poor" }), new TextRun({ text: " Poor - Manpower, equipment or document not provided timely." })] })
-            ]
-          })
-        ]
-      }),
-      new TableRow({
-        children: [
-          createQtyCell("8.", { bold: true }),
-          new TableCell({
-            columnSpan: 3,
-            borders: tableBorders(),
-            children: [
-              new Paragraph({ children: [new TextRun({ text: "Number of workers in factory:", bold: true })] }),
-              new Paragraph({
-                children: [
-                  new CheckBox({ checked: data.workerCount === "lt50" }), new TextRun({ text: " Less than 50 people,  " }),
-                  new CheckBox({ checked: data.workerCount === "50to100" }), new TextRun({ text: " 50-100 people,  " }),
-                  new CheckBox({ checked: data.workerCount === "100to500" }), new TextRun({ text: " 100-500 people,  " }),
-                  new CheckBox({ checked: data.workerCount === "500to1000" }), new TextRun({ text: " 50-1000 people,  " }),
-                  new CheckBox({ checked: data.workerCount === "gt1000" }), new TextRun({ text: " More than 1000 people." })
-                ]
-              })
-            ]
-          })
-        ]
-      }),
-      new TableRow({
-        children: [
-          createQtyCell("9.", { bold: true }),
-          new TableCell({
-            columnSpan: 3,
-            borders: tableBorders(),
-            children: [
-              new Paragraph({ children: [new TextRun({ text: "Inspector's opinion on the factory:", bold: true })] }),
-              new Paragraph({ children: [new CheckBox({ checked: data.inspectorOpinion === "good" }), new TextRun({ text: " Good - The factory was neat and tidy. The testing equipment was well maintained and calibrated." })] }),
-              new Paragraph({ children: [new CheckBox({ checked: data.inspectorOpinion === "average" }), new TextRun({ text: " AVERAGE - The factory was tidy, and the testing equipment ran normally." })] }),
-              new Paragraph({ children: [new CheckBox({ checked: data.inspectorOpinion === "poor" }), new TextRun({ text: " Poor - The factory was messed, the basic testing equipment was not available / not workable." })] })
-            ]
-          })
-        ]
-      }),
-      new TableRow({
-        children: [
-          createQtyCell("10.", { bold: true }),
-          new TableCell({
-            columnSpan: 3,
-            borders: tableBorders(),
-            children: [
-              new Paragraph({ children: [new TextRun({ text: "Sample Collection Record:", bold: true })] }),
-              new Paragraph({ children: [new TextRun({ text: sanitizeDocxText(data.sampleCollectionRecord || "-") })] }),
-            ]
-          })
-        ]
-      }),
-      ...(remarkPhotos.length > 0 ? [
-        new TableRow({
+              new CheckBox({ checked: String(data[item.key] || "").toLowerCase() === "no" }),
+              new TextRun({ text: " No", size: 14 })
+            ],
+            alignment: "left"
+          })]
+        })
+      ]
+    })),
+    new TableRow({
+      children: [
+        createQtyCell("6.", { bold: true }),
+        new TableCell({
+          columnSpan: 3,
+          borders: tableBorders(),
           children: [
-            createQtyCell("11.", { bold: true }),
-            new TableCell({
-              columnSpan: 3,
-              shading: { fill: "F2F2F2" },
-              borders: tableBorders(),
-              children: [new Paragraph({ children: [new TextRun({ text: "Photos:", bold: true })] })]
+            new Paragraph({ children: [new TextRun({ text: "Based on our finding of material/accessories/semi-finished/finished products and the observation of product line, we recommend the manufacturer to make improvement or pay attention on follow up mass production:", size: 16 })], spacing: { before: 40 } }),
+            new Paragraph({ children: [new TextRun({ text: blankIfEmpty(asVal(data.recommendationText)), color: "333333" })], spacing: { after: 40 } })
+          ]
+        })
+      ]
+    }),
+    new TableRow({
+      children: [
+        new TableCell({ shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [] })] }),
+        new TableCell({ columnSpan: 3, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Factory Information:", bold: true })] })] })
+      ]
+    }),
+    new TableRow({
+      children: [
+        createQtyCell("7.", { bold: true }),
+        new TableCell({
+          columnSpan: 3,
+          borders: tableBorders(),
+          children: [
+            new Paragraph({ children: [new TextRun({ text: "Factory cooperation:", bold: true })] }),
+            new Paragraph({ children: [new CheckBox({ checked: data.factoryCooperation === "good" }), new TextRun({ text: " Good - Enough manpower to assist, and good cooperation." })] }),
+            new Paragraph({ children: [new CheckBox({ checked: data.factoryCooperation === "average" }), new TextRun({ text: " AVERAGE - Enough manpower to assist." })] }),
+            new Paragraph({ children: [new CheckBox({ checked: data.factoryCooperation === "poor" }), new TextRun({ text: " Poor - Manpower, equipment or document not provided timely." })] })
+          ]
+        })
+      ]
+    }),
+    new TableRow({
+      children: [
+        createQtyCell("8.", { bold: true }),
+        new TableCell({
+          columnSpan: 3,
+          borders: tableBorders(),
+          children: [
+            new Paragraph({ children: [new TextRun({ text: "Number of workers in factory:", bold: true })] }),
+            new Paragraph({
+              children: [
+                new CheckBox({ checked: data.workerCount === "lt50" }), new TextRun({ text: " Less than 50 people,  " }),
+                new CheckBox({ checked: data.workerCount === "50to100" }), new TextRun({ text: " 50-100 people,  " }),
+                new CheckBox({ checked: data.workerCount === "100to500" }), new TextRun({ text: " 100-500 people,  " }),
+                new CheckBox({ checked: data.workerCount === "500to1000" }), new TextRun({ text: " 50-1000 people,  " }),
+                new CheckBox({ checked: data.workerCount === "gt1000" }), new TextRun({ text: " More than 1000 people." })
+              ]
             })
           ]
         })
-      ] : [])
+      ]
+    }),
+    new TableRow({
+      children: [
+        createQtyCell("9.", { bold: true }),
+        new TableCell({
+          columnSpan: 3,
+          borders: tableBorders(),
+          children: [
+            new Paragraph({ children: [new TextRun({ text: "Inspector's opinion on the factory:", bold: true })] }),
+            new Paragraph({ children: [new CheckBox({ checked: data.inspectorOpinion === "good" }), new TextRun({ text: " Good - The factory was neat and tidy. The testing equipment was well maintained and calibrated." })] }),
+            new Paragraph({ children: [new CheckBox({ checked: data.inspectorOpinion === "average" }), new TextRun({ text: " AVERAGE - The factory was tidy, and the testing equipment ran normally." })] }),
+            new Paragraph({ children: [new CheckBox({ checked: data.inspectorOpinion === "poor" }), new TextRun({ text: " Poor - The factory was messed, the basic testing equipment was not available / not workable." })] })
+          ]
+        })
+      ]
+    }),
+    new TableRow({
+      children: [
+        createQtyCell("10.", { bold: true }),
+        new TableCell({
+          columnSpan: 3,
+          borders: tableBorders(),
+          children: [
+            new Paragraph({ children: [new TextRun({ text: "Sample Collection Record:", bold: true })] }),
+            new Paragraph({ children: [new TextRun({ text: sanitizeDocxText(data.sampleCollectionRecord || "-") })] }),
+          ]
+        })
+      ]
+    }),
+    ...(remarkPhotos.length > 0 ? [
+      new TableRow({
+        children: [
+          createQtyCell("11.", { bold: true }),
+          new TableCell({
+            columnSpan: 3,
+            shading: { fill: "F2F2F2" },
+            borders: tableBorders(),
+            children: [new Paragraph({ children: [new TextRun({ text: "Photos:", bold: true })] })]
+          })
+        ]
+      })
+    ] : [])
   ];
 
   if (remarkPhotos.length > 0) {
@@ -502,13 +502,13 @@ async function createReportContent(data, uploadedFiles) {
 
   const isClsReport = data.serviceType?.toLowerCase() === 'cls';
   const isDpiReport = data.serviceType?.toLowerCase() === 'dpi';
-  
+
   const serviceTitle = data.servicePerformed || (
-    isClsReport ? "Container Loading Supervision (CLS)" : 
-    isDpiReport ? "During Production Inspection Report" : 
-    "Pre-Shipment Inspection Report"
+    isClsReport ? "Container Loading Supervision (CLS)" :
+      isDpiReport ? "During Production Inspection Report" :
+        "Pre-Shipment Inspection Report"
   );
-  
+
   const infoRows = [
     // Service Title Row
     new TableRow({
@@ -590,27 +590,27 @@ async function createReportContent(data, uploadedFiles) {
 
     // Workmanship AQL field aliases (wmXxx → XxxWM / accepted / found)
     data.inspectionStandardWM = data.inspectionStandardWM || data.wmInspectionStandard;
-    data.samplingPlanWM       = data.samplingPlanWM       || data.wmSamplingPlan;
-    data.inspectionLevelWM    = data.inspectionLevelWM    || data.wmInspectionLevel;
-    data.orderQuantityWM      = data.orderQuantityWM      || data.wmOrderQuantity;
-    data.availableQuantityWM  = data.availableQuantityWM  || data.wmAvailableQuantity;
-    data.sampleSizeWM         = data.sampleSizeWM         || data.wmSampleSize;
-    data.aqlCriticalWM        = data.aqlCriticalWM        || data.wmAqlCritical;
-    data.aqlMajorWM           = data.aqlMajorWM           || data.wmAqlMajor;
-    data.aqlMinorWM           = data.aqlMinorWM           || data.wmAqlMinor;
-    data.acceptedCritical     = data.acceptedCritical     || data.wmAcceptedCritical;
-    data.acceptedMajor        = data.acceptedMajor        || data.wmAcceptedMajor;
-    data.acceptedMinor        = data.acceptedMinor        || data.wmAcceptedMinor;
-    data.totalFoundCritical   = data.totalFoundCritical   || data.wmFoundCritical;
-    data.totalFoundMajor      = data.totalFoundMajor      || data.wmFoundMajor;
-    data.totalFoundMinor      = data.totalFoundMinor      || data.wmFoundMinor;
-    data.workmanshipResult    = data.workmanshipResult    || data.wmResult;
+    data.samplingPlanWM = data.samplingPlanWM || data.wmSamplingPlan;
+    data.inspectionLevelWM = data.inspectionLevelWM || data.wmInspectionLevel;
+    data.orderQuantityWM = data.orderQuantityWM || data.wmOrderQuantity;
+    data.availableQuantityWM = data.availableQuantityWM || data.wmAvailableQuantity;
+    data.sampleSizeWM = data.sampleSizeWM || data.wmSampleSize;
+    data.aqlCriticalWM = data.aqlCriticalWM || data.wmAqlCritical;
+    data.aqlMajorWM = data.aqlMajorWM || data.wmAqlMajor;
+    data.aqlMinorWM = data.aqlMinorWM || data.wmAqlMinor;
+    data.acceptedCritical = data.acceptedCritical || data.wmAcceptedCritical;
+    data.acceptedMajor = data.acceptedMajor || data.wmAcceptedMajor;
+    data.acceptedMinor = data.acceptedMinor || data.wmAcceptedMinor;
+    data.totalFoundCritical = data.totalFoundCritical || data.wmFoundCritical;
+    data.totalFoundMajor = data.totalFoundMajor || data.wmFoundMajor;
+    data.totalFoundMinor = data.totalFoundMinor || data.wmFoundMinor;
+    data.workmanshipResult = data.workmanshipResult || data.wmResult;
 
     // On-site tests: expand array → flat keys (testDescN, testMethodN, ...)
     if (Array.isArray(data.onSiteTestsTable)) {
       data.onSiteTestsTable.forEach((row, i) => {
         const n = i + 1;
-        if (!data[`testDesc${n}`])   data[`testDesc${n}`]   = row.description;
+        if (!data[`testDesc${n}`]) data[`testDesc${n}`] = row.description;
         if (!data[`testMethod${n}`]) data[`testMethod${n}`] = row.method;
         if (!data[`testSample${n}`]) data[`testSample${n}`] = row.sampleSize;
         if (!data[`testResult${n}`]) data[`testResult${n}`] = row.resultReading;
@@ -623,56 +623,56 @@ async function createReportContent(data, uploadedFiles) {
     if (Array.isArray(data.packingTable)) {
       data.packingTable.forEach((row, i) => {
         const n = i + 1;
-        data[`packing_item_${n}`]                = data[`packing_item_${n}`]                || row.itemNo;
-        data[`packing_qty_carton_marking_${n}`]  = data[`packing_qty_carton_marking_${n}`]  || row.qtyPerCartonMarking;
-        data[`packing_qty_carton_actual_${n}`]   = data[`packing_qty_carton_actual_${n}`]   || row.qtyPerCartonActual;
+        data[`packing_item_${n}`] = data[`packing_item_${n}`] || row.itemNo;
+        data[`packing_qty_carton_marking_${n}`] = data[`packing_qty_carton_marking_${n}`] || row.qtyPerCartonMarking;
+        data[`packing_qty_carton_actual_${n}`] = data[`packing_qty_carton_actual_${n}`] || row.qtyPerCartonActual;
         data[`packing_carton_size_marking_${n}`] = data[`packing_carton_size_marking_${n}`] || row.cartonSizeMarking;
-        data[`packing_carton_size_actual_${n}`]  = data[`packing_carton_size_actual_${n}`]  || row.cartonSizeActual;
-        data[`packing_weight_marking_${n}`]      = data[`packing_weight_marking_${n}`]      || row.grossWeightMarking;
-        data[`packing_weight_actual_${n}`]       = data[`packing_weight_actual_${n}`]       || row.grossWeightActual;
-        data[`packing_qty_inner_marking_${n}`]   = data[`packing_qty_inner_marking_${n}`]   || row.qtyInnerBoxMarking;
-        data[`packing_qty_inner_actual_${n}`]    = data[`packing_qty_inner_actual_${n}`]    || row.qtyInnerBoxActual;
+        data[`packing_carton_size_actual_${n}`] = data[`packing_carton_size_actual_${n}`] || row.cartonSizeActual;
+        data[`packing_weight_marking_${n}`] = data[`packing_weight_marking_${n}`] || row.grossWeightMarking;
+        data[`packing_weight_actual_${n}`] = data[`packing_weight_actual_${n}`] || row.grossWeightActual;
+        data[`packing_qty_inner_marking_${n}`] = data[`packing_qty_inner_marking_${n}`] || row.qtyInnerBoxMarking;
+        data[`packing_qty_inner_actual_${n}`] = data[`packing_qty_inner_actual_${n}`] || row.qtyInnerBoxActual;
       });
     }
     data.fastening_metal_staples = data.fastening_metal_staples || data.packFasteningMetalStaples;
-    data.nylon_band              = data.nylon_band              || data.packNylonBand;
-    data.material                = data.material                || data.packMaterial;
-    data.corrugated_paper_plies  = data.corrugated_paper_plies  || data.packCorrugatedPaperPlies;
-    data.packing_method          = data.packing_method          || data.packPackingMethod;
-    data.assortment_method       = data.assortment_method       || data.packAssortment;
-    data.packing_result          = data.packing_result          || data.packingResult;
-    data.packing_remark          = data.packing_remark          || data.packingRemark;
+    data.nylon_band = data.nylon_band || data.packNylonBand;
+    data.material = data.material || data.packMaterial;
+    data.corrugated_paper_plies = data.corrugated_paper_plies || data.packCorrugatedPaperPlies;
+    data.packing_method = data.packing_method || data.packPackingMethod;
+    data.assortment_method = data.assortment_method || data.packAssortment;
+    data.packing_result = data.packing_result || data.packingResult;
+    data.packing_remark = data.packing_remark || data.packingRemark;
 
     // Marking: take first row of markingTable for the barcode/label row
     if (Array.isArray(data.markingTable) && data.markingTable.length > 0 && !data.barcode_name) {
       const m = data.markingTable[0];
-      data.barcode_name     = m.name;
+      data.barcode_name = m.name;
       data.barcode_location = m.location;
-      data.barcode_result   = m.result;
+      data.barcode_result = m.result;
     }
     data.marking_result_final = data.marking_result_final || data.markingResult;
-    data.marking_remark       = data.marking_remark       || data.markingRemark;
-    data.shipping_marks       = data.shipping_marks       || data.markingShippingMarks;
-    data.side_marks           = data.side_marks           || data.markingSideMarks;
-    data.inner_box_marks      = data.inner_box_marks      || data.markingInnerBoxMarks;
+    data.marking_remark = data.marking_remark || data.markingRemark;
+    data.shipping_marks = data.shipping_marks || data.markingShippingMarks;
+    data.side_marks = data.side_marks || data.markingSideMarks;
+    data.inner_box_marks = data.inner_box_marks || data.markingInnerBoxMarks;
 
     // Client requirement result/remark
     data.client_requirement_result = data.client_requirement_result || data.clientRequirementResult;
     data.client_requirement_remark = data.client_requirement_remark || data.clientRequirementRemark;
 
     // Dimensions / Product Specification: support DPI form key `productSpecificationTable` (preferred)
-    data._dpiDimensionsRows      = Array.isArray(data.productSpecificationTable)
-                                    ? data.productSpecificationTable
-                                    : (Array.isArray(data.dimensionsTable) ? data.dimensionsTable : []);
-    data._dpiDimensionsItemNo    = data.dimensionsItemNo || data.productItemNo || data.itemNo || "";
+    data._dpiDimensionsRows = Array.isArray(data.productSpecificationTable)
+      ? data.productSpecificationTable
+      : (Array.isArray(data.dimensionsTable) ? data.dimensionsTable : []);
+    data._dpiDimensionsItemNo = data.dimensionsItemNo || data.productItemNo || data.itemNo || "";
     data._dpiDimensionsGroupName = data.dimensionsGroupName || data.productGroupName || "";
-    data.productResult           = data.productResult || data.dimensionsResult || data.productSpecificationResult;
-    data.productRemark           = data.productRemark || data.dimensionsRemark || data.productSpecificationRemark;
+    data.productResult = data.productResult || data.dimensionsResult || data.productSpecificationResult;
+    data.productRemark = data.productRemark || data.dimensionsRemark || data.productSpecificationRemark;
   }
   // ─────────────────────────────────────────────────────────────────────────────
 
   let summaryRows = [];
-  
+
   if (isCls) {
     const summaryResults = [
       { label: "A. Quantity", val: data.quantity },
@@ -681,7 +681,7 @@ async function createReportContent(data, uploadedFiles) {
       { label: "D. Loading Process", val: data.loadingProcess },
       { label: "E. Client Requirement", val: data.clientRequirement },
     ];
-    
+
     summaryRows = [
       new TableRow({ children: [new TableCell({ columnSpan: 5, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "II. INSPECTION SUMMARY", bold: true, size: 22, color: "1F4E79", font: "Arial" })] })] })] }),
       new TableRow({
@@ -886,7 +886,7 @@ async function createReportContent(data, uploadedFiles) {
       { label: "F. Marking & Labeling", val: data.marking_result_final },
       { label: "G. Client Special Requirement", val: data.client_requirement_result },
     ];
-    
+
     summaryRows = [
       new TableRow({ children: [new TableCell({ columnSpan: 5, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "II. INSPECTION SUMMARY", bold: true, size: 22, color: "1F4E79", font: "Arial" })] })] })] }),
       new TableRow({
@@ -998,7 +998,7 @@ async function createReportContent(data, uploadedFiles) {
       if (typeof colSpan === "number" && colSpan > 1) {
         cellOptions.columnSpan = colSpan;
       }
-      
+
       if (verticalMerge) {
         cellOptions.verticalMerge = verticalMerge;
       }
@@ -1094,7 +1094,7 @@ async function createReportContent(data, uploadedFiles) {
 
   if (!isCls) {
     children.push(await createConclusionTable(data, false));
-    children.push(new Paragraph({ children: [] }));
+    children.push(new Paragraph({ children: [new PageBreak()] }));
 
     // Note Paragraph
     const noteText = "Note: 1. This report reflects our findings at the time and the place of inspection based on random samples selected. 2. This inspection was carried out to the best of our knowledge and abilities, and our responsibility is limited to the exercise of reasonable one. 3. This report does not relieve the sellers from their contractual obligations nor does it prejudice buyer's right for compensation for any apparent and/or hidden defects not detected during our inspection or occurring thereafter. 4. This report does not evidence shipment. 5. Our services are subject to the General Conditions of Service of Absolute Veritas, which is shown at our website and can be sent to you upon written request. 6. This report's inspection results only relate to the samples as (randomly picked) by our inspector. 7. This report is complete and its content may not be reproduced.";
@@ -1219,192 +1219,192 @@ async function createReportContent(data, uploadedFiles) {
   // B. WORKMANSHIP (Matched to complex grid SS)
   if (!isCls) {
     const wmRes = data.workmanshipResult || "Passed";
-  const bRows = [
-    // Header
-    new TableRow({ children: [new TableCell({ columnSpan: 7, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "B. WORKMANSHIP", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+    const bRows = [
+      // Header
+      new TableRow({ children: [new TableCell({ columnSpan: 7, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "B. WORKMANSHIP", bold: true, size: 22, color: "1F4E79" })] })] })] }),
 
-    // Tiered Header Row 1
-    new TableRow({
-      children: [
-        createQtyCell("Inspection Standard:", { bold: true, shaded: true, align: "left" }),
-        createQtyCell(data.inspectionStandardWM || "ANSI/ASQ Z1.4 (ISO 2859-1)", { align: "left" }),
-        new TableCell({ width: { size: 10, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [] })] }),
-        createQtyCell("AQL", { bold: true, shaded: true }),
-        createQtyCell("Accepted", { bold: true, shaded: true }),
-        createQtyCell("Total Found", { bold: true, shaded: true }),
-        createQtyCell("Result", { bold: true, shaded: true }),
-      ]
-    }),
-    // Tiered Header Row 2
-    new TableRow({
-      children: [
-        createQtyCell("Sampling Plan:", { bold: true, shaded: true, align: "left" }),
-        createQtyCell(data.samplingPlanWM || "Fixed Sample Size", { align: "left" }),
-        createQtyCell("Critical:", { bold: true, shaded: true, align: "left" }),
-        createQtyCell(data.aqlCriticalWM || "Not Allowed"),
-        createQtyCell(data.acceptedCritical || "00"),
-        createQtyCell(data.totalFoundCritical || "0"),
-        createQtyCell(resolveResultWM(data.totalFoundCritical, data.acceptedCritical), { bold: true }),
-      ]
-    }),
-    // Tiered Header Row 3
-    new TableRow({
-      children: [
-        createQtyCell("Inspection Level:", { bold: true, shaded: true, align: "left" }),
-        createQtyCell(data.inspectionLevelWM || "Level II", { align: "left" }),
-        createQtyCell("Major:", { bold: true, shaded: true, align: "left" }),
-        createQtyCell(data.aqlMajorWM || "2.5"),
-        createQtyCell(data.acceptedMajor || "00"),
-        createQtyCell(data.totalFoundMajor || "0"),
-        createQtyCell(resolveResultWM(data.totalFoundMajor, data.acceptedMajor), { bold: true }),
-      ]
-    }),
-    // Tiered Header Row 4
-    new TableRow({
-      children: [
-        createQtyCell("Sample Size:", { bold: true, shaded: true, align: "left" }),
-        createQtyCell(data.sampleSizeWM || "5 Sets", { align: "left" }),
-        createQtyCell("Minor:", { bold: true, shaded: true, align: "left" }),
-        createQtyCell(data.aqlMinorWM || "4.0"),
-        createQtyCell(data.acceptedMinor || "00"),
-        createQtyCell(data.totalFoundMinor || "0"),
-        createQtyCell(resolveResultWM(data.totalFoundMinor, data.acceptedMinor), { bold: true }),
-      ]
-    }),
-    // Subheader
-    new TableRow({ children: [new TableCell({ columnSpan: 7, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Workmanship Defectives / Function Inspection Findings", bold: true })] })] })] }),
-    // Defect Table Headers
-    new TableRow({
-      children: [
-        createQtyCell(""), // for Number
-        createQtyCell("Description", { bold: true, colSpan: 3, align: "left" }),
-        createQtyCell("Critical", { bold: true }),
-        createQtyCell("Major", { bold: true }),
-        createQtyCell("Minor", { bold: true }),
-      ]
-    }),
-    // Dynamic Defects (grouped by item/sample size)
-    ...(() => {
-      const defects = Array.isArray(data.workmanshipDefects) ? data.workmanshipDefects : [];
-      const rows = [];
-      let currentItemHeader = null;
-      
-      defects.forEach((defect, i) => {
-        const resolvedItemName = defect.itemName || defect.itemGroup;
-        const headerKey = `${resolvedItemName}_${defect.sampleSize}`;
+      // Tiered Header Row 1
+      new TableRow({
+        children: [
+          createQtyCell("Inspection Standard:", { bold: true, shaded: true, align: "left" }),
+          createQtyCell(data.inspectionStandardWM || "ANSI/ASQ Z1.4 (ISO 2859-1)", { align: "left" }),
+          new TableCell({ width: { size: 10, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [] })] }),
+          createQtyCell("AQL", { bold: true, shaded: true }),
+          createQtyCell("Accepted", { bold: true, shaded: true }),
+          createQtyCell("Total Found", { bold: true, shaded: true }),
+          createQtyCell("Result", { bold: true, shaded: true }),
+        ]
+      }),
+      // Tiered Header Row 2
+      new TableRow({
+        children: [
+          createQtyCell("Sampling Plan:", { bold: true, shaded: true, align: "left" }),
+          createQtyCell(data.samplingPlanWM || "Fixed Sample Size", { align: "left" }),
+          createQtyCell("Critical:", { bold: true, shaded: true, align: "left" }),
+          createQtyCell(data.aqlCriticalWM || "Not Allowed"),
+          createQtyCell(data.acceptedCritical || "00"),
+          createQtyCell(data.totalFoundCritical || "0"),
+          createQtyCell(resolveResultWM(data.totalFoundCritical, data.acceptedCritical), { bold: true }),
+        ]
+      }),
+      // Tiered Header Row 3
+      new TableRow({
+        children: [
+          createQtyCell("Inspection Level:", { bold: true, shaded: true, align: "left" }),
+          createQtyCell(data.inspectionLevelWM || "Level II", { align: "left" }),
+          createQtyCell("Major:", { bold: true, shaded: true, align: "left" }),
+          createQtyCell(data.aqlMajorWM || "2.5"),
+          createQtyCell(data.acceptedMajor || "00"),
+          createQtyCell(data.totalFoundMajor || "0"),
+          createQtyCell(resolveResultWM(data.totalFoundMajor, data.acceptedMajor), { bold: true }),
+        ]
+      }),
+      // Tiered Header Row 4
+      new TableRow({
+        children: [
+          createQtyCell("Sample Size:", { bold: true, shaded: true, align: "left" }),
+          createQtyCell(data.sampleSizeWM || "5 Sets", { align: "left" }),
+          createQtyCell("Minor:", { bold: true, shaded: true, align: "left" }),
+          createQtyCell(data.aqlMinorWM || "4.0"),
+          createQtyCell(data.acceptedMinor || "00"),
+          createQtyCell(data.totalFoundMinor || "0"),
+          createQtyCell(resolveResultWM(data.totalFoundMinor, data.acceptedMinor), { bold: true }),
+        ]
+      }),
+      // Subheader
+      new TableRow({ children: [new TableCell({ columnSpan: 7, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Workmanship Defectives / Function Inspection Findings", bold: true })] })] })] }),
+      // Defect Table Headers
+      new TableRow({
+        children: [
+          createQtyCell(""), // for Number
+          createQtyCell("Description", { bold: true, colSpan: 3, align: "left" }),
+          createQtyCell("Critical", { bold: true }),
+          createQtyCell("Major", { bold: true }),
+          createQtyCell("Minor", { bold: true }),
+        ]
+      }),
+      // Dynamic Defects (grouped by item/sample size)
+      ...(() => {
+        const defects = Array.isArray(data.workmanshipDefects) ? data.workmanshipDefects : [];
+        const rows = [];
+        let currentItemHeader = null;
 
-        if (headerKey !== currentItemHeader) {
+        defects.forEach((defect, i) => {
+          const resolvedItemName = defect.itemName || defect.itemGroup;
+          const headerKey = `${resolvedItemName}_${defect.sampleSize}`;
+
+          if (headerKey !== currentItemHeader) {
+            rows.push(new TableRow({
+              children: [
+                createQtyCell(`For Item ${resolvedItemName || "-"}`, { align: "left", colSpan: 2 }),
+                createQtyCell(`Sample size: ${defect.sampleSize || "0"} Sets`, { align: "center", colSpan: 2 }),
+                createQtyCell(""),
+                createQtyCell(""),
+                createQtyCell(""),
+              ]
+            }));
+            currentItemHeader = headerKey;
+          }
+
           rows.push(new TableRow({
             children: [
-              createQtyCell(`For Item ${resolvedItemName || "-"}`, { align: "left", colSpan: 2 }),
-              createQtyCell(`Sample size: ${defect.sampleSize || "0"} Sets`, { align: "center", colSpan: 2 }),
-              createQtyCell(""),
-              createQtyCell(""),
-              createQtyCell(""),
+              createQtyCell(String(i + 1) + "."),
+              createQtyCell(defect.description || "", { align: "left", colSpan: 3 }),
+              createQtyCell(defect.critical || "0"),
+              createQtyCell(defect.major || "0"),
+              createQtyCell(defect.minor || "0"),
             ]
           }));
-          currentItemHeader = headerKey;
-        }
+        });
 
-        rows.push(new TableRow({
+        return rows;
+      })(),
+      // Totals Section
+      new TableRow({
+        children: [
+          createQtyCell("Total found:", { bold: true, align: "right", colSpan: 4, shaded: true }),
+          createQtyCell(data.totalFoundCritical || "0", { bold: true }),
+          createQtyCell(data.totalFoundMajor || "0", { bold: true }),
+          createQtyCell(data.totalFoundMinor || "0", { bold: true }),
+        ]
+      }),
+      new TableRow({
+        children: [
+          createQtyCell("Accepted:", { bold: true, align: "right", colSpan: 4, shaded: true }),
+          createQtyCell(data.acceptedCritical || "00", { bold: true }),
+          createQtyCell(data.acceptedMajor || "00", { bold: true }),
+          createQtyCell(data.acceptedMinor || "00", { bold: true }),
+        ]
+      }),
+      new TableRow({
+        children: [
+          createQtyCell("Sample size:", { bold: true, align: "right", colSpan: 4, shaded: true }),
+          createQtyCell("2", { bold: true }), // Match SS hardcoding/fallback
+          createQtyCell("2", { bold: true }),
+          createQtyCell("2", { bold: true }),
+        ]
+      }),
+      // Final Summary
+      new TableRow({ children: [createQtyCell("Result:", { bold: true, shaded: true, align: "left" }), createQtyCell(wmRes, { colSpan: 6, align: "left", bold: true, color: wmRes === "Passed" ? "228B22" : "CC0000" })] }),
+      new TableRow({ children: [createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(blankIfEmpty(data.workmanshipRemark || "No critical workmanship issues observed."), { colSpan: 6, align: "left" })] }),
+      new TableRow({ children: [createQtyCell("Note:", { bold: true, shaded: true, align: "left" }), createQtyCell("A Defective is defined as a unit of product that contains one or more defects. A Defect is defined as any non-conformance of the inspected unit of product with specified requirements. A single defect is taken into account per each defective unit; only one most serious defect is taken into account per each defective unit.", { colSpan: 6, align: "left", size: 14 })] })
+    ];
+    // Defect Photos — extract from reportPhotoGroups and merge into B table
+    const defectPhotosGroup = (data.reportPhotoGroups || []).find(g => g.id === "defectPhotos" || (g.description || "").toLowerCase().includes("defect"));
+    const defectPhotos = defectPhotosGroup ? (defectPhotosGroup.photos || []) : (Array.isArray(data.workmanshipPhotos) ? data.workmanshipPhotos : []);
+
+    // Remove from general queue to prevent duplication
+    if (data.reportPhotoGroups && defectPhotosGroup) {
+      data.reportPhotoGroups = data.reportPhotoGroups.filter(g => g !== defectPhotosGroup);
+    }
+
+    if (defectPhotos.length > 0) {
+      bRows.push(new TableRow({ children: [new TableCell({ columnSpan: 7, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Defect photos of Item " + (data.itemNo || data.productName || "-"), bold: true })] })] })] }));
+
+      for (let i = 0; i < defectPhotos.length; i += 2) {
+        const p1 = defectPhotos[i];
+        const p2 = defectPhotos[i + 1];
+
+        // Image Row
+        const p1Buffer = p1 ? await getImageBuffer(p1) : null;
+        const p2Buffer = p2 ? await getImageBuffer(p2) : null;
+
+        bRows.push(new TableRow({
           children: [
-            createQtyCell(String(i + 1) + "."),
-            createQtyCell(defect.description || "", { align: "left", colSpan: 3 }),
-            createQtyCell(defect.critical || "0"),
-            createQtyCell(defect.major || "0"),
-            createQtyCell(defect.minor || "0"),
+            new TableCell({
+              columnSpan: 3,
+              borders: tableBorders(),
+              children: [
+                p1Buffer ? new Paragraph({
+                  children: [new ImageRun({ data: p1Buffer, type: "png", transformation: { width: 340, height: 230 } })],
+                  alignment: "center",
+                  spacing: { before: 100, after: 100 }
+                }) : new Paragraph({ children: [] })
+              ]
+            }),
+            new TableCell({
+              columnSpan: 4,
+              borders: tableBorders(),
+              children: [
+                p2Buffer ? new Paragraph({
+                  children: [new ImageRun({ data: p2Buffer, type: "png", transformation: { width: 340, height: 230 } })],
+                  alignment: "center",
+                  spacing: { before: 100, after: 100 }
+                }) : new Paragraph({ children: [] })
+              ]
+            })
           ]
         }));
-      });
 
-      return rows;
-    })(),
-    // Totals Section
-    new TableRow({
-      children: [
-        createQtyCell("Total found:", { bold: true, align: "right", colSpan: 4, shaded: true }),
-        createQtyCell(data.totalFoundCritical || "0", { bold: true }),
-        createQtyCell(data.totalFoundMajor || "0", { bold: true }),
-        createQtyCell(data.totalFoundMinor || "0", { bold: true }),
-      ]
-    }),
-    new TableRow({
-      children: [
-        createQtyCell("Accepted:", { bold: true, align: "right", colSpan: 4, shaded: true }),
-        createQtyCell(data.acceptedCritical || "00", { bold: true }),
-        createQtyCell(data.acceptedMajor || "00", { bold: true }),
-        createQtyCell(data.acceptedMinor || "00", { bold: true }),
-      ]
-    }),
-    new TableRow({
-      children: [
-        createQtyCell("Sample size:", { bold: true, align: "right", colSpan: 4, shaded: true }),
-        createQtyCell("2", { bold: true }), // Match SS hardcoding/fallback
-        createQtyCell("2", { bold: true }),
-        createQtyCell("2", { bold: true }),
-      ]
-    }),
-    // Final Summary
-    new TableRow({ children: [createQtyCell("Result:", { bold: true, shaded: true, align: "left" }), createQtyCell(wmRes, { colSpan: 6, align: "left", bold: true, color: wmRes === "Passed" ? "228B22" : "CC0000" })] }),
-    new TableRow({ children: [createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(blankIfEmpty(data.workmanshipRemark || "No critical workmanship issues observed."), { colSpan: 6, align: "left" })] }),
-    new TableRow({ children: [createQtyCell("Note:", { bold: true, shaded: true, align: "left" }), createQtyCell("A Defective is defined as a unit of product that contains one or more defects. A Defect is defined as any non-conformance of the inspected unit of product with specified requirements. A single defect is taken into account per each defective unit; only one most serious defect is taken into account per each defective unit.", { colSpan: 6, align: "left", size: 14 })] })
-  ];
-  // Defect Photos — extract from reportPhotoGroups and merge into B table
-  const defectPhotosGroup = (data.reportPhotoGroups || []).find(g => g.id === "defectPhotos" || (g.description || "").toLowerCase().includes("defect"));
-  const defectPhotos = defectPhotosGroup ? (defectPhotosGroup.photos || []) : (Array.isArray(data.workmanshipPhotos) ? data.workmanshipPhotos : []);
-
-  // Remove from general queue to prevent duplication
-  if (data.reportPhotoGroups && defectPhotosGroup) {
-    data.reportPhotoGroups = data.reportPhotoGroups.filter(g => g !== defectPhotosGroup);
-  }
-
-  if (defectPhotos.length > 0) {
-    bRows.push(new TableRow({ children: [new TableCell({ columnSpan: 7, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Defect photos of Item " + (data.itemNo || data.productName || "-"), bold: true })] })] })] }));
-
-    for (let i = 0; i < defectPhotos.length; i += 2) {
-      const p1 = defectPhotos[i];
-      const p2 = defectPhotos[i + 1];
-
-      // Image Row
-      const p1Buffer = p1 ? await getImageBuffer(p1) : null;
-      const p2Buffer = p2 ? await getImageBuffer(p2) : null;
-
-      bRows.push(new TableRow({
-        children: [
-          new TableCell({
-            columnSpan: 3,
-            borders: tableBorders(),
-            children: [
-              p1Buffer ? new Paragraph({
-                children: [new ImageRun({ data: p1Buffer, type: "png", transformation: { width: 340, height: 230 } })],
-                alignment: "center",
-                spacing: { before: 100, after: 100 }
-              }) : new Paragraph({ children: [] })
-            ]
-          }),
-          new TableCell({
-            columnSpan: 4,
-            borders: tableBorders(),
-            children: [
-              p2Buffer ? new Paragraph({
-                children: [new ImageRun({ data: p2Buffer, type: "png", transformation: { width: 340, height: 230 } })],
-                alignment: "center",
-                spacing: { before: 100, after: 100 }
-              }) : new Paragraph({ children: [] })
-            ]
-          })
-        ]
-      }));
-
-      // Description Row
-      bRows.push(new TableRow({
-        children: [
-          new TableCell({ columnSpan: 3, borders: tableBorders(), shading: { fill: "F9F9F9" }, children: [new Paragraph({ alignment: "center", children: [new TextRun({ text: p1?.label || p1?.description || "Defect photo", size: 18 })] })] }),
-          new TableCell({ columnSpan: 4, borders: tableBorders(), shading: { fill: "F9F9F9" }, children: [new Paragraph({ alignment: "center", children: [new TextRun({ text: p2?.label || p2?.description || (p2 ? "Defect photo" : ""), size: 18 })] })] }),
-        ]
-      }));
+        // Description Row
+        bRows.push(new TableRow({
+          children: [
+            new TableCell({ columnSpan: 3, borders: tableBorders(), shading: { fill: "F9F9F9" }, children: [new Paragraph({ alignment: "center", children: [new TextRun({ text: p1?.label || p1?.description || "Defect photo", size: 18 })] })] }),
+            new TableCell({ columnSpan: 4, borders: tableBorders(), shading: { fill: "F9F9F9" }, children: [new Paragraph({ alignment: "center", children: [new TextRun({ text: p2?.label || p2?.description || (p2 ? "Defect photo" : ""), size: 18 })] })] }),
+          ]
+        }));
+      }
     }
-  }
 
     children.push(new Table({ width: { size: 100, type: "pct" }, rows: bRows }));
     children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
@@ -2145,7 +2145,7 @@ async function getImageBuffer(photoData) {
 
 function getPhotoContent(photoData, uploadedFiles, allData = {}) {
   let preview = "";
-  
+
   if (typeof photoData === "string" && photoData.startsWith("data:image")) {
     preview = photoData;
   } else if (uploadedFiles && uploadedFiles[0]?.path) {
@@ -2164,13 +2164,13 @@ function getPhotoContent(photoData, uploadedFiles, allData = {}) {
 
   try {
     const base64 = preview.split(",")[1];
-    return [new Paragraph({ 
-      children: [new ImageRun({ data: Buffer.from(base64, "base64"), type: "png", transformation: { width: 320, height: 260 } })], 
+    return [new Paragraph({
+      children: [new ImageRun({ data: Buffer.from(base64, "base64"), type: "png", transformation: { width: 320, height: 260 } })],
       alignment: "center",
       spacing: { before: 0, after: 0 }
     })];
-  } catch (e) { 
-    return [new Paragraph({ children: [new TextRun({ text: "[Photo Error]" })], alignment: "center", spacing: { before: 0, after: 0 } })]; 
+  } catch (e) {
+    return [new Paragraph({ children: [new TextRun({ text: "[Photo Error]" })], alignment: "center", spacing: { before: 0, after: 0 } })];
   }
 }
 
@@ -2366,7 +2366,7 @@ function createProductConformityTable(data) {
         })
       ]
     }),
-     // Workmanship Table Header
+    // Workmanship Table Header
     new TableRow({
       children: [
         createQtyCell("Description", { bold: true, align: "center", width: { size: 80, type: "pct" }, colSpan: 9 }),
@@ -2610,7 +2610,7 @@ function createCLSLoadingProcessTable(data) {
   const containerCheck = Array.isArray(data.containerCheck) ? data.containerCheck : [];
   const loadingCheck = Array.isArray(data.loadingCheck) ? data.loadingCheck : [];
   const containerClosing = Array.isArray(data.containerClosing) ? data.containerClosing : [];
-  
+
   const rows = [
     // 1. Section Header
     new TableRow({
@@ -2805,11 +2805,11 @@ function createCLSClientRequirementTable(data) {
         new TableRow({
           children: [
             createQtyCell("Result:", { bold: true, width: { size: 15, type: "pct" }, shaded: true }),
-            createQtyCell(data.client_requirement_result || "Passed", { 
-              colSpan: 2, 
-              align: "left", 
-              bold: true, 
-              color: String(data.client_requirement_result || "").toLowerCase().includes("fail") ? "CC0000" : "228B22" 
+            createQtyCell(data.client_requirement_result || "Passed", {
+              colSpan: 2,
+              align: "left",
+              bold: true,
+              color: String(data.client_requirement_result || "").toLowerCase().includes("fail") ? "CC0000" : "228B22"
             })
           ]
         }),
@@ -2909,11 +2909,11 @@ function createEndOfReportSection() {
         new TableRow({
           children: [
             new TableCell({
-              borders: { 
-                top: { style: "single", size: 12, color: "1F4E79" }, 
-                bottom: { style: "single", size: 12, color: "1F4E79" }, 
-                left: { style: "none" }, 
-                right: { style: "none" } 
+              borders: {
+                top: { style: "single", size: 12, color: "1F4E79" },
+                bottom: { style: "single", size: 12, color: "1F4E79" },
+                left: { style: "none" },
+                right: { style: "none" }
               },
               children: [
                 new Paragraph({
