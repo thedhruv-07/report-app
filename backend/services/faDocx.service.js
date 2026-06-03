@@ -27,28 +27,7 @@ const {
 
 const { tableBorders, createQtyCell, sanitizeDocxText } = require("../utils/docx.utils");
 
-// Load logo once at module startup.
-// Primary:  backend/assets/company-logo.png  (ships with backend in production)
-// Fallback: frontend/public/company-logo.png (local dev convenience)
-const _LOGO_CANDIDATES = [
-  path.join(__dirname, "..", "assets", "company-logo.png"),
-  path.join(__dirname, "..", "..", "frontend", "public", "company-logo.png"),
-];
-let _logoBuffer = null;
-for (const candidate of _LOGO_CANDIDATES) {
-  try {
-    if (fs.existsSync(candidate)) {
-      _logoBuffer = fs.readFileSync(candidate);
-      console.log("[faDocx] Logo loaded:", candidate, `(${_logoBuffer.length} bytes)`);
-      break;
-    }
-  } catch (e) {
-    console.error("[faDocx] Failed to read logo from", candidate, ":", e.message);
-  }
-}
-if (!_logoBuffer) {
-  console.warn("[faDocx] Company logo not found in any candidate path — header will show text fallback");
-}
+// Logo is now loaded dynamically per-report to prevent buffer exhaustion issues.
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -281,136 +260,95 @@ function spacer() {
 exports.createFAHeaderTable = function createFAHeaderTable(data) {
   const gi = data.generalInfo || {};
 
-  const client = san(val(gi.client || data.client, ""));
+  const client      = san(val(gi.client      || data.client,       ""));
   const inspectionNo = san(val(gi.inspectionNo || data.inspectionNumber, "-"));
-  const auditDate = san(val(gi.auditDate || data.auditDate, "-"));
-  const auditor = san(val(gi.auditorName || data.auditorName || data.auditor || data.inspectorName, "-"));
-  const conclusion = san(val(data.auditOverview?.overallConclusion || data.conclusion, "PENDING"));
+  const auditDate   = san(val(gi.auditDate   || data.auditDate,    "-"));
+  const auditor     = san(val(gi.auditorName || data.auditorName || data.auditor || data.inspectorName, "-"));
+  const conclusion  = san(val(data.auditOverview?.overallConclusion || data.conclusion, "PENDING"));
   const conclusionColor = getResultColor(conclusion);
 
-  // Logo — use buffer loaded once at module startup
+  // Logo — load dynamically to ensure clean buffer for docx lib
   let logoRun = null;
-  if (_logoBuffer) {
-    try {
-      logoRun = new ImageRun({ data: _logoBuffer, type: "png", transformation: { width: 140, height: 70 } });
-    } catch (e) {
-      console.error("[faDocx] ImageRun creation failed:", e.message);
+  try {
+    const candidates = [
+      path.join(__dirname, "..", "assets", "company-logo.png"),
+      path.join(__dirname, "..", "..", "frontend", "public", "company-logo.png")
+    ];
+    for (const candidate of candidates) {
+      if (fs.existsSync(candidate)) {
+        const imgBuffer = fs.readFileSync(candidate);
+        logoRun = new ImageRun({ data: imgBuffer, type: "png", transformation: { width: 140, height: 70 } });
+        break;
+      }
     }
+  } catch (e) {
+    console.error("[faDocx] ImageRun creation failed:", e.message);
   }
 
-  const noBorder = {
-    top: { style: BorderStyle.NONE },
-    bottom: { style: BorderStyle.NONE },
-    left: { style: BorderStyle.NONE },
-    right: { style: BorderStyle.NONE }
-  };
+  const thin  = { top: { style: BorderStyle.SINGLE, size: 6,  color: "1F1F1F" }, bottom: { style: BorderStyle.SINGLE, size: 6,  color: "1F1F1F" }, left: { style: BorderStyle.SINGLE, size: 6,  color: "1F1F1F" }, right: { style: BorderStyle.SINGLE, size: 6,  color: "1F1F1F" } };
+  const thick = { top: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" }, bottom: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" }, left: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" }, right: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" } };
+  const none  = { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } };
 
-  const thinBorder = {
-    top: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
-    bottom: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
-    left: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" },
-    right: { style: BorderStyle.SINGLE, size: 6, color: "1F1F1F" }
-  };
+  // ── Nested info table (5 rows × 2 cols) replaces the middle columns ──────
+  // Using a nested table eliminates VerticalMergeType entirely, which
+  // causes images to disappear in LibreOffice PDF conversion.
+  const infoRows = [
+    ["Report Type:",    "FACTORY AUDIT REPORT"],
+    ["Client:",         client],
+    ["Inspection No.:", inspectionNo],
+    ["Audit Date:",     auditDate],
+    ["Auditor:",        auditor],
+  ].map(([label, value]) => new TableRow({
+    children: [
+      new TableCell({ borders: thin, shading: { fill: "F2F2F2" }, children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, size: 18 })], spacing: { before: 20, after: 20 } })] }),
+      new TableCell({ borders: thin, children: [new Paragraph({ children: [new TextRun({ text: sanitizeDocxText(value), bold: true, size: 18 })], spacing: { before: 20, after: 20 } })] }),
+    ]
+  }));
 
-  const thickBorder = {
-    top: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
-    bottom: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
-    left: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" },
-    right: { style: BorderStyle.SINGLE, size: 12, color: "1F1F1F" }
-  };
+  const infoTable = new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    borders: none,
+    rows: infoRows,
+  });
 
-  function labelCell(text) {
-    return new TableCell({
-      borders: thinBorder,
-      shading: { fill: "F2F2F2" },
-      children: [new Paragraph({ children: [new TextRun({ text, bold: true, size: 18 })] })]
-    });
-  }
-
-  function valueCell(text) {
-    return new TableCell({
-      borders: thinBorder,
-      children: [new Paragraph({ children: [new TextRun({ text: sanitizeDocxText(text), bold: true, size: 18 })] })]
-    });
-  }
-
+  // ── Outer table — single row, no vertical merging ────────────────────────
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     rows: [
-      // Row 1: Logo | Report Title (span 2) | Conclusion (span, restart merge)
       new TableRow({
         children: [
+          // Logo cell
           new TableCell({
             width: { size: 22, type: "pct" },
-            verticalMerge: VerticalMergeType.RESTART,
-            borders: thickBorder,
+            borders: thick,
             verticalAlign: VerticalAlign.CENTER,
-            children: [logoRun
-              ? new Paragraph({ children: [logoRun], alignment: AlignmentType.CENTER })
-              : new Paragraph({ children: [new TextRun({ text: "Absolute Veritas", bold: true, size: 18 })] })
-            ]
+            children: [new Paragraph({
+              children: logoRun ? [logoRun] : [new TextRun({ text: "Absolute Veritas", bold: true, size: 18 })],
+              alignment: AlignmentType.CENTER,
+              spacing: { before: 60, after: 60 },
+            })],
           }),
+          // Info nested table cell
           new TableCell({
-            width: { size: 14, type: "pct" },
-            borders: thinBorder,
-            shading: { fill: "F2F2F2" },
-            children: [new Paragraph({ children: [new TextRun({ text: "Report Type:", bold: true, size: 18 })] })]
+            width: { size: 40, type: "pct" },
+            borders: thick,
+            verticalAlign: VerticalAlign.CENTER,
+            children: [infoTable],
           }),
-          new TableCell({
-            width: { size: 26, type: "pct" },
-            borders: thinBorder,
-            children: [new Paragraph({ children: [new TextRun({ text: "FACTORY AUDIT REPORT", bold: true, size: 18 })] })]
-          }),
+          // Conclusion cell
           new TableCell({
             width: { size: 38, type: "pct" },
-            verticalMerge: VerticalMergeType.RESTART,
-            borders: thickBorder,
+            borders: thick,
             verticalAlign: VerticalAlign.CENTER,
             children: [new Paragraph({
               children: [new TextRun({ text: conclusion, bold: true, size: 48, font: "Arial", color: conclusionColor })],
               alignment: AlignmentType.CENTER,
-              spacing: { before: 120, after: 120 }
-            })]
-          })
-        ]
+              spacing: { before: 120, after: 120 },
+            })],
+          }),
+        ],
       }),
-      // Row 2: (logo merge) | Client | value | (conclusion merge)
-      new TableRow({
-        children: [
-          new TableCell({ verticalMerge: VerticalMergeType.CONTINUE, borders: thickBorder, children: [new Paragraph({ children: [] })] }),
-          labelCell("Client:"),
-          valueCell(client),
-          new TableCell({ verticalMerge: VerticalMergeType.CONTINUE, borders: thickBorder, children: [new Paragraph({ children: [] })] })
-        ]
-      }),
-      // Row 3: (logo merge) | Inspection No. | value | (conclusion merge)
-      new TableRow({
-        children: [
-          new TableCell({ verticalMerge: VerticalMergeType.CONTINUE, borders: thickBorder, children: [new Paragraph({ children: [] })] }),
-          labelCell("Inspection No.:"),
-          valueCell(inspectionNo),
-          new TableCell({ verticalMerge: VerticalMergeType.CONTINUE, borders: thickBorder, children: [new Paragraph({ children: [] })] })
-        ]
-      }),
-      // Row 4: (logo merge) | Audit Date | value | (conclusion merge)
-      new TableRow({
-        children: [
-          new TableCell({ verticalMerge: VerticalMergeType.CONTINUE, borders: thickBorder, children: [new Paragraph({ children: [] })] }),
-          labelCell("Audit Date:"),
-          valueCell(auditDate),
-          new TableCell({ verticalMerge: VerticalMergeType.CONTINUE, borders: thickBorder, children: [new Paragraph({ children: [] })] })
-        ]
-      }),
-      // Row 5: (logo merge) | Auditor | value | (conclusion merge)
-      new TableRow({
-        children: [
-          new TableCell({ verticalMerge: VerticalMergeType.CONTINUE, borders: thickBorder, children: [new Paragraph({ children: [] })] }),
-          labelCell("Auditor:"),
-          valueCell(auditor),
-          new TableCell({ verticalMerge: VerticalMergeType.CONTINUE, borders: thickBorder, children: [new Paragraph({ children: [] })] })
-        ]
-      })
-    ]
+    ],
   });
 };
 
