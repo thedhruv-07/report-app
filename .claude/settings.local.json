@@ -16,7 +16,12 @@
       "Bash(Test-Path *)",
       "Bash(Get-ChildItem -Path \"C:\\\\Projects\\\\report-app-main\" -Recurse -Directory)",
       "Bash(Select-Object -ExpandProperty FullName)",
-      "Bash(git check-ignore *)"
+      "Bash(git check-ignore *)",
+      "Bash(git push *)",
+      "Bash(dir frontend/public/)",
+      "Bash(npx kill-port *)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:5000/)"
     ]
   }
 }

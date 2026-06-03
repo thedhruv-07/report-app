@@ -25,8 +25,21 @@ const {
   PageBreak,
 } = require("docx");
 
-const { LOGO_PATH } = require("../config/config");
 const { tableBorders, createQtyCell, sanitizeDocxText } = require("../utils/docx.utils");
+
+// Load logo once at module startup — path relative to this file, not CWD
+const _LOGO_PATH = path.join(__dirname, "..", "..", "frontend", "public", "company-logo.png");
+let _logoBuffer = null;
+try {
+  if (fs.existsSync(_LOGO_PATH)) {
+    _logoBuffer = fs.readFileSync(_LOGO_PATH);
+    console.log("[faDocx] Logo loaded:", _LOGO_PATH, `(${_logoBuffer.length} bytes)`);
+  } else {
+    console.warn("[faDocx] Logo file not found at:", _LOGO_PATH);
+  }
+} catch (e) {
+  console.error("[faDocx] Failed to load logo:", e.message);
+}
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -266,14 +279,15 @@ exports.createFAHeaderTable = function createFAHeaderTable(data) {
   const conclusion = san(val(data.auditOverview?.overallConclusion || data.conclusion, "PENDING"));
   const conclusionColor = getResultColor(conclusion);
 
-  // Logo
+  // Logo — use buffer loaded once at module startup
   let logoRun = null;
-  try {
-    if (fs.existsSync(LOGO_PATH)) {
-      const imgBuffer = fs.readFileSync(LOGO_PATH);
-      logoRun = new ImageRun({ data: imgBuffer, type: "png", transformation: { width: 140, height: 70 } });
+  if (_logoBuffer) {
+    try {
+      logoRun = new ImageRun({ data: _logoBuffer, type: "png", transformation: { width: 140, height: 70 } });
+    } catch (e) {
+      console.error("[faDocx] ImageRun creation failed:", e.message);
     }
-  } catch (e) { /* logo unavailable */ }
+  }
 
   const noBorder = {
     top: { style: BorderStyle.NONE },
