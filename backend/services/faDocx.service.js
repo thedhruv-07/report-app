@@ -27,18 +27,27 @@ const {
 
 const { tableBorders, createQtyCell, sanitizeDocxText } = require("../utils/docx.utils");
 
-// Load logo once at module startup — path relative to this file, not CWD
-const _LOGO_PATH = path.join(__dirname, "..", "..", "frontend", "public", "company-logo.png");
+// Load logo once at module startup.
+// Primary:  backend/assets/company-logo.png  (ships with backend in production)
+// Fallback: frontend/public/company-logo.png (local dev convenience)
+const _LOGO_CANDIDATES = [
+  path.join(__dirname, "..", "assets", "company-logo.png"),
+  path.join(__dirname, "..", "..", "frontend", "public", "company-logo.png"),
+];
 let _logoBuffer = null;
-try {
-  if (fs.existsSync(_LOGO_PATH)) {
-    _logoBuffer = fs.readFileSync(_LOGO_PATH);
-    console.log("[faDocx] Logo loaded:", _LOGO_PATH, `(${_logoBuffer.length} bytes)`);
-  } else {
-    console.warn("[faDocx] Logo file not found at:", _LOGO_PATH);
+for (const candidate of _LOGO_CANDIDATES) {
+  try {
+    if (fs.existsSync(candidate)) {
+      _logoBuffer = fs.readFileSync(candidate);
+      console.log("[faDocx] Logo loaded:", candidate, `(${_logoBuffer.length} bytes)`);
+      break;
+    }
+  } catch (e) {
+    console.error("[faDocx] Failed to read logo from", candidate, ":", e.message);
   }
-} catch (e) {
-  console.error("[faDocx] Failed to load logo:", e.message);
+}
+if (!_logoBuffer) {
+  console.warn("[faDocx] Company logo not found in any candidate path — header will show text fallback");
 }
 
 // ─── helpers ────────────────────────────────────────────────────────────────
