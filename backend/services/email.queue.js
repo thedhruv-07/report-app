@@ -92,9 +92,14 @@ const runWorker = async () => {
   if (isWorkerRunning) return;
   isWorkerRunning = true;
   try {
-    const pending = await EmailLog.find({ status: { $in: ['queued','failed'] } }).sort({ createdAt: 1 }).limit(100).lean();
-    if (!pending || pending.length === 0) return;
-    const batch = pending.slice(0, CONCURRENCY);
+    // Process fresh 'queued' items first, then retry 'failed' ones
+    const queued = await EmailLog.find({ status: 'queued' }).sort({ createdAt: 1 }).limit(CONCURRENCY).lean();
+    const failedSlots = CONCURRENCY - queued.length;
+    const failed = failedSlots > 0
+      ? await EmailLog.find({ status: 'failed' }).sort({ retryCount: 1, createdAt: 1 }).limit(failedSlots).lean()
+      : [];
+    const batch = [...queued, ...failed];
+    if (batch.length === 0) return;
     await Promise.all(batch.map(async (item) => {
       try {
         const fresh = await EmailLog.findById(item._id).lean();
