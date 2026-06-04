@@ -30,6 +30,8 @@ export default function NotificationManager() {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -69,15 +71,22 @@ export default function NotificationManager() {
   };
 
   const handleDeactivate = async (id) => {
-    if (!window.confirm("Deactivate this notification?")) return;
+    setDeleting(true);
     try {
-      await fetch(ENDPOINTS.NOTIFICATIONS.DELETE(id), {
+      const res = await fetch(ENDPOINTS.NOTIFICATIONS.DELETE(id), {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
-      fetchAll();
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Server error ${res.status}`);
+      }
+      setNotifications(prev => prev.map(n => n._id === id ? { ...n, isActive: false } : n));
     } catch (err) {
       alert("Failed to deactivate: " + err.message);
+    } finally {
+      setDeleting(false);
+      setConfirmDeleteId(null);
     }
   };
 
@@ -219,13 +228,31 @@ export default function NotificationManager() {
                           <Edit2 className="w-4 h-4" />
                         </button>
                         {notif.isActive && (
-                          <button
-                            onClick={() => handleDeactivate(notif._id)}
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Deactivate"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          confirmDeleteId === notif._id ? (
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => handleDeactivate(notif._id)}
+                                disabled={deleting}
+                                className="text-[11px] font-semibold px-2 py-1 rounded-lg bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50"
+                              >
+                                {deleting ? '…' : 'Confirm'}
+                              </button>
+                              <button
+                                onClick={() => setConfirmDeleteId(null)}
+                                className="text-[11px] font-semibold px-2 py-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setConfirmDeleteId(notif._id)}
+                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Deactivate"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )
                         )}
                       </div>
                     </td>
