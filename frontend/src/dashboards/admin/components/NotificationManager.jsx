@@ -81,7 +81,7 @@ export default function NotificationManager() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || `Server error ${res.status}`);
       }
-      setNotifications(prev => prev.map(n => n._id === id ? { ...n, isActive: false } : n));
+      setNotifications(prev => prev.filter(n => n._id !== id));
     } catch (err) {
       alert("Failed to deactivate: " + err.message);
     } finally {
