@@ -227,8 +227,7 @@ export default function NotificationManager() {
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
-                        {notif.isActive && (
-                          confirmDeleteId === notif._id ? (
+                        {confirmDeleteId === notif._id ? (
                             <div className="flex items-center gap-1">
                               <button
                                 onClick={() => handleDeactivate(notif._id)}
@@ -253,7 +252,6 @@ export default function NotificationManager() {
                               <Trash2 className="w-4 h-4" />
                             </button>
                           )
-                        )}
                       </div>
                     </td>
                   </tr>
