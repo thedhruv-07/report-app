@@ -286,11 +286,12 @@ export default function AdminDashboard() {
         throw new Error(errData.error || 'Failed to assign booking');
       }
 
-      await fetchBookingInbox();
-      await fetchNotifications?.();
+      // Close modal immediately, refresh data in background
       setInspectorPickerOpen(false);
       setSelectedBooking(null);
       setSelectedInspectorId('');
+      fetchBookingInbox();
+      fetchNotifications?.();
     } catch (error) {
       console.error('Failed to assign booking:', error);
       alert(error.message);

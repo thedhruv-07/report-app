@@ -207,7 +207,7 @@ router.post('/:id/assign', roleCheck(['admin', 'manager']), async (req, res) => 
         </div>
       `;
 
-      await sendImmediateEmail({
+      sendImmediateEmail({
         to: inspector.email,
         subject: `New inspection assigned — ${booking.clientName}`,
         html: emailHtml || fallbackHtml,
