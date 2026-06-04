@@ -66,7 +66,7 @@ export default function TechnicalManagerDashboard() {
     email: "sarah.chen@rms.com"
   };
 
-  const { unreadCount: systemUnreadCount } = useNotifications();
+  const { unreadCount: systemUnreadCount, bellNotifications, markAsRead: markSystemAsRead, markAllAsRead: markAllSystemRead, fetchNotifications } = useNotifications();
 
   // Queue view filters
   const [queueFilters, setQueueFilters] = useState({
@@ -123,11 +123,20 @@ export default function TechnicalManagerDashboard() {
     revisionRound: r.revisionRound
   }));
 
-  const [notifications, setNotifications] = useState([]);
+  // DB-backed notifications from SystemNotification (task accept, report submit, etc.)
+  const notifications = bellNotifications.map(n => ({
+    id: n._id,
+    message: n.message,
+    reportId: null,
+    isRead: false,
+    createdAt: n.createdAt,
+    timeAgo: n.createdAt ? new Date(n.createdAt).toLocaleString() : 'Recently',
+    type: n.type || 'info',
+  }));
 
-  // Wire real-time socket notifications from backend
+  // Wire real-time socket notifications — just refresh DB notifications on new events
   useManagerNotifications((newNotif) => {
-    setNotifications(prev => [newNotif, ...prev]);
+    fetchNotifications();
     if (newNotif.type === 'submission' || newNotif.type === 'status') {
       refetchQueue();
     }
@@ -284,8 +293,7 @@ export default function TechnicalManagerDashboard() {
   // Compute pending review reports count
   const pendingCount = reports.filter(r => r.status === "Pending Review").length;
   
-  // Compute unread notification count
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const unreadCount = systemUnreadCount;
 
   // Handle opening a report review interface
   const handleOpenReport = async (reportId) => {
@@ -327,12 +335,12 @@ export default function TechnicalManagerDashboard() {
 
   // Notification helper: mark as read
   const handleMarkAsRead = (notifId) => {
-    setNotifications(prev => prev.map(n => n.id === notifId ? { ...n, isRead: true } : n));
+    markSystemAsRead(notifId);
   };
 
   // Mark all notifications as read
   const handleMarkAllRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    markAllSystemRead(bellNotifications.map(n => n._id));
     addToast("All notifications marked as read.", "info");
   };
 
