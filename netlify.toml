@@ -1,3 +1,7 @@
+[build]
+  command = "npm install --prefix frontend && npm run build --prefix frontend"
+  publish = "frontend/dist"
+
 [[headers]]
   for = "/*"
   [headers.values]
