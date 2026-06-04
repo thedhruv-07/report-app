@@ -8,7 +8,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try {
-      const saved = localStorage.getItem("reportUser");
+      const saved = sessionStorage.getItem("reportUser");
       return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
@@ -17,7 +17,7 @@ export function AuthProvider({ children }) {
 
   const [token, setToken] = useState(() => {
     try {
-      return localStorage.getItem("reportToken") || "";
+      return sessionStorage.getItem("reportToken") || "";
     } catch {
       return "";
     }
@@ -65,16 +65,16 @@ export function AuthProvider({ children }) {
     sessionStorage.removeItem("notif_popup_shown");
     setUser(userData);
     setToken(tokenStr);
-    localStorage.setItem("reportUser", JSON.stringify(userData));
-    localStorage.setItem("reportToken", tokenStr);
+    sessionStorage.setItem("reportUser", JSON.stringify(userData));
+    sessionStorage.setItem("reportToken", tokenStr);
   };
 
   const logout = () => {
     setUser(null);
     setToken("");
     setOnboardingCompleted(null);
-    localStorage.removeItem("reportUser");
-    localStorage.removeItem("reportToken");
+    sessionStorage.removeItem("reportUser");
+    sessionStorage.removeItem("reportToken");
     sessionStorage.removeItem("notif_popup_shown");
   };
 
