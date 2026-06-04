@@ -398,22 +398,8 @@ export default function AdminDashboard() {
           </button>
         </nav>
 
-        {/* Right: Notifications Bell, User Info & Logout */}
+        {/* Right: User Info & Logout */}
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => setNotificationsPanelOpen(!notificationsPanelOpen)}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl relative transition-all duration-200 cursor-pointer"
-          >
-            <Bell className="w-5 h-5" />
-            {notifUnreadCount > 0 && (
-              <span className="absolute top-1 right-1 min-w-4.5 h-4.5 bg-rose-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold px-1">
-                {notifUnreadCount > 9 ? "9+" : notifUnreadCount}
-              </span>
-            )}
-          </button>
-
-          <div className="h-6 w-px bg-slate-200 hidden sm:block"></div>
-
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-md text-xs">
               AD
