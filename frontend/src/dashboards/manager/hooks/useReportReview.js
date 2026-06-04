@@ -16,13 +16,13 @@ export const useReportReview = (id) => {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch report details');
       }
-      
+
       const data = await response.json();
-      setReportData(data); // contains { report, type }
+      setReportData(data);
     } catch (err) {
       console.error(err);
       setError(err.message);
@@ -36,7 +36,7 @@ export const useReportReview = (id) => {
   }, [fetchReport]);
 
   const submitFeedback = async (section, comment, priority) => {
-    const token = localStorage.getItem("reportToken");
+    const token = sessionStorage.getItem("reportToken");
     const response = await fetch(ENDPOINTS.MANAGER.SUBMIT_FEEDBACK(id), {
       method: 'POST',
       headers: {
@@ -46,21 +46,21 @@ export const useReportReview = (id) => {
       body: JSON.stringify({ section, comment, priority })
     });
     if (!response.ok) throw new Error('Failed to submit feedback');
-    await fetchReport(); // Refresh data
+    await fetchReport();
   };
 
   const finalizeReport = async () => {
-    const token = localStorage.getItem("reportToken");
+    const token = sessionStorage.getItem("reportToken");
     const response = await fetch(ENDPOINTS.MANAGER.FINALIZE(id), {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (!response.ok) throw new Error('Failed to finalize report');
-    await fetchReport(); // Refresh data
+    await fetchReport();
   };
 
   const addRemark = async (text) => {
-    const token = localStorage.getItem("reportToken");
+    const token = sessionStorage.getItem("reportToken");
     const response = await fetch(ENDPOINTS.MANAGER.ADD_REMARK(id), {
       method: 'POST',
       headers: {
@@ -70,16 +70,16 @@ export const useReportReview = (id) => {
       body: JSON.stringify({ text })
     });
     if (!response.ok) throw new Error('Failed to add remark');
-    await fetchReport(); // Refresh data
+    await fetchReport();
   };
 
-  return { 
-    reportData, 
-    loading, 
-    error, 
-    submitFeedback, 
-    finalizeReport, 
+  return {
+    reportData,
+    loading,
+    error,
+    submitFeedback,
+    finalizeReport,
     addRemark,
-    refetch: fetchReport 
+    refetch: fetchReport
   };
 };
