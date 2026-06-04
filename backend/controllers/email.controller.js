@@ -41,44 +41,29 @@ const sendTestEmail = async (req, res) => {
 
     const subject = '[TEST] Absolute Veritas email delivery check';
     const html = `
-      <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:24px;color:#0f172a;">
-        <h2 style="margin:0 0 12px;color:#1d4ed8;">Email delivery test</h2>
-        <p style="margin:0 0 12px;">This is a test message from the Absolute Veritas email system.</p>
-        <p style="margin:0 0 12px;">Recipient: <strong>${recipient}</strong></p>
-        <p style="margin:0 0 12px;">Timestamp: ${new Date().toISOString()}</p>
+      <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:24px;color:#0f172a;background:#f8fafc;">
+        <div style="background:#fff;border-radius:12px;padding:24px;border:1px solid #e2e8f0;">
+          <h2 style="margin:0 0 12px;color:#1d4ed8;">✅ Email Delivery Test</h2>
+          <p style="margin:0 0 8px;">This is a test message from the <strong>Absolute Veritas</strong> email system.</p>
+          <p style="margin:0 0 8px;">Recipient: <strong>${recipient}</strong></p>
+          <p style="margin:0 0 8px;color:#64748b;font-size:13px;">Sent: ${new Date().toUTCString()}</p>
+        </div>
       </div>
     `;
 
-    await EmailLog.create({
+    // Use queue so request returns immediately — SMTP runs in background
+    await enqueueEmail({
       recipient,
       subject,
       type: 'test_email',
       html,
-      status: 'queued',
       metadata: { triggeredBy: req.user?.email || req.user?.id || 'admin' }
     });
 
-    const result = await sendImmediateEmail({
-      to: recipient,
-      subject,
-      html,
-    });
-
-    await EmailLog.create({
-      recipient,
-      subject,
-      type: 'test_email',
-      html,
-      status: 'sent',
-      sentAt: new Date(),
-      deliveredAt: new Date(),
-      metadata: { messageId: result.messageId, previewUrl: result.previewUrl || false, accepted: result.accepted || [], rejected: result.rejected || [], response: result.response || '', envelope: result.envelope || null }
-    });
-
-    return res.json({ message: 'Test email sent', recipient, result });
+    return res.json({ message: 'Test email queued — check your inbox in a few seconds', recipient });
   } catch (err) {
     console.error('Send test email error:', err);
-    return res.status(500).json({ error: 'Failed to send test email', detail: err.message });
+    return res.status(500).json({ error: 'Failed to queue test email', detail: err.message });
   }
 };
 
@@ -99,29 +84,15 @@ const sendSelfTestEmail = async (req, res) => {
       </div>
     `;
 
-    const log = await EmailLog.create({
+    await enqueueEmail({
       recipient,
       subject,
       type: 'test_email_self',
       html,
-      status: 'queued',
       metadata: { triggeredBy: req.user?.email || req.user?.id || 'self-test' }
     });
 
-    const result = await sendImmediateEmail({
-      to: recipient,
-      subject,
-      html,
-    });
-
-    await EmailLog.findByIdAndUpdate(log._id, {
-      status: 'sent',
-      sentAt: new Date(),
-      deliveredAt: new Date(),
-      metadata: { ...(log.metadata || {}), messageId: result.messageId, previewUrl: result.previewUrl || false, accepted: result.accepted || [], rejected: result.rejected || [], response: result.response || '', envelope: result.envelope || null }
-    });
-
-    return res.json({ message: 'Self test email sent', recipient, result });
+    return res.json({ message: 'Self test email queued', recipient });
   } catch (err) {
     console.error('Send self test email error:', err);
     return res.status(500).json({ error: 'Failed to send self test email', detail: err.message });
