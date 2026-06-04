@@ -231,7 +231,13 @@ const generateReport = async (req, res) => {
         type: 'info',
         priority: 2,
         emailSubject: `[REPORT SUBMITTED] ${reportType} — ${clientLabel}`,
-        emailHtml: `<p>Inspector <strong>${inspectorName}</strong> has submitted a <strong>${reportType}</strong> report for <strong>${clientLabel}</strong>.</p><p>Please log in to review the report.</p>`,
+        templateName: 'report-submitted-staff.html',
+        templateVars: {
+          inspectorName,
+          reportType,
+          clientName: clientLabel,
+          submittedAt: new Date().toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }),
+        },
       }).catch(e => console.warn('[reportSubmit] notifyStaff failed:', e.message));
 
       if (req.query.notify === "true") {

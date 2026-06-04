@@ -1,8 +1,11 @@
 // Shared helper: create a dashboard SystemNotification for admin+manager and send emails
 const SystemNotification = require('../models/systemNotification.model');
 const { User } = require('../models/user.model');
+const { renderTemplate } = require('../services/email.service');
 
-const notifyStaff = async ({ title, message, type = 'info', priority = 2, emailSubject, emailHtml }) => {
+const DASHBOARD_URL = (process.env.FRONTEND_URL || 'https://absolute-veritas.netlify.app') + '/dashboard';
+
+const notifyStaff = async ({ title, message, type = 'info', priority = 2, emailSubject, templateName, templateVars = {} }) => {
   await SystemNotification.create({
     title,
     message,
@@ -20,8 +23,15 @@ const notifyStaff = async ({ title, message, type = 'info', priority = 2, emailS
     );
     const dbUsers = await User.find({ role: { $in: ['admin', 'manager'] } }).select('email').lean();
     dbUsers.forEach(u => { if (u.email) recipients.add(u.email); });
+
+    const html = renderTemplate(templateName, {
+      dashboardUrl: DASHBOARD_URL,
+      year: new Date().getFullYear(),
+      ...templateVars,
+    });
+
     for (const r of Array.from(recipients)) {
-      enqueueEmail({ recipient: r, subject: emailSubject, type: 'system', html: emailHtml });
+      enqueueEmail({ recipient: r, subject: emailSubject, type: 'system', html });
     }
   } catch (e) {
     console.warn('[notifyStaff] email failed:', e.message);

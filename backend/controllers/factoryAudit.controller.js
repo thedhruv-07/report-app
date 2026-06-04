@@ -43,7 +43,13 @@ exports.createReport = async (req, res) => {
       type: 'info',
       priority: 2,
       emailSubject: `[REPORT SUBMITTED] Factory Audit — ${clientLabel}`,
-      emailHtml: `<p>Inspector <strong>${inspectorName}</strong> has submitted a <strong>Factory Audit</strong> report for <strong>${clientLabel}</strong>.</p><p>Please log in to review the report.</p>`,
+      templateName: 'report-submitted-staff.html',
+      templateVars: {
+        inspectorName,
+        reportType: 'Factory Audit',
+        clientName: clientLabel,
+        submittedAt: new Date().toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }),
+      },
     }).catch(e => console.warn('[faSubmit] notifyStaff failed:', e.message));
 
     // Enqueue email alert for submitted FA
@@ -112,7 +118,13 @@ exports.submitForReview = async (req, res) => {
       type: 'info',
       priority: 2,
       emailSubject: `[REPORT SUBMITTED] Factory Audit — ${_clientLabel}`,
-      emailHtml: `<p>Inspector <strong>${_inspectorName}</strong> has submitted a <strong>Factory Audit</strong> report for <strong>${_clientLabel}</strong>.</p><p>Please log in to review the report.</p>`,
+      templateName: 'report-submitted-staff.html',
+      templateVars: {
+        inspectorName: _inspectorName,
+        reportType: 'Factory Audit',
+        clientName: _clientLabel,
+        submittedAt: new Date().toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }),
+      },
     }).catch(e => console.warn('[faSubmitForReview] notifyStaff failed:', e.message));
 
     try {

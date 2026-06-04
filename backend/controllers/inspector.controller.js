@@ -71,7 +71,13 @@ const acceptTask = async (req, res) => {
       type: 'info',
       priority: 2,
       emailSubject: `[TASK ACCEPTED] ${inspectorName} accepted ${typeLabel} — ${clientLabel}`,
-      emailHtml: `<p>Inspector <strong>${inspectorName}</strong> has accepted the <strong>${typeLabel}</strong> task for <strong>${clientLabel}</strong>.</p><p>They will now proceed to complete the inspection report.</p>`,
+      templateName: 'task-accepted.html',
+      templateVars: {
+        inspectorName,
+        inspectionType: typeLabel,
+        clientName: clientLabel,
+        acceptedAt: new Date().toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }),
+      },
     }).catch(e => console.warn('[acceptTask] notifyStaff failed:', e.message));
 
     res.json({ task });
