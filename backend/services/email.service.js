@@ -34,10 +34,13 @@ const sendViaBrevoApi = async ({ to, subject, html, text, from }) => {
 // Create transporter — uses Ethereal (free test SMTP) by default.
 // Replace with real SMTP credentials in production.
 let cachedTransporter = null;
+let cachedTransporterKey = null;
 let templateCache = {};
 
 const getTransporter = async () => {
-  if (cachedTransporter) return cachedTransporter;
+  const credKey = `${process.env.SMTP_HOST}|${process.env.SMTP_USER}|${process.env.SMTP_PASS}`;
+  if (cachedTransporter && cachedTransporterKey === credKey) return cachedTransporter;
+  cachedTransporter = null;
 
   // Check for real SMTP config
   if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
@@ -84,6 +87,7 @@ const getTransporter = async () => {
     }
 
     cachedTransporter = nodemailer.createTransport(transportOpts);
+    cachedTransporterKey = credKey;
     return cachedTransporter;
   }
 

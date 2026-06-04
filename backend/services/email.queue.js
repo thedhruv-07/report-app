@@ -47,11 +47,12 @@ const enqueueEmail = async ({ reportId, recipient, subject, type, html, attachme
   // Prevent duplicate sends for same report/recipient/type within short window
   const recent = await EmailLog.findOne({ reportId, recipient, type, createdAt: { $gt: new Date(Date.now() - 1000 * 60 * 5) } });
   if (recent && recent.status !== 'failed') {
+    // Still kick the worker — the item may be stuck in queued state
+    process.nextTick(() => { runWorker().catch(err => console.error('Email worker error:', err)); });
     return recent;
   }
 
   const log = await EmailLog.create({ reportId, recipient, subject, type, html, attachments, metadata, status: 'queued' });
-  // Kick worker
   process.nextTick(() => { runWorker().catch(err => console.error('Email worker error:', err)); });
   return log;
 };
@@ -117,8 +118,7 @@ const startWorkerLoop = () => {
   }, 15 * 1000);
 };
 
-mongoose.connection.once('connected', async () => {
-  // Reset any emails stuck in SENDING state from a previous crashed run
+const initEmailWorker = async () => {
   try {
     const reset = await EmailLog.updateMany({ status: 'sending' }, { status: 'queued' });
     if (reset.modifiedCount > 0) console.log(`[email-queue] Reset ${reset.modifiedCount} stuck SENDING emails to queued`);
@@ -127,6 +127,12 @@ mongoose.connection.once('connected', async () => {
   }
   startWorkerLoop();
   runWorker().catch(e => console.error('Email worker startup error:', e));
-});
+};
+
+if (isDbReady()) {
+  initEmailWorker();
+} else {
+  mongoose.connection.once('connected', initEmailWorker);
+}
 
 module.exports = { enqueueEmail, runWorker, startWorkerLoop };
