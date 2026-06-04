@@ -156,7 +156,14 @@ export default function EmailMonitoringPanel() {
                 {filtered.map(email => (
                   <tr key={email._id} className="border-b border-slate-50 hover:bg-slate-50/60">
                     <td className="px-4 py-3 text-slate-700">{email.recipient}</td>
-                    <td className="px-4 py-3 text-slate-700 max-w-[320px] truncate">{email.subject}</td>
+                    <td className="px-4 py-3 text-slate-700 max-w-[260px]">
+                      <p className="truncate">{email.subject}</p>
+                      {email.failedReason && (
+                        <p className="text-[11px] text-rose-500 mt-0.5 truncate" title={email.failedReason}>
+                          ✕ {email.failedReason}
+                        </p>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-slate-500">{email.type}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${STATUS_BADGE[email.status] || STATUS_BADGE.queued}`}>
