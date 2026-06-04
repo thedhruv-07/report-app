@@ -92,11 +92,11 @@ const runWorker = async () => {
   if (isWorkerRunning) return;
   isWorkerRunning = true;
   try {
-    // Process fresh 'queued' items first, then retry 'failed' ones
+    // Process fresh 'queued' items first, then auto-retry 'failed' ones under MAX_RETRIES
     const queued = await EmailLog.find({ status: 'queued' }).sort({ createdAt: 1 }).limit(CONCURRENCY).lean();
     const failedSlots = CONCURRENCY - queued.length;
     const failed = failedSlots > 0
-      ? await EmailLog.find({ status: 'failed' }).sort({ retryCount: 1, createdAt: 1 }).limit(failedSlots).lean()
+      ? await EmailLog.find({ status: 'failed', retryCount: { $lt: MAX_RETRIES } }).sort({ retryCount: 1, createdAt: 1 }).limit(failedSlots).lean()
       : [];
     const batch = [...queued, ...failed];
     if (batch.length === 0) return;
