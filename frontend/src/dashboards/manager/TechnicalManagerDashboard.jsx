@@ -556,6 +556,7 @@ export default function TechnicalManagerDashboard() {
                 handleOpenReport={handleOpenReport}
                 getTypeBadgeClass={getTypeBadgeClass}
                 getStatusBadgeClass={getStatusBadgeClass}
+                userName={currentUser.name}
               />
             </Suspense>
           )}

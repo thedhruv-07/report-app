@@ -8,12 +8,12 @@ import {
   ChevronRight
 } from 'lucide-react';
 
-function DashboardView({ pendingCount, animatedStats, reports, setActiveView, handleOpenReport, getTypeBadgeClass, getStatusBadgeClass }) {
+function DashboardView({ pendingCount, animatedStats, reports, setActiveView, handleOpenReport, getTypeBadgeClass, getStatusBadgeClass, userName }) {
   return (
     <div className="space-y-6 max-w-6xl mx-auto animate-in fade-in duration-300">
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Welcome Back, Sarah Chen 👋</h1>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Welcome Back, {userName || 'Manager'} 👋</h1>
           <p className="text-slate-500 text-sm mt-0.5">Ensure highest compliance. You have {pendingCount} new inspection reports awaiting review today.</p>
         </div>
       </div>
