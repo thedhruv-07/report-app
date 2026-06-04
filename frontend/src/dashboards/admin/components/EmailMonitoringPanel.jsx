@@ -68,7 +68,10 @@ export default function EmailMonitoringPanel() {
         },
         body: JSON.stringify({ recipient: testRecipient.trim() })
       });
-      if (!res.ok) throw new Error('Test email failed');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || data.error || 'Test email failed');
+      }
       setToast({ type: 'success', message: 'Email alert sent successfully' });
       await fetchEmails();
       window.setTimeout(() => setToast(null), 2500);
