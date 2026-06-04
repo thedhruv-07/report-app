@@ -119,22 +119,21 @@ router.post('/:id/assign', roleCheck(['admin', 'manager']), async (req, res) => 
     // Create Task so the booking appears in the inspector's task list
     const taskInspectionType = toTaskInspectionType(booking.inspectionType);
     const validTaskTypes = ['PSI', 'CLS', 'DPI', 'Factory Audit', 'Social Audit'];
-    if (validTaskTypes.includes(taskInspectionType)) {
-      try {
-        await Task.create({
-          assignedInspectorId,
-          clientName: booking.clientName,
-          factoryName: booking.factoryName || 'TBD',
-          factoryAddress: booking.factoryAddress || 'TBD',
-          inspectionType: taskInspectionType,
-          scheduledDate: booking.scheduledDate || new Date(),
-          status: 'Pending Acceptance',
-          adminInstructions: booking.specialInstructions || '',
-        });
-      } catch (taskErr) {
-        console.warn('[bookings] Task creation failed:', taskErr.message);
-      }
+    if (!validTaskTypes.includes(taskInspectionType)) {
+      return res.status(400).json({
+        error: `Cannot assign booking: unrecognised inspection type "${booking.inspectionType}". Expected one of: PSI, CLS, DPI, factory_audit, social_audit.`,
+      });
     }
+    await Task.create({
+      assignedInspectorId,
+      clientName: booking.clientName,
+      factoryName: booking.factoryName || 'TBD',
+      factoryAddress: booking.factoryAddress || 'TBD',
+      inspectionType: taskInspectionType,
+      scheduledDate: booking.scheduledDate || new Date(),
+      status: 'Pending Acceptance',
+      adminInstructions: booking.specialInstructions || '',
+    });
 
     // Notification in the Notification collection (inspector dashboard list)
     await Notification.create({
