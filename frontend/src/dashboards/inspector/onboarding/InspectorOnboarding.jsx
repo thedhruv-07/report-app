@@ -2,8 +2,10 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { motion as Motion } from 'framer-motion';
 import { Sparkles, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { ENDPOINTS } from '../../../config/api';
+import { clearFormStorage } from '../../../shared/services';
 import StepIndicator from './StepIndicator';
 
 const Step1Manual = lazy(() => import('./steps/Step1Manual'));
@@ -27,6 +29,7 @@ const itemVariants = {
 
 export default function InspectorOnboarding() {
   const { user, token, refreshOnboarding } = useAuth();
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(true);
 
@@ -69,9 +72,12 @@ export default function InspectorOnboarding() {
   };
 
   const handleAssessmentComplete = async () => {
-    // Clear localStorage when onboarding is fully completed
     localStorage.removeItem('onboarding_current_step');
+    // Clear all form drafts so the inspector starts with a clean slate
+    ['/dashboard/pre-shipment', '/dashboard/container-loading', '/dashboard/during-production', '/dashboard/factory-audit', '/dashboard/social-audit']
+      .forEach(route => clearFormStorage(route));
     await refreshOnboarding();
+    navigate('/dashboard/inspector', { replace: true });
   };
 
   const handlePreviousStep = () => {
