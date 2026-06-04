@@ -20,9 +20,10 @@ const getTransporter = async () => {
       host: process.env.SMTP_HOST,
       port,
       secure,
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 15000,
+      family: 4, // Force IPv4 — Render does not support IPv6 outbound
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 20000,
       name: process.env.SMTP_HELO || process.env.DKIM_DOMAIN || process.env.SMTP_HOST,
       auth: {
         user: process.env.SMTP_USER,
