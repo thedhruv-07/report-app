@@ -6,6 +6,7 @@ const { createFAContent, createFAHeaderTable } = require("../services/faDocx.ser
 const wasabiService = require("../services/wasabiService");
 const { GetObjectCommand } = require("@aws-sdk/client-s3");
 const { getIO } = require("../socket");
+const notifyStaff = require("../utils/notifyStaff");
 
 const emitReportSubmitted = (report, user) => {
   try {
@@ -33,6 +34,18 @@ exports.createReport = async (req, res) => {
     });
     await report.save();
     emitReportSubmitted(report, req.user);
+
+    const inspectorName = req.user?.name || 'Inspector';
+    const clientLabel = report.generalInfo?.client || report.generalInfo?.factory || 'Unknown Client';
+    notifyStaff({
+      title: 'Factory Audit Submitted',
+      message: `${inspectorName} submitted a Factory Audit report for ${clientLabel}.`,
+      type: 'info',
+      priority: 2,
+      emailSubject: `[REPORT SUBMITTED] Factory Audit — ${clientLabel}`,
+      emailHtml: `<p>Inspector <strong>${inspectorName}</strong> has submitted a <strong>Factory Audit</strong> report for <strong>${clientLabel}</strong>.</p><p>Please log in to review the report.</p>`,
+    }).catch(e => console.warn('[faSubmit] notifyStaff failed:', e.message));
+
     // Enqueue email alert for submitted FA
     try {
       const { enqueueEmail } = require('../services/email.queue');
@@ -90,6 +103,18 @@ exports.submitForReview = async (req, res) => {
       await report.save();
     }
     emitReportSubmitted(report, req.user);
+
+    const _inspectorName = req.user?.name || 'Inspector';
+    const _clientLabel = report.generalInfo?.client || report.generalInfo?.factory || 'Unknown Client';
+    notifyStaff({
+      title: 'Factory Audit Submitted',
+      message: `${_inspectorName} submitted a Factory Audit report for ${_clientLabel}.`,
+      type: 'info',
+      priority: 2,
+      emailSubject: `[REPORT SUBMITTED] Factory Audit — ${_clientLabel}`,
+      emailHtml: `<p>Inspector <strong>${_inspectorName}</strong> has submitted a <strong>Factory Audit</strong> report for <strong>${_clientLabel}</strong>.</p><p>Please log in to review the report.</p>`,
+    }).catch(e => console.warn('[faSubmitForReview] notifyStaff failed:', e.message));
+
     try {
       const { enqueueEmail } = require('../services/email.queue');
       const { renderTemplate } = require('../services/email.service');

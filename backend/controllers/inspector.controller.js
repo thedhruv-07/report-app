@@ -1,5 +1,6 @@
 const Task = require('../models/task.model');
 const Notification = require('../models/notification.model');
+const notifyStaff = require('../utils/notifyStaff');
 
 const getSummary = async (req, res) => {
   try {
@@ -60,6 +61,19 @@ const acceptTask = async (req, res) => {
       { new: true }
     );
     if (!task) return res.status(400).json({ error: "Task cannot be accepted or not found" });
+
+    const inspectorName = req.user?.name || 'An inspector';
+    const clientLabel = task.clientName || 'Unknown Client';
+    const typeLabel = task.inspectionType || 'inspection';
+    notifyStaff({
+      title: 'Task Accepted',
+      message: `${inspectorName} accepted the ${typeLabel} task for ${clientLabel}.`,
+      type: 'info',
+      priority: 2,
+      emailSubject: `[TASK ACCEPTED] ${inspectorName} accepted ${typeLabel} — ${clientLabel}`,
+      emailHtml: `<p>Inspector <strong>${inspectorName}</strong> has accepted the <strong>${typeLabel}</strong> task for <strong>${clientLabel}</strong>.</p><p>They will now proceed to complete the inspection report.</p>`,
+    }).catch(e => console.warn('[acceptTask] notifyStaff failed:', e.message));
+
     res.json({ task });
   } catch (err) {
     res.status(500).json({ error: "Server error", detail: err.message });

@@ -5,6 +5,7 @@ const { learnFromReport } = require("../services/ai.service");
 const { enrichReportHeaderData, normalizePayload } = require("../utils/parser.utils");
 const mongoose = require("mongoose");
 const { getIO } = require("../socket");
+const notifyStaff = require("../utils/notifyStaff");
 
 // Import Mongoose Models
 const { Report } = require("../models/report.model");
@@ -220,13 +221,26 @@ const generateReport = async (req, res) => {
       ]);
       console.log(`✅ Saved Granular Modular Report to MongoDB with ID: ${report._id}`);
 
+      // Dashboard + email notification for admin and manager
+      const inspectorName = data.auditorName || req.user?.name || 'Inspector';
+      const clientLabel = data.client || data.factory || 'Unknown Client';
+      const reportType = data.servicePerformed || 'PSI';
+      notifyStaff({
+        title: 'Report Submitted',
+        message: `${inspectorName} submitted a ${reportType} report for ${clientLabel}.`,
+        type: 'info',
+        priority: 2,
+        emailSubject: `[REPORT SUBMITTED] ${reportType} — ${clientLabel}`,
+        emailHtml: `<p>Inspector <strong>${inspectorName}</strong> has submitted a <strong>${reportType}</strong> report for <strong>${clientLabel}</strong>.</p><p>Please log in to review the report.</p>`,
+      }).catch(e => console.warn('[reportSubmit] notifyStaff failed:', e.message));
+
       if (req.query.notify === "true") {
         try {
           getIO().to("manager_room").emit("new_report_submitted", {
             reportId: report._id,
-            inspectorName: data.auditorName || req.user?.name || "Inspector",
+            inspectorName,
             client: data.client || "",
-            reportType: data.servicePerformed || "PSI",
+            reportType,
             submittedAt: new Date().toISOString(),
           });
         } catch (e) {
