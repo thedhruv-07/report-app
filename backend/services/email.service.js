@@ -1,6 +1,13 @@
 const nodemailer = require("nodemailer");
+const dns = require('dns');
 const fs = require('fs');
 const path = require('path');
+
+const resolveIPv4 = (hostname) => new Promise((resolve) => {
+  dns.resolve4(hostname, (err, addresses) => {
+    resolve((!err && addresses && addresses[0]) ? addresses[0] : hostname);
+  });
+});
 
 // Send via Brevo HTTP API (avoids SMTP port blocking on cloud hosts)
 const sendViaBrevoApi = async ({ to, subject, html, text, from }) => {
@@ -48,15 +55,22 @@ const getTransporter = async () => {
     const secure = process.env.SMTP_SECURE
       ? process.env.SMTP_SECURE === "true"
       : port === 465;
+    // Pre-resolve to IPv4 — Render blocks outbound IPv6 and family:4 alone is unreliable
+    const smtpHostname = process.env.SMTP_HOST;
+    const smtpHost = await resolveIPv4(smtpHostname);
+    if (smtpHost !== smtpHostname) {
+      console.log(`[email] Resolved ${smtpHostname} → ${smtpHost} (IPv4)`);
+    }
     const transportOpts = {
-      host: process.env.SMTP_HOST,
+      host: smtpHost,
       port,
       secure,
-      family: 4, // Force IPv4 — Render does not support IPv6 outbound
+      family: 4,
       connectionTimeout: 15000,
       greetingTimeout: 15000,
       socketTimeout: 20000,
-      name: process.env.SMTP_HELO || process.env.DKIM_DOMAIN || process.env.SMTP_HOST,
+      name: process.env.SMTP_HELO || process.env.DKIM_DOMAIN || smtpHostname,
+      tls: { servername: smtpHostname }, // use original hostname for TLS cert validation
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
