@@ -2,6 +2,35 @@ const nodemailer = require("nodemailer");
 const fs = require('fs');
 const path = require('path');
 
+// Send via Brevo HTTP API (avoids SMTP port blocking on cloud hosts)
+const sendViaBrevoApi = async ({ to, subject, html, text, from }) => {
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) throw new Error('BREVO_API_KEY not set');
+
+  const fromAddress = from || process.env.SMTP_FROM || process.env.SMTP_USER || 'cs@absoluteveritas.com';
+  const body = {
+    sender: { name: 'Absolute Veritas', email: fromAddress },
+    to: [{ email: to }],
+    subject,
+    htmlContent: html,
+    textContent: text || (html ? html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : ''),
+  };
+
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: { 'accept': 'application/json', 'api-key': apiKey, 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(`Brevo API error ${res.status}: ${err.message || JSON.stringify(err)}`);
+  }
+
+  const data = await res.json();
+  return { messageId: data.messageId, accepted: [to], rejected: [], response: 'Brevo API OK', envelope: { from: fromAddress, to: [to] } };
+};
+
 // Create transporter — uses Ethereal (free test SMTP) by default.
 // Replace with real SMTP credentials in production.
 let cachedTransporter = null;
@@ -87,6 +116,11 @@ const renderTemplate = (name, vars = {}) => {
 };
 
 const sendImmediateEmail = async ({ to, subject, html, text, attachments = [], from } = {}) => {
+  // Use Brevo HTTP API if key is set — avoids SMTP port blocking on cloud hosts
+  if (process.env.BREVO_API_KEY) {
+    return sendViaBrevoApi({ to, subject, html, text, from });
+  }
+
   const transporter = await getTransporter();
   const fromAddress = from || process.env.SMTP_FROM || process.env.SMTP_USER || 'cs@absoluteveritas.com';
   const logoPath = path.resolve(__dirname, '..', '..', 'frontend', 'public', 'company-logo.png');
