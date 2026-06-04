@@ -42,7 +42,7 @@ export default function SchemaPhotos({ config, formData, onChange }) {
 
     setProcessingGroups(prev => ({ ...prev, [groupId]: true }));
     try {
-      const token = localStorage.getItem("token") || localStorage.getItem("reportToken");
+      const token = sessionStorage.getItem("token") || sessionStorage.getItem("reportToken");
       const res = await fetch(ENDPOINTS.AI_DESCRIBE, {
         method: "POST",
         headers: { 

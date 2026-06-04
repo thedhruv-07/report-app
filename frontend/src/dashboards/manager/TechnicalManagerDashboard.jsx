@@ -301,7 +301,7 @@ export default function TechnicalManagerDashboard() {
     
     // The backend update status will be called if the report is newly opened
     try {
-      const token = localStorage.getItem("reportToken");
+      const token = sessionStorage.getItem("reportToken");
       const report = reports.find(r => r.id === reportId);
       if (report && report.status === "Pending Review") {
         await fetch(`http://localhost:5000/api/manager/reports/${reportId}/status`, {
@@ -556,7 +556,6 @@ export default function TechnicalManagerDashboard() {
                 handleOpenReport={handleOpenReport}
                 getTypeBadgeClass={getTypeBadgeClass}
                 getStatusBadgeClass={getStatusBadgeClass}
-                userName={currentUser.name}
               />
             </Suspense>
           )}

@@ -68,7 +68,7 @@ export default function SmartTextarea({
   // Suggestion fetcher (hoisted so useEffect can call it)
   const fetchSuggestion = useCallback(async (partialText = "") => {
     try {
-      const token = localStorage.getItem("token") || localStorage.getItem("reportToken");
+      const token = sessionStorage.getItem("token") || sessionStorage.getItem("reportToken");
       const res = await fetch(ENDPOINTS.SUGGEST, {
         method: "POST",
         headers: {

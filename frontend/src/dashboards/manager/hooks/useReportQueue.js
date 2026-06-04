@@ -11,7 +11,7 @@ export const useReportQueue = (filters = {}) => {
     setLoading(true);
     try {
       const queryParams = new URLSearchParams(filters).toString();
-      const token = localStorage.getItem("reportToken");
+      const token = sessionStorage.getItem("reportToken");
       
       const response = await fetch(`${ENDPOINTS.MANAGER.QUEUE}?${queryParams}`, {
         headers: {

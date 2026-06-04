@@ -10,7 +10,7 @@ export const useReportReview = (id) => {
     if (!id) return;
     setLoading(true);
     try {
-      const token = localStorage.getItem("reportToken");
+      const token = sessionStorage.getItem("reportToken");
       const response = await fetch(ENDPOINTS.MANAGER.REPORT_DETAILS(id), {
         headers: {
           'Authorization': `Bearer ${token}`
