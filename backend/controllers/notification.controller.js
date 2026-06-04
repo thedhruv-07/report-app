@@ -25,16 +25,18 @@ const buildUserQuery = (user) => {
 const getMyNotifications = async (req, res) => {
   try {
     const userId = req.user.id;
-    const query = {
-      ...buildUserQuery(req.user),
-      "readBy.userId": { $ne: userId }
-    };
 
-    const notifications = await SystemNotification.find(query)
-      .sort({ priority: 1, createdAt: -1 })
+    const notifications = await SystemNotification.find(buildUserQuery(req.user))
+      .sort({ createdAt: -1 })
+      .limit(10)
       .lean();
 
-    res.json({ notifications });
+    const withReadStatus = notifications.map(n => ({
+      ...n,
+      isRead: n.readBy?.some(r => r.userId?.toString() === userId?.toString()) || false,
+    }));
+
+    res.json({ notifications: withReadStatus });
   } catch (err) {
     console.error("getMyNotifications error:", err);
     res.status(500).json({ error: "Server error" });

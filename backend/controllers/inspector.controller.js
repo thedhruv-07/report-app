@@ -83,7 +83,7 @@ const acceptTask = async (req, res) => {
 const getNotifications = async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
-    const notifications = await Notification.find({ inspectorId: userId }).sort({ createdAt: -1 }).limit(50);
+    const notifications = await Notification.find({ inspectorId: userId }).sort({ createdAt: -1 }).limit(10);
     const unreadCount = await Notification.countDocuments({ inspectorId: userId, isRead: false });
     res.json({ notifications, unreadCount });
   } catch (err) {

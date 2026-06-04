@@ -26,8 +26,8 @@ export function NotificationProvider({ children }) {
       const data = await res.json();
       const notifs = data.notifications || [];
       setPopupNotifications(notifs);
-      setBellNotifications(notifs.slice(0, 10));
-      setUnreadCount(notifs.length);
+      setBellNotifications(notifs);
+      setUnreadCount(notifs.filter(n => !n.isRead).length);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -51,14 +51,12 @@ export function NotificationProvider({ children }) {
     try {
       await fetch(ENDPOINTS.NOTIFICATIONS.MARK_READ, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ notificationId })
       });
-      setPopupNotifications(prev => prev.filter(n => n._id !== notificationId));
-      setBellNotifications(prev => prev.filter(n => n._id !== notificationId));
+      const mark = n => n._id === notificationId ? { ...n, isRead: true } : n;
+      setPopupNotifications(prev => prev.map(mark));
+      setBellNotifications(prev => prev.map(mark));
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (err) {
       console.error("markAsRead error:", err);
@@ -70,14 +68,12 @@ export function NotificationProvider({ children }) {
     try {
       await fetch(ENDPOINTS.NOTIFICATIONS.MARK_ALL_READ, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ notificationIds })
       });
-      setPopupNotifications([]);
-      setBellNotifications([]);
+      const markAll = n => ({ ...n, isRead: true });
+      setPopupNotifications(prev => prev.map(markAll));
+      setBellNotifications(prev => prev.map(markAll));
       setUnreadCount(0);
     } catch (err) {
       console.error("markAllAsRead error:", err);

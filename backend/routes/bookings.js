@@ -144,6 +144,12 @@ router.post('/:id/assign', roleCheck(['admin', 'manager']), async (req, res) => 
       relatedBookingId: booking._id,
       isRead: false,
     });
+    // Keep only the 10 most recent notifications per inspector
+    const allNotifs = await Notification.find({ inspectorId: assignedInspectorId }).sort({ createdAt: -1 }).select('_id').lean();
+    if (allNotifs.length > 10) {
+      const toDelete = allNotifs.slice(10).map(n => n._id);
+      await Notification.deleteMany({ _id: { $in: toDelete } });
+    }
 
     // SystemNotification so the bell count reflects this assignment
     await SystemNotification.create({
