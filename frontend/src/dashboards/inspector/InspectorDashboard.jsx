@@ -115,7 +115,18 @@ export default function Dashboard() {
     'Social Audit': '/dashboard/social-audit',
   })[type] || '/dashboard/pre-shipment';
 
-  const handleStartReport = (task) => navigate(getInspectionRoute(task.inspectionType), { state: { task } });
+  const FORM_STORAGE_KEYS = {
+    'PSI':           ['inspectionStep','inspectionForm','inspectionItems','inspectionPhotos','inspectionPhotoGroups','inspectionGeneralPhoto','inspectionGeneralPhotoData','inspectionLastSubmittedTemplate'],
+    'CLS':           ['clsStep','clsForm'],
+    'DPI':           ['dpiStep','dpiForm'],
+    'Factory Audit': ['faStep','faForm','faReportId'],
+    'Social Audit':  [],
+  };
+
+  const handleStartReport = (task) => {
+    (FORM_STORAGE_KEYS[task.inspectionType] || []).forEach(k => localStorage.removeItem(k));
+    navigate(getInspectionRoute(task.inspectionType), { state: { task } });
+  };
 
   const filteredTasks = tasks.filter(task => {
     const q = searchTerm.toLowerCase();
