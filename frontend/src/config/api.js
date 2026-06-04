@@ -55,6 +55,7 @@ export const ENDPOINTS = {
   },
   ADMIN: {
     INSPECTORS: `${API_BASE_URL}/api/admin/inspectors`,
+    DELETE_INSPECTOR: (id) => `${API_BASE_URL}/api/admin/inspectors/${encodeURIComponent(id)}`,
   },
   BOOKINGS: {
     ADMIN_LIST: `${API_BASE_URL}/api/bookings`,

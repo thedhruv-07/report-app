@@ -1,7 +1,7 @@
 // frontend/src/dashboards/admin/components/InspectorDirectory.jsx
 import React from 'react';
 import { useState, useEffect } from 'react';
-import { Mail } from 'lucide-react';
+import { Mail, Trash2 } from 'lucide-react';
 import { ENDPOINTS } from '../../../config/api';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -39,6 +39,25 @@ export default function InspectorDirectory({ activeView }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async (id) => {
+    setDeleting(true);
+    try {
+      const res = await fetch(ENDPOINTS.ADMIN.DELETE_INSPECTOR(id), {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error();
+      setInspectors(prev => prev.filter(i => i._id !== id));
+    } catch {
+      alert('Failed to delete inspector. Please try again.');
+    } finally {
+      setDeleting(false);
+      setConfirmDeleteId(null);
+    }
+  };
 
   useEffect(() => {
     if (activeView !== 'inspectors') return;
@@ -105,6 +124,31 @@ export default function InspectorDirectory({ activeView }) {
                   </p>
                 </div>
               </div>
+              {confirmDeleteId === inspector._id ? (
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => handleDelete(inspector._id)}
+                    disabled={deleting}
+                    className="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50"
+                  >
+                    {deleting ? '...' : 'Confirm'}
+                  </button>
+                  <button
+                    onClick={() => setConfirmDeleteId(null)}
+                    className="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmDeleteId(inspector._id)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+                  title="Delete inspector"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
             </div>
 
             {/* Email */}
