@@ -126,7 +126,7 @@ router.post('/:id/assign', roleCheck(['admin', 'manager']), async (req, res) => 
     }
     await Task.create({
       assignedInspectorId,
-      clientName: booking.clientName,
+      clientName: booking.clientName || 'Unknown Client',
       factoryName: booking.factoryName || 'TBD',
       factoryAddress: booking.factoryAddress || 'TBD',
       inspectionType: taskInspectionType,
