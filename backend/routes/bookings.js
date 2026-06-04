@@ -117,7 +117,7 @@ router.post('/:id/assign', roleCheck(['admin', 'manager']), async (req, res) => 
     );
 
     // Create Task so the booking appears in the inspector's task list
-    const taskInspectionType = toTaskInspectionType(booking.inspectionType);
+    const taskInspectionType = toTaskInspectionType(booking.inspectionType || 'PSI');
     const validTaskTypes = ['PSI', 'CLS', 'DPI', 'Factory Audit', 'Social Audit'];
     if (!validTaskTypes.includes(taskInspectionType)) {
       return res.status(400).json({
