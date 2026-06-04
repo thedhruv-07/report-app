@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, useLocation } from "react-router-dom";
 import { Menu, LogOut, ChevronDown, UserCircle, Bell, Check } from "lucide-react";
-import { services } from '../../shared/services';
+import { services, clearFormStorage } from '../../shared/services';
 import { ENDPOINTS } from '../../config/api';
 import { useNotifications } from '../../context/NotificationContext';
 import { timeAgo } from '../../utils/timeAgo';
@@ -100,7 +100,7 @@ export default function Navbar() {
                 {services.map(service => (
                   <button
                     key={service.id}
-                    onClick={() => navigate(service.route)}
+                    onClick={() => { clearFormStorage(service.route); navigate(service.route); }}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${location.pathname === service.route ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
                   >
                     <span className="truncate">{service.name}</span>

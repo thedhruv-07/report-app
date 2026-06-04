@@ -5,6 +5,18 @@
  * automatically pick them up. Do NOT hardcode services elsewhere.
  */
 
+const FORM_STORAGE_KEYS = {
+  '/dashboard/pre-shipment':    ['inspectionStep','inspectionForm','inspectionItems','inspectionPhotos','inspectionPhotoGroups','inspectionGeneralPhoto','inspectionGeneralPhotoData','inspectionLastSubmittedTemplate'],
+  '/dashboard/container-loading': ['clsStep','clsForm'],
+  '/dashboard/during-production': ['dpiStep','dpiForm'],
+  '/dashboard/factory-audit':   ['faStep','faForm','faReportId'],
+  '/dashboard/social-audit':    [],
+};
+
+export const clearFormStorage = (route) => {
+  (FORM_STORAGE_KEYS[route] || []).forEach(k => localStorage.removeItem(k));
+};
+
 export const services = [
   {
     id: "psi",
