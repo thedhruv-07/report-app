@@ -20,6 +20,9 @@ const getTransporter = async () => {
       host: process.env.SMTP_HOST,
       port,
       secure,
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
       name: process.env.SMTP_HELO || process.env.DKIM_DOMAIN || process.env.SMTP_HOST,
       auth: {
         user: process.env.SMTP_USER,

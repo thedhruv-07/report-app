@@ -117,7 +117,14 @@ const startWorkerLoop = () => {
   }, 15 * 1000);
 };
 
-mongoose.connection.once('connected', () => {
+mongoose.connection.once('connected', async () => {
+  // Reset any emails stuck in SENDING state from a previous crashed run
+  try {
+    const reset = await EmailLog.updateMany({ status: 'sending' }, { status: 'queued' });
+    if (reset.modifiedCount > 0) console.log(`[email-queue] Reset ${reset.modifiedCount} stuck SENDING emails to queued`);
+  } catch (e) {
+    console.error('[email-queue] Failed to reset stuck emails:', e.message);
+  }
   startWorkerLoop();
   runWorker().catch(e => console.error('Email worker startup error:', e));
 });
