@@ -61,9 +61,9 @@ export default function TechnicalManagerDashboard() {
   const auth = useAuth();
   
   const currentUser = auth?.user || {
-    name: "Sarah Chen",
+    name: "Technical Manager",
     role: "manager",
-    email: "sarah.chen@rms.com"
+    email: ""
   };
 
   const { unreadCount: systemUnreadCount, bellNotifications, markAsRead: markSystemAsRead, markAllAsRead: markAllSystemRead, fetchNotifications } = useNotifications();
@@ -697,7 +697,7 @@ export default function TechnicalManagerDashboard() {
                 <span className="bg-blue-50 text-blue-600 text-xs px-3 py-1 rounded-full font-bold border border-blue-100 uppercase tracking-wider">
                   Quality Gatekeeper — Manager
                 </span>
-                <p className="text-xs text-slate-400">Sarah Chen holds final review authority across all PSI, CLS, and Social Audit modules.</p>
+                <p className="text-xs text-slate-400">{currentUser.name} holds final review authority across all PSI, CLS, and Social Audit modules.</p>
               </div>
 
               <div className="space-y-4">
