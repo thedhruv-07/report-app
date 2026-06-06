@@ -31,16 +31,16 @@ export const colors = {
 // Input Styles
 export const inputStyle = {
   width: "100%",
-  padding: "12px 14px",
-  marginBottom: "15px",
-  borderRadius: "8px",
-  border: `2px solid ${colors.border}`,
+  padding: "6px 9px",
+  marginBottom: "0",
+  borderRadius: "6px",
+  border: `1px solid ${colors.border}`,
   outline: "none",
-  fontSize: "14px",
+  fontSize: "13px",
   fontFamily: "inherit",
-  backgroundColor: colors.surface,
+  backgroundColor: "transparent",
   color: colors.text,
-  transition: "all 0.3s ease",
+  transition: "border-color 0.2s ease",
   boxSizing: "border-box",
 };
 
@@ -165,12 +165,15 @@ export const cardStyle = {
 };
 
 export const sectionHeaderStyle = {
-  fontSize: "18px",
+  fontSize: "11px",
   fontWeight: "700",
   color: colors.header,
-  marginBottom: "20px",
-  borderBottom: `3px solid ${colors.primary}`,
-  paddingBottom: "12px",
+  textTransform: "uppercase",
+  letterSpacing: "0.08em",
+  marginBottom: "10px",
+  marginTop: "0",
+  paddingLeft: "10px",
+  borderLeft: `3px solid ${colors.primary}`,
 };
 
 export const badgeStyle = {
