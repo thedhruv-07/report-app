@@ -793,35 +793,30 @@ function App() {
       width: "100%",
       overflow: "hidden",
       background: "#f8fafc",
-      fontFamily: "Arial, Helvetica, sans-serif",
+      fontFamily: "'Outfit', Arial, sans-serif",
       boxSizing: "border-box",
       position: "relative"
     }}>
       {/* Top Navigation Header */}
       <div style={{
         width: "100%",
-        background: colors.headerBg,
+        background: colors.surface,
         borderBottom: `1px solid ${colors.border}`,
-        display: "flex",
-        flexDirection: isMobile ? "column" : "row",
-        alignItems: "stretch",
-        boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+        boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
         zIndex: 10,
         flexShrink: 0
       }}>
-        {/* Brand Area Removed */}
-        {/* Horizontal Navigation Area */}
-        <div style={{ 
-          flex: 1, 
-          overflowX: "auto", 
-          padding: "16px",
-          display: "flex",
-          gap: "8px",
-          alignItems: "center",
-          scrollbarWidth: "none", 
-          background: colors.surface
-        }}
-        >
+        {/* Breadcrumb + step indicator */}
+        <div style={{ padding: "7px 16px 3px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+            <span style={{ fontSize: "11px", color: colors.textMuted, fontWeight: 500 }}>Reports</span>
+            <span style={{ fontSize: "11px", color: colors.textMuted }}>›</span>
+            <span style={{ fontSize: "12px", fontWeight: "700", color: colors.header }}>Pre-Shipment Inspection</span>
+          </div>
+          <span style={{ fontSize: "11px", color: colors.textMuted, fontWeight: 500 }}>Step {step} of 13</span>
+        </div>
+        {/* Tab pills */}
+        <div style={{ overflowX: "auto", padding: "3px 12px 6px", display: "flex", gap: "4px", scrollbarWidth: "none" }}>
           {stepNavItems.map((item) => {
             const isActive = step === item.id;
             return (
@@ -830,153 +825,81 @@ function App() {
                 onClick={() => goToStep(item.id)}
                 style={{
                   border: "none",
-                  background: isActive ? colors.primaryLight : "transparent",
-                  color: isActive ? colors.primary : colors.text,
-                  borderRadius: "8px",
-                  padding: "10px 16px",
+                  background: isActive ? colors.primary : colors.surfaceAlt,
+                  color: isActive ? "#fff" : colors.textMuted,
+                  borderRadius: "20px",
+                  padding: "4px 10px",
                   cursor: "pointer",
-                  fontSize: "13px",
+                  fontSize: "11px",
                   fontWeight: isActive ? "700" : "500",
                   transition: "all 0.2s ease",
                   display: "flex",
                   alignItems: "center",
-                  gap: "8px",
+                  gap: "4px",
                   whiteSpace: "nowrap"
                 }}
               >
-                <span style={{ 
-                  width: "20px", 
-                  height: "20px", 
-                  borderRadius: "5px", 
-                  background: isActive ? colors.primary : colors.surfaceAlt, 
+                <span style={{
+                  width: "15px", height: "15px", borderRadius: "50%",
+                  background: isActive ? "rgba(255,255,255,0.25)" : colors.border,
                   color: isActive ? "#fff" : colors.textMuted,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "10px",
-                  fontWeight: "bold"
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "9px", fontWeight: "bold", flexShrink: 0
                 }}>{item.id}</span>
                 {item.label}
               </button>
             );
           })}
         </div>
-
+        {/* Progress bar */}
+        <div style={{ height: "3px", background: colors.border }}>
+          <div style={{ width: `${(step / 13) * 100}%`, height: "100%", background: colors.primary, transition: "width 0.3s ease" }} />
+        </div>
       </div>
 
       {/* Main Content Area - Scrollable */}
       <div style={{
         flex: 1,
         overflowY: "auto",
-        background: colors.surface,
+        background: "#f8fafc",
         scrollBehavior: "smooth"
       }}>
 
         <div style={{
           width: "100%",
           margin: "0",
-          background: colors.surface,
-          padding: isMobile ? "20px 16px" : "40px",
+          background: "#f8fafc",
+          padding: isMobile ? "10px 12px" : "14px 22px",
           minHeight: "fit-content"
         }}>
 
-        {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: isMobile ? "20px" : "40px" }}>
-          <h1 style={{ 
-            fontSize: isMobile ? "20px" : "clamp(24px, 2.4vw, 30px)", 
-            fontWeight: "800", 
-            color: colors.header,
-            margin: "0 0 10px 0"
-          }}>
-            Pre-Shipment Inspection Report
-          </h1>
-          <p style={{ 
-            fontSize: "13px", 
-            color: colors.textMuted,
-            margin: "0"
-          }}>
-            Step {step} of 13
-          </p>
-          <div style={{
-            display: "flex",
-            height: "4px",
-            background: colors.border,
-            borderRadius: "2px",
-            marginTop: "12px",
-            overflow: "hidden"
-          }}>
-            <div style={{
-              width: `${(step / 13) * 100}%`,
-              background: colors.primary,
-              transition: "width 0.3s ease"
-            }}></div>
-          </div>
-        </div>
-
-        {/* Clear Form Button */}
-        <div style={{ 
-          display: "flex", 
-          justifyContent: isMobile ? "center" : "flex-end", 
-          gap: "10px", 
-          marginBottom: isMobile ? "20px" : "30px",
+        {/* Compact action buttons */}
+        <div style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: "8px",
+          marginBottom: "12px",
           flexWrap: "wrap"
         }}>
           <button
             onClick={quickFillForm}
-            style={{
-              padding: isMobile ? "8px 14px" : "10px 18px",
-              background: colors.success,
-              color: "#fff",
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer",
-              fontSize: isMobile ? "11px" : "13px",
-              fontWeight: "600",
-              transition: "all 0.3s ease",
-              boxShadow: "0 2px 8px rgba(16, 185, 129, 0.2)"
-            }}
+            style={{ padding: "7px 12px", background: colors.success, color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "600", boxShadow: "0 2px 6px rgba(16,185,129,0.2)" }}
           >
-            ⚡ Quick Fill Template
+            ⚡ Quick Fill
           </button>
           <button
             onClick={handleSaveDraft}
-            style={{
-              padding: isMobile ? "8px 14px" : "10px 18px",
-              background: colors.warning,
-              color: "#fff",
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer",
-              fontSize: isMobile ? "11px" : "13px",
-              fontWeight: "600",
-              transition: "all 0.3s ease",
-              boxShadow: "0 2px 8px rgba(245, 158, 11, 0.2)"
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = colors.warningHover;
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = colors.warning;
-            }}
+            style={{ padding: "7px 12px", background: colors.warning, color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "600", boxShadow: "0 2px 6px rgba(245,158,11,0.2)" }}
+            onMouseEnter={(e) => { e.target.style.background = colors.warningHover; }}
+            onMouseLeave={(e) => { e.target.style.background = colors.warning; }}
           >
             💾 Save Draft
           </button>
           <button
             onClick={clearForm}
-            style={{
-              padding: isMobile ? "8px 14px" : "10px 18px",
-              background: colors.danger,
-              color: "#fff",
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer",
-              fontSize: isMobile ? "11px" : "13px",
-              fontWeight: "600",
-              transition: "all 0.3s ease",
-              boxShadow: "0 2px 8px rgba(239, 68, 68, 0.15)"
-            }}
+            style={{ padding: "7px 12px", background: colors.danger, color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "600", boxShadow: "0 2px 6px rgba(239,68,68,0.15)" }}
           >
-            ⟲ Clear Form & Restart
+            ⟲ Clear
           </button>
         </div>
 
