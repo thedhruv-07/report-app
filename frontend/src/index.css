@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
 @import "tailwindcss" layer(tailwind);
 
 /*
@@ -18,7 +19,7 @@
   --surface: #ffffff;
   --border: #e2e8f0;
 
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Outfit', Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -28,6 +29,7 @@ body {
   padding: 0;
   overflow: hidden; /* Prevent double scrollbars */
   background: var(--bg);
+  font-family: 'Outfit', Arial, Helvetica, sans-serif;
 }
 
 #root {
