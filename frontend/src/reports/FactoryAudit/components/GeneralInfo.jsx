@@ -1,51 +1,44 @@
 import React from 'react';
-import { UploadCloud, X } from "lucide-react";
+import { UploadCloud } from 'lucide-react';
 import SchemaSection from '../../shared/components/SchemaSection';
 import { colors } from '../../../styles';
 
-export default function GeneralInfo({ form, handleChange, handleGeneralPhotoUpload, setForm, isPhotoProcessing, isMobile }) {
-  const { schema } = form;
+function GeneralPhotoCard({ photo, onUpload, onRemove }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 300px", gap: "30px" }}>
-        <div>
-          <SchemaSection title="1. General Information" fields={schema.generalInfo} formData={form} onChange={handleChange} />
-        </div>
-        <div style={{ padding: "20px", border: `1px solid ${colors.border}`, borderRadius: "16px", background: "white", boxShadow: "0 4px 12px rgba(0,0,0,0.03)" }}>
-          <h4 style={{ margin: "0 0 15px 0", color: colors.header, fontSize: "14px", fontWeight: "700", borderBottom: `2px solid ${colors.surfaceAlt}`, paddingBottom: "8px" }}>General Photo</h4>
-          <div style={{ position: "relative", width: "100%", height: "220px", border: `2px dashed ${form.generalPhoto ? colors.success : colors.border}`, borderRadius: "12px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", overflow: "hidden", backgroundColor: colors.surfaceAlt, transition: "all 0.3s ease" }}>
-            {form.generalPhoto ? (
-              <>
-                <img src={form.generalPhoto} alt="General" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                <button
-                  type="button"
-                  onClick={() => setForm(prev => ({ ...prev, generalPhoto: "" }))}
-                  style={{ position: "absolute", top: "10px", right: "10px", background: "#ef4444", color: "white", border: "none", borderRadius: "50%", width: "26px", height: "26px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 4px rgba(0,0,0,0.2)" }}
-                >
-                  <X size={14} />
-                </button>
-              </>
-            ) : (
-              <div style={{ textAlign: "center", padding: "20px" }}>
-                <UploadCloud size={40} color={colors.textMuted} style={{ marginBottom: "10px", opacity: 0.5 }} />
-                <span style={{ color: colors.textMuted, fontSize: "12px", display: "block" }}>No photo uploaded</span>
-              </div>
-            )}
-            {isPhotoProcessing && <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "600", color: colors.primary }}>Processing...</div>}
+    <div style={{ background: "#fff", borderRadius: "10px", border: `1px solid ${colors.border}`, boxShadow: "0 1px 6px rgba(0,0,0,0.05)", overflow: "hidden" }}>
+      <div style={{ padding: "9px 16px", borderBottom: "1px solid #edf0f5", background: "#f8fafc", display: "flex", alignItems: "center", gap: "8px" }}>
+        <div style={{ width: "3px", height: "14px", background: colors.primary, borderRadius: "2px", flexShrink: 0 }} />
+        <span style={{ fontSize: "11px", fontWeight: "700", color: colors.header, textTransform: "uppercase", letterSpacing: "0.08em" }}>General Photo</span>
+      </div>
+      <div style={{ padding: "12px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "160px" }}>
+        {photo ? (
+          <div style={{ position: "relative", width: "100%" }}>
+            <img src={photo} alt="General" style={{ width: "100%", borderRadius: "6px", objectFit: "cover", display: "block" }} />
+            <button type="button" onClick={onRemove} style={{ position: "absolute", top: "4px", right: "4px", background: "#ef4444", color: "white", border: "none", borderRadius: "50%", width: "20px", height: "20px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", fontWeight: "700" }}>×</button>
           </div>
-          <label style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-            marginTop: "15px", padding: "10px", borderRadius: "8px",
-            background: isPhotoProcessing ? colors.surfaceAlt : colors.primaryLight,
-            color: isPhotoProcessing ? colors.textMuted : colors.primary,
-            cursor: isPhotoProcessing ? "not-allowed" : "pointer",
-            fontSize: "13px", fontWeight: "600", border: `1px solid ${colors.primary}40`
-          }}>
-            <UploadCloud size={16} />
-            {form.generalPhoto ? "Change Photo" : "Upload Photo"}
-            <input type="file" accept="image/*" onChange={handleGeneralPhotoUpload} disabled={isPhotoProcessing} style={{ display: "none" }} />
+        ) : (
+          <label style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", cursor: "pointer", padding: "20px" }}>
+            <UploadCloud size={32} strokeWidth={1.5} color={colors.primary} />
+            <span style={{ fontSize: "12px", fontWeight: "600", color: colors.primary }}>Upload Photo</span>
+            <span style={{ fontSize: "11px", color: colors.textMuted, textAlign: "center" }}>Photo appears in General Info table of the report</span>
+            <input type="file" accept="image/*" style={{ display: "none" }} onChange={onUpload} />
           </label>
-        </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function GeneralInfo({ form, handleChange, handleGeneralPhotoUpload }) {
+  const { schema } = form;
+  const clearGeneralPhoto = () => handleChange({ target: { name: "generalPhoto", value: null } });
+  return (
+    <div style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
+      <div style={{ flex: 1 }}>
+        <SchemaSection title="1. General Information" fields={schema.generalInfo} formData={form} onChange={handleChange} ai={false} />
+      </div>
+      <div style={{ width: "200px", flexShrink: 0 }}>
+        <GeneralPhotoCard photo={form.generalPhoto} onUpload={handleGeneralPhotoUpload} onRemove={clearGeneralPhoto} />
       </div>
     </div>
   );

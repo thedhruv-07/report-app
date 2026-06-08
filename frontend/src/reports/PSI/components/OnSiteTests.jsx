@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { colors, buttonStyle } from '../../../styles';
+import { colors } from '../../../styles';
+import NavButtons from '../../shared/components/NavButtons';
 import SmartTextarea from '../../../components/shared/SmartTextarea';
 
 const OnSiteTests = ({ form, handleChange, onPrev, onNext }) => {
@@ -35,7 +36,17 @@ const OnSiteTests = ({ form, handleChange, onPrev, onNext }) => {
 
   return (
     <div style={{ color: colors.text, fontSize: "14px" }}>
-      <h2 style={{ marginBottom: "20px", color: colors.text, fontSize: "18px", fontWeight: "bold" }}>Step 7: C. ON-SITE TESTS</h2>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
+        <h2 style={{ margin: 0, color: colors.text, fontSize: "18px", fontWeight: "bold" }}>Step 7: C. ON-SITE TESTS</h2>
+        <button
+          onClick={addRow}
+          style={{ padding: "8px 16px", background: colors.success, color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "600", transition: "all 0.3s ease" }}
+          onMouseEnter={(e) => { e.target.style.transform = "translateY(-2px)"; e.target.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.3)"; }}
+          onMouseLeave={(e) => { e.target.style.transform = "translateY(0)"; e.target.style.boxShadow = "none"; }}
+        >
+          + Add Row
+        </button>
+      </div>
 
       <div style={{ marginBottom: "25px", overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", border: cellBorder, fontSize: "12px" }}>
@@ -78,20 +89,31 @@ const OnSiteTests = ({ form, handleChange, onPrev, onNext }) => {
                     <input type="text" name={`testDesc${row.id}`} value={form[`testDesc${row.id}`] || ""} onChange={handleChange} placeholder="Enter description" style={{ width: "100%", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", fontSize: "12px" }} />
                   </td>
                   <td style={{ padding: "8px", border: cellBorder, background: colors.surface, color: colors.text }}>
-                    <SmartTextarea 
-                      name={`testMethod${row.id}`} 
-                      value={form[`testMethod${row.id}`] || ""} 
-                      onChange={(e) => setField(`testMethod${row.id}`, e.target.value)} 
-                      placeholder="Enter method" 
+                    <SmartTextarea
+                      name={`testMethod${row.id}`}
+                      value={form[`testMethod${row.id}`] || ""}
+                      onChange={(e) => setField(`testMethod${row.id}`, e.target.value)}
+                      placeholder="Enter method"
                       context="quality control test method and procedure"
-                      style={{ width: "100%", minHeight: "60px", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", fontFamily: "inherit", fontSize: "11px", boxSizing: "border-box" }} 
+                      style={{ width: "100%", minHeight: "60px", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", fontFamily: "inherit", fontSize: "11px", boxSizing: "border-box" }}
                     />
                   </td>
                   <td style={{ padding: "8px", border: cellBorder, background: colors.surface, color: colors.text }}>
                     <input type="text" name={`testSample${row.id}`} value={form[`testSample${row.id}`] || ""} onChange={handleChange} placeholder="Sample size" style={{ width: "100%", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", textAlign: "center", fontSize: "12px" }} />
                   </td>
                   <td style={{ padding: "8px", border: cellBorder, background: colors.surface }}>
-                    <input type="text" name={`testResult${row.id}`} value={form[`testResult${row.id}`] || ""} onChange={handleChange} placeholder="Result" style={{ width: "100%", padding: "4px", background: colors.surface, color: getResultColor(form[`testResult${row.id}`]), border: "none", borderRadius: "2px", fontSize: "12px", fontWeight: "bold" }} />
+                    <select
+                      name={`testResult${row.id}`}
+                      value={form[`testResult${row.id}`] || ""}
+                      onChange={handleChange}
+                      style={{ width: "100%", padding: "4px", background: colors.surface, color: getResultColor(form[`testResult${row.id}`]), border: "none", borderRadius: "2px", fontSize: "12px", fontWeight: "bold", cursor: "pointer", outline: "none" }}
+                    >
+                      <option value="">Select...</option>
+                      <option value="Passed">Passed</option>
+                      <option value="Failed">Failed</option>
+                      <option value="Pending">Pending</option>
+                      <option value="N/A">N/A</option>
+                    </select>
                   </td>
                   <td style={{ padding: "8px", border: cellBorder, background: colors.surface, textAlign: "center" }}>
                     <button
@@ -105,26 +127,38 @@ const OnSiteTests = ({ form, handleChange, onPrev, onNext }) => {
                 </tr>
               );
             })}
+          </tbody>
+        </table>
+      </div>
 
-            {/* Result Row */}
+      {/* Result & Remarks section */}
+      <div style={{ marginBottom: "25px" }}>
+        <h3 style={{ fontSize: "15px", fontWeight: "bold", color: colors.text, marginBottom: "10px" }}>Result</h3>
+        <table style={{ width: "100%", borderCollapse: "collapse", border: cellBorder, fontSize: "12px" }}>
+          <tbody>
             <tr>
-              <td style={{ padding: "8px", border: cellBorder, background: subHeaderBg, fontWeight: "bold", textAlign: "left", color: colors.text }}>Result:</td>
-              <td colSpan={5} style={{ padding: "8px", border: cellBorder, background: colors.surface }}>
-                <input
-                  type="text"
+              <td style={{ padding: "10px 12px", border: cellBorder, background: "#f8fafc", fontWeight: "bold", textAlign: "left", color: colors.text, width: "150px" }}>
+                Result <span style={{ color: colors.danger }}>*</span>
+              </td>
+              <td style={{ padding: "8px", border: cellBorder, background: colors.surface }}>
+                <select
                   name="onSiteTestResult"
-                  value={form.onSiteTestResult || ""}
+                  value={form.onSiteTestResult || "Pending"}
                   onChange={handleChange}
-                  placeholder="Pending"
-                  style={{ width: "100%", padding: "4px", background: colors.surface, color: resultColor, border: "none", borderRadius: "2px", fontSize: "12px", fontWeight: "bold" }}
-                />
+                  style={{ width: "100%", padding: "4px", background: colors.surface, color: resultColor, border: "none", borderRadius: "2px", fontSize: "12px", fontWeight: "bold", cursor: "pointer", outline: "none" }}
+                >
+                  <option value="Passed">Passed</option>
+                  <option value="Failed">Failed</option>
+                  <option value="Pending">Pending</option>
+                  <option value="N/A">N/A</option>
+                </select>
               </td>
             </tr>
-
-            {/* Remark Row */}
             <tr>
-              <td style={{ padding: "8px", border: cellBorder, background: colors.surface, fontWeight: "bold", textAlign: "left", color: colors.text }}>Remark:</td>
-              <td colSpan={5} style={{ padding: "8px", border: cellBorder, background: colors.surface }}>
+              <td style={{ padding: "10px 12px", border: cellBorder, background: "#f8fafc", fontWeight: "bold", textAlign: "left", color: colors.text }}>
+                Remarks
+              </td>
+              <td style={{ padding: "8px", border: cellBorder, background: colors.surface }}>
                 <SmartTextarea
                   name="onSiteTestRemark"
                   value={form.onSiteTestRemark || ""}
@@ -139,34 +173,7 @@ const OnSiteTests = ({ form, handleChange, onPrev, onNext }) => {
         </table>
       </div>
 
-      <button
-        onClick={addRow}
-        style={{ padding: "8px 16px", background: colors.success, color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12px", marginBottom: "20px", fontWeight: "600", transition: "all 0.3s ease" }}
-        onMouseEnter={(e) => { e.target.style.transform = "translateY(-2px)"; e.target.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.3)"; }}
-        onMouseLeave={(e) => { e.target.style.transform = "translateY(0)"; e.target.style.boxShadow = "none"; }}
-      >
-        + Add Row
-      </button>
-
-      {/* Navigation */}
-      <div style={{ display: "flex", gap: "10px", marginTop: "30px" }}>
-        <button
-          onClick={onPrev}
-          style={buttonStyle}
-          onMouseEnter={(e) => { e.target.style.transform = "translateY(-2px)"; e.target.style.boxShadow = "0 8px 16px rgba(59, 130, 246, 0.4)"; }}
-          onMouseLeave={(e) => { e.target.style.transform = "translateY(0)"; e.target.style.boxShadow = "0 2px 8px rgba(59, 130, 246, 0.2)"; }}
-        >
-          Previous
-        </button>
-        <button
-          onClick={onNext}
-          style={buttonStyle}
-          onMouseEnter={(e) => { e.target.style.transform = "translateY(-2px)"; e.target.style.boxShadow = "0 8px 16px rgba(59, 130, 246, 0.4)"; }}
-          onMouseLeave={(e) => { e.target.style.transform = "translateY(0)"; e.target.style.boxShadow = "0 2px 8px rgba(59, 130, 246, 0.2)"; }}
-        >
-          Next
-        </button>
-      </div>
+      <NavButtons onPrev={onPrev} onNext={onNext} />
     </div>
   );
 };

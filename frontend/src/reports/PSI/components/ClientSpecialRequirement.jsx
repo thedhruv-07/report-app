@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { colors, buttonStyle } from '../../../styles';
+import { colors } from '../../../styles';
+import NavButtons from '../../shared/components/NavButtons';
 import SmartTextarea from '../../../components/shared/SmartTextarea';
 
 const normalizeRequirements = (value) => {
@@ -106,17 +107,18 @@ const ClientSpecialRequirement = ({ form, handleChange, onPrev, onNext, onRequir
             </tr>
             {/* Column labels */}
             <tr>
-              <td style={{ padding: "8px", background: colors.surface, border: cellBorder, width: "5%" }}></td>
+              <td style={{ padding: "8px", background: colors.surface, border: cellBorder, width: "40px", textAlign: "center", color: colors.text, fontWeight: "bold" }}>#</td>
               <td style={{ padding: "8px", background: colors.surface, border: cellBorder, color: colors.text, textAlign: "center" }}>Client Requirements</td>
-              <td style={{ padding: "8px", background: colors.surface, border: cellBorder, color: colors.text, textAlign: "center", width: "15%" }}>Result</td>
+              <td style={{ padding: "8px", background: colors.surface, border: cellBorder, color: colors.text, textAlign: "center", width: "20%" }}>Result</td>
+              <td onClick={addRequirement} style={{ padding: "8px", background: colors.surface, border: cellBorder, color: colors.text, textAlign: "center", width: "30px", cursor: "pointer", fontSize: "18px", fontWeight: "bold" }}>+</td>
             </tr>
           </thead>
           <tbody>
             {/* Dynamic Rows */}
             {requirements.map((req, idx) => (
               <tr key={idx}>
-                <td style={{ padding: "8px", background: colors.surface, border: cellBorder, textAlign: "left", color: colors.text }}>
-                  {req.index}.
+                <td style={{ padding: "8px", background: colors.surface, border: cellBorder, textAlign: "center", color: colors.text, fontWeight: "bold" }}>
+                  {req.index}
                 </td>
                 <td style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
                   <input
@@ -128,64 +130,70 @@ const ClientSpecialRequirement = ({ form, handleChange, onPrev, onNext, onRequir
                   />
                 </td>
                 <td style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
-                  <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
-                    <input
-                      type="text"
-                      value={req.result}
-                      onChange={(e) => handleRequirementChange(idx, "result", e.target.value)}
-                      style={{ ...inputBase, textAlign: "center" }}
-                      placeholder="-"
-                    />
-                    {requirements.length > 1 && (
-                      <button
-                        onClick={() => removeRequirement(idx)}
-                        style={{
-                          padding: "4px 8px",
-                          background: colors.danger,
-                          color: "#fff",
-                          border: "none",
-                          borderRadius: "3px",
-                          cursor: "pointer",
-                          fontSize: "11px"
-                        }}
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </div>
+                  <select
+                    value={req.result}
+                    onChange={(e) => handleRequirementChange(idx, "result", e.target.value)}
+                    style={{ ...inputBase, cursor: "pointer", color: getResultColor(req.result), fontWeight: req.result ? "bold" : "normal" }}
+                  >
+                    <option value="">Select...</option>
+                    <option value="Passed">Passed</option>
+                    <option value="Failed">Failed</option>
+                    <option value="Pending">Pending</option>
+                    <option value="N/A">N/A</option>
+                  </select>
+                </td>
+                <td style={{ padding: "8px", background: colors.surface, border: cellBorder, textAlign: "center" }}>
+                  <button
+                    onClick={() => removeRequirement(idx)}
+                    disabled={requirements.length === 1}
+                    style={{ background: "transparent", color: requirements.length === 1 ? "#ccc" : colors.danger, border: "none", cursor: requirements.length === 1 ? "not-allowed" : "pointer", fontWeight: "bold", fontSize: "14px" }}
+                  >
+                    x
+                  </button>
                 </td>
               </tr>
             ))}
 
-            {/* Result Row */}
+            {/* (Result & Remark moved below) */}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Result & Remarks section */}
+      <div style={{ marginBottom: "25px" }}>
+        <h3 style={{ fontSize: "15px", fontWeight: "bold", color: colors.text, marginBottom: "10px" }}>Result</h3>
+        <table style={{ width: "100%", borderCollapse: "collapse", border: cellBorder, fontSize: "12px" }}>
+          <tbody>
             <tr>
-              <td style={{ padding: "8px", background: colors.surface, border: cellBorder, color: colors.text, fontWeight: "bold", textAlign: "left" }}>
-                Result:
+              <td style={{ padding: "10px 12px", border: cellBorder, background: "#f8fafc", fontWeight: "bold", textAlign: "left", color: colors.text, width: "150px" }}>
+                Result <span style={{ color: "#CC0000" }}>*</span>
               </td>
-              <td colSpan={2} style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
-                <input
-                  type="text"
+              <td style={{ padding: "8px", border: cellBorder, background: colors.surface }}>
+                <select
                   name="client_requirement_result"
                   value={form.client_requirement_result || ""}
                   onChange={handleChange}
-                  placeholder="NA"
-                  style={{ ...inputBase, color: clientResultColor, fontWeight: "bold" }}
-                />
+                  style={{ width: "100%", padding: "4px", background: colors.surface, color: clientResultColor, border: "none", borderRadius: "2px", fontSize: "12px", fontWeight: "bold", cursor: "pointer", outline: "none" }}
+                >
+                  <option value="">Select...</option>
+                  <option value="Passed">Passed</option>
+                  <option value="Failed">Failed</option>
+                  <option value="Pending">Pending</option>
+                  <option value="N/A">N/A</option>
+                </select>
               </td>
             </tr>
-
-            {/* Remark Row */}
             <tr>
-              <td style={{ padding: "8px", background: colors.surface, border: cellBorder, color: colors.text, textAlign: "left" }}>
-                Remark:
+              <td style={{ padding: "10px 12px", border: cellBorder, background: "#f8fafc", fontWeight: "bold", textAlign: "left", color: colors.text }}>
+                Remarks
               </td>
-              <td colSpan={2} style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
+              <td style={{ padding: "8px", border: cellBorder, background: colors.surface }}>
                 <SmartTextarea
                   name="client_requirement_remark"
                   value={form.client_requirement_remark || "NA"}
                   onChange={(e) => handleChange({ target: { name: "client_requirement_remark", value: e.target.value } })}
-                  style={inputBase}
                   context="client special requirement verification remark"
+                  style={{ width: "100%", minHeight: "40px", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", fontFamily: "inherit", fontSize: "12px", boxSizing: "border-box" }}
                 />
               </td>
             </tr>
@@ -193,21 +201,7 @@ const ClientSpecialRequirement = ({ form, handleChange, onPrev, onNext, onRequir
         </table>
       </div>
 
-      <div style={{ marginBottom: "25px" }}>
-        <button onClick={addRequirement} style={{ ...buttonStyle, marginBottom: "0" }}>
-          + Add Requirement
-        </button>
-      </div>
-
-      {/* Navigation */}
-      <div style={{ display: "flex", gap: "10px", marginTop: "30px" }}>
-        <button onClick={onPrev} style={{ ...buttonStyle }}>
-          Previous
-        </button>
-        <button onClick={onNext} style={{ ...buttonStyle }}>
-          Next
-        </button>
-      </div>
+      <NavButtons onPrev={onPrev} onNext={onNext} />
     </div>
   );
 };

@@ -1,185 +1,208 @@
-import { inputStyle, buttonStyle, colors, sectionHeaderStyle } from '../../../styles';
-import SmartTextarea from '../../../components/shared/SmartTextarea';
+import { colors } from '../../../styles';
+import NavButtons from '../../shared/components/NavButtons';
+
+const LABEL_W = "180px";
+
+const cardStyle = {
+  background: "#fff",
+  borderRadius: "10px",
+  border: `1px solid ${colors.border}`,
+  boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
+  overflow: "hidden",
+  marginBottom: "16px",
+};
+
+function CardHeader({ title }) {
+  return (
+    <div style={{ padding: "9px 16px", borderBottom: "1px solid #edf0f5", background: "#f8fafc", display: "flex", alignItems: "center", gap: "8px" }}>
+      <div style={{ width: "3px", height: "14px", background: colors.primary, borderRadius: "2px", flexShrink: 0 }} />
+      <span style={{ fontSize: "11px", fontWeight: "700", color: colors.header, textTransform: "uppercase", letterSpacing: "0.08em" }}>{title}</span>
+    </div>
+  );
+}
+
+function Row({ label, children, isLast, alignTop }) {
+  return (
+    <div
+      style={{ display: "flex", alignItems: alignTop ? "flex-start" : "center", padding: alignTop ? "10px 16px" : "8px 16px", borderBottom: isLast ? "none" : "1px solid #edf0f5", transition: "background 0.15s" }}
+      onMouseEnter={(e) => { if (!alignTop) e.currentTarget.style.background = "#fafbfc"; }}
+      onMouseLeave={(e) => { if (!alignTop) e.currentTarget.style.background = "transparent"; }}
+    >
+      <div style={{ width: LABEL_W, flexShrink: 0, fontSize: "12px", color: colors.textLight, fontWeight: 600, paddingTop: alignTop ? "3px" : 0 }}>{label}</div>
+      <div style={{ flex: 1 }}>{children}</div>
+    </div>
+  );
+}
+
+function TextInput({ name, value, onChange, placeholder }) {
+  return (
+    <input
+      type="text"
+      name={name}
+      value={value || ""}
+      onChange={onChange}
+      placeholder={placeholder}
+      style={{ flex: 1, border: "none", borderBottom: "1px solid transparent", outline: "none", fontSize: "13px", color: colors.text, background: "transparent", padding: "1px 4px", fontFamily: "inherit", transition: "border-color 0.2s", width: "100%" }}
+      onFocus={(e) => { e.target.style.borderBottomColor = colors.primary; }}
+      onBlur={(e)  => { e.target.style.borderBottomColor = "transparent"; }}
+    />
+  );
+}
+
+function StatusPicker({ name, value, onChange }) {
+  const opts = [
+    { label: "Passed",  border: colors.success },
+    { label: "Failed",  border: colors.danger },
+    { label: "Pending", border: colors.warning },
+    { label: "N/A",     border: colors.textMuted },
+  ];
+  return (
+    <div style={{ display: "flex", gap: "8px" }}>
+      {opts.map(({ label, border }) => {
+        const sel = value === label;
+        return (
+          <div key={label} style={{ width: "60px", display: "flex", justifyContent: "center" }}>
+            <button type="button"
+              onClick={() => onChange({ target: { name, value: label } })}
+              style={{ padding: "4px", borderRadius: "50%", border: "none", background: "transparent", cursor: "pointer", outline: "none", display: "flex", alignItems: "center", justifyContent: "center" }}
+            >
+              <span style={{ width: "16px", height: "16px", borderRadius: "50%", border: `2px solid ${sel ? border : colors.border}`, background: sel ? border : "transparent", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}>
+                {sel && <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#fff" }} />}
+              </span>
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+const CRITERIA_ROWS = [
+  { key: "quantity",      label: "A. Quantity"                   },
+  { key: "workmanship",   label: "B. Workmanship"                },
+  { key: "onSiteTests",   label: "C. On-Site Tests"              },
+  { key: "dimensions",    label: "D. Dimensions"                 },
+  { key: "packing",       label: "E. Packing"                    },
+  { key: "markingLabeling", label: "F. Marking & Labeling"       },
+  { key: "clientSpecial", label: "G. Client Special Requirement" },
+];
+
+const RESULT_COLOR = { Passed: colors.success, Failed: colors.danger, Pending: colors.warning };
 
 export default function InspectionSummaryTable({ form, handleChange, onPrev, onNext }) {
   const setField = (name, value) => handleChange({ target: { name, value } });
-  const criteriaOptions = ["Passed", "Failed", "Pending", "N/A"];
-
-  // Define light theme styles
-  const tableStyle = { width: "100%", borderCollapse: "collapse", border: `1px solid ${colors.border}` };
-  const headerCellStyle = { padding: "12px", fontWeight: "bold", background: colors.headerBg, border: `1px solid ${colors.border}`, textAlign: "center", color: colors.text };
-  const labelCellStyle = { padding: "10px", fontWeight: "500", background: colors.surfaceAlt, border: `1px solid ${colors.border}`, color: colors.text, lineHeight: "1.4" };
-  const dataCellStyle = { padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "left" };
-  const inputFieldStyle = { width: "100%", padding: "12px", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, borderRadius: "8px", fontSize: "16px", fontFamily: "inherit", boxSizing: "border-box", minHeight: "40px", transition: "all 0.3s ease" };
-
 
   return (
-    <>
-      <h3 style={{ ...sectionHeaderStyle, color: colors.text }}>II. INSPECTION SUMMARY</h3>
+    <div>
 
-      {/* Inspection Criteria Table */}
-      <div style={{ marginBottom: "20px", overflowX: "auto" }}>
-        <table style={tableStyle}>
-          <thead>
-            <tr>
-              <th style={headerCellStyle}>Criteria</th>
-              <th style={headerCellStyle}>Passed</th>
-              <th style={headerCellStyle}>Failed</th>
-              <th style={headerCellStyle}>Pending</th>
-              <th style={headerCellStyle}>N/A</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[
-              { key: "quantity", label: "A. Quantity" },
-              { key: "workmanship", label: "B. Workmanship" },
-              { key: "onSiteTests", label: "C. On-Site Tests" },
-              { key: "dimensions", label: "D. Dimensions" },
-              { key: "packing", label: "E. Packing" },
-              { key: "markingLabeling", label: "F. Marking & Labeling" },
-              { key: "clientSpecial", label: "G. Client Special Requirement" },
-            ].map((row) => (
-              <tr key={row.key}>
-                <td style={labelCellStyle}>{row.label}</td>
-                {criteriaOptions.map((option) => (
-                  <td key={option} style={dataCellStyle}>
-                    <input
-                      type="radio"
-                      name={row.key}
-                      value={option}
-                      checked={form[row.key] === option}
-                      onChange={handleChange}
-                    />
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* ── Card 1: Inspection Criteria ── */}
+      <div style={cardStyle}>
+        <CardHeader title="II. Inspection Criteria" />
+        
+        {/* Column sub-header */}
+        <div style={{ display: "flex", alignItems: "center", padding: "6px 16px", background: "#f8fafc", borderBottom: "1px solid #edf0f5" }}>
+          <div style={{ width: LABEL_W, flexShrink: 0 }}></div>
+          <div style={{ flex: 1, display: "flex", gap: "8px" }}>
+            <div style={{ width: "60px", textAlign: "center", fontSize: "11px", color: colors.textMuted, fontWeight: 600 }}>Passed</div>
+            <div style={{ width: "60px", textAlign: "center", fontSize: "11px", color: colors.textMuted, fontWeight: 600 }}>Failed</div>
+            <div style={{ width: "60px", textAlign: "center", fontSize: "11px", color: colors.textMuted, fontWeight: 600 }}>Pending</div>
+            <div style={{ width: "60px", textAlign: "center", fontSize: "11px", color: colors.textMuted, fontWeight: 600 }}>N/A</div>
+          </div>
+        </div>
+        {CRITERIA_ROWS.map((row, i) => (
+          <Row key={row.key} label={row.label} isLast={i === CRITERIA_ROWS.length - 1}>
+            <StatusPicker name={row.key} value={form[row.key]} onChange={handleChange} />
+          </Row>
+        ))}
       </div>
 
-      {/* Workmanship Summary */}
-      <h4 style={{ marginTop: "20px", marginBottom: "15px", color: colors.text, fontWeight: "600", fontSize: "14px" }}>Workmanship Summary (based on the finished products)</h4>
-      
-      {/* Inspection Standard */}
-      <div style={{ marginBottom: "15px", display: "grid", gridTemplateColumns: "180px 1fr 100px 100px 100px", gap: "10px", alignItems: "start" }}>
-        <div style={{ padding: "10px", fontWeight: "500", background: colors.surfaceAlt, border: `1px solid ${colors.border}`, color: colors.text }}>Inspection Standard:</div>
-        <input 
-          type="text" 
-          name="inspectionStandard" 
-          value={form.inspectionStandard || ""} 
-          onChange={handleChange}
-          style={{
-            ...inputFieldStyle,
-          }} 
-          placeholder="Enter standard" 
-        />
-        <div style={{ padding: "10px", fontWeight: "bold", background: colors.headerBg, border: `1px solid ${colors.border}`, textAlign: "center", color: colors.text }}>Critical</div>
-        <div style={{ padding: "10px", fontWeight: "bold", background: colors.headerBg, border: `1px solid ${colors.border}`, textAlign: "center", color: colors.text }}>Major</div>
-        <div style={{ padding: "10px", fontWeight: "bold", background: colors.headerBg, border: `1px solid ${colors.border}`, textAlign: "center", color: colors.text }}>Minor</div>
+      {/* ── Card 2: Workmanship Summary ── */}
+      <div style={cardStyle}>
+        <CardHeader title="Workmanship Summary (based on finished products)" />
+
+        {/* Column sub-header */}
+        <div style={{ display: "grid", gridTemplateColumns: `${LABEL_W} 240px 90px 90px 90px`, gap: 0, padding: "6px 16px", background: "#f8fafc", borderBottom: "1px solid #edf0f5" }}>
+          <div />
+          <div style={{ fontSize: "11px", color: colors.textMuted, fontWeight: 600 }}>Value</div>
+          <div style={{ fontSize: "11px", color: colors.textMuted, fontWeight: 600, textAlign: "center" }}>Critical</div>
+          <div style={{ fontSize: "11px", color: colors.textMuted, fontWeight: 600, textAlign: "center" }}>Major</div>
+          <div style={{ fontSize: "11px", color: colors.textMuted, fontWeight: 600, textAlign: "center" }}>Minor</div>
+        </div>
+
+        {/* Rows with 3 extra columns */}
+        {[
+          { label: "Inspection Standard", name: "inspectionStandard", c: "aqlCritical",      m: "aqlMajor",      mi: "aqlMinor"      },
+          { label: "Sampling Plan",        name: "samplingPlan",       c: "aqlCritical",      m: "aqlMajor",      mi: "aqlMinor"      },
+          { label: "Inspection Level",     name: "inspectionLevel",    c: "acceptedCritical", m: "acceptedMajor", mi: "acceptedMinor" },
+          { label: "Order Quantity",       name: "orderQuantity",      c: "foundCritical",    m: "foundMajor",    mi: "foundMinor"    },
+        ].map((row) => (
+          <div key={row.name}
+            style={{ display: "grid", gridTemplateColumns: `${LABEL_W} 240px 90px 90px 90px`, gap: 0, padding: "7px 16px", borderBottom: "1px solid #edf0f5", alignItems: "center", transition: "background 0.15s" }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "#fafbfc"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+          >
+            <div style={{ fontSize: "12px", color: colors.textLight, fontWeight: 600 }}>{row.label}</div>
+            <div style={{ paddingRight: "8px" }}><TextInput name={row.name} value={form[row.name]} onChange={handleChange} placeholder="—" /></div>
+            <div style={{ paddingRight: "4px" }}><TextInput name={row.c}    value={form[row.c]}    onChange={handleChange} placeholder="—" /></div>
+            <div style={{ paddingRight: "4px" }}><TextInput name={row.m}    value={form[row.m]}    onChange={handleChange} placeholder="—" /></div>
+            <div><TextInput name={row.mi} value={form[row.mi]} onChange={handleChange} placeholder="—" /></div>
+          </div>
+        ))}
+
+        {/* Simple rows */}
+        <Row label="Available Quantity">
+          <TextInput name="availableQuantity" value={form.availableQuantity} onChange={handleChange} placeholder="Enter quantity" />
+        </Row>
+        <Row label="Sample Size">
+          <TextInput name="sampleSize" value={form.sampleSize} onChange={handleChange} placeholder="Enter size" />
+        </Row>
+
+        {/* Result */}
+        <Row label="Overall Result" isLast>
+          <select
+            name="overallResult"
+            value={form.overallResult || ""}
+            onChange={handleChange}
+            style={{ border: "none", borderBottom: "1px solid transparent", outline: "none", fontSize: "13px", fontWeight: 700, color: RESULT_COLOR[form.overallResult] || colors.textMuted, background: "transparent", padding: "1px 4px", fontFamily: "inherit", cursor: "pointer", transition: "border-color 0.2s" }}
+            onFocus={(e) => { e.target.style.borderBottomColor = colors.primary; }}
+            onBlur={(e)  => { e.target.style.borderBottomColor = "transparent"; }}
+          >
+            <option value="">Select result…</option>
+            <option value="Passed">Passed</option>
+            <option value="Failed">Failed</option>
+            <option value="Pending">Pending</option>
+          </select>
+        </Row>
       </div>
 
-      {/* Sampling Plan with AQL */}
-      <div style={{ marginBottom: "15px", display: "grid", gridTemplateColumns: "180px 1fr 100px 100px 100px", gap: "10px", alignItems: "start" }}>
-        <div style={{ padding: "10px", fontWeight: "500", background: colors.surfaceAlt, border: `1px solid ${colors.border}`, color: colors.text }}>Sampling Plan:</div>
-        <input type="text" name="samplingPlan" value={form.samplingPlan || ""} onChange={handleChange} style={{...inputFieldStyle}} placeholder="Enter plan" />
-        <input type="text" name="aqlCritical" value={form.aqlCritical || ""} onChange={handleChange} style={{...inputFieldStyle}} placeholder="AQL" />
-        <input type="text" name="aqlMajor" value={form.aqlMajor || ""} onChange={handleChange} style={{...inputFieldStyle}} placeholder="AQL" />
-        <input type="text" name="aqlMinor" value={form.aqlMinor || ""} onChange={handleChange} style={{...inputFieldStyle}} placeholder="AQL" />
+      {/* ── Card 3: Signatures & Comments ── */}
+      <div style={cardStyle}>
+        <CardHeader title="Signatures & Comments" />
+        <Row label="Inspector Signature">
+          <TextInput name="inspectorSignature" value={form.inspectorSignature} onChange={handleChange} placeholder="Inspector name and signature details" />
+        </Row>
+        <Row label="Factory Comments" alignTop isLast={false}>
+          <textarea
+            name="factoryComments"
+            value={form.factoryComments || ""}
+            onChange={(e) => setField("factoryComments", e.target.value)}
+            placeholder="Factory representative comments after inspection"
+            style={{ width: "100%", minHeight: "68px", background: "transparent", color: colors.text, border: "none", borderBottom: "1px solid #e2e8f0", padding: "1px 4px", boxSizing: "border-box", fontSize: "13px", fontFamily: "inherit", resize: "vertical", outline: "none" }}
+          />
+        </Row>
+        <Row label="Factory Notes (Chinese)" alignTop isLast>
+          <textarea
+            name="factoryNotesChinese"
+            value={form.factoryNotesChinese || ""}
+            onChange={(e) => setField("factoryNotesChinese", e.target.value)}
+            placeholder="输入中文备注…"
+            style={{ width: "100%", minHeight: "68px", background: "transparent", color: colors.text, border: "none", borderBottom: "1px solid #e2e8f0", padding: "1px 4px", boxSizing: "border-box", fontSize: "13px", fontFamily: "inherit", resize: "vertical", outline: "none" }}
+          />
+        </Row>
       </div>
 
-      {/* Inspection Level with Accepted */}
-      <div style={{ marginBottom: "15px", display: "grid", gridTemplateColumns: "180px 1fr 100px 100px 100px", gap: "10px", alignItems: "start" }}>
-        <div style={{ padding: "10px", fontWeight: "500", background: colors.surfaceAlt, border: `1px solid ${colors.border}`, color: colors.text }}>Inspection Level:</div>
-        <input type="text" name="inspectionLevel" value={form.inspectionLevel || ""} onChange={handleChange} style={{...inputFieldStyle}} placeholder="Enter level" />
-        <input type="text" name="acceptedCritical" value={form.acceptedCritical || ""} onChange={handleChange} style={{...inputFieldStyle}} placeholder="Accepted" />
-        <input type="text" name="acceptedMajor" value={form.acceptedMajor || ""} onChange={handleChange} style={{...inputFieldStyle}} placeholder="Accepted" />
-        <input type="text" name="acceptedMinor" value={form.acceptedMinor || ""} onChange={handleChange} style={{...inputFieldStyle}} placeholder="Accepted" />
-      </div>
+      <NavButtons onPrev={onPrev} onNext={onNext} />
 
-      {/* Order Quantity with Found */}
-      <div style={{ marginBottom: "15px", display: "grid", gridTemplateColumns: "180px 1fr 100px 100px 100px", gap: "10px", alignItems: "start" }}>
-        <div style={{ padding: "10px", fontWeight: "500", background: colors.surfaceAlt, border: `1px solid ${colors.border}`, color: colors.text }}>Order Quantity:</div>
-        <input type="text" name="orderQuantity" value={form.orderQuantity || ""} onChange={handleChange} style={{...inputFieldStyle}} placeholder="Enter qty" />
-        <input type="text" name="foundCritical" value={form.foundCritical || ""} onChange={handleChange} style={{...inputFieldStyle}} placeholder="Found" />
-        <input type="text" name="foundMajor" value={form.foundMajor || ""} onChange={handleChange} style={{...inputFieldStyle}} placeholder="Found" />
-        <input type="text" name="foundMinor" value={form.foundMinor || ""} onChange={handleChange} style={{...inputFieldStyle}} placeholder="Found" />
-      </div>
-
-      {/* Available Quantity */}
-      <div style={{ marginBottom: "15px", display: "grid", gridTemplateColumns: "180px 1fr", gap: "10px", alignItems: "start" }}>
-        <div style={{ padding: "10px", fontWeight: "500", background: colors.surfaceAlt, border: `1px solid ${colors.border}`, color: colors.text }}>Available Quantity:</div>
-        <input type="text" name="availableQuantity" value={form.availableQuantity || ""} onChange={handleChange} style={{...inputFieldStyle}} placeholder="Enter qty" />
-      </div>
-
-      {/* Sample Size */}
-      <div style={{ marginBottom: "15px", display: "grid", gridTemplateColumns: "180px 1fr", gap: "10px", alignItems: "start" }}>
-        <div style={{ padding: "10px", fontWeight: "500", background: colors.surfaceAlt, border: `1px solid ${colors.border}`, color: colors.text }}>Sample Size:</div>
-        <input type="text" name="sampleSize" value={form.sampleSize || ""} onChange={handleChange} style={{...inputFieldStyle}} placeholder="Enter size" />
-      </div>
-
-      {/* Result Dropdown */}
-      <div style={{ marginBottom: "20px", display: "grid", gridTemplateColumns: "180px 1fr", gap: "10px", alignItems: "start" }}>
-        <div style={{ padding: "10px", fontWeight: "bold", background: colors.surfaceAlt, border: `1px solid ${colors.border}`, color: colors.text }}>Result:</div>
-        <select name="overallResult" value={form.overallResult || ""} onChange={handleChange} style={{ ...inputFieldStyle, color: form.overallResult === "Failed" ? colors.danger : form.overallResult === "Passed" ? colors.success : colors.warning, fontWeight: "bold" }}>
-          <option value="">Select Result</option>
-          <option value="Passed">Passed</option>
-          <option value="Failed">Failed</option>
-          <option value="Pending">Pending</option>
-        </select>
-      </div>
-
-      {/* Factory Comments */}
-      <label style={{ fontWeight: "600", display: "block", marginBottom: "8px", color: colors.text, fontSize: "14px" }}>Factory Comments & Signature</label>
-      <SmartTextarea
-        placeholder="Enter factory comments and signature"
-        name="factoryComments"
-        value={form.factoryComments || ""}
-        onChange={(e) => setField("factoryComments", e.target.value)}
-        context="factory representative comments after inspection"
-        style={{ ...inputStyle, minHeight: "100px", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, borderRadius: "8px" }}
-      />
-
-      {/* Inspector Signature */}
-      <label style={{ fontWeight: "600", display: "block", marginBottom: "8px", marginTop: "20px", color: colors.text, fontSize: "14px" }}>Inspector Signature & Chop</label>
-      <input 
-        type="text" 
-        name="inspectorSignature" 
-        value={form.inspectorSignature || ""} 
-        onChange={handleChange} 
-        style={{ ...inputStyle, background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, borderRadius: "8px" }}
-        placeholder="Enter inspector name and signature details"
-      />
-
-      {/* Editable Chinese Factory Notes */}
-      <label style={{ fontWeight: "600", display: "block", marginBottom: "8px", marginTop: "20px", color: colors.text, fontSize: "14px" }}>Factory Notes (Chinese)</label>
-      <SmartTextarea
-        placeholder="输入中文备注..."
-        name="factoryNotesChinese"
-        value={form.factoryNotesChinese || ""}
-        onChange={(e) => setField("factoryNotesChinese", e.target.value)}
-        context="factory notes or observations in Chinese"
-        style={{ ...inputStyle, height: "100px", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, borderRadius: "8px" }}
-      />
-
-      <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
-        <button 
-          onClick={onPrev} 
-          style={buttonStyle}
-          onMouseEnter={(e) => { e.target.style.transform = "translateY(-2px)"; e.target.style.boxShadow = "0 8px 16px rgba(59, 130, 246, 0.4)"; }}
-          onMouseLeave={(e) => { e.target.style.transform = "translateY(0)"; e.target.style.boxShadow = "0 2px 8px rgba(59, 130, 246, 0.2)"; }}
-        >
-          Back
-        </button>
-        <button
-          onClick={onNext} 
-          style={buttonStyle}
-          onMouseEnter={(e) => { e.target.style.transform = "translateY(-2px)"; e.target.style.boxShadow = "0 8px 16px rgba(59, 130, 246, 0.4)"; }}
-          onMouseLeave={(e) => { e.target.style.transform = "translateY(0)"; e.target.style.boxShadow = "0 2px 8px rgba(59, 130, 246, 0.2)"; }}
-        >
-          Next
-        </button>
-      </div>
-    </>
+    </div>
   );
 }

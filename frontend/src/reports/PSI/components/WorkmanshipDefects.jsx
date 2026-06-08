@@ -1,420 +1,329 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { inputStyle, buttonStyle, colors, sectionHeaderStyle } from '../../../styles';
+import { inputStyle, colors, sectionHeaderStyle } from '../../../styles';
+import NavButtons from '../../shared/components/NavButtons';
 import SmartTextarea from '../../../components/shared/SmartTextarea';
+import { AddRowButton, RemoveRowButton, AddIconButton } from '../../shared/components/RowButtons';
 
 const DefectPhotosPanel = lazy(() => import('./DefectPhotosPanel'));
 
+const toNum = (v) => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
+
+const newRow  = () => ({ id: Date.now() + Math.random(), description: "", critical: "", major: "", minor: "" });
+const newGroup = (itemName = "", sampleSize = "") => ({ id: Date.now() + Math.random(), itemName, sampleSize, rows: [newRow()] });
+
 export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext, onWorkmanshipDefectsChange, onWorkmanshipPhotosChange, items }) {
   const setField = (name, value) => handleChange({ target: { name, value } });
-  // Initialize defects from form
-  const [defects, setDefects] = useState(() => {
-    if (form.workmanshipDefects && Array.isArray(form.workmanshipDefects) && form.workmanshipDefects.length > 0) {
-      return form.workmanshipDefects;
+
+  /* ── grouped defect state ── */
+  const [groups, setGroups] = useState(() => {
+    if (Array.isArray(form.workmanshipDefects) && form.workmanshipDefects.length > 0) {
+      // migrate flat → grouped
+      const map = {};
+      form.workmanshipDefects.forEach(d => {
+        const key = d.itemName || "Item";
+        if (!map[key]) map[key] = newGroup(d.itemName, d.sampleSize || "");
+        else map[key].rows.push({ id: d.id || Date.now() + Math.random(), description: d.description || "", critical: d.critical || "", major: d.major || "", minor: d.minor || "" });
+        Object.assign(map[key].rows[map[key].rows.length - 1], { description: d.description || "", critical: d.critical || "", major: d.major || "", minor: d.minor || "" });
+      });
+      return Object.values(map);
     }
     if (Array.isArray(items) && items.length > 0) {
-      return items.map((item, idx) => ({
-        id: Date.now() + idx,
-        itemName: item.itemName || item.name || `Item ${idx + 1}`,
-        description: "",
-        critical: "",
-        major: "",
-        minor: "",
-        sampleSize: item.sampleSizePacked || "0"
-      }));
+      return items.map(item => newGroup(item.itemName || item.name || "", item.sampleSizePacked || ""));
     }
-    return [{ id: Date.now(), itemName: "Item 1", description: "", critical: "", major: "", minor: "", sampleSize: "0" }];
+    return [newGroup()];
   });
 
-  // Initialize defect photos from form
   const [defectPhotos, setDefectPhotos] = useState(() => {
-    if (form.workmanshipPhotos && Array.isArray(form.workmanshipPhotos) && form.workmanshipPhotos.length > 0) {
-      return form.workmanshipPhotos;
-    }
+    if (form.workmanshipPhotos && Array.isArray(form.workmanshipPhotos) && form.workmanshipPhotos.length > 0) return form.workmanshipPhotos;
     return [{ id: Date.now(), preview: "", fileName: "", description: "" }];
   });
 
-  // Sync to parent whenever defects change
+  // Sync flat defects to parent
   useEffect(() => {
-    onWorkmanshipDefectsChange(defects);
-  }, [defects, onWorkmanshipDefectsChange]);
+    const flat = groups.flatMap(g => g.rows.map(r => ({ id: r.id, itemName: g.itemName, sampleSize: g.sampleSize, description: r.description, critical: r.critical, major: r.major, minor: r.minor })));
+    onWorkmanshipDefectsChange(flat);
+  }, [groups, onWorkmanshipDefectsChange]);
 
-  // Sync to parent whenever photos change
-  useEffect(() => {
-    onWorkmanshipPhotosChange(defectPhotos);
-  }, [defectPhotos, onWorkmanshipPhotosChange]);
+  useEffect(() => { onWorkmanshipPhotosChange(defectPhotos); }, [defectPhotos, onWorkmanshipPhotosChange]);
 
-  const toNum = (v) => {
-    const n = Number(v);
-    return Number.isFinite(n) ? n : 0;
-  };
+  /* ── group actions ── */
+  const addGroup    = ()      => setGroups(g => [...g, newGroup()]);
+  const removeGroup = (gid)   => setGroups(g => g.length > 1 ? g.filter(x => x.id !== gid) : g);
+  const updateGroup = (gid, k, v) => setGroups(g => g.map(x => x.id === gid ? { ...x, [k]: v } : x));
 
-  const resolveResult = (manual, found, accepted) => {
-    if (manual) return manual;
-    return toNum(found) <= toNum(accepted) ? "Pass" : "Fail";
-  };
+  /* ── row actions ── */
+  const addRow    = (gid)        => setGroups(g => g.map(x => x.id === gid ? { ...x, rows: [...x.rows, newRow()] } : x));
+  const removeRow = (gid, rid)   => setGroups(g => g.map(x => x.id === gid ? { ...x, rows: x.rows.length > 1 ? x.rows.filter(r => r.id !== rid) : x.rows } : x));
+  const updateRow = (gid, rid, k, v) => setGroups(g => g.map(x => x.id === gid ? { ...x, rows: x.rows.map(r => r.id === rid ? { ...r, [k]: v } : r) } : x));
 
-  const addDefect = () => {
-    setDefects([
-      ...defects,
-      { id: Date.now(), itemName: "", description: "", critical: "", major: "", minor: "", sampleSize: "" }
-    ]);
-  };
-
-  const removeDefect = (id) => {
-    if (defects.length <= 1) return;
-    setDefects(defects.filter(d => d.id !== id));
-  };
-
-  const updateDefect = (id, field, value) => {
-    setDefects(defects.map(d => d.id === id ? { ...d, [field]: value } : d));
-  };
-
-  const addDefectPhoto = () => {
-    setDefectPhotos([
-      ...defectPhotos,
-      { id: Date.now(), preview: "", fileName: "", description: "" }
-    ]);
-  };
-
-  const removeDefectPhoto = (id) => {
-    if (defectPhotos.length <= 1) {
-      updateDefectPhoto(id, { preview: "", fileName: "", description: "" });
-      return;
-    }
-    setDefectPhotos(defectPhotos.filter(p => p.id !== id));
-  };
-
-  const updateDefectPhoto = (id, updates) => {
-    setDefectPhotos(defectPhotos.map(p => p.id === id ? { ...p, ...updates } : p));
-  };
-
+  /* ── defect photo actions ── */
+  const addDefectPhoto    = ()      => setDefectPhotos(p => [...p, { id: Date.now(), preview: "", fileName: "", description: "" }]);
+  const removeDefectPhoto = (id)    => setDefectPhotos(p => p.length <= 1 ? p.map(x => x.id === id ? { ...x, preview: "", fileName: "", description: "" } : x) : p.filter(x => x.id !== id));
+  const updateDefectPhoto = (id, u) => setDefectPhotos(p => p.map(x => x.id === id ? { ...x, ...u } : x));
   const handleDefectPhotoUpload = (id, file) => {
     if (!file) return;
-
     const reader = new FileReader();
-    reader.onloadend = () => {
-      updateDefectPhoto(id, {
-        preview: reader.result,
-        fileName: file.name
-      });
-    };
+    reader.onloadend = () => updateDefectPhoto(id, { preview: reader.result, fileName: file.name });
     reader.readAsDataURL(file);
   };
 
+  /* ── auto totals ── */
+  const allRows = groups.flatMap(g => g.rows);
+  const autoTotals = {
+    critical: allRows.reduce((s, r) => s + toNum(r.critical), 0),
+    major:    allRows.reduce((s, r) => s + toNum(r.major),    0),
+    minor:    allRows.reduce((s, r) => s + toNum(r.minor),    0),
+  };
+
+  const cellSt = { border: `1px solid ${colors.border}`, padding: "0", background: colors.surface, textAlign: "center" };
+  const numIn  = (name, value, w = "100%") => (
+    <input type="number" min="0" name={name} value={value} onChange={handleChange}
+      style={{ width: w, border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none", textAlign: "center", padding: "6px 0" }} />
+  );
+  const txtIn = (name, value, w = "100%", placeholder = "") => (
+    <input type="text" name={name} value={value} onChange={handleChange} placeholder={placeholder}
+      style={{ width: w, border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none", padding: "6px" }} />
+  );
+
   return (
     <>
-      <h3 style={{ ...sectionHeaderStyle, marginBottom: "0px", padding: "10px", background: colors.headerBg, color: colors.text, fontWeight: "bold", fontSize: "14px" }}>B. WORKMANSHIP</h3>
+      {/* ── Toggle buttons ── */}
+      <div style={{ display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <button type="button"
+            style={{ padding: "5px 12px", borderRadius: "6px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, color: colors.text, fontSize: "12px", cursor: "pointer", fontWeight: 600, whiteSpace: "nowrap" }}>
+            转为4档AQL (Switch to 4-grade AQL)
+          </button>
+          <span style={{ fontSize: "11px", color: colors.danger }}>如果客户没有要求，请不要使用4档AQL. If not required by client, please DO NOT use "4-grade AQL".</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <button type="button"
+            style={{ padding: "5px 12px", borderRadius: "6px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, color: colors.text, fontSize: "12px", cursor: "pointer", fontWeight: 600, whiteSpace: "nowrap" }}>
+            分款计算 (Count by item)
+          </button>
+          <span style={{ fontSize: "11px", color: colors.danger }}>如果客户没有要求，请不要使用分款计算 If not required by client, please DO NOT use "count by item"</span>
+        </div>
+      </div>
 
-      {/* Workmanship Summary Table */}
-      <div style={{ marginBottom: "25px" }}>
+      {/* ── AQL Settings Table ── */}
+      <div style={{ marginBottom: "20px" }}>
+        <h3 style={{ ...sectionHeaderStyle, marginBottom: "0px", padding: "10px", background: colors.headerBg, color: colors.text, fontWeight: "bold", fontSize: "14px" }}>AQL</h3>
         <table style={{ width: "100%", borderCollapse: "collapse", border: `1px solid ${colors.border}`, fontSize: "12px" }}>
+          <thead>
+            <tr>
+              <th colSpan={2} style={{ padding: "8px", background: colors.headerBg, border: `1px solid ${colors.border}`, color: colors.text }}></th>
+              <th style={{ padding: "8px", background: colors.headerBg, border: `1px solid ${colors.border}`, color: colors.text, textAlign: "center", width: "130px" }}>AQL</th>
+              <th style={{ padding: "8px", background: colors.headerBg, border: `1px solid ${colors.border}`, color: colors.text, textAlign: "center", width: "100px" }}>Accepted</th>
+              <th style={{ padding: "8px", background: colors.headerBg, border: `1px solid ${colors.border}`, color: colors.text, textAlign: "center", width: "110px" }}>Total Found</th>
+              <th style={{ padding: "8px", background: colors.headerBg, border: `1px solid ${colors.border}`, color: colors.text, textAlign: "center", width: "120px" }}>Result</th>
+            </tr>
+          </thead>
           <tbody>
+            {/* Row 1: Inspection Level + Critical */}
             <tr>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, fontWeight: "bold", color: colors.text, width: "18%" }}>
-                Inspection Standard:
-              </td>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, width: "26%" }}>
-                <input
-                  type="text"
-                  name="inspectionStandardWM"
-                  value={form.inspectionStandardWM || "ANSI/ASQ Z1.4 (ISO 2859-1)"}
-                  onChange={handleChange}
-                  style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none" }}
-                />
-              </td>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, fontWeight: "bold", color: colors.text, textAlign: "center", width: "20%" }}>AQL</td>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, fontWeight: "bold", color: colors.text, textAlign: "center", width: "10%" }}>Accepted</td>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, fontWeight: "bold", color: colors.text, textAlign: "center", width: "11%" }}>Total Found</td>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, fontWeight: "bold", color: colors.text, textAlign: "center", width: "15%" }}>Result</td>
-            </tr>
-
-            <tr>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, color: colors.text, fontWeight: "bold" }}>Sampling Plan:</td>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, fontWeight: "bold", color: colors.text, width: "140px" }}>Inspection Level</td>
               <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface }}>
-                <input type="text" name="samplingPlanWM" value={form.samplingPlanWM || "Fixed Sample Size"} onChange={handleChange} style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none" }} />
+                {txtIn("inspectionLevelWM", form.inspectionLevelWM || "Level II")}
               </td>
               <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, color: colors.text }}>
-                <strong>Critical:</strong>&nbsp;
-                <input type="text" name="aqlCriticalWM" value={form.aqlCriticalWM || "Not Allowed"} onChange={handleChange} style={{ width: "55%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none" }} />
+                <span style={{ fontWeight: "bold" }}>Critical: </span>
+                {txtIn("aqlCriticalWM", form.aqlCriticalWM || "Not Allowed", "65%")}
               </td>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
-                <input
-                  type="number"
-                  min="0"
-                  name="acceptedCritical"
-                  value={form.acceptedCritical || "0"}
-                  onChange={handleChange}
-                  style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none", textAlign: "center" }}
-                />
-              </td>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
-                <input
-                  type="number"
-                  min="0"
-                  name="totalFoundCritical"
-                  value={form.totalFoundCritical || "0"}
-                  onChange={handleChange}
-                  style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none", textAlign: "center" }}
-                />
-              </td>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
-                 <input
-                  type="text"
-                  name="result1WM"
-                  value={form.result1WM || resolveResult(form.result1WM, form.totalFoundCritical, form.acceptedCritical)}
-                  onChange={handleChange}
-                  style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none", textAlign: "center" }}
-                />
+              <td style={cellSt}>{numIn("acceptedCritical", form.acceptedCritical || "0")}</td>
+              <td style={cellSt}>{numIn("totalFoundCritical", form.totalFoundCritical || "0")}</td>
+              <td style={{ ...cellSt, padding: "4px" }}>
+                <select name="result1WM" value={form.result1WM || ""} onChange={handleChange}
+                  style={{ width: "100%", border: "none", background: "transparent", color: form.result1WM === "Pass" ? colors.success : form.result1WM === "Fail" ? colors.danger : colors.text, fontSize: "12px", outline: "none", textAlign: "center", cursor: "pointer", fontWeight: 600 }}>
+                  <option value="">—</option>
+                  <option value="Pass">Pass</option>
+                  <option value="Fail">Fail</option>
+                </select>
               </td>
             </tr>
-
+            {/* Row 2: Inspection Standard + Major */}
             <tr>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, color: colors.text, fontWeight: "bold" }}>Inspection Level:</td>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, fontWeight: "bold", color: colors.text }}>Inspection Standard</td>
               <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface }}>
-                <input type="text" name="inspectionLevelWM" value={form.inspectionLevelWM || "Level II"} onChange={handleChange} style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none" }} />
+                {txtIn("inspectionStandardWM", form.inspectionStandardWM || "ANSI/ASQ Z1.4")}
               </td>
               <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, color: colors.text }}>
-                <strong>Major:</strong>&nbsp;
-                <input type="number" name="aqlMajorWM" value={form.aqlMajorWM || "2.5"} onChange={handleChange} style={{ width: "55%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none" }} />
+                <span style={{ fontWeight: "bold" }}>Major: </span>
+                {txtIn("aqlMajorWM", form.aqlMajorWM || "1.5", "65%")}
               </td>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
-                <input
-                  type="number"
-                  min="0"
-                  name="acceptedMajor"
-                  value={form.acceptedMajor || "0"}
-                  onChange={handleChange}
-                  style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none", textAlign: "center" }}
-                />
-              </td>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
-                <input
-                  type="number"
-                  min="0"
-                  name="totalFoundMajor"
-                  value={form.totalFoundMajor || "0"}
-                  onChange={handleChange}
-                  style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none", textAlign: "center" }}
-                />
-              </td>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
-                <input
-                  type="text"
-                  name="result2WM"
-                  value={form.result2WM || resolveResult(form.result2WM, form.totalFoundMajor, form.acceptedMajor)}
-                  onChange={handleChange}
-                  style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none", textAlign: "center" }}
-                />
+              <td style={cellSt}>{numIn("acceptedMajor", form.acceptedMajor || "0")}</td>
+              <td style={cellSt}>{numIn("totalFoundMajor", form.totalFoundMajor || "0")}</td>
+              <td style={{ ...cellSt, padding: "4px" }}>
+                <select name="result2WM" value={form.result2WM || ""} onChange={handleChange}
+                  style={{ width: "100%", border: "none", background: "transparent", color: form.result2WM === "Pass" ? colors.success : form.result2WM === "Fail" ? colors.danger : colors.text, fontSize: "12px", outline: "none", textAlign: "center", cursor: "pointer", fontWeight: 600 }}>
+                  <option value="">—</option>
+                  <option value="Pass">Pass</option>
+                  <option value="Fail">Fail</option>
+                </select>
               </td>
             </tr>
-
+            {/* Row 3: Sampling Plan + Minor */}
             <tr>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, color: colors.text, fontWeight: "bold" }}>Sample Size:</td>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, fontWeight: "bold", color: colors.text }}>Sampling Plan</td>
               <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface }}>
-                <input type="text" name="sampleSizeWM" value={form.sampleSizeWM || "5 Sets"} onChange={handleChange} style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none" }} />
+                {txtIn("samplingPlanWM", form.samplingPlanWM || "Normal, Single")}
               </td>
               <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, color: colors.text }}>
-                <strong>Minor:</strong>&nbsp;
-                <input type="text" name="aqlMinorWM" value={form.aqlMinorWM || "4.0"} onChange={handleChange} style={{ width: "55%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none" }} />
+                <span style={{ fontWeight: "bold" }}>Minor: </span>
+                {txtIn("aqlMinorWM", form.aqlMinorWM || "4.0", "65%")}
               </td>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
-                <input
-                  type="number"
-                  min="0"
-                  name="acceptedMinor"
-                  value={form.acceptedMinor || "0"}
-                  onChange={handleChange}
-                  style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none", textAlign: "center" }}
-                />
+              <td style={cellSt}>{numIn("acceptedMinor", form.acceptedMinor || "0")}</td>
+              <td style={cellSt}>{numIn("totalFoundMinor", form.totalFoundMinor || "0")}</td>
+              <td style={{ ...cellSt, padding: "4px" }}>
+                <select name="result3WM" value={form.result3WM || ""} onChange={handleChange}
+                  style={{ width: "100%", border: "none", background: "transparent", color: form.result3WM === "Pass" ? colors.success : form.result3WM === "Fail" ? colors.danger : colors.text, fontSize: "12px", outline: "none", textAlign: "center", cursor: "pointer", fontWeight: 600 }}>
+                  <option value="">—</option>
+                  <option value="Pass">Pass</option>
+                  <option value="Fail">Fail</option>
+                </select>
               </td>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
-                <input
-                  type="number"
-                  min="0"
-                  name="totalFoundMinor"
-                  value={form.totalFoundMinor || "0"}
-                  onChange={handleChange}
-                  style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none", textAlign: "center" }}
-                />
-              </td>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
-                <input
-                  type="text"
-                  name="result3WM"
-                  value={form.result3WM || resolveResult(form.result3WM, form.totalFoundMinor, form.acceptedMinor)}
-                  onChange={handleChange}
-                  style={{ width: "100%", border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none", textAlign: "center" }}
-                />
+            </tr>
+            {/* Row 4: Sample Size */}
+            <tr>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, fontWeight: "bold", color: colors.text }}>Sample Size</td>
+              <td colSpan={5} style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface }}>
+                {txtIn("sampleSizeWM", form.sampleSizeWM || "315")}
               </td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <h3 style={{ marginBottom: "20px", ...sectionHeaderStyle, padding: "10px", background: colors.headerBg, color: colors.text, fontWeight: "bold", fontSize: "14px" }}>WORKMANSHIP DEFECTS / INSPECTION FINDINGS</h3>
+      {/* ── Workmanship Defects ── */}
+      <h3 style={{ marginBottom: "0px", ...sectionHeaderStyle, padding: "10px", background: colors.headerBg, color: colors.text, fontWeight: "bold", fontSize: "14px" }}>Workmanship</h3>
 
-      {/* Workmanship Defects Table */}
       <div style={{ marginBottom: "15px", overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", border: `1px solid ${colors.border}`, fontSize: "12px" }}>
           <thead>
             <tr>
-              <th style={{ padding: "10px", background: colors.headerBg, border: `1px solid ${colors.border}`, color: colors.text, textAlign: "left", width: "30%" }}>Item Name</th>
-              <th style={{ padding: "10px", background: colors.headerBg, border: `1px solid ${colors.border}`, color: colors.text, textAlign: "left" }}>Description</th>
-              <th style={{ padding: "10px", background: colors.headerBg, border: `1px solid ${colors.border}`, color: colors.text, textAlign: "center", width: "80px" }}>Critical</th>
-              <th style={{ padding: "10px", background: colors.headerBg, border: `1px solid ${colors.border}`, color: colors.text, textAlign: "center", width: "80px" }}>Major</th>
-              <th style={{ padding: "10px", background: colors.headerBg, border: `1px solid ${colors.border}`, color: colors.text, textAlign: "center", width: "80px" }}>Minor</th>
-              <th style={{ padding: "10px", background: colors.headerBg, border: `1px solid ${colors.border}`, color: colors.text, textAlign: "center", width: "50px" }}>Action</th>
+              <th style={{ padding: "8px", background: colors.headerBg, border: `1px solid ${colors.border}`, color: colors.text, width: "36px", textAlign: "center" }}>No.</th>
+              <th style={{ padding: "8px", background: colors.headerBg, border: `1px solid ${colors.border}`, color: colors.text, textAlign: "left" }}>Defect</th>
+              <th style={{ padding: "8px", background: colors.headerBg, border: `1px solid ${colors.border}`, color: colors.text, textAlign: "center", width: "80px" }}>Critical</th>
+              <th style={{ padding: "8px", background: colors.headerBg, border: `1px solid ${colors.border}`, color: colors.text, textAlign: "center", width: "80px" }}>Major</th>
+              <th style={{ padding: "8px", background: colors.headerBg, border: `1px solid ${colors.border}`, color: colors.text, textAlign: "center", width: "80px" }}>Minor</th>
+              <th style={{ padding: "8px", background: colors.headerBg, border: `1px solid ${colors.border}`, color: colors.text, textAlign: "center", width: "60px" }}></th>
             </tr>
           </thead>
           <tbody>
-            {defects.map((defect) => (
-              <tr key={defect.id}>
-                <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface }}>
-                  <input
-                    type="text"
-                    value={defect.itemName}
-                    onChange={(e) => updateDefect(defect.id, "itemName", e.target.value)}
-                    placeholder="Enter item name..."
-                    style={{ width: "100%", padding: "4px", background: "transparent", color: colors.text, border: "none", fontSize: "12px", outline: "none" }}
-                  />
-                </td>
-                <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface }}>
-                  <SmartTextarea
-                    value={defect.description}
-                    onChange={(e) => updateDefect(defect.id, "description", e.target.value)}
-                    placeholder="Defect description..."
-                    context="workmanship quality defect description"
-                    style={{
-                      width: "100%",
-                      padding: "4px",
-                      background: "transparent",
-                      color: colors.text,
-                      border: "none",
-                      fontSize: "12px",
-                      outline: "none",
-                      fontFamily: "inherit",
-                      minHeight: "30px"
-                    }}
-                  />
-                </td>
-                <td style={{ padding: "0px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
-                  <input
-                    type="number"
-                    min="0"
-                    value={defect.critical}
-                    onChange={(e) => updateDefect(defect.id, "critical", e.target.value)}
-                    style={{ width: "100%", padding: "12px 0", background: "transparent", color: colors.text, border: "none", textAlign: "center", outline: "none" }}
-                  />
-                </td>
-                <td style={{ padding: "0px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
-                  <input
-                    type="number"
-                    min="0"
-                    value={defect.major}
-                    onChange={(e) => updateDefect(defect.id, "major", e.target.value)}
-                    style={{ width: "100%", padding: "12px 0", background: "transparent", color: colors.text, border: "none", textAlign: "center", outline: "none" }}
-                  />
-                </td>
-                <td style={{ padding: "0px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
-                  <input
-                    type="number"
-                    min="0"
-                    value={defect.minor}
-                    onChange={(e) => updateDefect(defect.id, "minor", e.target.value)}
-                    style={{ width: "100%", padding: "12px 0", background: "transparent", color: colors.text, border: "none", textAlign: "center", outline: "none" }}
-                  />
-                </td>
-                <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
-                  <button
-                    onClick={() => removeDefect(defect.id)}
-                    style={{
-                      background: colors.danger,
-                      color: "#fff",
-                      border: "none",
-                      padding: "4px 8px",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                      fontSize: "10px"
-                    }}
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
+            {groups.map((group, gi) => (
+              <React.Fragment key={group.id}>
+                {/* Item header row */}
+                <tr style={{ background: colors.surfaceAlt }}>
+                  <td style={{ padding: "6px 8px", border: `1px solid ${colors.border}`, textAlign: "center", fontWeight: 700, color: colors.primary, fontSize: "12px" }}>#{gi + 1}</td>
+                  <td style={{ padding: "4px 8px", border: `1px solid ${colors.border}` }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <select
+                        value={group.itemName || ""}
+                        onChange={(e) => updateGroup(group.id, "itemName", e.target.value)}
+                        style={{ border: `1px solid ${colors.border}`, borderRadius: "4px", padding: "3px 6px", fontSize: "12px", color: colors.text, background: "#fff", outline: "none", cursor: "pointer", fontFamily: "inherit", flex: 1, maxWidth: "220px" }}
+                      >
+                        <option value="">— Select Item —</option>
+                        {Array.isArray(items) && items.map((item, ii) => (
+                          <option key={ii} value={item.itemName || `Item ${ii + 1}`}>
+                            {item.itemName || `Item ${ii + 1}`}{item.po ? ` (${item.po})` : ""}
+                          </option>
+                        ))}
+                      </select>
+                      <span style={{ fontSize: "11px", color: colors.textMuted, whiteSpace: "nowrap" }}>
+                        Sample size:&nbsp;
+                        <input
+                          type="text"
+                          value={group.sampleSize || ""}
+                          onChange={(e) => updateGroup(group.id, "sampleSize", e.target.value)}
+                          placeholder="0"
+                          style={{ width: "40px", border: "none", borderBottom: `1px solid ${colors.border}`, outline: "none", fontSize: "11px", textAlign: "center", fontFamily: "inherit", color: colors.text, background: "transparent" }}
+                        /> pcs
+                      </span>
+                    </div>
+                  </td>
+                  <td colSpan={3} style={{ border: `1px solid ${colors.border}`, background: colors.surfaceAlt }}></td>
+                  <td style={{ border: `1px solid ${colors.border}`, padding: "4px 6px", background: colors.surfaceAlt }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "6px" }}>
+                      <RemoveRowButton onClick={() => removeGroup(group.id)} disabled={groups.length <= 1} />
+                      <AddIconButton onClick={() => addRow(group.id)} size={18} />
+                    </div>
+                  </td>
+                </tr>
+
+                {/* Defect rows for this item */}
+                {group.rows.map((row, ri) => (
+                  <tr key={row.id} style={{ background: colors.surface }}>
+                    <td style={{ padding: "6px", border: `1px solid ${colors.border}`, textAlign: "center", color: colors.textMuted, fontSize: "11px" }}>{ri + 1}</td>
+                    <td style={{ padding: "4px 8px", border: `1px solid ${colors.border}` }}>
+                      <SmartTextarea
+                        value={row.description}
+                        onChange={(e) => updateRow(group.id, row.id, "description", e.target.value)}
+                        placeholder="Defect description..."
+                        context="workmanship quality defect description"
+                        style={{ width: "100%", padding: "4px", background: "transparent", color: colors.text, border: "none", fontSize: "12px", outline: "none", fontFamily: "inherit", minHeight: "28px" }}
+                      />
+                    </td>
+                    <td style={{ padding: "0", border: `1px solid ${colors.border}`, textAlign: "center" }}>
+                      <input type="number" min="0" value={row.critical}
+                        onChange={(e) => updateRow(group.id, row.id, "critical", e.target.value)}
+                        style={{ width: "100%", padding: "10px 0", background: "transparent", color: colors.text, border: "none", textAlign: "center", outline: "none" }} />
+                    </td>
+                    <td style={{ padding: "0", border: `1px solid ${colors.border}`, textAlign: "center" }}>
+                      <input type="number" min="0" value={row.major}
+                        onChange={(e) => updateRow(group.id, row.id, "major", e.target.value)}
+                        style={{ width: "100%", padding: "10px 0", background: "transparent", color: colors.text, border: "none", textAlign: "center", outline: "none" }} />
+                    </td>
+                    <td style={{ padding: "0", border: `1px solid ${colors.border}`, textAlign: "center" }}>
+                      <input type="number" min="0" value={row.minor}
+                        onChange={(e) => updateRow(group.id, row.id, "minor", e.target.value)}
+                        style={{ width: "100%", padding: "10px 0", background: "transparent", color: colors.text, border: "none", textAlign: "center", outline: "none" }} />
+                    </td>
+                    <td style={{ padding: "6px", border: `1px solid ${colors.border}`, textAlign: "center" }}>
+                      <RemoveRowButton onClick={() => removeRow(group.id, row.id)} disabled={group.rows.length <= 1} />
+                    </td>
+                  </tr>
+                ))}
+              </React.Fragment>
             ))}
 
-            {/* Total Found Row aligned with columns */}
+            {/* Total Found */}
             <tr>
-              <td colSpan={2} style={{ padding: "12px", border: `1px solid ${colors.border}`, background: colors.headerBg, fontWeight: "bold", color: colors.text, textAlign: "right" }}>
-                Total Found:
+              <td colSpan={2} style={{ padding: "8px 12px", border: `1px solid ${colors.border}`, background: colors.headerBg, fontWeight: "bold", color: colors.text, textAlign: "right" }}>Total Found:</td>
+              <td style={{ padding: "0", border: `1px solid ${colors.border}`, textAlign: "center", background: "#f8fafc" }}>
+                <span style={{ display: "block", padding: "8px 0", fontWeight: "bold", color: colors.text }}>{autoTotals.critical}</span>
               </td>
-              <td style={{ padding: "0px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
-                <input
-                  type="number"
-                  min="0"
-                  name="totalFoundCritical"
-                  value={form.totalFoundCritical || ""}
-                  onChange={handleChange}
-                  style={{ width: "100%", padding: "12px 0", border: "none", textAlign: "center", background: "#f8fafc", color: colors.text, fontWeight: "bold", outline: "none" }}
-                />
+              <td style={{ padding: "0", border: `1px solid ${colors.border}`, textAlign: "center", background: "#f8fafc" }}>
+                <span style={{ display: "block", padding: "8px 0", fontWeight: "bold", color: colors.text }}>{autoTotals.major}</span>
               </td>
-              <td style={{ padding: "0px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
-                <input
-                  type="number"
-                  min="0"
-                  name="totalFoundMajor"
-                  value={form.totalFoundMajor || ""}
-                  onChange={handleChange}
-                  style={{ width: "100%", padding: "12px 0", border: "none", textAlign: "center", background: "#f8fafc", color: colors.text, fontWeight: "bold", outline: "none" }}
-                />
-              </td>
-              <td style={{ padding: "0px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
-                <input
-                  type="number"
-                  min="0"
-                  name="totalFoundMinor"
-                  value={form.totalFoundMinor || ""}
-                  onChange={handleChange}
-                  style={{ width: "100%", padding: "12px 0", border: "none", textAlign: "center", background: "#f8fafc", color: colors.text, fontWeight: "bold", outline: "none" }}
-                />
+              <td style={{ padding: "0", border: `1px solid ${colors.border}`, textAlign: "center", background: "#f8fafc" }}>
+                <span style={{ display: "block", padding: "8px 0", fontWeight: "bold", color: colors.text }}>{autoTotals.minor}</span>
               </td>
               <td style={{ border: `1px solid ${colors.border}`, background: colors.headerBg }}></td>
             </tr>
 
-            {/* Accepted Row aligned with columns */}
+            {/* Accepted */}
             <tr>
-              <td colSpan={2} style={{ padding: "12px", border: `1px solid ${colors.border}`, background: colors.headerBg, fontWeight: "bold", color: colors.text, textAlign: "right" }}>
-                Accepted:
+              <td colSpan={2} style={{ padding: "8px 12px", border: `1px solid ${colors.border}`, background: colors.headerBg, fontWeight: "bold", color: colors.text, textAlign: "right" }}>Accepted:</td>
+              <td style={{ padding: "0", border: `1px solid ${colors.border}`, textAlign: "center", background: "#f8fafc" }}>
+                <input type="number" min="0" name="acceptedCritical" value={form.acceptedCritical || ""} onChange={handleChange}
+                  style={{ width: "100%", padding: "8px 0", border: "none", textAlign: "center", background: "transparent", color: colors.text, fontWeight: "bold", outline: "none" }} />
               </td>
-              <td style={{ padding: "0px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
-                <input
-                  type="number"
-                  min="0"
-                  name="acceptedCritical"
-                  value={form.acceptedCritical || ""}
-                  onChange={handleChange}
-                  style={{ width: "100%", padding: "12px 0", border: "none", textAlign: "center", background: "#f8fafc", color: colors.text, fontWeight: "bold", outline: "none" }}
-                />
+              <td style={{ padding: "0", border: `1px solid ${colors.border}`, textAlign: "center", background: "#f8fafc" }}>
+                <input type="number" min="0" name="acceptedMajor" value={form.acceptedMajor || ""} onChange={handleChange}
+                  style={{ width: "100%", padding: "8px 0", border: "none", textAlign: "center", background: "transparent", color: colors.text, fontWeight: "bold", outline: "none" }} />
               </td>
-              <td style={{ padding: "0px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
-                <input
-                  type="number"
-                  min="0"
-                  name="acceptedMajor"
-                  value={form.acceptedMajor || ""}
-                  onChange={handleChange}
-                  style={{ width: "100%", padding: "12px 0", border: "none", textAlign: "center", background: "#f8fafc", color: colors.text, fontWeight: "bold", outline: "none" }}
-                />
+              <td style={{ padding: "0", border: `1px solid ${colors.border}`, textAlign: "center", background: "#f8fafc" }}>
+                <input type="number" min="0" name="acceptedMinor" value={form.acceptedMinor || ""} onChange={handleChange}
+                  style={{ width: "100%", padding: "8px 0", border: "none", textAlign: "center", background: "transparent", color: colors.text, fontWeight: "bold", outline: "none" }} />
               </td>
-              <td style={{ padding: "0px", border: `1px solid ${colors.border}`, background: colors.surface, textAlign: "center" }}>
-                <input
-                  type="number"
-                  min="0"
-                  name="acceptedMinor"
-                  value={form.acceptedMinor || ""}
-                  onChange={handleChange}
-                  style={{ width: "100%", padding: "12px 0", border: "none", textAlign: "center", background: "#f8fafc", color: colors.text, fontWeight: "bold", outline: "none" }}
-                />
+              <td style={{ border: `1px solid ${colors.border}`, background: colors.headerBg }}></td>
+            </tr>
+
+            {/* Sample Size */}
+            <tr>
+              <td colSpan={2} style={{ padding: "8px 12px", border: `1px solid ${colors.border}`, background: colors.headerBg, fontWeight: "bold", color: colors.text, textAlign: "right" }}>Sample Size:</td>
+              <td colSpan={3} style={{ padding: "0", border: `1px solid ${colors.border}`, textAlign: "center", background: "#f8fafc" }}>
+                <input type="text" name="sampleSizeWM" value={form.sampleSizeWM || ""} onChange={handleChange}
+                  style={{ width: "100%", padding: "8px 0", border: "none", textAlign: "center", background: "transparent", color: colors.text, fontWeight: "bold", outline: "none" }} />
               </td>
               <td style={{ border: `1px solid ${colors.border}`, background: colors.headerBg }}></td>
             </tr>
@@ -422,57 +331,39 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
         </table>
       </div>
 
-      <button
-        onClick={addDefect}
-        style={{
-          ...buttonStyle,
-          background: colors.success,
-          color: "#fff",
-          marginBottom: "25px",
-          padding: "8px 15px",
-          fontSize: "12px"
-        }}
-      >
-        + Add Defect Row
-      </button>
+      {/* Add other Item */}
+      <div style={{ paddingBottom: "20px" }}>
+        <AddRowButton onClick={addGroup} label="Add other Item" />
+      </div>
 
       {/* Notes Section */}
       <div style={{ marginBottom: "20px", padding: "15px", background: colors.surfaceAlt, border: `1px solid ${colors.border}`, borderRadius: "8px" }}>
-        <p style={{ color: colors.textMuted, fontSize: "12px", marginBottom: "10px" }}>
+        <p style={{ color: colors.textMuted, fontSize: "12px", marginBottom: "0" }}>
           <strong>Notes:</strong> A Defective is defined as a unit of product that contains one or more defects. A Defect is defined as any non-conformance of the inspected unit of product with specified requirement. A single defect is taken into account per each defective unit; only one most critical classification per defective unit.
         </p>
       </div>
 
       {/* Result and Remark */}
-      <div style={{ marginBottom: "20px", display: "grid", gridTemplateColumns: "1fr 2fr", gap: "15px" }}>
-        <div>
-          <label style={{ fontWeight: "bold", display: "block", marginBottom: "10px", color: colors.text }}>Result:</label>
-          <select
-            name="workmanshipResult"
-            value={form.workmanshipResult || ""}
-            onChange={handleChange}
-            style={{
-              ...inputStyle,
-              color: form.workmanshipResult === "Failed" ? colors.danger : form.workmanshipResult === "Passed" ? colors.success : form.workmanshipResult === "Pending" ? colors.warning : colors.text,
-              fontWeight: "bold"
-            }}
-          >
-            <option value="">Select Result</option>
-            <option value="Passed">Passed</option>
-            <option value="Failed">Failed</option>
-            <option value="Pending">Pending</option>
-          </select>
-        </div>
-        <div>
-          <label style={{ fontWeight: "bold", display: "block", marginBottom: "10px", color: colors.text }}>Remark:</label>
-          <SmartTextarea
-            name="workmanshipRemark"
-            value={form.workmanshipRemark || ""}
-            onChange={(e) => setField("workmanshipRemark", e.target.value)}
-            placeholder="Enter remarks..."
-            context="overall workmanship inspection summary and findings"
-            style={{ ...inputStyle }}
-          />
+      <div style={{ marginBottom: "20px" }}>
+        <h3 style={{ ...sectionHeaderStyle, marginBottom: "10px", padding: "8px 10px", background: colors.headerBg, color: colors.text, fontWeight: "bold", fontSize: "13px" }}>Result</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "15px" }}>
+          <div>
+            <label style={{ fontWeight: "bold", display: "block", marginBottom: "6px", color: colors.text, fontSize: "12px" }}>Result *</label>
+            <select name="workmanshipResult" value={form.workmanshipResult || ""} onChange={handleChange}
+              style={{ ...inputStyle, color: form.workmanshipResult === "Failed" ? colors.danger : form.workmanshipResult === "Passed" ? colors.success : form.workmanshipResult === "Pending" ? colors.warning : colors.text, fontWeight: "bold" }}>
+              <option value="">Select Result</option>
+              <option value="Passed">Passed</option>
+              <option value="Failed">Failed</option>
+              <option value="Pending">Pending</option>
+            </select>
+          </div>
+          <div>
+            <label style={{ fontWeight: "bold", display: "block", marginBottom: "6px", color: colors.text, fontSize: "12px" }}>Remarks</label>
+            <SmartTextarea name="workmanshipRemark" value={form.workmanshipRemark || ""}
+              onChange={(e) => setField("workmanshipRemark", e.target.value)}
+              placeholder="Enter remarks..." context="overall workmanship inspection summary and findings"
+              style={{ ...inputStyle }} />
+          </div>
         </div>
       </div>
 
@@ -487,10 +378,7 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
         />
       </Suspense>
 
-      <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
-        <button onClick={onPrev} style={buttonStyle}>Back</button>
-        <button onClick={onNext} style={buttonStyle}>Next</button>
-      </div>
+      <NavButtons onPrev={onPrev} onNext={onNext} />
     </>
   );
 }

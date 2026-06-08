@@ -30,6 +30,7 @@ export default function ContainerLoading() {
   const { token } = useAuth();
   const location = useLocation();
   const prefillData = location.state?.task?.prefillData ?? null;
+  const taskId = location.state?.task?._id ?? null;
 
   const [prefillBannerDismissed, setPrefillBannerDismissed] = useState(false);
 
@@ -209,6 +210,7 @@ export default function ContainerLoading() {
   const next = () => setStep(step + 1);
   const prev = () => setStep(step - 1);
 
+
   const handleGeneralPhotoUpload = async (e) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
@@ -267,6 +269,7 @@ export default function ContainerLoading() {
     if (form.quantityTable) {
       formData.append("items", JSON.stringify(form.quantityTable));
     }
+    if (taskId) formData.append("taskId", taskId);
 
     try {
       const generateUrl = notify ? `${ENDPOINTS.GENERATE}?notify=true` : ENDPOINTS.GENERATE;
@@ -327,8 +330,14 @@ export default function ContainerLoading() {
 
   const currentStep = steps.find(s => s.id === step);
 
+  const stepShortLabels = {
+    1: "General", 2: "Summary", 3: "Remarks", 4: "Conclusion",
+    5: "Quantity", 6: "Conformity", 7: "Packing", 8: "Loading",
+    9: "Client Req.", 10: "Photos", 11: "Finalize",
+  };
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", width: "100%", overflow: "hidden", background: "#f8fafc", fontFamily: "'Outfit', Arial, sans-serif" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%", overflow: "hidden", background: "#f8fafc", fontFamily: "'Outfit', Arial, sans-serif" }}>
       
       {/* Top Navigation */}
       <div style={{ width: "100%", background: colors.surface, borderBottom: `1px solid ${colors.border}`, boxShadow: "0 1px 4px rgba(0,0,0,0.06)", zIndex: 10, flexShrink: 0 }}>
@@ -344,7 +353,7 @@ export default function ContainerLoading() {
           {steps.map((item) => (
             <button key={item.id} onClick={() => setStep(item.id)} style={{ border: "none", background: step === item.id ? colors.primary : colors.surfaceAlt, color: step === item.id ? "#fff" : colors.textMuted, borderRadius: "20px", padding: "4px 10px", cursor: "pointer", fontSize: "11px", fontWeight: step === item.id ? "700" : "500", transition: "all 0.2s", display: "flex", alignItems: "center", gap: "4px", whiteSpace: "nowrap" }}>
               <span style={{ width: "15px", height: "15px", borderRadius: "50%", background: step === item.id ? "rgba(255,255,255,0.25)" : colors.border, color: step === item.id ? "#fff" : colors.textMuted, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "9px", fontWeight: "bold", flexShrink: 0 }}>{item.id}</span>
-              {item.label}
+              {step === item.id ? item.label : stepShortLabels[item.id]}
             </button>
           ))}
         </div>
@@ -354,6 +363,7 @@ export default function ContainerLoading() {
       </div>
 
       {/* Main Content */}
+      <div style={{ flex: 1, overflow: "hidden", display: "flex" }}>
       <div style={{ flex: 1, overflowY: "auto", background: "#f8fafc", padding: isMobile ? "10px 12px" : "14px 22px" }}>
         
         {/* Compact action buttons */}
@@ -410,19 +420,22 @@ export default function ContainerLoading() {
         </div>
 
         {/* Step Navigation */}
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "40px", paddingTop: "20px", borderTop: `1px solid ${colors.border}` }}>
-          <button onClick={prev} disabled={step === 1} style={{ padding: "12px 24px", borderRadius: "8px", border: `1px solid ${colors.border}`, background: step === 1 ? colors.surfaceAlt : colors.surface, color: step === 1 ? colors.textMuted : colors.text, cursor: step === 1 ? "not-allowed" : "pointer", fontWeight: "600", transition: "all 0.2s" }}>
-            ← Previous
-          </button>
-          
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "40px", paddingTop: "20px", borderTop: `1px solid ${colors.border}` }}>
+          {step > 1 && (
+            <button onClick={prev} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 24px", borderRadius: "24px", border: "none", background: colors.primary, color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 2px 8px rgba(59,130,246,0.25)" }}>
+              ← Previous
+            </button>
+          )}
           {step < steps.length && (
-            <button onClick={next} style={{ padding: "12px 24px", borderRadius: "8px", border: "none", background: colors.primary, color: "#fff", cursor: "pointer", fontWeight: "600", transition: "all 0.2s", boxShadow: "0 4px 12px rgba(59, 130, 246, 0.25)" }}>
+            <button onClick={next} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 24px", borderRadius: "24px", border: "none", background: colors.primary, color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 2px 8px rgba(59,130,246,0.25)" }}>
               Next Step →
             </button>
           )}
         </div>
 
       </div>
+
+      </div>{/* end flex row */}
 
       {isGenerating && <ReportLoader />}
 

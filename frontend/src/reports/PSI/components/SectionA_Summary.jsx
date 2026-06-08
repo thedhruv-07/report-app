@@ -1,272 +1,142 @@
-import { buttonStyle, colors, tableLabelStyle } from '../../../styles';
-import { useState } from "react";
-import { compressImage, formatFileSize } from '../../../utils/imageCompression';
+import { UploadCloud } from 'lucide-react';
+import { colors } from '../../../styles';
 
-export default function GeneralInfo({ form, handleChange, onNext, generalPhoto, generalPhotoData, onGeneralPhotoChange }) {
-  const [isPhotoProcessing, setIsPhotoProcessing] = useState(false);
+const LABEL_W = "150px";
 
-  const photoPreview =
-    generalPhotoData && typeof generalPhotoData.preview === "string" && generalPhotoData.preview.startsWith("data:image")
-      ? generalPhotoData.preview
-      : typeof generalPhoto === "string" && generalPhoto.startsWith("data:image")
-      ? generalPhoto
-      : null;
+const rowStyle = (last) => ({
+  display: "flex",
+  alignItems: "center",
+  padding: "8px 16px",
+  borderBottom: last ? "none" : `1px solid #edf0f5`,
+  transition: "background 0.15s",
+});
 
-  const handleGeneralPhotoUpload = async (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
+const labelStyle = {
+  width: LABEL_W,
+  flexShrink: 0,
+  fontSize: "12px",
+  color: colors.textLight,
+  fontWeight: 600,
+};
 
-    setIsPhotoProcessing(true);
+const inputStyle = {
+  flex: 1,
+  border: "none",
+  borderBottom: "1px solid transparent",
+  outline: "none",
+  fontSize: "13px",
+  color: colors.text,
+  background: "transparent",
+  padding: "1px 4px",
+  fontFamily: "inherit",
+  transition: "border-color 0.2s",
+};
 
-    try {
-      const { file: compressedFile, preview, originalSize, compressedSize } = await compressImage(file);
-      onGeneralPhotoChange({
-        id: `general_${Date.now()}`,
-        label: "",
-        fileName: compressedFile.name,
-        preview,
-        originalSize,
-        compressedSize,
-      });
-      setIsPhotoProcessing(false);
-    } catch {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        onGeneralPhotoChange({
-          id: `general_${Date.now()}`,
-          label: "",
-          fileName: file.name,
-          preview: reader.result,
-          originalSize: file.size,
-          compressedSize: file.size,
-          error: true,
-        });
-        setIsPhotoProcessing(false);
-      };
-      reader.onerror = () => {
-        setIsPhotoProcessing(false);
-      };
-      reader.readAsDataURL(file);
-      return;
-    }
+const FIELDS = [
+  { label: "Service Performed",  name: "servicePerformed",  placeholder: "Pre-Shipment Inspection" },
+  { label: "Client",             name: "client",            placeholder: "FRIN" },
+  { label: "Supplier",           name: "supplier",          placeholder: "JUFENG" },
+  { label: "Factory",            name: "factory",           placeholder: "JUFENG" },
+  { label: "Product Name",       name: "productName",       placeholder: "Nut Forming Machine & Moulds" },
+  { label: "P.O. No.",           name: "po",                placeholder: "8092023" },
+  { label: "Item No.",           name: "itemNo",            placeholder: "30B nut forming machine..." },
+  { label: "Destination Country",name: "country",           placeholder: "India" },
+  { label: "Inspection Date",    name: "inspectionDate",    placeholder: "20240516" },
+  { label: "Inspection Location",name: "inspectionLocation",placeholder: "Jiangsu (CHINA)" },
+  { label: "Reference Sample",   name: "referenceSample",   type: "yesNo" },
+];
 
-    if (e.target) {
-      e.target.value = "";
-    }
-  };
-
-  const clearGeneralPhoto = () => {
-    onGeneralPhotoChange("");
-    setIsPhotoProcessing(false);
-  };
-
-  const photoMetaText =
-    generalPhotoData && generalPhotoData.compressedSize
-      ? `${formatFileSize(generalPhotoData.compressedSize)}${
-          generalPhotoData.originalSize > generalPhotoData.compressedSize
-            ? ` (saved ${formatFileSize(generalPhotoData.originalSize - generalPhotoData.compressedSize)})`
-            : ""
-        }`
-      : "";
-
-  const photoMetaColor = generalPhotoData?.error ? colors.danger : colors.success;
-
-  const handlePhotoChange = (e) => {
-    handleGeneralPhotoUpload(e).catch(() => {
-      setIsPhotoProcessing(false);
-    });
-  };
-
+function GeneralPhotoCard({ photo, onUpload, onRemove }) {
   return (
-    <div style={{ display: "flex", gap: "30px" }}>
-      {/* Left side - Information Table */}
-      <div style={{ flex: 1 }}>
-        <h3 style={{ fontSize: "18px", fontWeight: "700", color: colors.header, marginBottom: "20px", borderBottom: `3px solid ${colors.primary}`, padding: "12px", backgroundColor: colors.surfaceAlt }}>I. GENERAL INFORMATION</h3>
-        
-        <table style={{ width: "100%", borderCollapse: "collapse", border: `1px solid ${colors.border}` }}>
-          <tbody>
-            <tr>
-              <td style={{ ...tableLabelStyle }}>Service Performed:</td>
-              <td style={{ padding: "12px 14px", border: `1px solid ${colors.border}`, background: colors.surface }}>
-                <input name="servicePerformed" placeholder="Pre-Shipment Inspection"
-                  value={form.servicePerformed || ""} onChange={handleChange} style={{ width: "100%", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, padding: "8px", borderRadius: "6px", boxSizing: "border-box", fontSize: "14px" }} />
-              </td>
-            </tr>
-            <tr>
-              <td style={{ ...tableLabelStyle }}>Client:</td>
-              <td style={{ padding: "12px 14px", border: `1px solid ${colors.border}`, background: colors.surface }}>
-                <input name="client" placeholder="FRIN"
-                  value={form.client || ""} onChange={handleChange} style={{ width: "100%", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, padding: "8px", borderRadius: "6px", boxSizing: "border-box", fontSize: "14px" }} />
-              </td>
-            </tr>
-            <tr>
-              <td style={{ ...tableLabelStyle }}>Supplier:</td>
-              <td style={{ padding: "12px 14px", border: `1px solid ${colors.border}`, background: colors.surface }}>
-                <input name="supplier" placeholder="JUFENG"
-                  value={form.supplier || ""} onChange={handleChange} style={{ width: "100%", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, padding: "8px", borderRadius: "6px", boxSizing: "border-box", fontSize: "14px" }} />
-              </td>
-            </tr>
-            <tr>
-              <td style={{ ...tableLabelStyle }}>Factory:</td>
-              <td style={{ padding: "12px 14px", border: `1px solid ${colors.border}`, background: colors.surface }}>
-                <input name="factory" placeholder="JUFENG"
-                  value={form.factory || ""} onChange={handleChange} style={{ width: "100%", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, padding: "8px", borderRadius: "6px", boxSizing: "border-box", fontSize: "14px" }} />
-              </td>
-            </tr>
-            <tr>
-              <td style={{ ...tableLabelStyle }}>Product Name:</td>
-              <td style={{ padding: "12px 14px", border: `1px solid ${colors.border}`, background: colors.surface }}>
-                <input name="productName" placeholder="Nut Forming Machine & Moulds"
-                  value={form.productName || ""} onChange={handleChange} style={{ width: "100%", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, padding: "8px", borderRadius: "6px", boxSizing: "border-box", fontSize: "14px" }} />
-              </td>
-            </tr>
-            <tr>
-              <td style={{ ...tableLabelStyle }}>P.O. No.:</td>
-              <td style={{ padding: "12px 14px", border: `1px solid ${colors.border}`, background: colors.surface }}>
-                <input name="po" placeholder="8092023"
-                  value={form.po || ""} onChange={handleChange} style={{ width: "100%", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, padding: "8px", borderRadius: "6px", boxSizing: "border-box", fontSize: "14px" }} />
-              </td>
-            </tr>
-            <tr>
-              <td style={{ ...tableLabelStyle }}>Item No.:</td>
-              <td style={{ padding: "12px 14px", border: `1px solid ${colors.border}`, background: colors.surface }}>
-                <input name="itemNo" placeholder="30B nut forming machine (Model: 30B-6S-40), Mould M8, Mould M10, Mould M12, Mould M14"
-                  value={form.itemNo || ""} onChange={handleChange} style={{ width: "100%", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, padding: "8px", borderRadius: "6px", boxSizing: "border-box", fontSize: "14px" }} />
-              </td>
-            </tr>
-            <tr>
-              <td style={{ ...tableLabelStyle }}>Destination Country:</td>
-              <td style={{ padding: "12px 14px", border: `1px solid ${colors.border}`, background: colors.surface }}>
-                <input name="country" placeholder="India"
-                  value={form.country || ""} onChange={handleChange} style={{ width: "100%", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, padding: "8px", borderRadius: "6px", boxSizing: "border-box", fontSize: "14px" }} />
-              </td>
-            </tr>
-            <tr>
-              <td style={{ ...tableLabelStyle }}>Inspection Date:</td>
-              <td style={{ padding: "12px 14px", border: `1px solid ${colors.border}`, background: colors.surface }}>
-                <input name="inspectionDate" placeholder="20240516"
-                  value={form.inspectionDate || ""} onChange={handleChange} style={{ width: "100%", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, padding: "8px", borderRadius: "6px", boxSizing: "border-box", fontSize: "14px" }} />
-              </td>
-            </tr>
-            <tr>
-              <td style={{ ...tableLabelStyle }}>Inspection Location:</td>
-              <td style={{ padding: "12px 14px", border: `1px solid ${colors.border}`, background: colors.surface }}>
-                <input name="inspectionLocation" placeholder="Jiangsu (CHINA)"
-                  value={form.inspectionLocation || ""} onChange={handleChange} style={{ width: "100%", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, padding: "8px", borderRadius: "6px", boxSizing: "border-box", fontSize: "14px" }} />
-              </td>
-            </tr>
-            <tr>
-              <td style={{ ...tableLabelStyle }}>Reference Sample:</td>
-              <td style={{ padding: "12px 14px", border: `1px solid ${colors.border}`, background: colors.surface }}>
-                <input name="referenceSample" placeholder="Yes/No"
-                  value={form.referenceSample || ""} onChange={handleChange} style={{ width: "100%", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, padding: "8px", borderRadius: "6px", boxSizing: "border-box", fontSize: "14px" }} />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <button 
-          onClick={onNext} 
-          style={{ 
-            ...buttonStyle, 
-            marginTop: "25px",
-            width: "100%",
-            opacity: isPhotoProcessing ? 0.6 : 1,
-            cursor: isPhotoProcessing ? "not-allowed" : "pointer"
-          }}
-          disabled={isPhotoProcessing}
-          onMouseEnter={(e) => {
-            if (isPhotoProcessing) return;
-            e.target.style.background = colors.primaryHover;
-            e.target.style.transform = "translateY(-2px)";
-            e.target.style.boxShadow = "0 4px 12px rgba(59, 130, 246, 0.25)";
-          }}
-          onMouseLeave={(e) => {
-            if (isPhotoProcessing) return;
-            e.target.style.background = colors.primary;
-            e.target.style.transform = "translateY(0)";
-            e.target.style.boxShadow = "0 2px 8px rgba(59, 130, 246, 0.15)";
-          }}
-        >
-          {isPhotoProcessing ? "Processing photo..." : "Next Step →"}
-        </button>
+    <div style={{ background: "#fff", borderRadius: "10px", border: `1px solid ${colors.border}`, boxShadow: "0 1px 6px rgba(0,0,0,0.05)", overflow: "hidden" }}>
+      <div style={{ padding: "9px 16px", borderBottom: "1px solid #edf0f5", background: "#f8fafc", display: "flex", alignItems: "center", gap: "8px" }}>
+        <div style={{ width: "3px", height: "14px", background: colors.primary, borderRadius: "2px", flexShrink: 0 }} />
+        <span style={{ fontSize: "11px", fontWeight: "700", color: colors.header, textTransform: "uppercase", letterSpacing: "0.08em" }}>General Photo</span>
       </div>
-
-      {/* Right side - Photo Section */}
-      <div style={{ width: "280px" }}>
-        <div style={{ marginBottom: "10px" }}>
-          <label style={{ display: "block", marginBottom: "8px", fontSize: "13px", fontWeight: "600", color: colors.text }}>
-            General Photo:
-          </label>
-          <input 
-            type="file" 
-            name="generalPhoto"
-            accept="image/*"
-            onChange={handlePhotoChange}
-            style={{ width: "100%", padding: "10px", background: colors.surface, color: colors.text, border: `2px solid ${colors.border}`, borderRadius: "8px", cursor: "pointer", fontSize: "12px", boxSizing: "border-box", transition: "all 0.3s ease" }}
-          />
-        </div>
-
-        {photoPreview ? (
-          <div>
-            <img 
-              src={photoPreview} 
-              alt="General photo preview"
-              style={{
-                width: "100%",
-                border: `2px solid ${colors.border}`,
-                borderRadius: "8px",
-                objectFit: "cover",
-                height: "220px",
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)"
-              }}
-            />
-
-            <div style={{ marginTop: "8px", fontSize: "11px", color: colors.textMuted }}>
-              {generalPhotoData?.fileName || "Uploaded image"}
-            </div>
-
-            {photoMetaText && (
-              <div style={{ marginTop: "4px", fontSize: "11px", color: photoMetaColor }}>
-                {photoMetaText}
-              </div>
-            )}
-
-            <button
-              type="button"
-              onClick={clearGeneralPhoto}
-              style={{
-                marginTop: "8px",
-                width: "100%",
-                border: "none",
-                borderRadius: "6px",
-                background: colors.danger,
-                color: "#fff",
-                fontSize: "12px",
-                padding: "8px",
-                cursor: "pointer",
-              }}
-            >
-              Remove Photo
-            </button>
+      <div style={{ padding: "12px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "160px" }}>
+        {photo ? (
+          <div style={{ position: "relative", width: "100%" }}>
+            <img src={photo} alt="General" style={{ width: "100%", borderRadius: "6px", objectFit: "cover", display: "block" }} />
+            <button type="button" onClick={onRemove} style={{ position: "absolute", top: "4px", right: "4px", background: "#ef4444", color: "white", border: "none", borderRadius: "50%", width: "20px", height: "20px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", fontWeight: "700" }}>×</button>
           </div>
         ) : (
-          <div style={{
-            width: "100%",
-            height: "220px",
-            border: `2px dashed ${colors.border}`,
-            borderRadius: "8px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: colors.textMuted,
-            fontSize: "12px",
-            background: colors.surfaceAlt
-          }}>
-            📷 No photo uploaded
-          </div>
+          <label style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", cursor: "pointer", color: colors.textMuted, padding: "20px" }}>
+            <UploadCloud size={32} strokeWidth={1.5} color={colors.primary} />
+            <span style={{ fontSize: "12px", fontWeight: "600", color: colors.primary }}>Upload Photo</span>
+            <span style={{ fontSize: "11px", color: colors.textMuted, textAlign: "center" }}>Photo appears in General Info table of the report</span>
+            <input type="file" accept="image/*" style={{ display: "none" }} onChange={onUpload} />
+          </label>
         )}
       </div>
+    </div>
+  );
+}
+
+export default function GeneralInfo({ form, handleChange, onNext, handleGeneralPhotoUpload, clearGeneralPhoto }) {
+  return (
+    <div style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
+
+      {/* ── Main form card ── */}
+      <div style={{ flex: 1, background: "#fff", borderRadius: "10px", border: `1px solid ${colors.border}`, boxShadow: "0 1px 6px rgba(0,0,0,0.05)", overflow: "hidden" }}>
+
+        {/* Card header */}
+        <div style={{ padding: "9px 16px", borderBottom: `1px solid #f1f5f9`, background: "#f8fafc", display: "flex", alignItems: "center", gap: "8px" }}>
+          <div style={{ width: "3px", height: "14px", background: colors.primary, borderRadius: "2px", flexShrink: 0 }} />
+          <span style={{ fontSize: "11px", fontWeight: "700", color: colors.header, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            I. General Information
+          </span>
+        </div>
+
+        {/* Field rows */}
+        {FIELDS.map((field, i) => (
+          <div
+            key={field.name}
+            style={rowStyle(i === FIELDS.length - 1)}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "#fafbfc"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+          >
+            <div style={labelStyle}>{field.label}</div>
+            {field.type === "yesNo" ? (
+              <select
+                name={field.name}
+                value={form[field.name] || ""}
+                onChange={handleChange}
+                style={{ ...inputStyle, cursor: "pointer" }}
+              >
+                <option value="">—</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            ) : (
+              <input
+                name={field.name}
+                placeholder={field.placeholder}
+                value={form[field.name] || ""}
+                onChange={handleChange}
+                style={{ ...inputStyle }}
+                onFocus={(e) => { e.target.style.borderBottomColor = colors.primary; }}
+                onBlur={(e)  => { e.target.style.borderBottomColor = "transparent"; }}
+              />
+            )}
+          </div>
+        ))}
+
+        {/* Next button */}
+        <div style={{ padding: "10px 16px", borderTop: `1px solid #edf0f5`, background: "#f8fafc", display: "flex", justifyContent: "flex-end" }}>
+          <button
+            onClick={onNext}
+            style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 24px", borderRadius: "24px", border: "none", background: colors.primary, color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 2px 8px rgba(59,130,246,0.25)" }}
+          >
+            Next Step →
+          </button>
+        </div>
+      </div>
+
+      {/* ── Photo card ── */}
+      <div style={{ width: "200px", flexShrink: 0 }}>
+        <GeneralPhotoCard photo={form.generalPhoto} onUpload={handleGeneralPhotoUpload} onRemove={clearGeneralPhoto} />
+      </div>
+
     </div>
   );
 }

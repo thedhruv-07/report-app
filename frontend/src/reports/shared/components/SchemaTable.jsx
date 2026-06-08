@@ -1,8 +1,9 @@
 import { colors } from '../../../styles';
-import { Plus, Trash2, UploadCloud, X, Image as ImageIcon } from "lucide-react";
+import { Trash2, UploadCloud, X, Image as ImageIcon } from "lucide-react";
 import SmartTextarea from '../../../components/shared/SmartTextarea';
 import { compressImage } from '../../../utils/imageCompression';
 import { useState } from "react";
+import { AddRowButton, RemoveRowButton } from './RowButtons';
 
 export default function SchemaTable({ title, config, formData, onChange, dataKey, ai = true }) {
   const rows = Array.isArray(formData[dataKey]) ? formData[dataKey] : [];
@@ -46,12 +47,7 @@ export default function SchemaTable({ title, config, formData, onChange, dataKey
         <h3 style={{ fontSize: "16px", fontWeight: "700", color: colors.text, margin: 0 }}>
           {title}
         </h3>
-        <button 
-          onClick={addRow}
-          style={{ display: "flex", alignItems: "center", gap: "6px", background: colors.primary, color: "white", border: "none", padding: "6px 12px", borderRadius: "6px", fontSize: "13px", cursor: "pointer", fontWeight: "600" }}
-        >
-          <Plus size={14} /> Add Row
-        </button>
+        <AddRowButton onClick={addRow} label="Add Row" />
       </div>
 
       <div style={{ overflowX: "auto" }}>
@@ -130,13 +126,7 @@ export default function SchemaTable({ title, config, formData, onChange, dataKey
                     </td>
                   ))}
                   <td key="cell-actions" style={{ padding: "10px", textAlign: "center", borderBottom: `1px solid ${colors.border}`, background: colors.surface }}>
-                    <button 
-                      onClick={() => removeRow(index)}
-                      style={{ background: "transparent", color: colors.danger, border: "none", cursor: "pointer", padding: "4px" }}
-                      title="Remove Row"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <RemoveRowButton onClick={() => removeRow(index)} />
                   </td>
                 </tr>
               ))

@@ -1,14 +1,27 @@
 import React, { useState } from "react";
-import { colors, buttonStyle } from '../../../styles';
+import { colors } from '../../../styles';
+import NavButtons from '../../shared/components/NavButtons';
 import SmartTextarea from '../../../components/shared/SmartTextarea';
 
 const Packing = ({ form, handleChange, onPrev, onNext }) => {
   const setField = (name, value) => handleChange({ target: { name, value } });
-  const [items] = useState([
+  const [items, setItems] = useState([
     { id: 1, name: "30B nut forming machine (Model: 30B-6S-40)" },
     { id: 2, name: "Mould M10" },
     { id: 3, name: "" }
   ]);
+  const [nextId, setNextId] = useState(4);
+
+  const addItem = () => {
+    setItems([...items, { id: nextId, name: "" }]);
+    setNextId(nextId + 1);
+  };
+
+  const removeItem = (id) => {
+    if (items.length > 1) {
+      setItems(items.filter(item => item.id !== id));
+    }
+  };
 
   const borderColor = "#1F1F1F";
   const cellBorder = `1px solid ${borderColor}`;
@@ -47,7 +60,7 @@ const Packing = ({ form, handleChange, onPrev, onNext }) => {
             {/* E. PACKING Title */}
             <tr>
               <th
-                colSpan={9}
+                colSpan={10}
                 style={{
                   padding: "10px 12px",
                   background: sectionHeaderBg,
@@ -64,7 +77,7 @@ const Packing = ({ form, handleChange, onPrev, onNext }) => {
             {/* Package Details with Logo */}
             <tr>
               <th
-                colSpan={6}
+                colSpan={7}
                 style={{
                   padding: "10px 12px",
                   background: sectionHeaderBg,
@@ -102,6 +115,7 @@ const Packing = ({ form, handleChange, onPrev, onNext }) => {
               <th colSpan={2} style={{ padding: "8px", background: colors.surface, border: cellBorder, color: colors.text, fontWeight: "bold", textAlign: "center" }}>Carton Size L×W×H (cm)</th>
               <th colSpan={2} style={{ padding: "8px", background: colors.surface, border: cellBorder, color: colors.text, fontWeight: "bold", textAlign: "center" }}>Gross Weight (KG)</th>
               <th colSpan={2} style={{ padding: "8px", background: colors.surface, border: cellBorder, color: colors.text, fontWeight: "bold", textAlign: "center" }}>Qty / Inner box</th>
+              <th rowSpan={2} style={{ padding: "8px", background: colors.surface, border: cellBorder, color: colors.text, fontWeight: "bold", textAlign: "center", cursor: "pointer", width: "30px", fontSize: "16px" }} onClick={addItem}>+</th>
             </tr>
             {/* Sub-headers Row 2 */}
             <tr>
@@ -151,12 +165,21 @@ const Packing = ({ form, handleChange, onPrev, onNext }) => {
                 <td style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
                   <input type="number" name={`packing_qty_inner_actual_${item.id}`} value={form[`packing_qty_inner_actual_${item.id}`] || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "center" }} placeholder="-" />
                 </td>
+                <td style={{ padding: "8px", background: colors.surface, border: cellBorder, textAlign: "center" }}>
+                  <button
+                    onClick={() => removeItem(item.id)}
+                    disabled={items.length === 1}
+                    style={{ background: "transparent", color: items.length === 1 ? colors.textMuted : colors.danger, border: "none", cursor: items.length === 1 ? "not-allowed" : "pointer", fontWeight: "bold", fontSize: "14px" }}
+                  >
+                    x
+                  </button>
+                </td>
               </tr>
             ))}
 
             {/* Export Carton Details Header */}
             <tr>
-              <td colSpan={9} style={{ padding: "8px", background: subHeaderBg, border: cellBorder, color: colors.text, fontWeight: "bold", textAlign: "left" }}>
+              <td colSpan={10} style={{ padding: "8px", background: subHeaderBg, border: cellBorder, color: colors.text, fontWeight: "bold", textAlign: "left" }}>
                 Export Carton Details
               </td>
             </tr>
@@ -167,13 +190,21 @@ const Packing = ({ form, handleChange, onPrev, onNext }) => {
                 Fastening Metal Staples
               </td>
               <td colSpan={2} style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
-                <input type="text" name="fastening_metal_staples" value={form.fastening_metal_staples || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "left" }} placeholder="-" />
+                <select name="fastening_metal_staples" value={form.fastening_metal_staples || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "left", cursor: "pointer" }}>
+                  <option value=""></option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
               </td>
               <td colSpan={2} style={{ padding: "8px", background: colors.surface, border: cellBorder, color: colors.text, textAlign: "right" }}>
                 Nylon Band
               </td>
-              <td colSpan={2} style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
-                <input type="text" name="nylon_band" value={form.nylon_band || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "left" }} placeholder="-" />
+              <td colSpan={3} style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
+                <select name="nylon_band" value={form.nylon_band || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "left", cursor: "pointer" }}>
+                  <option value=""></option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
               </td>
             </tr>
 
@@ -183,12 +214,17 @@ const Packing = ({ form, handleChange, onPrev, onNext }) => {
                 Material
               </td>
               <td colSpan={2} style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
-                <input type="text" name="material" value={form.material || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "left" }} placeholder="-" />
+                <select name="material" value={form.material || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "left", cursor: "pointer" }}>
+                  <option value=""></option>
+                  <option value="Cardboard">Cardboard</option>
+                  <option value="Plastic">Plastic</option>
+                  <option value="Wood">Wood</option>
+                </select>
               </td>
               <td colSpan={2} style={{ padding: "8px", background: colors.surface, border: cellBorder, color: colors.text, textAlign: "right" }}>
                 Corrugated Paper Plies
               </td>
-              <td colSpan={2} style={{ padding: "8px", background: colors.surface, border: cellBorder, display: "flex", alignItems: "center" }}>
+              <td colSpan={3} style={{ padding: "8px", background: colors.surface, border: cellBorder, display: "flex", alignItems: "center" }}>
                 <input type="number" name="corrugated_paper_plies" value={form.corrugated_paper_plies || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "right", width: "40px" }} />
                 <span>-ply</span>
               </td>
@@ -196,13 +232,13 @@ const Packing = ({ form, handleChange, onPrev, onNext }) => {
 
             {/* Packing Method Header */}
             <tr>
-              <td colSpan={9} style={{ padding: "8px", background: subHeaderBg, border: cellBorder, color: colors.text, fontWeight: "bold" }}>
+              <td colSpan={10} style={{ padding: "8px", background: subHeaderBg, border: cellBorder, color: colors.text, fontWeight: "bold" }}>
                 Packing Method
               </td>
             </tr>
             {/* Packing Method Data */}
             <tr>
-              <td colSpan={9} style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
+              <td colSpan={10} style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
                 <textarea
                   name="packing_method"
                   value={form.packing_method || ""}
@@ -215,52 +251,78 @@ const Packing = ({ form, handleChange, onPrev, onNext }) => {
 
             {/* Assortment Method Header */}
             <tr>
-              <td colSpan={9} style={{ padding: "8px", background: subHeaderBg, border: cellBorder, color: colors.text, fontWeight: "bold" }}>
+              <td colSpan={10} style={{ padding: "8px", background: subHeaderBg, border: cellBorder, color: colors.text, fontWeight: "bold" }}>
                 Assortment Method
               </td>
             </tr>
             {/* Assortment Method Data */}
             <tr>
-              <td colSpan={9} style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
-                <input
-                  type="text"
-                  name="assortment_method"
-                  value={form.assortment_method || "No assortment"}
-                  onChange={handleChange}
-                  style={inputBase}
-                />
+              <td colSpan={10} style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
+                <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
+                  {["By Color", "By Size", "By Design", "Other", "No assortment"].map((opt) => {
+                    const isChecked = (form.assortment_method || "").includes(opt);
+                    return (
+                      <label key={opt} style={{ display: "flex", alignItems: "center", gap: "5px", cursor: "pointer" }}>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            let arr = (form.assortment_method || "").split(', ').filter(Boolean);
+                            if (e.target.checked) {
+                              arr.push(opt);
+                            } else {
+                              arr = arr.filter(x => x !== opt);
+                            }
+                            setField("assortment_method", arr.join(', '));
+                          }}
+                        />
+                        {opt}
+                      </label>
+                    );
+                  })}
+                </div>
               </td>
             </tr>
 
-            {/* Result */}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Result & Remarks section */}
+      <div style={{ marginBottom: "25px" }}>
+        <h3 style={{ fontSize: "15px", fontWeight: "bold", color: colors.text, marginBottom: "10px" }}>Result</h3>
+        <table style={{ width: "100%", borderCollapse: "collapse", border: cellBorder, fontSize: "12px" }}>
+          <tbody>
             <tr>
-              <td colSpan={2} style={{ padding: "8px", background: colors.surface, border: cellBorder, color: colors.text, fontWeight: "bold", textAlign: "left" }}>
-                Result:
+              <td style={{ padding: "10px 12px", border: cellBorder, background: "#f8fafc", fontWeight: "bold", textAlign: "left", color: colors.text, width: "150px" }}>
+                Result <span style={{color: "#CC0000"}}>*</span>
               </td>
-              <td colSpan={7} style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
-                <input
-                  type="text"
+              <td style={{ padding: "8px", border: cellBorder, background: colors.surface }}>
+                <select
                   name="packing_result"
                   value={form.packing_result || ""}
                   onChange={handleChange}
-                  placeholder="Failed"
-                  style={{ ...inputBase, color: packColor, fontWeight: "bold" }}
-                />
+                  style={{ width: "100%", padding: "4px", background: colors.surface, color: packColor, border: "none", borderRadius: "2px", fontSize: "12px", fontWeight: "bold", cursor: "pointer", outline: "none" }}
+                >
+                  <option value="">Select...</option>
+                  <option value="Passed">Passed</option>
+                  <option value="Failed">Failed</option>
+                  <option value="Pending">Pending</option>
+                  <option value="N/A">N/A</option>
+                </select>
               </td>
             </tr>
-
-            {/* Remark */}
             <tr>
-              <td colSpan={2} style={{ padding: "8px", background: colors.surface, border: cellBorder, color: colors.text, textAlign: "left" }}>
-                Remark:
+              <td style={{ padding: "10px 12px", border: cellBorder, background: "#f8fafc", fontWeight: "bold", textAlign: "left", color: colors.text }}>
+                Remarks
               </td>
-              <td colSpan={7} style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
+              <td style={{ padding: "8px", border: cellBorder, background: colors.surface }}>
                 <SmartTextarea
                   name="packing_remark"
                   value={form.packing_remark || "No packing"}
                   onChange={(e) => setField("packing_remark", e.target.value)}
                   context="packing inspection observations and discrepancies"
-                  style={inputBase}
+                  style={{ width: "100%", minHeight: "40px", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", fontFamily: "inherit", fontSize: "12px", boxSizing: "border-box" }}
                 />
               </td>
             </tr>
@@ -268,15 +330,7 @@ const Packing = ({ form, handleChange, onPrev, onNext }) => {
         </table>
       </div>
 
-      {/* Navigation */}
-      <div style={{ display: "flex", gap: "10px", marginTop: "30px" }}>
-        <button onClick={onPrev} style={{ ...buttonStyle }}>
-          Previous
-        </button>
-        <button onClick={onNext} style={{ ...buttonStyle }}>
-          Next
-        </button>
-      </div>
+      <NavButtons onPrev={onPrev} onNext={onNext} />
     </div>
   );
 };

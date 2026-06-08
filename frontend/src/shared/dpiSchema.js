@@ -17,7 +17,7 @@ export const dpiSchema = {
     { name: "destinationCountry", label: "Destination Country", type: "text", placeholder: "e.g., India" },
     { name: "inspectionDate", label: "Inspection Date", type: "date" },
     { name: "inspectionLocation", label: "Inspection Location", type: "text", placeholder: "e.g., Jiangsu (CHINA)" },
-    { name: "referenceSample", label: "Reference Sample", type: "text", placeholder: "e.g., Yes / No" },
+    { name: "referenceSample", label: "Reference Sample", type: "select", options: ["Yes", "No"] },
   ],
 
   // ─── SECTION II: INSPECTION SUMMARY ─────────────────────────────────────────

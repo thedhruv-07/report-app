@@ -1,11 +1,12 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { colors, buttonStyle } from '../../../styles';
+import NavButtons from '../../shared/components/NavButtons';
 import SmartTextarea from '../../../components/shared/SmartTextarea';
+import { ENDPOINTS } from '../../../config/api';
 
 const PhotoStagingPanel = lazy(() => import('./PhotoStagingPanel'));
 const PhotoGroupsDisplay = lazy(() => import('./PhotoGroupsDisplay'));
 
-// Small cleanup hook component to run a clear function on unmount
 function CleanupHook({ clear }) {
   useEffect(() => {
     return () => {
@@ -15,29 +16,143 @@ function CleanupHook({ clear }) {
   return null;
 }
 
-const Photos = ({ photos = [], photoGroups = [], onPhotoGroupsChange, onPhotoFileChange, onRemovePhoto, onPrev, onNext }) => {
-  const initialStaged = (() => {
-    try {
-      const s = typeof window !== 'undefined' ? localStorage.getItem('stagedPhotos') : null;
-      return s ? JSON.parse(s) : [];
-    } catch (err) {
-      console.warn('Photos: failed to parse stagedPhotos', err);
-      return [];
-    }
-  })();
+const getToken = () => {
+  try { return sessionStorage.getItem('reportToken') || ''; } catch { return ''; }
+};
 
-  const [pendingFiles, setPendingFiles] = useState(initialStaged);
-  const [pendingPreviews, setPendingPreviews] = useState(initialStaged);
-  const [selectedPending, setSelectedPending] = useState(new Set(initialStaged.map(p => p.id)));
+const Photos = ({ photos = [], photoGroups = [], onPhotoGroupsChange, onPhotoFileChange, onRemovePhoto, onPrev, onNext }) => {
+  const [pendingFiles, setPendingFiles] = useState([]);
+  const [selectedPending, setSelectedPending] = useState(new Set());
+  const [groupDescription, setGroupDescription] = useState('');
+  const [aiSuggestions, setAiSuggestions] = useState([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isAnalyzingIndividual, setIsAnalyzingIndividual] = useState(false);
   const [selectedUngrouped, setSelectedUngrouped] = useState(new Set());
   const [ungroupedDescription, setUngroupedDescription] = useState('');
   const [editingGroupId, setEditingGroupId] = useState(null);
   const [editingDescription, setEditingDescription] = useState('');
 
   useEffect(() => {
-    if (pendingPreviews.length > 0) localStorage.setItem('stagedPhotos', JSON.stringify(pendingPreviews)); else localStorage.removeItem('stagedPhotos');
-  }, [pendingPreviews]);
+    try { localStorage.removeItem('stagedPhotos'); } catch (_) {}
+  }, []);
 
+  // ── Staging handlers ──────────────────────────────────────────────────────
+  const stageFiles = (fileList) => {
+    const arr = Array.from(fileList).filter(f => f.type && f.type.startsWith('image/'));
+    if (!arr.length) return;
+    const readers = arr.map(file => new Promise(resolve => {
+      const r = new FileReader();
+      r.onload = () => resolve({ id: `p_${Date.now()}_${Math.random()}`, file, preview: r.result, fileName: file.name, size: file.size, label: '' });
+      r.onerror = () => resolve(null);
+      r.readAsDataURL(file);
+    }));
+    Promise.all(readers).then(results => {
+      const items = results.filter(Boolean);
+      if (items.length) {
+        setPendingFiles(prev => [...prev, ...items]);
+        setSelectedPending(prev => new Set([...Array.from(prev), ...items.map(i => i.id)]));
+      }
+    });
+  };
+
+  const handleFileInputChange = (e) => {
+    if (e?.target?.files) stageFiles(e.target.files);
+    if (e?.target) e.target.value = '';
+  };
+
+  const handleFolderInputChange = (e) => {
+    if (e?.target?.files) stageFiles(e.target.files);
+    if (e?.target) e.target.value = '';
+  };
+
+  const handleDrop = (e) => { e.preventDefault(); if (e.dataTransfer?.files) stageFiles(e.dataTransfer.files); };
+  const handleDragEnter = (e) => e.preventDefault();
+  const handleDragLeave = (e) => e.preventDefault();
+  const handleDragOver = (e) => e.preventDefault();
+
+  const handleSelectAll = () => setSelectedPending(new Set(pendingFiles.map(p => p.id)));
+  const handleDeselectAll = () => setSelectedPending(new Set());
+  const handleClearAll = () => { setPendingFiles([]); setSelectedPending(new Set()); };
+
+  const handleTogglePendingSelection = (id) => setSelectedPending(prev => {
+    const s = new Set(prev);
+    s.has(id) ? s.delete(id) : s.add(id);
+    return s;
+  });
+
+  const handleRemovePendingPhoto = (id) => {
+    setPendingFiles(prev => prev.filter(p => p.id !== id));
+    setSelectedPending(prev => { const s = new Set(prev); s.delete(id); return s; });
+  };
+
+  const handleUpdatePendingLabel = (id, label) => {
+    setPendingFiles(prev => prev.map(p => p.id === id ? { ...p, label } : p));
+  };
+
+  // ── Group description / add to report ────────────────────────────────────
+  const handleAddSelectedAsGroup = () => {
+    const selected = pendingFiles.filter(p => selectedPending.has(p.id));
+    if (!selected.length) return;
+    onPhotoFileChange(selected, groupDescription.trim());
+    setPendingFiles(prev => prev.filter(p => !selectedPending.has(p.id)));
+    setSelectedPending(new Set());
+    setGroupDescription('');
+    setAiSuggestions([]);
+  };
+
+  // ── AI: Group Suggestions ─────────────────────────────────────────────────
+  const handleAutoDescribe = async () => {
+    const selected = pendingFiles.filter(p => selectedPending.has(p.id));
+    if (!selected.length || isAnalyzing) return;
+    setIsAnalyzing(true);
+    setAiSuggestions([]);
+    try {
+      const images = selected.map(p => p.preview);
+      const res = await fetch(ENDPOINTS.AI_DESCRIBE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ images }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setAiSuggestions(Array.isArray(data.suggestions) ? data.suggestions : []);
+    } catch (err) {
+      console.error('AI group suggest error:', err);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // ── AI: Auto-Describe Each ────────────────────────────────────────────────
+  const handleAutoDescribeEach = async () => {
+    const selected = pendingFiles.filter(p => selectedPending.has(p.id));
+    if (!selected.length || isAnalyzingIndividual) return;
+    setIsAnalyzingIndividual(true);
+    try {
+      const images = selected.map(p => ({ data: p.preview, fileName: p.fileName }));
+      const res = await fetch(ENDPOINTS.AI_DESCRIBE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ images, mode: 'individual' }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const suggestions = Array.isArray(data.suggestions) ? data.suggestions : [];
+      if (suggestions.length) {
+        setPendingFiles(prev => prev.map(p => {
+          const idx = selected.findIndex(s => s.id === p.id);
+          if (idx !== -1 && suggestions[idx]) return { ...p, label: suggestions[idx] };
+          return p;
+        }));
+      }
+    } catch (err) {
+      console.error('AI individual describe error:', err);
+    } finally {
+      setIsAnalyzingIndividual(false);
+    }
+  };
+
+  // ── Already-added photo group handlers ───────────────────────────────────
   const getGroupPhotos = (group) => (group.photoIds || []).map(pid => photos.find(p => p.id === pid)).filter(Boolean);
   const getUngroupedPhotos = () => {
     if (!photoGroups || photoGroups.length === 0) return photos;
@@ -46,7 +161,6 @@ const Photos = ({ photos = [], photoGroups = [], onPhotoGroupsChange, onPhotoFil
   };
 
   const ungroupedPhotos = getUngroupedPhotos();
-
   const toggleUngroupedSelection = (id) => setSelectedUngrouped(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
 
   const groupUngroupedPhotos = () => {
@@ -58,46 +172,30 @@ const Photos = ({ photos = [], photoGroups = [], onPhotoGroupsChange, onPhotoFil
   };
 
   const startEditGroup = (groupId, desc) => { setEditingGroupId(groupId); setEditingDescription(desc || ''); };
-  const saveGroupDescription = () => { if (editingGroupId == null) return; const updated = (photoGroups || []).map(g => g.id === editingGroupId ? { ...g, description: editingDescription } : g); onPhotoGroupsChange(updated); setEditingGroupId(null); setEditingDescription(''); };
-  const deleteGroup = (groupId) => { const group = (photoGroups || []).find(g => g.id === groupId); if (group) (group.photoIds || []).forEach(pid => onRemovePhoto(pid)); onPhotoGroupsChange((photoGroups || []).filter(g => g.id !== groupId)); };
-  const removePhotoFromGroup = (groupId, photoId) => { onRemovePhoto(photoId); const updated = (photoGroups || []).map(g => g.id === groupId ? { ...g, photoIds: (g.photoIds || []).filter(id => id !== photoId) } : g).filter(g => (g.photoIds || []).length > 0); onPhotoGroupsChange(updated); };
-
-  const stageFiles = (fileList) => {
-    const arr = Array.from(fileList).filter(f => f.type && f.type.startsWith('image/'));
-    if (!arr.length) return;
-    const readers = arr.map(file => new Promise(resolve => { const r = new FileReader(); r.onload = () => resolve({ id: `p_${Date.now()}_${Math.random()}`, file, preview: r.result, fileName: file.name, size: file.size }); r.onerror = () => resolve(null); r.readAsDataURL(file); }));
-    Promise.all(readers).then(results => { const items = results.filter(Boolean); if (items.length) { setPendingFiles(prev => [...prev, ...items]); setPendingPreviews(prev => [...prev, ...items]); setSelectedPending(prev => new Set([...Array.from(prev), ...items.map(i => i.id)])); } });
+  const saveGroupDescription = () => {
+    if (editingGroupId == null) return;
+    const updated = (photoGroups || []).map(g => g.id === editingGroupId ? { ...g, description: editingDescription } : g);
+    onPhotoGroupsChange(updated);
+    setEditingGroupId(null);
+    setEditingDescription('');
+  };
+  const deleteGroup = (groupId) => {
+    const group = (photoGroups || []).find(g => g.id === groupId);
+    if (group) (group.photoIds || []).forEach(pid => onRemovePhoto(pid));
+    onPhotoGroupsChange((photoGroups || []).filter(g => g.id !== groupId));
+  };
+  const removePhotoFromGroup = (groupId, photoId) => {
+    onRemovePhoto(photoId);
+    const updated = (photoGroups || []).map(g => g.id === groupId ? { ...g, photoIds: (g.photoIds || []).filter(id => id !== photoId) } : g).filter(g => (g.photoIds || []).length > 0);
+    onPhotoGroupsChange(updated);
   };
 
-  const handleFileInputChange = (e) => {
-    const files = e && e.target && e.target.files ? e.target.files : null;
-    if (files) stageFiles(files);
-    // clear input to allow re-uploading same file
-    if (e && e.target) e.target.value = '';
-  };
-
-  const handleFolderInputChange = (e) => {
-    const files = e && e.target && e.target.files ? e.target.files : null;
-    if (files) stageFiles(files);
-    if (e && e.target) e.target.value = '';
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    if (e.dataTransfer && e.dataTransfer.files) stageFiles(e.dataTransfer.files);
-  };
-
-  const handleDragEnter = (e) => e.preventDefault();
-  const handleDragLeave = (e) => e.preventDefault();
-  const handleDragOver = (e) => e.preventDefault();
-
-  // Programmatic staging API for automated tests / external callers
+  // ── Dev globals ───────────────────────────────────────────────────────────
   const stagePreviews = (previewArray = []) => {
     if (!Array.isArray(previewArray) || previewArray.length === 0) return;
-    const items = previewArray.map((p) => ({ id: `p_${Date.now()}_${Math.random()}`, preview: p.preview || p, fileName: p.fileName || 'staged-image.png', size: p.size || 0 }));
-    setPendingFiles((prev) => [...prev, ...items]);
-    setPendingPreviews((prev) => [...prev, ...items]);
-    setSelectedPending((prev) => new Set([...Array.from(prev), ...items.map(i => i.id)]));
+    const items = previewArray.map(p => ({ id: `p_${Date.now()}_${Math.random()}`, preview: p.preview || p, fileName: p.fileName || 'staged-image.png', size: p.size || 0, label: '' }));
+    setPendingFiles(prev => [...prev, ...items]);
+    setSelectedPending(prev => new Set([...Array.from(prev), ...items.map(i => i.id)]));
   };
 
   return (
@@ -105,39 +203,42 @@ const Photos = ({ photos = [], photoGroups = [], onPhotoGroupsChange, onPhotoFil
       <Suspense fallback={<div style={{ color: colors.textMuted, marginBottom: 12 }}>Loading photo tools…</div>}>
         <PhotoStagingPanel
           pendingFiles={pendingFiles}
-          pendingPreviews={pendingPreviews}
           selectedPending={selectedPending}
-          setSelectedPending={setSelectedPending}
+          groupDescription={groupDescription}
+          aiSuggestions={aiSuggestions}
+          isAnalyzing={isAnalyzing}
+          isAnalyzingIndividual={isAnalyzingIndividual}
           onFileInputChange={handleFileInputChange}
           onFolderInputChange={handleFolderInputChange}
           onDrop={handleDrop}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDragOver={handleDragOver}
-          stageFiles={stageFiles}
-          onAddSelected={(selected, description) => onPhotoFileChange(selected, description)}
-          clearPending={() => { setPendingFiles([]); setPendingPreviews([]); setSelectedPending(new Set()); }}
+          onSelectAll={handleSelectAll}
+          onDeselectAll={handleDeselectAll}
+          onClearAll={handleClearAll}
+          onTogglePendingSelection={handleTogglePendingSelection}
+          onRemovePendingPhoto={handleRemovePendingPhoto}
+          onUpdatePendingLabel={handleUpdatePendingLabel}
+          onGroupDescriptionChange={setGroupDescription}
+          onDismissAiSuggestions={() => setAiSuggestions([])}
+          onAddSelectedAsGroup={handleAddSelectedAsGroup}
+          onAutoDescribe={handleAutoDescribe}
+          onAutoDescribeEach={handleAutoDescribeEach}
         />
       </Suspense>
 
-      {/* Expose staging helpers for automated scripts (non-production only). Clean up on unmount. */}
-      {typeof window !== 'undefined' && (() => null)()}
-
-      {/* Attach dev-only globals in an effect to avoid SSR and lint errors */}
       {typeof window !== 'undefined' && (
-        <DevGlobalsHook setPendingFiles={setPendingFiles} setPendingPreviews={setPendingPreviews} setSelectedPending={setSelectedPending} stagePreviews={stagePreviews} />
+        <DevGlobalsHook setPendingFiles={setPendingFiles} setSelectedPending={setSelectedPending} stagePreviews={stagePreviews} />
       )}
 
-      {/* Ensure globals are removed on unmount (defensive cleanup) */}
       <CleanupHook clear={() => {
         try {
           if (typeof window !== 'undefined') {
             if (window.__stagePhotos && window.__stagePhotos === stagePreviews) delete window.__stagePhotos;
             if (window.__clearStagedPhotos) delete window.__clearStagedPhotos;
           }
-        } catch (err) {
-          console.warn(err);
-        }
+        } catch (err) { console.warn(err); }
       }} />
 
       {photoGroups && photoGroups.length > 0 && (
@@ -192,24 +293,20 @@ const Photos = ({ photos = [], photoGroups = [], onPhotoGroupsChange, onPhotoFil
         </ul>
       </div>
 
-      <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-        <button onClick={onPrev} style={{ ...buttonStyle, minWidth: 110 }}>Previous</button>
-        <button onClick={onNext} style={{ ...buttonStyle, minWidth: 110 }}>Next</button>
-      </div>
+      <NavButtons onPrev={onPrev} onNext={onNext} />
     </div>
   );
 };
 
 export default Photos;
 
-// Dev-only component to attach globals safely
-function DevGlobalsHook({ setPendingFiles, setPendingPreviews, setSelectedPending, stagePreviews }) {
+function DevGlobalsHook({ setPendingFiles, setSelectedPending, stagePreviews }) {
   const isDev = typeof import.meta !== 'undefined' ? (import.meta.env && import.meta.env.MODE) !== 'production' : false;
   React.useEffect(() => {
     if (!isDev || typeof window === 'undefined') return;
     try {
       window.__stagePhotos = stagePreviews;
-      window.__clearStagedPhotos = () => { setPendingFiles([]); setPendingPreviews([]); setSelectedPending(new Set()); localStorage.removeItem('stagedPhotos'); };
+      window.__clearStagedPhotos = () => { setPendingFiles([]); setSelectedPending(new Set()); };
     } catch (err) { console.warn(err); }
     return () => {
       try {
@@ -217,6 +314,6 @@ function DevGlobalsHook({ setPendingFiles, setPendingPreviews, setSelectedPendin
         if (window.__clearStagedPhotos) delete window.__clearStagedPhotos;
       } catch (err) { console.warn(err); }
     };
-  }, [setPendingFiles, setPendingPreviews, setSelectedPending, stagePreviews, isDev]);
+  }, [setPendingFiles, setSelectedPending, stagePreviews, isDev]);
   return null;
 }

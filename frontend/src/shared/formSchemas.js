@@ -135,7 +135,7 @@ export const clsSchema = {
     ],
     metadata: [
       { name: "cls_fastening_metal_staples", label: "Fastening Metal Staples", type: "text", defaultValue: "/" },
-      { name: "cls_nylon_band", label: "Nylon Band", type: "text", defaultValue: "Yes" },
+      { name: "cls_nylon_band", label: "Nylon Band", type: "select", options: ["Yes", "No"], defaultValue: "Yes" },
       { name: "cls_material", label: "Material", type: "text", defaultValue: "/" },
       { name: "cls_corrugated_paper_plies", label: "Corrugated Paper Plies", type: "text", defaultValue: "/" },
       { name: "cls_packing_method", label: "Packing Method", type: "text", defaultValue: "/" },

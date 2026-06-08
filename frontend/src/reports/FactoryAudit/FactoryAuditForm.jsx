@@ -6,18 +6,19 @@ import { colors } from "../../styles";
 import { faSchema } from "../../shared/faSchema";
 import ReportLoader from '../../components/shared/ReportLoader';
 
-import { 
-  GeneralInfo, 
-  AuditOverview, 
-  RemarksAndSuggestions, 
-  SupplierProfile, 
-  OrganizationChart, 
-  ProductionLines, 
-  Machinery, 
-  QAQCSystem, 
-  RDCapacity, 
-  Environment, 
-  FinalStep 
+import {
+  GeneralInfo,
+  AuditOverview,
+  SupplierProfile,
+  OrganizationChart,
+  ProductionLines,
+  Machinery,
+  QAQCSystem,
+  RDCapacity,
+  Environment,
+  FinalStep,
+  OverallConclusionStep,
+  CombinedRemarksStep,
 } from './components';
 
 import { compressImage, formatFileSize } from "../../utils/imageCompression";
@@ -31,6 +32,7 @@ export default function FactoryAudit() {
   const { token } = useAuth();
   const location = useLocation();
   const prefillData = location.state?.task?.prefillData ?? null;
+  const taskId = location.state?.task?._id ?? null;
 
   const [prefillBannerDismissed, setPrefillBannerDismissed] = useState(false);
 
@@ -612,7 +614,7 @@ export default function FactoryAudit() {
         const res = await fetch(ENDPOINTS.FACTORY_AUDIT.SUBMIT(savedId), {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({}),
+          body: JSON.stringify({ taskId: taskId || undefined }),
         });
         if (res.status === 401) { navigate("/login"); return; }
         if (!res.ok) throw new Error("Failed to submit for review");
@@ -622,7 +624,7 @@ export default function FactoryAudit() {
         const res = await fetch(ENDPOINTS.FACTORY_AUDIT.BASE, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ ...nestedData, status: "submitted" }),
+          body: JSON.stringify({ ...nestedData, status: "submitted", taskId: taskId || undefined }),
         });
         if (res.status === 401) { navigate("/login"); return; }
         if (!res.ok) throw new Error("Failed to submit for review");
@@ -663,6 +665,7 @@ export default function FactoryAudit() {
     }
   };
 
+
   const clearForm = () => {
     if (window.confirm("Are you sure you want to clear all data? This cannot be undone.")) {
       localStorage.removeItem("faStep");
@@ -692,26 +695,27 @@ export default function FactoryAudit() {
   const formWithSchema = useMemo(() => ({ ...form, schema: faSchema }), [form]);
 
   const steps = [
-    { id: 1, label: "General Information", component: (
-      <GeneralInfo 
-        form={formWithSchema} 
-        handleChange={handleChange} 
+    { id: 1,  label: "General Information",          component: (
+      <GeneralInfo
+        form={formWithSchema}
+        handleChange={handleChange}
         handleGeneralPhotoUpload={handleGeneralPhotoUpload}
         setForm={setForm}
         isPhotoProcessing={isPhotoProcessing}
         isMobile={isMobile}
       />
     ) },
-    { id: 2, label: "Audit Overview", component: <AuditOverview form={formWithSchema} setForm={setForm} /> },
-    { id: 3, label: "Remarks & Suggestions", component: <RemarksAndSuggestions form={formWithSchema} handleChange={handleChange} /> },
-    { id: 4, label: "Part 1: Supplier Profile", component: <SupplierProfile form={formWithSchema} handleChange={handleChange} setForm={setForm} /> },
-    { id: 5, label: "Part 2: Organization Chart", component: <OrganizationChart form={formWithSchema} handleChange={handleChange} setForm={setForm} /> },
-    { id: 6, label: "Part 3: Production Lines", component: <ProductionLines form={formWithSchema} handleChange={handleChange} setForm={setForm} /> },
-    { id: 7, label: "Part 4: Machinery", component: <Machinery form={formWithSchema} handleChange={handleChange} setForm={setForm} /> },
-    { id: 8, label: "Part 5: QA/QC System", component: <QAQCSystem form={formWithSchema} handleChange={handleChange} setForm={setForm} /> },
-    { id: 9, label: "Part 6: R&D Capacity", component: <RDCapacity form={formWithSchema} handleChange={handleChange} setForm={setForm} /> },
-    { id: 10, label: "Part 7: Environment", component: <Environment form={formWithSchema} handleChange={handleChange} setForm={setForm} /> },
-    { id: 11, label: "Finalize & Download", component: (
+    { id: 2,  label: "Audit Overview",           component: <AuditOverview form={formWithSchema} setForm={setForm} /> },
+    { id: 3,  label: "Overall Conclusion",       component: <OverallConclusionStep form={formWithSchema} setForm={setForm} /> },
+    { id: 4,  label: "Remarks",                  component: <CombinedRemarksStep form={formWithSchema} handleChange={handleChange} /> },
+    { id: 5,  label: "Part 1: Supplier Profile", component: <SupplierProfile form={formWithSchema} handleChange={handleChange} setForm={setForm} /> },
+    { id: 6,  label: "Part 2: Organization Chart",component: <OrganizationChart form={formWithSchema} handleChange={handleChange} setForm={setForm} /> },
+    { id: 7,  label: "Part 3: Production Lines", component: <ProductionLines form={formWithSchema} handleChange={handleChange} setForm={setForm} /> },
+    { id: 8,  label: "Part 4: Machinery",        component: <Machinery form={formWithSchema} handleChange={handleChange} setForm={setForm} /> },
+    { id: 9,  label: "Part 5: QA/QC System",     component: <QAQCSystem form={formWithSchema} handleChange={handleChange} setForm={setForm} /> },
+    { id: 10, label: "Part 6: R&D Capacity",     component: <RDCapacity form={formWithSchema} handleChange={handleChange} setForm={setForm} /> },
+    { id: 11, label: "Part 7: Environment",      component: <Environment form={formWithSchema} handleChange={handleChange} setForm={setForm} /> },
+    { id: 12, label: "Finalize & Download",      component: (
       <FinalStep
         reportDownloaded={reportDownloaded}
         clearFormAfterDownload={clearFormAfterDownload}
@@ -726,44 +730,48 @@ export default function FactoryAudit() {
 
   const currentStep = steps.find(s => s.id === step);
 
+  const stepShortLabels = {
+    1:  "General",     2:  "Overview",    3:  "Conclusion",  4:  "Remarks",
+    5:  "Supplier",    6:  "Org. Chart",  7:  "Prod. Lines", 8:  "Machinery",
+    9:  "QA/QC",       10: "R&D",         11: "Environment", 12: "Finalize",
+  };
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#f8fafc", fontFamily: "Arial, Helvetica, sans-serif" }}>
-      <div style={{ background: colors.surface, borderBottom: `1px solid ${colors.border}`, padding: "10px", display: "flex", overflowX: "auto", gap: "8px", scrollbarWidth: "none" }}>
-        {steps.map(s => (
-          <button 
-            key={s.id} 
-            onClick={() => setStep(s.id)} 
-            style={{ 
-              border: "none", 
-              background: step === s.id ? colors.primaryLight : "transparent", 
-              color: step === s.id ? colors.primary : colors.text, 
-              borderRadius: "6px", padding: "8px 12px", whiteSpace: "nowrap", 
-              cursor: "pointer", fontWeight: step === s.id ? "700" : "500", fontSize: "13px",
-              transition: "all 0.2s"
-            }}
-          >
-            {s.id}. {s.label}
-          </button>
-        ))}
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f8fafc", fontFamily: "'Outfit', Arial, sans-serif" }}>
+      <div style={{ background: colors.surface, borderBottom: `1px solid ${colors.border}`, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+        <div style={{ padding: "7px 16px 3px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+            <span style={{ fontSize: "11px", color: colors.textMuted, fontWeight: 500 }}>Reports</span>
+            <span style={{ fontSize: "11px", color: colors.textMuted }}>›</span>
+            <span style={{ fontSize: "12px", fontWeight: "700", color: colors.header }}>Factory Audit</span>
+          </div>
+          <span style={{ fontSize: "11px", color: colors.textMuted, fontWeight: 500 }}>Step {step} of {steps.length}</span>
+        </div>
+        <div style={{ overflowX: "auto", padding: "3px 12px 6px", display: "flex", gap: "4px", scrollbarWidth: "none" }}>
+          {steps.map(s => (
+            <button
+              key={s.id}
+              onClick={() => setStep(s.id)}
+              style={{ border: "none", background: step === s.id ? colors.primary : colors.surfaceAlt, color: step === s.id ? "#fff" : colors.textMuted, borderRadius: "20px", padding: "4px 10px", whiteSpace: "nowrap", cursor: "pointer", fontWeight: step === s.id ? "700" : "500", fontSize: "11px", transition: "all 0.2s", display: "flex", alignItems: "center", gap: "4px" }}
+            >
+              <span style={{ width: "15px", height: "15px", borderRadius: "50%", background: step === s.id ? "rgba(255,255,255,0.25)" : colors.border, color: step === s.id ? "#fff" : colors.textMuted, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "9px", fontWeight: "bold", flexShrink: 0 }}>{s.id}</span>
+              {step === s.id ? s.label : stepShortLabels[s.id]}
+            </button>
+          ))}
+        </div>
+        <div style={{ height: "3px", background: colors.border }}>
+          <div style={{ width: `${(step / steps.length) * 100}%`, height: "100%", background: colors.primary, transition: "width 0.3s ease" }} />
+        </div>
       </div>
       
-      <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "20px 15px" : "40px" }}>
+      <div style={{ flex: 1, overflow: "hidden", display: "flex" }}>
+      <div style={{ flex: 1, overflowY: "auto", background: "#f8fafc", padding: isMobile ? "10px 12px" : "14px 22px" }}>
         <div style={{ width: "100%", maxWidth: "1400px", margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: "40px" }}>
-            <h1 style={{ fontSize: isMobile ? "24px" : "36px", fontWeight: "900", color: colors.header, marginBottom: "10px", letterSpacing: "-0.5px" }}>Factory Audit Module</h1>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
-              <span style={{ padding: "4px 12px", background: colors.primaryLight, color: colors.primary, borderRadius: "20px", fontSize: "12px", fontWeight: "700" }}>STEP {step} OF {steps.length}</span>
-              <span style={{ color: colors.textMuted, fontSize: "14px", fontWeight: "500" }}>{currentStep?.label}</span>
-            </div>
-            <div style={{ width: "100%", height: "4px", background: colors.border, borderRadius: "2px", marginTop: "20px", overflow: "hidden" }}>
-              <div style={{ width: `${(step / steps.length) * 100}%`, height: "100%", background: colors.primary, transition: "width 0.4s cubic-bezier(0.4, 0, 0.2, 1)" }}></div>
-            </div>
-          </div>
-          
-          <div style={{ display: "flex", justifyContent: isMobile ? "center" : "flex-end", gap: "12px", marginBottom: "30px", flexWrap: "wrap" }}>
-            <button onClick={autofillDemoData} style={{ padding: "10px 20px", background: colors.primary, color: "#fff", border: "none", borderRadius: "10px", fontWeight: "600", cursor: "pointer", fontSize: "13px", boxShadow: "0 4px 12px rgba(59, 130, 246, 0.2)", transition: "all 0.2s" }}>⚡ Autofill Demo Data</button>
-            <button onClick={handleSaveDraft} style={{ padding: "10px 20px", background: colors.warning, color: "#fff", border: "none", borderRadius: "10px", fontWeight: "600", cursor: "pointer", fontSize: "13px", boxShadow: "0 4px 12px rgba(245, 158, 11, 0.2)", transition: "all 0.2s" }}>💾 Save Draft</button>
-            <button onClick={clearForm} style={{ padding: "10px 20px", background: colors.danger, color: "#fff", border: "none", borderRadius: "10px", fontWeight: "600", cursor: "pointer", fontSize: "13px", boxShadow: "0 4px 12px rgba(239, 68, 68, 0.15)", transition: "all 0.2s" }}>⟲ Clear</button>
+          {/* Compact action buttons */}
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginBottom: "12px", flexWrap: "wrap" }}>
+            <button onClick={autofillDemoData} style={{ padding: "7px 12px", background: colors.success, color: "#fff", border: "none", borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "12px", boxShadow: "0 2px 6px rgba(16,185,129,0.2)" }}>⚡ Quick Fill</button>
+            <button onClick={handleSaveDraft} style={{ padding: "7px 12px", background: colors.warning, color: "#fff", border: "none", borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "12px", boxShadow: "0 2px 6px rgba(245,158,11,0.2)" }}>💾 Save Draft</button>
+            <button onClick={clearForm} style={{ padding: "7px 12px", background: colors.danger, color: "#fff", border: "none", borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "12px", boxShadow: "0 2px 6px rgba(239,68,68,0.15)" }}>⟲ Clear</button>
           </div>
           
           {prefillData && !prefillBannerDismissed && (
@@ -805,28 +813,19 @@ export default function FactoryAudit() {
             {currentStep?.component}
           </div>
           
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: "60px", padding: "30px 0", borderTop: `1px solid ${colors.border}` }}>
-            <button 
-              onClick={() => setStep(s => Math.max(1, s - 1))} 
-              disabled={step === 1} 
-              style={{ 
-                padding: "14px 28px", borderRadius: "10px", border: `1px solid ${colors.border}`, 
-                background: "#fff", color: colors.text, fontWeight: "600", 
-                cursor: step === 1 ? "not-allowed" : "pointer", opacity: step === 1 ? 0.5 : 1,
-                transition: "all 0.2s"
-              }}
-            >
-              ← Previous Section
-            </button>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "60px", padding: "30px 0", borderTop: `1px solid ${colors.border}` }}>
+            {step > 1 && (
+              <button
+                onClick={() => setStep(s => Math.max(1, s - 1))}
+                style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 24px", borderRadius: "24px", border: "none", background: colors.primary, color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 2px 8px rgba(59,130,246,0.25)" }}
+              >
+                ← Previous Section
+              </button>
+            )}
             {step < steps.length && (
-              <button 
-                onClick={() => setStep(s => Math.min(steps.length, s + 1))} 
-                style={{ 
-                  padding: "14px 32px", borderRadius: "10px", border: "none", 
-                  background: colors.primary, color: "#fff", fontWeight: "700", 
-                  cursor: "pointer", boxShadow: "0 4px 14px rgba(59, 130, 246, 0.3)",
-                  transition: "all 0.2s"
-                }}
+              <button
+                onClick={() => setStep(s => Math.min(steps.length, s + 1))}
+                style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 24px", borderRadius: "24px", border: "none", background: colors.primary, color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 2px 8px rgba(59,130,246,0.25)" }}
               >
                 Next Section →
               </button>
@@ -834,7 +833,9 @@ export default function FactoryAudit() {
           </div>
         </div>
       </div>
-      
+
+      </div>{/* end flex row */}
+
       {showSaveToast && (
         <div style={{ 
           position: "fixed", bottom: "30px", right: "30px", 

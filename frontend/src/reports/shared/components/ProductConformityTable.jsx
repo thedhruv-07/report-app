@@ -1,197 +1,256 @@
-import React from "react";
+import React, { useState } from "react";
 import { colors } from '../../../styles';
 import SmartTextarea from '../../../components/shared/SmartTextarea';
+
+const borderColor = "#1F1F1F";
+const cellBorder = `1px solid ${borderColor}`;
+const sectionHeaderBg = "#E8E8E8";
+const subHeaderBg = "#E9ECEF";
+const headerColor = "#1F4E79";
+
+const inputBase = {
+  width: "100%",
+  padding: "4px",
+  background: colors.surface,
+  color: colors.text,
+  border: "none",
+  boxSizing: "border-box",
+  fontSize: "12px",
+  fontFamily: "inherit"
+};
+
+const getResultColor = (val) => {
+  if (!val) return colors.text;
+  if (val.toLowerCase().includes("pass")) return "#228B22";
+  if (val.toLowerCase().includes("fail")) return "#CC0000";
+  return colors.text;
+};
+
+const DEFAULT_STYLE_ROW = { description: "", result: "" };
+const DEFAULT_WORK_ROW  = { description: "", result: "" };
 
 export default function ProductConformityTable({ formData, onChange }) {
   const handleChange = (field, value) => {
     onChange({ target: { name: field, value } });
   };
 
-  const getResultColor = (val) => {
-    if (!val) return colors.text;
-    if (val.toLowerCase().includes("pass")) return colors.success;
-    if (val.toLowerCase().includes("fail")) return colors.danger;
-    if (val.toLowerCase().includes("pending")) return colors.warning;
-    return colors.text;
+  // Style & Color rows
+  const [styleRows, setStyleRows] = useState(() =>
+    Array.isArray(formData.styleColorRows) && formData.styleColorRows.length > 0
+      ? formData.styleColorRows
+      : [
+          { description: " - Conform to product specification (Including color, accessories, hangtag/labels, logo/markings)", result: "" },
+          { description: " - Conform to reference sample", result: "" },
+          { description: " - Conform to product digital photo", result: "" },
+          { description: " - Others", result: "" },
+        ]
+  );
+
+  // Workmanship rows
+  const [workRows, setWorkRows] = useState(() =>
+    Array.isArray(formData.workmanshipRows) && formData.workmanshipRows.length > 0
+      ? formData.workmanshipRows
+      : [
+          { description: " - Obvious visual defects (appearance, artwork, logo)", result: "" },
+          { description: " - Base function check (no need to use equipment to check)", result: "" },
+        ]
+  );
+
+  const updateStyleRow = (idx, field, value) => {
+    const updated = styleRows.map((r, i) => i === idx ? { ...r, [field]: value } : r);
+    setStyleRows(updated);
+    handleChange("styleColorRows", updated);
   };
 
+  const addStyleRow = () => {
+    const updated = [...styleRows, { ...DEFAULT_STYLE_ROW }];
+    setStyleRows(updated);
+    handleChange("styleColorRows", updated);
+  };
+
+  const removeStyleRow = (idx) => {
+    if (styleRows.length <= 1) return;
+    const updated = styleRows.filter((_, i) => i !== idx);
+    setStyleRows(updated);
+    handleChange("styleColorRows", updated);
+  };
+
+  const updateWorkRow = (idx, field, value) => {
+    const updated = workRows.map((r, i) => i === idx ? { ...r, [field]: value } : r);
+    setWorkRows(updated);
+    handleChange("workmanshipRows", updated);
+  };
+
+  const addWorkRow = () => {
+    const updated = [...workRows, { ...DEFAULT_WORK_ROW }];
+    setWorkRows(updated);
+    handleChange("workmanshipRows", updated);
+  };
+
+  const removeWorkRow = (idx) => {
+    if (workRows.length <= 1) return;
+    const updated = workRows.filter((_, i) => i !== idx);
+    setWorkRows(updated);
+    handleChange("workmanshipRows", updated);
+  };
+
+  const conformityResultColor = getResultColor(formData.conformityOverallResult);
+
   return (
-    <div style={{ marginBottom: "30px", border: `1px solid ${colors.border}`, overflow: "hidden", fontFamily: "Arial, Helvetica, sans-serif", fontSize: "13px" }}>
-      {/* Title */}
-      <div style={{ padding: "8px", background: colors.lightGray, borderBottom: `1px solid ${colors.border}` }}>
-        <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "bold", color: "#1F4E79" }}>B. PRODUCT CONFORMITY</h3>
+    <div style={{ color: colors.text, fontSize: "14px" }}>
+      {/* ── Main Table ── */}
+      <div style={{ marginBottom: "25px", overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", border: cellBorder, fontSize: "12px" }}>
+          <thead>
+            <tr>
+              <th colSpan={3} style={{ padding: "10px 12px", background: sectionHeaderBg, border: cellBorder, color: headerColor, textAlign: "left", fontWeight: "bold", fontSize: "14px" }}>
+                B.&nbsp;&nbsp;PRODUCT CONFORMITY
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {/* Selected Cartons */}
+            <tr>
+              <td style={{ padding: "8px", background: subHeaderBg, border: cellBorder, fontWeight: "bold", color: colors.text, width: "200px" }}>Selected Cartons:</td>
+              <td colSpan={2} style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
+                <input type="text" value={formData.selectedCartons || ""} onChange={(e) => handleChange("selectedCartons", e.target.value)} placeholder="(3 carton per model)" style={inputBase} />
+              </td>
+            </tr>
+            <tr>
+              <td colSpan={3} style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
+                <input type="text" value={formData.randomSelectionInfo || ""} onChange={(e) => handleChange("randomSelectionInfo", e.target.value)} placeholder="12 Cartons were selected randomly on site. No carton number in shipping mark." style={{ ...inputBase, textDecoration: "underline" }} />
+              </td>
+            </tr>
+            <tr>
+              <td colSpan={3} style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
+                <input type="text" value={formData.cartonNoInfo || ""} onChange={(e) => handleChange("cartonNoInfo", e.target.value)} placeholder="Carton No.: NA" style={inputBase} />
+              </td>
+            </tr>
+
+            {/* Check Contents */}
+            <tr>
+              <td colSpan={3} style={{ padding: "8px", background: subHeaderBg, border: cellBorder, fontWeight: "bold", color: colors.text }}>Check Contents Inside Packaging</td>
+            </tr>
+
+            {/* 1. Style and Color */}
+            <tr>
+              <td colSpan={3} style={{ padding: "8px", background: subHeaderBg, border: cellBorder, fontWeight: "bold", color: colors.text }}>1. Style and Color</td>
+            </tr>
+            <tr>
+              <th style={{ padding: "8px", background: colors.surface, border: cellBorder, color: colors.text, textAlign: "left", width: "60%" }}>Description</th>
+              <th style={{ padding: "8px", background: colors.surface, border: cellBorder, color: colors.text, textAlign: "center", width: "30%" }}>Result</th>
+              {/* + add icon */}
+              <th
+                style={{ padding: "8px", background: colors.surface, border: cellBorder, color: colors.text, textAlign: "center", width: "30px", cursor: "pointer", fontSize: "18px", fontWeight: "bold" }}
+                onClick={addStyleRow}
+                title="Add row"
+              >+</th>
+            </tr>
+            {styleRows.map((row, idx) => (
+              <tr key={idx}>
+                <td style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
+                  <input type="text" value={row.description} onChange={(e) => updateStyleRow(idx, "description", e.target.value)} style={inputBase} />
+                </td>
+                <td style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
+                  <select value={row.result} onChange={(e) => updateStyleRow(idx, "result", e.target.value)} style={{ ...inputBase, cursor: "pointer", color: getResultColor(row.result), fontWeight: row.result ? "bold" : "normal" }}>
+                    <option value="">Select...</option>
+                    <option value="Passed">Passed</option>
+                    <option value="Failed">Failed</option>
+                    <option value="Pending">Pending</option>
+                    <option value="N/A">N/A</option>
+                  </select>
+                </td>
+                <td style={{ padding: "8px", background: colors.surface, border: cellBorder, textAlign: "center" }}>
+                  <button
+                    onClick={() => removeStyleRow(idx)}
+                    disabled={styleRows.length === 1}
+                    style={{ background: "transparent", color: styleRows.length === 1 ? "#ccc" : "#CC0000", border: "none", cursor: styleRows.length === 1 ? "not-allowed" : "pointer", fontWeight: "bold", fontSize: "14px" }}
+                  >x</button>
+                </td>
+              </tr>
+            ))}
+
+            {/* 2. Workmanship */}
+            <tr>
+              <td colSpan={3} style={{ padding: "8px", background: subHeaderBg, border: cellBorder, fontWeight: "bold", color: colors.text }}>2. Workmanship &amp; Function Check (2 units per model, but no more than 20 units)</td>
+            </tr>
+            <tr>
+              <th style={{ padding: "8px", background: colors.surface, border: cellBorder, color: colors.text, textAlign: "left" }}>Description</th>
+              <th style={{ padding: "8px", background: colors.surface, border: cellBorder, color: colors.text, textAlign: "center" }}>Result</th>
+              <th
+                style={{ padding: "8px", background: colors.surface, border: cellBorder, color: colors.text, textAlign: "center", cursor: "pointer", fontSize: "18px", fontWeight: "bold" }}
+                onClick={addWorkRow}
+                title="Add row"
+              >+</th>
+            </tr>
+            {workRows.map((row, idx) => (
+              <tr key={idx}>
+                <td style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
+                  <input type="text" value={row.description} onChange={(e) => updateWorkRow(idx, "description", e.target.value)} style={inputBase} />
+                </td>
+                <td style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
+                  <select value={row.result} onChange={(e) => updateWorkRow(idx, "result", e.target.value)} style={{ ...inputBase, cursor: "pointer", color: getResultColor(row.result), fontWeight: row.result ? "bold" : "normal" }}>
+                    <option value="">Select...</option>
+                    <option value="Passed">Passed</option>
+                    <option value="Failed">Failed</option>
+                    <option value="Pending">Pending</option>
+                    <option value="N/A">N/A</option>
+                  </select>
+                </td>
+                <td style={{ padding: "8px", background: colors.surface, border: cellBorder, textAlign: "center" }}>
+                  <button
+                    onClick={() => removeWorkRow(idx)}
+                    disabled={workRows.length === 1}
+                    style={{ background: "transparent", color: workRows.length === 1 ? "#ccc" : "#CC0000", border: "none", cursor: workRows.length === 1 ? "not-allowed" : "pointer", fontWeight: "bold", fontSize: "14px" }}
+                  >x</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      {/* Selected Cartons */}
-      <div style={{ display: "flex", borderBottom: `1px solid ${colors.border}`, background: colors.surface }}>
-        <div style={{ padding: "8px", fontWeight: "bold", minWidth: "140px", borderRight: `1px solid ${colors.border}` }}>Selected Cartons :</div>
-        <div style={{ padding: "8px", flex: 1 }}>
-          <input 
-            type="text" 
-            value={formData.selectedCartons || ""} 
-            onChange={(e) => handleChange("selectedCartons", e.target.value)}
-            placeholder="(3 carton per model)"
-            style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: "13px" }}
-          />
-        </div>
+      {/* Result & Remarks section */}
+      <div style={{ marginBottom: "25px" }}>
+        <h3 style={{ fontSize: "15px", fontWeight: "bold", color: colors.text, marginBottom: "10px" }}>Result</h3>
+        <table style={{ width: "100%", borderCollapse: "collapse", border: cellBorder, fontSize: "12px" }}>
+          <tbody>
+            <tr>
+              <td style={{ padding: "10px 12px", border: cellBorder, background: "#f8fafc", fontWeight: "bold", textAlign: "left", color: colors.text, width: "150px" }}>
+                Result <span style={{ color: "#CC0000" }}>*</span>
+              </td>
+              <td style={{ padding: "8px", border: cellBorder, background: colors.surface }}>
+                <select
+                  value={formData.conformityOverallResult || ""}
+                  onChange={(e) => handleChange("conformityOverallResult", e.target.value)}
+                  style={{ width: "100%", padding: "4px", background: colors.surface, color: conformityResultColor, border: "none", borderRadius: "2px", fontSize: "12px", fontWeight: "bold", cursor: "pointer", outline: "none" }}
+                >
+                  <option value="">Select...</option>
+                  <option value="Passed">Passed</option>
+                  <option value="Failed">Failed</option>
+                  <option value="Pending">Pending</option>
+                  <option value="N/A">N/A</option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <td style={{ padding: "10px 12px", border: cellBorder, background: "#f8fafc", fontWeight: "bold", textAlign: "left", color: colors.text }}>
+                Remarks
+              </td>
+              <td style={{ padding: "8px", border: cellBorder, background: colors.surface }}>
+                <SmartTextarea
+                  name="conformityRemark"
+                  value={formData.conformityRemark || ""}
+                  onChange={(e) => handleChange("conformityRemark", e.target.value)}
+                  placeholder="Enter observation or remark..."
+                  context="product conformity inspection observations"
+                  style={{ width: "100%", minHeight: "40px", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", fontFamily: "inherit", fontSize: "12px", boxSizing: "border-box" }}
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-
-      {/* Random Selection Info */}
-      <div style={{ padding: "8px", borderBottom: `1px solid ${colors.border}`, background: colors.surface }}>
-        <input 
-          type="text" 
-          value={formData.randomSelectionInfo || ""} 
-          onChange={(e) => handleChange("randomSelectionInfo", e.target.value)}
-          placeholder="12 Cartons were selected randomly on site. No carton number in shipping mark."
-          style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: "13px", textDecoration: "underline" }}
-        />
-      </div>
-
-      {/* Carton No Info */}
-      <div style={{ padding: "8px", borderBottom: `1px solid ${colors.border}`, background: colors.surface }}>
-        <input 
-          type="text" 
-          value={formData.cartonNoInfo || ""} 
-          onChange={(e) => handleChange("cartonNoInfo", e.target.value)}
-          placeholder="Carton No.: NA"
-          style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: "13px" }}
-        />
-      </div>
-
-      {/* Product Name Grid */}
-      <div style={{ display: "flex", borderBottom: `1px solid ${colors.border}`, background: colors.surface }}>
-        <div style={{ width: "25%", padding: "8px", borderRight: `1px solid ${colors.border}` }}>
-          <input 
-            type="text" 
-            value={formData.productName || ""} 
-            onChange={(e) => handleChange("productName", e.target.value)}
-            placeholder="Frozen Buffalo FQ Rolls"
-            style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: "13px" }}
-          />
-        </div>
-        {[...Array(9)].map((_, i) => (
-          <div key={i} style={{ width: "8.33%", padding: "8px", borderRight: i === 8 ? "none" : `1px solid ${colors.border}`, textAlign: "center" }}>
-            /
-          </div>
-        ))}
-      </div>
-
-      {/* Check Contents Inside Packaging */}
-      <div style={{ padding: "8px", background: colors.lightGray, borderBottom: `1px solid ${colors.border}`, fontWeight: "bold" }}>
-        Check Contents Inside Packaging
-      </div>
-
-      {/* 1. Style and Color Header */}
-      <div style={{ padding: "8px", background: colors.lightGray, borderBottom: `1px solid ${colors.border}`, fontWeight: "bold" }}>
-        1. Style and Color
-      </div>
-
-      <div style={{ display: "flex", borderBottom: `1px solid ${colors.border}`, background: colors.surface }}>
-        <div style={{ width: "80%", padding: "8px", fontWeight: "bold", textAlign: "center", borderRight: `1px solid ${colors.border}` }}>Description</div>
-        <div style={{ width: "20%", padding: "8px", fontWeight: "bold", textAlign: "center" }}>Result</div>
-      </div>
-
-      {[
-        { key: "styleColorDesc1", default: " - Conform to product specification (Including color, accessories, hangtag/labels, logo/markings)" },
-        { key: "styleColorDesc2", default: " - Conform to reference sample" },
-        { key: "styleColorDesc3", default: " - Conform to product digital photo" },
-        { key: "styleColorDesc4", default: " - Others" }
-      ].map((item, i) => (
-        <div key={i} style={{ display: "flex", borderBottom: `1px solid ${colors.border}`, background: colors.surface }}>
-          <div style={{ width: "80%", padding: "8px", borderRight: `1px solid ${colors.border}` }}>
-            <input
-              type="text"
-              value={formData[item.key] !== undefined ? formData[item.key] : item.default}
-              onChange={(e) => handleChange(item.key, e.target.value)}
-              style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: "13px" }}
-            />
-          </div>
-          <div style={{ width: "20%", padding: "4px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            {i < 3 ? (
-              <select 
-                value={formData.styleColorResult || "N/A"} 
-                onChange={(e) => handleChange("styleColorResult", e.target.value)}
-                style={{ width: "100%", border: "none", outline: "none", background: "transparent", textAlign: "center", fontWeight: "bold", color: getResultColor(formData.styleColorResult || "N/A") }}
-              >
-                <option value="Passed">Passed</option>
-                <option value="Failed">Failed</option>
-                <option value="Pending">Pending</option>
-                <option value="N/A">N/A</option>
-              </select>
-            ) : null}
-          </div>
-        </div>
-      ))}
-
-      {/* 2. Workmanship Header */}
-      <div style={{ padding: "8px", background: colors.lightGray, borderBottom: `1px solid ${colors.border}`, fontWeight: "bold" }}>
-        2. Workmanship & Function Check (2 units per model, but no more than 20 units)
-      </div>
-
-      <div style={{ display: "flex", borderBottom: `1px solid ${colors.border}`, background: colors.surface }}>
-        <div style={{ width: "80%", padding: "8px", fontWeight: "bold", textAlign: "center", borderRight: `1px solid ${colors.border}` }}>Description</div>
-        <div style={{ width: "20%", padding: "8px", fontWeight: "bold", textAlign: "center" }}>Result</div>
-      </div>
-
-      {[
-        { key: "workmanshipDesc1", default: " - Obvious visual defects (appearance, artwork, logo)" },
-        { key: "workmanshipDesc2", default: " - Base function check (no need to use equipment to check)" }
-      ].map((item, i) => (
-        <div key={i} style={{ display: "flex", borderBottom: `1px solid ${colors.border}`, background: colors.surface }}>
-          <div style={{ width: "80%", padding: "8px", borderRight: `1px solid ${colors.border}` }}>
-            <input
-              type="text"
-              value={formData[item.key] !== undefined ? formData[item.key] : item.default}
-              onChange={(e) => handleChange(item.key, e.target.value)}
-              style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: "13px" }}
-            />
-          </div>
-          <div style={{ width: "20%", padding: "4px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <select 
-              value={formData.workmanshipResult || "N/A"} 
-              onChange={(e) => handleChange("workmanshipResult", e.target.value)}
-              style={{ width: "100%", border: "none", outline: "none", background: "transparent", textAlign: "center", fontWeight: "bold", color: getResultColor(formData.workmanshipResult || "N/A") }}
-            >
-              <option value="Passed">Passed</option>
-              <option value="Failed">Failed</option>
-              <option value="Pending">Pending</option>
-              <option value="N/A">N/A</option>
-            </select>
-          </div>
-        </div>
-      ))}
-
-      {/* Final Result */}
-      <div style={{ display: "flex", borderBottom: `1px solid ${colors.border}`, background: colors.surface }}>
-        <div style={{ width: "20%", padding: "8px", fontWeight: "bold", borderRight: `1px solid ${colors.border}` }}>Result:</div>
-        <div style={{ width: "80%", padding: "4px" }}>
-          <select 
-            value={formData.conformityOverallResult || "N/A"} 
-            onChange={(e) => handleChange("conformityOverallResult", e.target.value)}
-            style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontWeight: "bold", color: getResultColor(formData.conformityOverallResult || "N/A") }}
-          >
-            <option value="Passed">Passed</option>
-            <option value="Failed">Failed</option>
-            <option value="Pending">Pending</option>
-            <option value="N/A">N/A</option>
-          </select>
-        </div>
-      </div>
-
-      <div style={{ display: "flex", background: colors.surface }}>
-        <div style={{ width: "20%", padding: "8px", fontWeight: "bold", borderRight: `1px solid ${colors.border}` }}>Remark:</div>
-        <div style={{ width: "80%", padding: "8px" }}>
-          <SmartTextarea
-            name="conformityRemark"
-            value={formData.conformityRemark || ""}
-            onChange={(e) => handleChange("conformityRemark", e.target.value)}
-            placeholder="Enter observation or remark..."
-            minHeight={40}
-            style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: "13px" }}
-          />
-        </div>
-      </div>
-
     </div>
   );
 }

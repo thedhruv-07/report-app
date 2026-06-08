@@ -1,4 +1,5 @@
 import React from "react";
+import { colors } from '../../../styles';
 import SchemaPhotos from "./SchemaPhotos";
 
 export default function LoadingProcessTable({ formData, onChange }) {
@@ -6,36 +7,51 @@ export default function LoadingProcessTable({ formData, onChange }) {
     onChange({ target: { name: field, value } });
   };
 
+  const borderColor = "#1F1F1F";
+  const cellBorder = `1px solid ${borderColor}`;
+  const sectionHeaderBg = "#E8E8E8";
+  const subHeaderBg = "#E9ECEF";
+  const headerColor = "#1F4E79";
+
   const tableStyle = {
     width: "100%",
     borderCollapse: "collapse",
-    border: "1px solid #999",
-    fontFamily: "Arial, Helvetica, sans-serif",
+    border: cellBorder,
     fontSize: "12px",
     marginBottom: "20px"
   };
 
-  const headerStyle = {
-    background: "#f1f1f1",
-    padding: "6px 8px",
-    border: "1px solid #999",
+  const headerCellStyle = {
+    padding: "10px 12px",
+    background: sectionHeaderBg,
+    border: cellBorder,
     fontWeight: "bold",
-    textTransform: "uppercase",
-    color: "#333"
+    color: headerColor,
+    textAlign: "left",
+    fontSize: "14px"
   };
 
-  const labelStyle = {
-    background: "#f9f9f9",
-    padding: "6px 8px",
-    border: "1px solid #999",
+  const subHeaderCellStyle = {
+    padding: "8px",
+    background: subHeaderBg,
+    border: cellBorder,
     fontWeight: "bold",
+    color: colors.text
+  };
+
+  const labelCellStyle = {
+    padding: "8px",
+    background: subHeaderBg,
+    border: cellBorder,
+    fontWeight: "bold",
+    color: colors.text,
     width: "180px"
   };
 
   const cellStyle = {
     padding: "0",
-    border: "1px solid #999",
-    background: "#fff"
+    border: cellBorder,
+    background: colors.surface
   };
 
   const inputStyle = {
@@ -45,28 +61,36 @@ export default function LoadingProcessTable({ formData, onChange }) {
     padding: "6px 8px",
     fontSize: "12px",
     background: "transparent",
-    boxSizing: "border-box"
+    boxSizing: "border-box",
+    color: colors.text,
+    fontFamily: "inherit"
   };
 
   return (
     <div style={{ marginBottom: "30px" }}>
       {/* Section Header */}
-      <div style={headerStyle}>D. LOADING PROCESS</div>
+      <table style={{ ...tableStyle, marginBottom: 0 }}>
+        <thead>
+          <tr>
+            <th colSpan="6" style={headerCellStyle}>D.&nbsp;&nbsp;LOADING PROCESS</th>
+          </tr>
+        </thead>
+      </table>
 
       {/* Container Table */}
       <div style={{ overflowX: "auto" }}>
         <table style={tableStyle}>
           <thead>
             <tr>
-              <th colSpan="6" style={{ ...labelStyle, width: "100%", textAlign: "left", background: "#f1f1f1" }}>Container:</th>
+              <th colSpan="6" style={subHeaderCellStyle}>Container:</th>
             </tr>
-            <tr style={{ background: "#f9f9f9" }}>
-              <th style={{ ...cellStyle, padding: "6px 8px", width: "15%" }}>Container Type</th>
-              <th style={{ ...cellStyle, padding: "6px 8px", width: "15%" }}>Container No.</th>
-              <th style={{ ...cellStyle, padding: "6px 8px", width: "15%" }}>Seal No.</th>
-              <th style={{ ...cellStyle, padding: "6px 8px", width: "15%" }}>Seal No. (AV) / If used</th>
-              <th style={{ ...cellStyle, padding: "6px 8px", width: "30%" }}>Item No. (Loaded Cargo)</th>
-              <th style={{ ...cellStyle, padding: "6px 8px", width: "10%" }}>Loaded Carton</th>
+            <tr>
+              <th style={{ ...cellStyle, padding: "8px", width: "15%", background: subHeaderBg, fontWeight: "bold", color: colors.text }}>Container Type</th>
+              <th style={{ ...cellStyle, padding: "8px", width: "15%", background: subHeaderBg, fontWeight: "bold", color: colors.text }}>Container No.</th>
+              <th style={{ ...cellStyle, padding: "8px", width: "15%", background: subHeaderBg, fontWeight: "bold", color: colors.text }}>Seal No.</th>
+              <th style={{ ...cellStyle, padding: "8px", width: "15%", background: subHeaderBg, fontWeight: "bold", color: colors.text }}>Seal No. (AV) / If used</th>
+              <th style={{ ...cellStyle, padding: "8px", width: "30%", background: subHeaderBg, fontWeight: "bold", color: colors.text }}>Item No. (Loaded Cargo)</th>
+              <th style={{ ...cellStyle, padding: "8px", width: "10%", background: subHeaderBg, fontWeight: "bold", color: colors.text }}>Loaded Carton</th>
             </tr>
           </thead>
           <tbody>
@@ -128,12 +152,12 @@ export default function LoadingProcessTable({ formData, onChange }) {
       <table style={tableStyle}>
         <thead>
           <tr>
-            <th colSpan="2" style={{ ...labelStyle, width: "100%", textAlign: "left", background: "#f1f1f1" }}>Loading Condition</th>
+            <th colSpan="2" style={subHeaderCellStyle}>Loading Condition</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style={labelStyle}>Loading Location:</td>
+            <td style={labelCellStyle}>Loading Location:</td>
             <td style={cellStyle}>
               <input 
                 type="text" 
@@ -144,7 +168,7 @@ export default function LoadingProcessTable({ formData, onChange }) {
             </td>
           </tr>
           <tr>
-            <td style={labelStyle}>Weather:</td>
+            <td style={labelCellStyle}>Weather:</td>
             <td style={cellStyle}>
               <input 
                 type="text" 
@@ -155,7 +179,7 @@ export default function LoadingProcessTable({ formData, onChange }) {
             </td>
           </tr>
           <tr>
-            <td style={labelStyle}>Sheltered:</td>
+            <td style={labelCellStyle}>Sheltered:</td>
             <td style={cellStyle}>
               <input 
                 type="text" 
@@ -166,7 +190,7 @@ export default function LoadingProcessTable({ formData, onChange }) {
             </td>
           </tr>
           <tr>
-            <td style={labelStyle}>Start Time:</td>
+            <td style={labelCellStyle}>Start Time:</td>
             <td style={cellStyle}>
               <input 
                 type="text" 
@@ -177,7 +201,7 @@ export default function LoadingProcessTable({ formData, onChange }) {
             </td>
           </tr>
           <tr>
-            <td style={labelStyle}>End Time:</td>
+            <td style={labelCellStyle}>End Time:</td>
             <td style={cellStyle}>
               <input 
                 type="text" 
@@ -191,7 +215,7 @@ export default function LoadingProcessTable({ formData, onChange }) {
       </table>
 
       {/* Photos Row */}
-      <div style={{ ...headerStyle, borderTop: "none" }}>Photos:</div>
+      <div style={{ ...subHeaderCellStyle, border: `1px solid ${borderColor}`, marginBottom: "4px" }}>Photos:</div>
       <div style={{ border: "1px solid #999", padding: "10px", background: "#fff" }}>
         <SchemaPhotos 
           config={{ groups: [

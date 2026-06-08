@@ -102,7 +102,7 @@ function makePhotoParagraph(src, { width = 400, height = 300, label = "" } = {})
   const img = loadImageSafe(src);
   if (img) {
     const children = [new ImageRun({ data: img.buffer, type: img.type, transformation: { width, height } })];
-    const paras = [new Paragraph({ children, alignment: AlignmentType.CENTER, spacing: { before: 80, after: 40 } })];
+    const paras = [new Paragraph({ children, alignment: AlignmentType.CENTER, spacing: { before: 30, after: 20 } })];
     if (label) {
       paras.push(new Paragraph({
         children: [new TextRun({ text: san(label), size: 16, color: "555555", italics: true })],
@@ -116,7 +116,7 @@ function makePhotoParagraph(src, { width = 400, height = 300, label = "" } = {})
   return [new Paragraph({
     children: [new TextRun({ text: label ? `[Photo: ${san(label)}]` : "[Photo not available]", size: 16, color: "999999" })],
     alignment: AlignmentType.CENTER,
-    spacing: { before: 60, after: 60 }
+    spacing: { before: 20, after: 20 }
   })];
 }
 
@@ -132,7 +132,7 @@ function sectionHeaderRow(text, colSpan = 2) {
         borders: tableBorders(),
         children: [new Paragraph({
           children: [new TextRun({ text: san(text), bold: true, size: 20, color: "1F4E79", font: "Arial" })],
-          spacing: { before: 80, after: 80 } })]
+          spacing: { before: 30, after: 30 } })]
       })
     ]
   });
@@ -149,7 +149,7 @@ function partTitleRow(text, colSpan = 1) {
         children: [new Paragraph({
           children: [new TextRun({ text: san(text), bold: true, size: 24, color: "FFFFFF", font: "Arial" })],
           alignment: AlignmentType.CENTER,
-          spacing: { before: 120, after: 120 } })]
+          spacing: { before: 40, after: 40 } })]
       })
     ]
   });
@@ -165,7 +165,7 @@ function subHeadRow(text, colSpan = 2) {
         borders: tableBorders(),
         children: [new Paragraph({
           children: [new TextRun({ text: san(text), bold: true, size: 18 })],
-          spacing: { before: 60, after: 60 }
+          spacing: { before: 20, after: 20 }
         })]
       })
     ]
@@ -181,9 +181,9 @@ function redHeaderRow(text, colSpan = 2) {
 function numberedDataRow(num, label, value) {
   return new TableRow({
     children: [
-      createQtyCell(String(num), { width: { size: 5, type: "pct" }, align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-      createQtyCell(san(label), { width: { size: 35, type: "pct" }, align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-      createQtyCell(san(val(value)), { width: { size: 60, type: "pct" }, align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } })
+      createQtyCell(String(num), { width: { size: 5, type: "pct" }, align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+      createQtyCell(san(label), { width: { size: 35, type: "pct" }, align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+      createQtyCell(san(val(value)), { width: { size: 60, type: "pct" }, align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } })
     ]
   });
 }
@@ -193,8 +193,8 @@ function dataRow(label, value, opts = {}) {
   const colSpanValue = opts.colSpanValue || 1;
   return new TableRow({
     children: [
-      createQtyCell(san(label), { bold: true, align: AlignmentType.LEFT, shaded: true, width: { size: 30, type: "pct" }, spacing: { before: 60, after: 60 } }),
-      createQtyCell(san(val(value)), { align: AlignmentType.LEFT, colSpan: colSpanValue, spacing: { before: 60, after: 60 } })
+      createQtyCell(san(label), { bold: true, align: AlignmentType.LEFT, shaded: true, width: { size: 30, type: "pct" }, spacing: { before: 20, after: 20 } }),
+      createQtyCell(san(val(value)), { align: AlignmentType.LEFT, colSpan: colSpanValue, spacing: { before: 20, after: 20 } })
     ]
   });
 }
@@ -208,7 +208,7 @@ function colHeaderRow(labels) {
       children: [new Paragraph({
         children: [new TextRun({ text: san(l), bold: true, size: 18, font: "Arial" })],
         alignment: AlignmentType.CENTER,
-        spacing: { before: 60, after: 60 }
+        spacing: { before: 20, after: 20 }
       })]
     }))
   });
@@ -241,14 +241,14 @@ function tableSpacerRow(colSpan = 10) {
           right: { style: "none", size: 0, color: "FFFFFF" }
         },
         shading: { fill: "FFFFFF" },
-        children: [new Paragraph({ children: [], spacing: { before: 120, after: 120 } })]
+        children: [new Paragraph({ children: [], spacing: { before: 40, after: 40 } })]
       })
     ]
   });
 }
 
 function spacer() {
-  return new Paragraph({ children: [], spacing: { before: 240, after: 240 } });
+  return new Paragraph({ children: [], spacing: { before: 20, after: 20 } });
 }
 
 // ─── HEADER TABLE ────────────────────────────────────────────────────────────
@@ -325,7 +325,7 @@ exports.createFAHeaderTable = function createFAHeaderTable(data) {
             children: [new Paragraph({
               children: logoRun ? [logoRun] : [new TextRun({ text: "Absolute Veritas", bold: true, size: 18 })],
               alignment: AlignmentType.CENTER,
-              spacing: { before: 60, after: 60 },
+              spacing: { before: 20, after: 20 },
             })],
           }),
           // Info nested table cell
@@ -343,7 +343,7 @@ exports.createFAHeaderTable = function createFAHeaderTable(data) {
             children: [new Paragraph({
               children: [new TextRun({ text: conclusion, bold: true, size: 48, font: "Arial", color: conclusionColor })],
               alignment: AlignmentType.CENTER,
-              spacing: { before: 120, after: 120 },
+              spacing: { before: 40, after: 40 },
             })],
           }),
         ],
@@ -423,7 +423,7 @@ function buildGeneralInfoTable(data) {
         children: [new Paragraph({
           children: [new TextRun({ text: "FACTORY AUDIT REPORT", bold: true, size: 28, color: "1F4E79", font: "Arial" })],
           alignment: AlignmentType.CENTER,
-          spacing: { before: 120, after: 120 }
+          spacing: { before: 40, after: 40 }
         })]
       })
     ]
@@ -439,7 +439,7 @@ function buildGeneralInfoTable(data) {
         children: [new Paragraph({
           children: [new TextRun({ text: "GENERAL INFORMATION", bold: true, size: 22, color: "1F4E79", font: "Arial" })],
           alignment: AlignmentType.LEFT,
-          spacing: { before: 80, after: 80 }
+          spacing: { before: 30, after: 30 }
         })]
       })
     ]
@@ -449,8 +449,8 @@ function buildGeneralInfoTable(data) {
   const [firstLabel, firstValue] = labelFields[0];
   rows.push(new TableRow({
     children: [
-      createQtyCell(firstLabel, { bold: true, align: AlignmentType.LEFT, shaded: true, width: { size: 25, type: "pct" }, spacing: { before: 60, after: 60 } }),
-      createQtyCell(firstValue, { align: AlignmentType.LEFT, width: { size: 35, type: "pct" }, spacing: { before: 60, after: 60 } }),
+      createQtyCell(firstLabel, { bold: true, align: AlignmentType.LEFT, shaded: true, width: { size: 25, type: "pct" }, spacing: { before: 20, after: 20 } }),
+      createQtyCell(firstValue, { align: AlignmentType.LEFT, width: { size: 35, type: "pct" }, spacing: { before: 20, after: 20 } }),
       new TableCell({
         verticalMerge: VerticalMergeType.RESTART,
         width: { size: 40, type: "pct" },
@@ -465,8 +465,8 @@ function buildGeneralInfoTable(data) {
   labelFields.slice(1).forEach(([label, value]) => {
     rows.push(new TableRow({
       children: [
-        createQtyCell(label, { bold: true, align: AlignmentType.LEFT, shaded: true, width: { size: 25, type: "pct" }, spacing: { before: 60, after: 60 } }),
-        createQtyCell(value, { align: AlignmentType.LEFT, width: { size: 35, type: "pct" }, spacing: { before: 60, after: 60 } }),
+        createQtyCell(label, { bold: true, align: AlignmentType.LEFT, shaded: true, width: { size: 25, type: "pct" }, spacing: { before: 20, after: 20 } }),
+        createQtyCell(value, { align: AlignmentType.LEFT, width: { size: 35, type: "pct" }, spacing: { before: 20, after: 20 } }),
         new TableCell({
           verticalMerge: VerticalMergeType.CONTINUE,
           borders: tableBorders(),
@@ -517,7 +517,7 @@ function buildScoreTable(data) {
         borders: tableBorders(),
         children: [new Paragraph({
           children: [new TextRun({ text: "General overview of audit", bold: true, size: 22, color: "1F4E79", font: "Arial" })],
-          spacing: { before: 80, after: 80 }
+          spacing: { before: 30, after: 30 }
         })]
       })
     ]
@@ -532,7 +532,7 @@ function buildScoreTable(data) {
         children: [new Paragraph({
           children: [new TextRun({ text: "Fields", bold: true, size: 18, font: "Arial" })],
           alignment: AlignmentType.CENTER,
-          spacing: { before: 60, after: 60 }
+          spacing: { before: 20, after: 20 }
         })]
       }),
       new TableCell({
@@ -541,7 +541,7 @@ function buildScoreTable(data) {
         children: [new Paragraph({
           children: [new TextRun({ text: "Score /10", bold: true, size: 18, font: "Arial" })],
           alignment: AlignmentType.CENTER,
-          spacing: { before: 60, after: 60 }
+          spacing: { before: 20, after: 20 }
         })]
       }),
       new TableCell({
@@ -550,7 +550,7 @@ function buildScoreTable(data) {
         children: [new Paragraph({
           children: [new TextRun({ text: "Weight /5", bold: true, size: 18, font: "Arial" })],
           alignment: AlignmentType.CENTER,
-          spacing: { before: 60, after: 60 }
+          spacing: { before: 20, after: 20 }
         })]
       }),
       new TableCell({
@@ -559,7 +559,7 @@ function buildScoreTable(data) {
         children: [new Paragraph({
           children: [new TextRun({ text: "Weighted score", bold: true, size: 18, font: "Arial" })],
           alignment: AlignmentType.CENTER,
-          spacing: { before: 60, after: 60 }
+          spacing: { before: 20, after: 20 }
         })]
       })
     ]
@@ -596,9 +596,9 @@ function buildScoreTable(data) {
             spacing: { before: 60, after: 60, left: 100 }
           })]
         }),
-        createQtyCell(String(scoreObtained), { align: AlignmentType.CENTER, width: { size: 15, type: "pct" }, spacing: { before: 60, after: 60 } }),
-        createQtyCell(String(currentWeight), { align: AlignmentType.CENTER, width: { size: 15, type: "pct" }, spacing: { before: 60, after: 60 } }),
-        createQtyCell(String(weightedScore), { align: AlignmentType.CENTER, width: { size: 15, type: "pct" }, spacing: { before: 60, after: 60 } })
+        createQtyCell(String(scoreObtained), { align: AlignmentType.CENTER, width: { size: 15, type: "pct" }, spacing: { before: 20, after: 20 } }),
+        createQtyCell(String(currentWeight), { align: AlignmentType.CENTER, width: { size: 15, type: "pct" }, spacing: { before: 20, after: 20 } }),
+        createQtyCell(String(weightedScore), { align: AlignmentType.CENTER, width: { size: 15, type: "pct" }, spacing: { before: 20, after: 20 } })
       ]
     }));
   });
@@ -615,8 +615,8 @@ function buildScoreTable(data) {
           spacing: { before: 60, after: 60, right: 100 }
         })]
       }),
-      createQtyCell(String(totalWeight), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } }),
-      createQtyCell(String(totalWeightedScore), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+      createQtyCell(String(totalWeight), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } }),
+      createQtyCell(String(totalWeightedScore), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
     ]
   }));
 
@@ -640,7 +640,7 @@ function buildScoreTable(data) {
         children: [new Paragraph({
           children: [new TextRun({ text: `${conclusionVal}/ 10`, bold: true, size: 18, color: "1F4E79", font: "Arial" })],
           alignment: AlignmentType.CENTER,
-          spacing: { before: 60, after: 60 }
+          spacing: { before: 20, after: 20 }
         })]
       })
     ]
@@ -654,7 +654,7 @@ function buildScoreTable(data) {
         new TextRun({ text: "PASSED:      ", size: 16 }),
         new TextRun({ text: "The general overview conclusion is minimum 8", size: 16 })
       ],
-      spacing: { before: 120 }
+      spacing: { before: 40 }
     }),
     new Paragraph({
       children: [
@@ -753,17 +753,17 @@ function buildCommentsSection(data) {
         columnSpan: 2,
         shading: { fill: "F2F2F2" },
         borders: tableBorders(),
-        children: [new Paragraph({ children: [new TextRun({ text: "Requirement", bold: true, size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })]
+        children: [new Paragraph({ children: [new TextRun({ text: "Requirement", bold: true, size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })]
       }),
       new TableCell({
         shading: { fill: "F2F2F2" },
         borders: tableBorders(),
-        children: [new Paragraph({ children: [new TextRun({ text: "Result", bold: true, size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })]
+        children: [new Paragraph({ children: [new TextRun({ text: "Result", bold: true, size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })]
       }),
       new TableCell({
         shading: { fill: "F2F2F2" },
         borders: tableBorders(),
-        children: [new Paragraph({ children: [new TextRun({ text: "Remark", bold: true, size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })]
+        children: [new Paragraph({ children: [new TextRun({ text: "Remark", bold: true, size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })]
       })
     ]
   }));
@@ -861,7 +861,7 @@ function buildConclusionSection(data) {
             new Paragraph({
               children: [new TextRun({ text: "Overall Conclusion", bold: true, size: 36, color: "1F4E79", font: "Arial" })],
               alignment: AlignmentType.CENTER,
-              spacing: { before: 120, after: 120 }
+              spacing: { before: 40, after: 40 }
             })
           ]
         }),
@@ -873,7 +873,7 @@ function buildConclusionSection(data) {
             new Paragraph({
               children: [new TextRun({ text: conclusion, bold: true, size: 36, color: conclusionColor, font: "Arial" })],
               alignment: AlignmentType.CENTER,
-              spacing: { before: 120, after: 120 }
+              spacing: { before: 40, after: 40 }
             })
           ]
         })
@@ -918,7 +918,7 @@ function buildRemarksSection(data) {
     generalOverviewRemarks.forEach(text => {
       rows.push(new TableRow({
         children: [
-          new TableCell({ width: { size: 5, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: String(counter++) + ".", size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })] }),
+          new TableCell({ width: { size: 5, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: String(counter++) + ".", size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })] }),
           new TableCell({ width: { size: 95, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: san(text), size: 18 })], spacing: { before: 60, after: 60, left: 60 } })] })
         ]
       }));
@@ -941,7 +941,7 @@ function buildRemarksSection(data) {
     clientSpecialRemarks.forEach(text => {
       rows.push(new TableRow({
         children: [
-          new TableCell({ width: { size: 5, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: String(counter), size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })] }),
+          new TableCell({ width: { size: 5, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: String(counter), size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })] }),
           new TableCell({ width: { size: 95, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: san(text.requirement || text), size: 18 })], spacing: { before: 60, after: 60, left: 60 } })] })
         ]
       }));
@@ -950,7 +950,7 @@ function buildRemarksSection(data) {
   } else {
     rows.push(new TableRow({
       children: [
-        new TableCell({ width: { size: 5, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: String(counter++), size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })] }),
+        new TableCell({ width: { size: 5, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: String(counter++), size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })] }),
         new TableCell({ width: { size: 95, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "-", size: 18 })], spacing: { before: 60, after: 60, left: 60 } })] })
       ]
     }));
@@ -972,7 +972,7 @@ function buildRemarksSection(data) {
     suggestions.forEach(text => {
       rows.push(new TableRow({
         children: [
-          new TableCell({ width: { size: 5, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: String(counter++), size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })] }),
+          new TableCell({ width: { size: 5, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: String(counter++), size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })] }),
           new TableCell({ width: { size: 95, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: san(text), size: 18 })], spacing: { before: 60, after: 60, left: 60 } })] })
         ]
       }));
@@ -980,7 +980,7 @@ function buildRemarksSection(data) {
   } else {
     rows.push(new TableRow({
       children: [
-        new TableCell({ width: { size: 5, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: String(counter++), size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })] }),
+        new TableCell({ width: { size: 5, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: String(counter++), size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })] }),
         new TableCell({ width: { size: 95, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "-", size: 18 })], spacing: { before: 60, after: 60, left: 60 } })] })
       ]
     }));
@@ -1017,7 +1017,7 @@ function buildTOCSection(data) {
     children.push(new Paragraph({
       children: [new TextRun({ text: item, size: 24, font: "Arial" })],
       indent: { left: 2500 },
-      spacing: { before: 120, after: 120 }
+      spacing: { before: 40, after: 40 }
     }));
   });
 
@@ -1039,7 +1039,7 @@ function buildPart1(data) {
   result.push(new Paragraph({
     children: [new TextRun({ text: "Part 1", bold: true, size: 28, font: "Arial" })],
     alignment: AlignmentType.CENTER,
-    spacing: { before: 120, after: 60 }
+    spacing: { before: 40, after: 20 }
   }));
   result.push(new Table({
     width: { size: 50, type: WidthType.PERCENTAGE },
@@ -1050,7 +1050,7 @@ function buildPart1(data) {
       children: [new Paragraph({
         children: [new TextRun({ text: "A: Supplier profile", bold: true, size: 24, font: "Arial" })],
         alignment: AlignmentType.CENTER,
-        spacing: { before: 60, after: 60 }
+        spacing: { before: 20, after: 20 }
       })]
     })] })]
   }));
@@ -1097,15 +1097,15 @@ function buildPart1(data) {
     pm.forEach(r => {
       pmRows.push(new TableRow({
         children: [
-          createQtyCell(san(val(r.productType)), { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-          createQtyCell(san(val(r.customerName)), { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-          createQtyCell(san(val(r.marketLocation)), { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-          createQtyCell(san(val(r.monthlyQty)), { spacing: { before: 60, after: 60 } })
+          createQtyCell(san(val(r.productType)), { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+          createQtyCell(san(val(r.customerName)), { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+          createQtyCell(san(val(r.marketLocation)), { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+          createQtyCell(san(val(r.monthlyQty)), { spacing: { before: 20, after: 20 } })
         ]
       }));
     });
   } else {
-    pmRows.push(new TableRow({ children: [new TableCell({ columnSpan: 4, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "No data provided.", size: 18, color: "888888" })], spacing: { before: 60, after: 60 } })] })] }));
+    pmRows.push(new TableRow({ children: [new TableCell({ columnSpan: 4, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "No data provided.", size: 18, color: "888888" })], spacing: { before: 20, after: 20 } })] })] }));
   }
   result.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: pmRows }));
   result.push(spacer());
@@ -1119,16 +1119,16 @@ function buildPart1(data) {
     recs.forEach(r => {
       recRows.push(new TableRow({
         children: [
-          createQtyCell(san(val(r.companyName)), { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-          createQtyCell(san(val(r.country)), { spacing: { before: 60, after: 60 } }),
-          createQtyCell(san(val(r.contact)), { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-          createQtyCell(san(val(r.products)), { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-          createQtyCell(san(val(r.details)), { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } })
+          createQtyCell(san(val(r.companyName)), { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+          createQtyCell(san(val(r.country)), { spacing: { before: 20, after: 20 } }),
+          createQtyCell(san(val(r.contact)), { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+          createQtyCell(san(val(r.products)), { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+          createQtyCell(san(val(r.details)), { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } })
         ]
       }));
     });
   } else {
-    recRows.push(new TableRow({ children: [new TableCell({ columnSpan: 5, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "No recommendations provided.", size: 18, color: "888888" })], spacing: { before: 60, after: 60 } })] })] }));
+    recRows.push(new TableRow({ children: [new TableCell({ columnSpan: 5, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "No recommendations provided.", size: 18, color: "888888" })], spacing: { before: 20, after: 20 } })] })] }));
   }
   result.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: recRows }));
   result.push(spacer());
@@ -1147,7 +1147,7 @@ function buildPart1(data) {
             children: [
               new Paragraph({
                 children: [new TextRun({ text: "Building and office viewing", bold: true, size: 18, font: "Arial" })],
-                spacing: { before: 60, after: 60 }
+                spacing: { before: 20, after: 20 }
               })
             ]
           })
@@ -1179,7 +1179,7 @@ function buildPart1(data) {
         new TableCell({
           shading: { fill: "D9D9D9" },
           borders: tableBorders(),
-          children: [new Paragraph({ children: [new TextRun({ text: "Building Certificate (Proprietary or leasing Document)", bold: true, size: 18 })], spacing: { before: 60, after: 60 } })]
+          children: [new Paragraph({ children: [new TextRun({ text: "Building Certificate (Proprietary or leasing Document)", bold: true, size: 18 })], spacing: { before: 20, after: 20 } })]
         })
       ]
     });
@@ -1195,9 +1195,9 @@ function buildPart1(data) {
     
     const bcAccRows = [
       sectionHeaderRow("License accreditation:", 1),
-      new TableRow({ children: [createQtyCell(`Certificate No: ${san(val(rp.certCertNo))}`, { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } })] }),
-      new TableRow({ children: [createQtyCell(`Date issued: ${san(val(rp.licenseDateIssued, "--"))}`, { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } })] }),
-      new TableRow({ children: [createQtyCell(`Expiration: ${san(val(rp.licenseExpiration, "Life time"))}`, { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } })] })
+      new TableRow({ children: [createQtyCell(`Certificate No: ${san(val(rp.certCertNo))}`, { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } })] }),
+      new TableRow({ children: [createQtyCell(`Date issued: ${san(val(rp.licenseDateIssued, "--"))}`, { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } })] }),
+      new TableRow({ children: [createQtyCell(`Expiration: ${san(val(rp.licenseExpiration, "Life time"))}`, { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } })] })
     ];
     result.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: bcAccRows }));
   }
@@ -1208,8 +1208,8 @@ function buildPart1(data) {
     result.push(...makePhotoParagraph(rp.exportPhoto, { width: 500, height: 600, label: "Export License Document" }));
     const elRows = [
       sectionHeaderRow("Export license", 1),
-      new TableRow({ children: [createQtyCell(`Certificate No: Ref. No: ${san(val(rp.exportCertNo))}`, { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } })] }),
-      new TableRow({ children: [createQtyCell(`Date issued: ${san(val(rp.licenseDateIssued, "--"))}`, { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } })] })
+      new TableRow({ children: [createQtyCell(`Certificate No: Ref. No: ${san(val(rp.exportCertNo))}`, { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } })] }),
+      new TableRow({ children: [createQtyCell(`Date issued: ${san(val(rp.licenseDateIssued, "--"))}`, { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } })] })
     ];
     result.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: elRows }));
   }
@@ -1220,9 +1220,9 @@ function buildPart1(data) {
     result.push(...makePhotoParagraph(rp.bankPhoto, { width: 500, height: 600, label: "Bank Certificate Document" }));
     const bankRows = [
       sectionHeaderRow("Bank information", 1),
-      new TableRow({ children: [createQtyCell(`Certificate No: ${san(val(rp.bankCertNo))}`, { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } })] }),
-      new TableRow({ children: [createQtyCell(`Date issued: --`, { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } })] }),
-      new TableRow({ children: [createQtyCell(`USD Bank account number: ${san(val(rp.bankAccountNumber))}`, { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } })] })
+      new TableRow({ children: [createQtyCell(`Certificate No: ${san(val(rp.bankCertNo))}`, { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } })] }),
+      new TableRow({ children: [createQtyCell(`Date issued: --`, { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } })] }),
+      new TableRow({ children: [createQtyCell(`USD Bank account number: ${san(val(rp.bankAccountNumber))}`, { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } })] })
     ];
     result.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: bankRows }));
   }
@@ -1277,7 +1277,7 @@ function buildPart2(data) {
   result.push(new Paragraph({
     children: [new TextRun({ text: "Part 2", bold: true, size: 28, font: "Arial" })],
     alignment: AlignmentType.CENTER,
-    spacing: { before: 120, after: 60 }
+    spacing: { before: 40, after: 20 }
   }));
   result.push(new Table({
     width: { size: 50, type: WidthType.PERCENTAGE },
@@ -1288,7 +1288,7 @@ function buildPart2(data) {
       children: [new Paragraph({
         children: [new TextRun({ text: "Factory Organization", bold: true, size: 24, font: "Arial" })],
         alignment: AlignmentType.CENTER,
-        spacing: { before: 60, after: 60 }
+        spacing: { before: 20, after: 20 }
       })]
     })] })]
   }));
@@ -1302,7 +1302,7 @@ function buildPart2(data) {
       children: [
         new TableCell({
           borders: tableBorders(),
-          children: [new Paragraph({ children: [new TextRun({ text: description, size: 18 })], spacing: { before: 240, after: 240 } })]
+          children: [new Paragraph({ children: [new TextRun({ text: description, size: 18 })], spacing: { before: 20, after: 20 } })]
         })
       ]
     }));
@@ -1378,7 +1378,7 @@ function buildPart3(data) {
   result.push(new Paragraph({
     children: [new TextRun({ text: "Part 3", bold: true, size: 28, font: "Arial" })],
     alignment: AlignmentType.CENTER,
-    spacing: { before: 120, after: 60 }
+    spacing: { before: 40, after: 20 }
   }));
   result.push(new Table({
     width: { size: 50, type: WidthType.PERCENTAGE },
@@ -1389,7 +1389,7 @@ function buildPart3(data) {
       children: [new Paragraph({
         children: [new TextRun({ text: "Production lines / Capacity", bold: true, size: 24, font: "Arial" })],
         alignment: AlignmentType.CENTER,
-        spacing: { before: 60, after: 60 }
+        spacing: { before: 20, after: 20 }
       })]
     })] })]
   }));
@@ -1409,7 +1409,7 @@ function buildPart3(data) {
       }));
     });
   } else {
-    wfRows.push(new TableRow({ children: [new TableCell({ borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "No workflow photos provided.", size: 18, color: "888888" })], spacing: { before: 60, after: 60 } })] })] }));
+    wfRows.push(new TableRow({ children: [new TableCell({ borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "No workflow photos provided.", size: 18, color: "888888" })], spacing: { before: 20, after: 20 } })] })] }));
   }
   result.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: wfRows }));
   result.push(spacer());
@@ -1424,17 +1424,17 @@ function buildPart3(data) {
     processLines.forEach(r => {
       procRows.push(new TableRow({
         children: [
-          createQtyCell(san(val(r.operationName)), { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-          createQtyCell(san(val(r.machineName)), { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-          createQtyCell(san(val(r.machineCount)), { spacing: { before: 60, after: 60 } }),
-          createQtyCell(san(val(r.workersNumber)), { spacing: { before: 60, after: 60 } }),
-          createQtyCell(san(val(r.outputPerHour)), { spacing: { before: 60, after: 60 } }),
-          createQtyCell(san(val(r.dailyCapacity)), { spacing: { before: 60, after: 60 } })
+          createQtyCell(san(val(r.operationName)), { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+          createQtyCell(san(val(r.machineName)), { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+          createQtyCell(san(val(r.machineCount)), { spacing: { before: 20, after: 20 } }),
+          createQtyCell(san(val(r.workersNumber)), { spacing: { before: 20, after: 20 } }),
+          createQtyCell(san(val(r.outputPerHour)), { spacing: { before: 20, after: 20 } }),
+          createQtyCell(san(val(r.dailyCapacity)), { spacing: { before: 20, after: 20 } })
         ]
       }));
     });
   } else {
-    procRows.push(new TableRow({ children: [new TableCell({ columnSpan: 6, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "No production process data provided.", size: 18, color: "888888" })], spacing: { before: 60, after: 60 } })] })] }));
+    procRows.push(new TableRow({ children: [new TableCell({ columnSpan: 6, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "No production process data provided.", size: 18, color: "888888" })], spacing: { before: 20, after: 20 } })] })] }));
   }
   result.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: procRows }));
   result.push(spacer());
@@ -1454,10 +1454,10 @@ function buildPart3(data) {
           width: { size: 80, type: "pct" },
           children: [new Paragraph({
             children: [new TextRun({ text: "Overall capacity = minimum step capacity (pcs per week):", bold: true, size: 20, color: "1F4E79", font: "Arial" })],
-            spacing: { before: 60, after: 60 }
+            spacing: { before: 20, after: 20 }
           })]
         }),
-        createQtyCell(san(val(minCapacity)), { spacing: { before: 60, after: 60 } })
+        createQtyCell(san(val(minCapacity)), { spacing: { before: 20, after: 20 } })
       ]
     })
   ];
@@ -1471,7 +1471,7 @@ function buildPart3(data) {
       new TableCell({
         borders: tableBorders(),
         width: { size: 50, type: "pct" },
-        children: [new Paragraph({ children: [new TextRun({ text: "Is there a running production in the factory during the Audit?", size: 18 })], spacing: { before: 60, after: 60 } })]
+        children: [new Paragraph({ children: [new TextRun({ text: "Is there a running production in the factory during the Audit?", size: 18 })], spacing: { before: 20, after: 20 } })]
       }),
       new TableCell({
         borders: tableBorders(),
@@ -1481,7 +1481,7 @@ function buildPart3(data) {
             new TextRun({ text: san(val(doc.runningProduction, "N/A")), size: 18 }),
             new TextRun({ text: doc.outputCheckComments ? `     Comment(s): - ${san(doc.outputCheckComments)}` : "", size: 18 })
           ],
-          spacing: { before: 60, after: 60 }
+          spacing: { before: 20, after: 20 }
         })]
       })
     ]
@@ -1517,37 +1517,37 @@ function buildPart3(data) {
           children: [new Paragraph({
             children: [new TextRun({ text: "For -process,- lines", bold: true, size: 20, font: "Arial" })],
             alignment: AlignmentType.CENTER,
-            spacing: { before: 60, after: 60 }
+            spacing: { before: 20, after: 20 }
           })]
         })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Start time", { bold: true, align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } }),
-        createQtyCell("Finished time", { bold: true, align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } }),
-        createQtyCell("Total time", { bold: true, align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Start time", { bold: true, align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } }),
+        createQtyCell("Finished time", { bold: true, align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } }),
+        createQtyCell("Total time", { bold: true, align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell(san(val(doc.startTime)), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } }),
-        createQtyCell(san(val(doc.finishedTime)), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } }),
-        createQtyCell(san(val(doc.totalTime)), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell(san(val(doc.startTime)), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } }),
+        createQtyCell(san(val(doc.finishedTime)), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } }),
+        createQtyCell(san(val(doc.totalTime)), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Finished products", { bold: true, align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } }),
-        createQtyCell("Finished products", { bold: true, align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } }),
-        createQtyCell("Output", { bold: true, align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Finished products", { bold: true, align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } }),
+        createQtyCell("Finished products", { bold: true, align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } }),
+        createQtyCell("Output", { bold: true, align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell(san(val(doc.finishedProductsStart)), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } }),
-        createQtyCell(san(val(doc.finishedProductsEnd)), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } }),
-        createQtyCell(san(val(doc.outputPieces)) + " pieces", { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell(san(val(doc.finishedProductsStart)), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } }),
+        createQtyCell(san(val(doc.finishedProductsEnd)), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } }),
+        createQtyCell(san(val(doc.outputPieces)) + " pieces", { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     })
   ];
@@ -1559,23 +1559,23 @@ function buildPart3(data) {
     sectionHeaderRow("Lead times for client's production:", 3),
     new TableRow({
       children: [
-        createQtyCell("According to", { bold: true, align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell("Factory", { bold: true, align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } }),
-        createQtyCell("Auditor check", { bold: true, align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("According to", { bold: true, align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell("Factory", { bold: true, align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } }),
+        createQtyCell("Auditor check", { bold: true, align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Raw material supply capacity:", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(san(val(lt.rawMaterialCapacityFactory)), { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(san(val(lt.rawMaterialCapacityAuditor)), { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } })
+        createQtyCell("Raw material supply capacity:", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(san(val(lt.rawMaterialCapacityFactory)), { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(san(val(lt.rawMaterialCapacityAuditor)), { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Production weekly capacity:", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(san(val(lt.weeklyCapacityFactory)), { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(san(val(lt.weeklyCapacityAuditor)), { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } })
+        createQtyCell("Production weekly capacity:", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(san(val(lt.weeklyCapacityFactory)), { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(san(val(lt.weeklyCapacityAuditor)), { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } })
       ]
     })
   ];
@@ -1589,7 +1589,7 @@ function buildPart3(data) {
       children: [
         new TableCell({
           borders: tableBorders(),
-          children: [new Paragraph({ children: [new TextRun({ text: `According to auditor check: - ${san(val(bn.bottleneckAuditorCheck))}`, size: 18 })], spacing: { before: 60, after: 60 } })]
+          children: [new Paragraph({ children: [new TextRun({ text: `According to auditor check: - ${san(val(bn.bottleneckAuditorCheck))}`, size: 18 })], spacing: { before: 20, after: 20 } })]
         })
       ]
     }),
@@ -1597,7 +1597,7 @@ function buildPart3(data) {
       children: [
         new TableCell({
           borders: tableBorders(),
-          children: [new Paragraph({ children: [new TextRun({ text: `Comments: - ${san(val(bn.bottleneckComments))}`, size: 18 })], spacing: { before: 60, after: 60 } })]
+          children: [new Paragraph({ children: [new TextRun({ text: `Comments: - ${san(val(bn.bottleneckComments))}`, size: 18 })], spacing: { before: 20, after: 20 } })]
         })
       ]
     })
@@ -1667,7 +1667,7 @@ function buildPart4(data) {
   result.push(new Paragraph({
     children: [new TextRun({ text: "Part 4", bold: true, size: 28, font: "Arial" })],
     alignment: AlignmentType.CENTER,
-    spacing: { before: 120, after: 60 }
+    spacing: { before: 40, after: 20 }
   }));
   result.push(new Table({
     width: { size: 60, type: WidthType.PERCENTAGE },
@@ -1678,7 +1678,7 @@ function buildPart4(data) {
       children: [new Paragraph({
         children: [new TextRun({ text: "Factory Facilities / Machinery Conditions", bold: true, size: 24, font: "Arial" })],
         alignment: AlignmentType.CENTER,
-        spacing: { before: 60, after: 60 }
+        spacing: { before: 20, after: 20 }
       })]
     })] })]
   }));
@@ -1689,10 +1689,10 @@ function buildPart4(data) {
     sectionHeaderRow("Machines for production", 4),
     new TableRow({
       children: [
-        new TableCell({ shading: { fill: "FFFFFF" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Machine Name/\nBrand/Country of\nOrigin", size: 18 })], spacing: { before: 60, after: 60 } })] }),
-        new TableCell({ shading: { fill: "FFFFFF" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Picture", size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })] }),
-        new TableCell({ shading: { fill: "FFFFFF" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Count", size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })] }),
-        new TableCell({ shading: { fill: "FFFFFF" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Comments (conditions\nand age)", size: 18 })], spacing: { before: 60, after: 60 } })] })
+        new TableCell({ shading: { fill: "FFFFFF" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Machine Name/\nBrand/Country of\nOrigin", size: 18 })], spacing: { before: 20, after: 20 } })] }),
+        new TableCell({ shading: { fill: "FFFFFF" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Picture", size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })] }),
+        new TableCell({ shading: { fill: "FFFFFF" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Count", size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })] }),
+        new TableCell({ shading: { fill: "FFFFFF" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Comments (conditions\nand age)", size: 18 })], spacing: { before: 20, after: 20 } })] })
       ]
     })
   ];
@@ -1706,7 +1706,7 @@ function buildPart4(data) {
             verticalAlign: VerticalAlign.CENTER,
             borders: tableBorders(),
             width: { size: 20, type: "pct" },
-            children: [new Paragraph({ children: [new TextRun({ text: san(val(m.machineName)), bold: true, size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })]
+            children: [new Paragraph({ children: [new TextRun({ text: san(val(m.machineName)), bold: true, size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })]
           }),
           new TableCell({
             verticalAlign: VerticalAlign.CENTER,
@@ -1720,19 +1720,19 @@ function buildPart4(data) {
             verticalAlign: VerticalAlign.CENTER,
             borders: tableBorders(),
             width: { size: 10, type: "pct" },
-            children: [new Paragraph({ children: [new TextRun({ text: san(val(m.count)), bold: true, size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })]
+            children: [new Paragraph({ children: [new TextRun({ text: san(val(m.count)), bold: true, size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })]
           }),
           new TableCell({
             verticalAlign: VerticalAlign.CENTER,
             borders: tableBorders(),
             width: { size: 20, type: "pct" },
-            children: [new Paragraph({ children: [new TextRun({ text: san(val(m.comments)), bold: true, size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })]
+            children: [new Paragraph({ children: [new TextRun({ text: san(val(m.comments)), bold: true, size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })]
           })
         ]
       }));
     });
   } else {
-    machRows.push(new TableRow({ children: [new TableCell({ columnSpan: 4, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "No machinery data provided.", size: 18, color: "888888" })], spacing: { before: 60, after: 60 } })] })] }));
+    machRows.push(new TableRow({ children: [new TableCell({ columnSpan: 4, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "No machinery data provided.", size: 18, color: "888888" })], spacing: { before: 20, after: 20 } })] })] }));
   }
 
   result.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: machRows }));
@@ -1743,32 +1743,32 @@ function buildPart4(data) {
     sectionHeaderRow("Warehouse condition", 2),
     new TableRow({
       children: [
-        createQtyCell("Area of Warehouse (M²)", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(san(val(wh.warehouseArea)), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Area of Warehouse (M²)", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(san(val(wh.warehouseArea)), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Materials clearly stocked in different areas?", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(formatCB(wh.materialsStocked), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Materials clearly stocked in different areas?", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(formatCB(wh.materialsStocked), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Lab/Marking clearly indicated in different material?", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(formatCB(wh.labMarking), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Lab/Marking clearly indicated in different material?", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(formatCB(wh.labMarking), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Warehouse clean and tidy?", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(formatCB(wh.warehouseClean), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Warehouse clean and tidy?", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(formatCB(wh.warehouseClean), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Equipment/Tools/Facilities Advanced?", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(formatCB(wh.facilitiesAdvanced), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Equipment/Tools/Facilities Advanced?", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(formatCB(wh.facilitiesAdvanced), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     })
   ];
@@ -1788,9 +1788,9 @@ function buildPart4(data) {
       new TableCell({
         shading: { fill: "E9ECEF" },
         borders: tableBorders(),
-        children: [new Paragraph({ children: [new TextRun({ text: "Estimated warehouse capacity:", bold: true, size: 20, color: "1F4E79", font: "Arial" })], alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })]
+        children: [new Paragraph({ children: [new TextRun({ text: "Estimated warehouse capacity:", bold: true, size: 20, color: "1F4E79", font: "Arial" })], alignment: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })]
       }),
-      createQtyCell(san(val(wh.warehouseCapacity)), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+      createQtyCell(san(val(wh.warehouseCapacity)), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
     ]
   }));
   result.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: whRows }));
@@ -1801,14 +1801,14 @@ function buildPart4(data) {
     sectionHeaderRow("Sample room condition", 2),
     new TableRow({
       children: [
-        createQtyCell("Sample room clean and tidy?", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(formatCB(sr.sampleRoomClean), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Sample room clean and tidy?", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(formatCB(sr.sampleRoomClean), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Sample complete disposed in Sample room?", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(formatCB(sr.sampleDisposed), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Sample complete disposed in Sample room?", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(formatCB(sr.sampleDisposed), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     })
   ];
@@ -1820,26 +1820,26 @@ function buildPart4(data) {
     sectionHeaderRow("Public power supply", 2),
     new TableRow({
       children: [
-        createQtyCell("Public power Connected?", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(formatCB(ps.publicPowerConnected), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Public power Connected?", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(formatCB(ps.publicPowerConnected), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Frequent Power Outage in the area?", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(formatCB(ps.frequentPowerOutage), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Frequent Power Outage in the area?", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(formatCB(ps.frequentPowerOutage), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Diesel Generator available?", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(formatCB(ps.dieselGenerator), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Diesel Generator available?", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(formatCB(ps.dieselGenerator), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("If yes, Electric Power Generator Count:", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(san(val(ps.generatorCount, "N/A")), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("If yes, Electric Power Generator Count:", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(san(val(ps.generatorCount, "N/A")), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     })
   ];
@@ -1851,26 +1851,26 @@ function buildPart4(data) {
     sectionHeaderRow("Shipment capabilities", 2),
     new TableRow({
       children: [
-        createQtyCell("Capacity of shipping meets requirement of buyer?", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(formatCB(sc.shippingMeetsRequirement), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Capacity of shipping meets requirement of buyer?", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(formatCB(sc.shippingMeetsRequirement), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Over 4 containers can be loaded together?", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(formatCB(sc.containersLoadedTogether), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Over 4 containers can be loaded together?", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(formatCB(sc.containersLoadedTogether), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Protection for loading against bad weather?", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(formatCB(sc.protectionBadWeather), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Protection for loading against bad weather?", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(formatCB(sc.protectionBadWeather), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Mechanical Loading Capacity disposed? (Fork,etc.)", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(formatCB(sc.mechanicalLoadingDisposed), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Mechanical Loading Capacity disposed? (Fork,etc.)", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(formatCB(sc.mechanicalLoadingDisposed), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     })
   ];
@@ -1947,7 +1947,7 @@ function buildPart5(data) {
   result.push(new Paragraph({
     children: [new TextRun({ text: "Part 5", bold: true, size: 28, font: "Arial" })],
     alignment: AlignmentType.CENTER,
-    spacing: { before: 120, after: 60 }
+    spacing: { before: 40, after: 20 }
   }));
   result.push(new Table({
     width: { size: 60, type: WidthType.PERCENTAGE },
@@ -1958,7 +1958,7 @@ function buildPart5(data) {
       children: [new Paragraph({
         children: [new TextRun({ text: "Quality Assurance & Quality Control System", bold: true, size: 24, font: "Arial" })],
         alignment: AlignmentType.CENTER,
-        spacing: { before: 60, after: 60 }
+        spacing: { before: 20, after: 20 }
       })]
     })] })]
   }));
@@ -1969,30 +1969,30 @@ function buildPart5(data) {
     sectionHeaderRow("Quality system management", 3),
     new TableRow({
       children: [
-        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Certificate: ISO 9001", size: 18 })], spacing: { before: 60, after: 60 } })] }),
-        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: formatCB(qsm.iso9001Status), size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })] }),
-        new TableCell({ width: { size: 40, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: `Comment: ${san(val(qsm.iso9001Comment, "-"))}`, size: 18 })], spacing: { before: 60, after: 60 } })] })
+        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Certificate: ISO 9001", size: 18 })], spacing: { before: 20, after: 20 } })] }),
+        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: formatCB(qsm.iso9001Status), size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })] }),
+        new TableCell({ width: { size: 40, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: `Comment: ${san(val(qsm.iso9001Comment, "-"))}`, size: 18 })], spacing: { before: 20, after: 20 } })] })
       ]
     }),
     new TableRow({
       children: [
-        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Internal QA manual", size: 18 })], spacing: { before: 60, after: 60 } })] }),
-        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: formatCB(qsm.internalQAManualStatus), size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })] }),
-        new TableCell({ width: { size: 40, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: `Comment: ${san(val(qsm.internalQAManualComment, "-"))}`, size: 18 })], spacing: { before: 60, after: 60 } })] })
+        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Internal QA manual", size: 18 })], spacing: { before: 20, after: 20 } })] }),
+        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: formatCB(qsm.internalQAManualStatus), size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })] }),
+        new TableCell({ width: { size: 40, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: `Comment: ${san(val(qsm.internalQAManualComment, "-"))}`, size: 18 })], spacing: { before: 20, after: 20 } })] })
       ]
     }),
     new TableRow({
       children: [
-        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Others:", size: 18 })], spacing: { before: 60, after: 60 } })] }),
-        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: formatCB(qsm.othersStatus), size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })] }),
-        new TableCell({ width: { size: 40, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: `Comment: ${san(val(qsm.othersComment, "-"))}`, size: 18 })], spacing: { before: 60, after: 60 } })] })
+        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Others:", size: 18 })], spacing: { before: 20, after: 20 } })] }),
+        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: formatCB(qsm.othersStatus), size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })] }),
+        new TableCell({ width: { size: 40, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: `Comment: ${san(val(qsm.othersComment, "-"))}`, size: 18 })], spacing: { before: 20, after: 20 } })] })
       ]
     }),
     new TableRow({
       children: [
-        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "QA staff", size: 18 })], spacing: { before: 60, after: 60 } })] }),
-        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: formatCB(qsm.qaStaffStatus), size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })] }),
-        new TableCell({ width: { size: 40, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: san(val(qsm.qaStaffComment, "-")), size: 18 })], spacing: { before: 60, after: 60 } })] })
+        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "QA staff", size: 18 })], spacing: { before: 20, after: 20 } })] }),
+        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: formatCB(qsm.qaStaffStatus), size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })] }),
+        new TableCell({ width: { size: 40, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: san(val(qsm.qaStaffComment, "-")), size: 18 })], spacing: { before: 20, after: 20 } })] })
       ]
     })
   ];
@@ -2009,8 +2009,8 @@ function buildPart5(data) {
     }));
     qsmPhotoRows.push(new TableRow({
       children: [
-        createQtyCell("QA/QC office", { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } }),
-        createQtyCell("QA / QC checking", { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("QA/QC office", { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } }),
+        createQtyCell("QA / QC checking", { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }));
   }
@@ -2022,8 +2022,8 @@ function buildPart5(data) {
   const certRows = [
     new TableRow({
       children: [
-        new TableCell({ borders: tableBorders(), width: { size: 30, type: "pct" }, children: [new Paragraph({ children: [new TextRun({ text: "List of certificates available (with certification company details and dates)", size: 18 })], spacing: { before: 60, after: 60 } })] }),
-        new TableCell({ borders: tableBorders(), width: { size: 70, type: "pct" }, children: [new Paragraph({ children: [new TextRun({ text: san(val(qsm.listCertificates, "No certification")), size: 18 })], spacing: { before: 60, after: 60 } })] })
+        new TableCell({ borders: tableBorders(), width: { size: 30, type: "pct" }, children: [new Paragraph({ children: [new TextRun({ text: "List of certificates available (with certification company details and dates)", size: 18 })], spacing: { before: 20, after: 20 } })] }),
+        new TableCell({ borders: tableBorders(), width: { size: 70, type: "pct" }, children: [new Paragraph({ children: [new TextRun({ text: san(val(qsm.listCertificates, "No certification")), size: 18 })], spacing: { before: 20, after: 20 } })] })
       ]
     })
   ];
@@ -2035,14 +2035,14 @@ function buildPart5(data) {
     sectionHeaderRow("Inspection track record by client", 2),
     new TableRow({
       children: [
-        createQtyCell("How often is it updated?", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(san(val(itr.howOftenUpdated)), { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } })
+        createQtyCell("How often is it updated?", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(san(val(itr.howOftenUpdated)), { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Last inspection by QC company (date)", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(san(val(itr.lastInspectionDate)), { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } })
+        createQtyCell("Last inspection by QC company (date)", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(san(val(itr.lastInspectionDate)), { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } })
       ]
     })
   ];
@@ -2054,8 +2054,8 @@ function buildPart5(data) {
     sectionHeaderRow("QC", 2),
     new TableRow({
       children: [
-        new TableCell({ borders: tableBorders(), width: { size: 50, type: "pct" }, children: [new Paragraph({ children: [new TextRun({ text: "QC staff count", size: 18 })], spacing: { before: 60, after: 60 } })] }),
-        new TableCell({ borders: tableBorders(), width: { size: 50, type: "pct" }, children: [new Paragraph({ children: [new TextRun({ text: san(val(p5.qcStaffCount)), size: 18 })], spacing: { before: 60, after: 60 } })] })
+        new TableCell({ borders: tableBorders(), width: { size: 50, type: "pct" }, children: [new Paragraph({ children: [new TextRun({ text: "QC staff count", size: 18 })], spacing: { before: 20, after: 20 } })] }),
+        new TableCell({ borders: tableBorders(), width: { size: 50, type: "pct" }, children: [new Paragraph({ children: [new TextRun({ text: san(val(p5.qcStaffCount)), size: 18 })], spacing: { before: 20, after: 20 } })] })
       ]
     })
   ];
@@ -2067,26 +2067,26 @@ function buildPart5(data) {
     sectionHeaderRow("On-line QC", 2),
     new TableRow({
       children: [
-        createQtyCell("Is there on-line QC?", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(formatCB(oqc.isOnlineQC), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Is there on-line QC?", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(formatCB(oqc.isOnlineQC), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("QC manual available?", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(formatCB(oqc.onlineQCManualAvailable), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("QC manual available?", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(formatCB(oqc.onlineQCManualAvailable), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("List of testing equipment", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(san(val(oqc.onlineQCTestingEquipment)), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("List of testing equipment", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(san(val(oqc.onlineQCTestingEquipment)), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Record / reports available?", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(formatCB(oqc.onlineQCRecordsAvailable), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Record / reports available?", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(formatCB(oqc.onlineQCRecordsAvailable), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     })
   ];
@@ -2099,8 +2099,8 @@ function buildPart5(data) {
     if (oqc.onlineQCRecord2) cells.push(new TableCell({ borders: tableBorders(), width: { size: 50, type: "pct" }, children: makePhotoParagraph(oqc.onlineQCRecord2, { width: 300, height: 220 }) }));
     if (cells.length === 1) cells.push(new TableCell({ borders: tableBorders(), children: [new Paragraph({ children: [] })] }));
     const lblCells = [
-      createQtyCell("On-Line QC Record", { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } }),
-      createQtyCell("On-Line QC Record", { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+      createQtyCell("On-Line QC Record", { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } }),
+      createQtyCell("On-Line QC Record", { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
     ];
     result.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [
       new TableRow({ children: cells }),
@@ -2114,32 +2114,32 @@ function buildPart5(data) {
     sectionHeaderRow("Final QC", 2),
     new TableRow({
       children: [
-        createQtyCell("Is there Final QC?", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(formatCB(fqc.isFinalQC), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Is there Final QC?", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(formatCB(fqc.isFinalQC), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("QC manual available?", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(formatCB(fqc.finalQCManualAvailable), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("QC manual available?", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(formatCB(fqc.finalQCManualAvailable), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("List of testing equipment", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(san(val(fqc.finalQCTestingEquipment)), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("List of testing equipment", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(san(val(fqc.finalQCTestingEquipment)), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Record / reports available?", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(formatCB(fqc.finalQCRecordsAvailable), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Record / reports available?", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(formatCB(fqc.finalQCRecordsAvailable), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Last results / record", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(formatCB(fqc.finalQCLastResults), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Last results / record", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(formatCB(fqc.finalQCLastResults), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     })
   ];
@@ -2151,26 +2151,26 @@ function buildPart5(data) {
     sectionHeaderRow("Incoming QC", 2),
     new TableRow({
       children: [
-        createQtyCell("Is there an Incoming QC?", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(formatCB(iqc.isIncomingQC), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Is there an Incoming QC?", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(formatCB(iqc.isIncomingQC), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("QC manual available?", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(formatCB(iqc.incomingQCManualAvailable), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("QC manual available?", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(formatCB(iqc.incomingQCManualAvailable), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("List of testing equipment", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(san(val(iqc.incomingQCTestingEquipment)), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("List of testing equipment", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(san(val(iqc.incomingQCTestingEquipment)), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Record / reports available?", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(formatCB(iqc.incomingQCRecordsAvailable), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Record / reports available?", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(formatCB(iqc.incomingQCRecordsAvailable), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     })
   ];
@@ -2183,8 +2183,8 @@ function buildPart5(data) {
     if (iqc.rawMaterialQCRecord2) cells.push(new TableCell({ borders: tableBorders(), width: { size: 50, type: "pct" }, children: makePhotoParagraph(iqc.rawMaterialQCRecord2, { width: 300, height: 220 }) }));
     if (cells.length === 1) cells.push(new TableCell({ borders: tableBorders(), children: [new Paragraph({ children: [] })] }));
     const lblCells = [
-      createQtyCell("Raw Material QC record", { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } }),
-      createQtyCell("Raw Material QC Record", { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+      createQtyCell("Raw Material QC record", { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } }),
+      createQtyCell("Raw Material QC Record", { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
     ];
     result.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [
       new TableRow({ children: cells }),
@@ -2199,8 +2199,8 @@ function buildPart5(data) {
     if (tePhotos.testEquipment2) cells.push(new TableCell({ borders: tableBorders(), width: { size: 50, type: "pct" }, children: makePhotoParagraph(tePhotos.testEquipment2, { width: 300, height: 220 }) }));
     if (cells.length === 1) cells.push(new TableCell({ borders: tableBorders(), children: [new Paragraph({ children: [] })] }));
     const lblCells = [
-      createQtyCell("Test Equipment", { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } }),
-      createQtyCell("Test Equipment", { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+      createQtyCell("Test Equipment", { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } }),
+      createQtyCell("Test Equipment", { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
     ];
     result.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [
       new TableRow({ children: cells }),
@@ -2257,7 +2257,7 @@ function buildPart6(data) {
   result.push(new Paragraph({
     children: [new TextRun({ text: "Part 6", bold: true, size: 28, font: "Arial" })],
     alignment: AlignmentType.CENTER,
-    spacing: { before: 120, after: 60 }
+    spacing: { before: 40, after: 20 }
   }));
   result.push(new Table({
     width: { size: 40, type: WidthType.PERCENTAGE },
@@ -2268,7 +2268,7 @@ function buildPart6(data) {
       children: [new Paragraph({
         children: [new TextRun({ text: "R&D / Sampling capacity", bold: true, size: 24, font: "Arial" })],
         alignment: AlignmentType.CENTER,
-        spacing: { before: 60, after: 60 }
+        spacing: { before: 20, after: 20 }
       })]
     })] })]
   }));
@@ -2279,32 +2279,32 @@ function buildPart6(data) {
     sectionHeaderRow("R & D facilities", 2),
     new TableRow({
       children: [
-        createQtyCell("Specific staff count:", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(san(val(p6.rdSpecificStaffCount)), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Specific staff count:", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(san(val(p6.rdSpecificStaffCount)), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Specific facilities:", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(san(val(p6.rdSpecificFacilities)), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Specific facilities:", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(san(val(p6.rdSpecificFacilities)), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Sample Production Process Description", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(san(val(p6.sampleProductionProcess)), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Sample Production Process Description", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(san(val(p6.sampleProductionProcess)), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Record", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(san(val(p6.rdRecord)), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Record", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(san(val(p6.rdRecord)), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Approval sample lead time:", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(san(val(p6.approvalSampleLeadTime)), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Approval sample lead time:", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(san(val(p6.approvalSampleLeadTime)), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     })
   ];
@@ -2373,7 +2373,7 @@ function buildPart7(data) {
   result.push(new Paragraph({
     children: [new TextRun({ text: "Part 7", bold: true, size: 28, font: "Arial" })],
     alignment: AlignmentType.CENTER,
-    spacing: { before: 120, after: 60 }
+    spacing: { before: 40, after: 20 }
   }));
   result.push(new Table({
     width: { size: 40, type: WidthType.PERCENTAGE },
@@ -2384,7 +2384,7 @@ function buildPart7(data) {
       children: [new Paragraph({
         children: [new TextRun({ text: "Environment (optional)", bold: true, size: 24, font: "Arial" })],
         alignment: AlignmentType.CENTER,
-        spacing: { before: 60, after: 60 }
+        spacing: { before: 20, after: 20 }
       })]
     })] })]
   }));
@@ -2395,29 +2395,29 @@ function buildPart7(data) {
     sectionHeaderRow("Environment management", 3),
     new TableRow({
       children: [
-        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "ISO14000 series:", size: 18 })], spacing: { before: 60, after: 60 } })] }),
-        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: formatCB(env.iso14000Status), size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })] }),
-        new TableCell({ width: { size: 40, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: `Comment: ${san(val(env.iso14000Comment, "-"))}`, size: 18 })], spacing: { before: 60, after: 60 } })] })
+        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "ISO14000 series:", size: 18 })], spacing: { before: 20, after: 20 } })] }),
+        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: formatCB(env.iso14000Status), size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })] }),
+        new TableCell({ width: { size: 40, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: `Comment: ${san(val(env.iso14000Comment, "-"))}`, size: 18 })], spacing: { before: 20, after: 20 } })] })
       ]
     }),
     new TableRow({
       children: [
-        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Others:Internal Environment system", size: 18 })], spacing: { before: 60, after: 60 } })] }),
-        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: formatCB(env.internalEnvStatus), size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })] }),
-        new TableCell({ width: { size: 40, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: `Comment: ${san(val(env.internalEnvComment, "-"))}`, size: 18 })], spacing: { before: 60, after: 60 } })] })
+        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Others:Internal Environment system", size: 18 })], spacing: { before: 20, after: 20 } })] }),
+        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: formatCB(env.internalEnvStatus), size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })] }),
+        new TableCell({ width: { size: 40, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: `Comment: ${san(val(env.internalEnvComment, "-"))}`, size: 18 })], spacing: { before: 20, after: 20 } })] })
       ]
     }),
     new TableRow({
       children: [
-        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Environment Policy Available", size: 18 })], spacing: { before: 60, after: 60 } })] }),
-        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: formatCB(env.envPolicyStatus), size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })] }),
-        new TableCell({ width: { size: 40, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: `Description: ${san(val(env.envPolicyDescription, "-"))}`, size: 18 })], spacing: { before: 60, after: 60 } })] })
+        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Environment Policy Available", size: 18 })], spacing: { before: 20, after: 20 } })] }),
+        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: formatCB(env.envPolicyStatus), size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })] }),
+        new TableCell({ width: { size: 40, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: `Description: ${san(val(env.envPolicyDescription, "-"))}`, size: 18 })], spacing: { before: 20, after: 20 } })] })
       ]
     }),
     new TableRow({
       children: [
-        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "List of certificates available", size: 18 })], spacing: { before: 60, after: 60 } })] }),
-        new TableCell({ columnSpan: 2, width: { size: 70, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: san(val(env.envListCertificates, "N/A")), size: 18 })], spacing: { before: 60, after: 60 } })] })
+        new TableCell({ width: { size: 30, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "List of certificates available", size: 18 })], spacing: { before: 20, after: 20 } })] }),
+        new TableCell({ columnSpan: 2, width: { size: 70, type: "pct" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: san(val(env.envListCertificates, "N/A")), size: 18 })], spacing: { before: 20, after: 20 } })] })
       ]
     })
   ];
@@ -2438,14 +2438,14 @@ function buildPart7(data) {
   }));
   wwRows.push(new TableRow({
     children: [
-      createQtyCell("Wastewater test Report", { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } }),
-      createQtyCell("Wastewater test Report", { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+      createQtyCell("Wastewater test Report", { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } }),
+      createQtyCell("Wastewater test Report", { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
     ]
   }));
   wwRows.push(new TableRow({
     children: [
-      new TableCell({ borders: tableBorders(), width: { size: 50, type: "pct" }, children: [new Paragraph({ children: [new TextRun({ text: "Staff in charge\n(name and mission)", size: 18 })], spacing: { before: 60, after: 60 } })] }),
-      new TableCell({ borders: tableBorders(), width: { size: 50, type: "pct" }, children: [new Paragraph({ children: [new TextRun({ text: san(val(ww.wastewaterStaffInCharge, "No")), size: 18 })], spacing: { before: 60, after: 60 } })] })
+      new TableCell({ borders: tableBorders(), width: { size: 50, type: "pct" }, children: [new Paragraph({ children: [new TextRun({ text: "Staff in charge\n(name and mission)", size: 18 })], spacing: { before: 20, after: 20 } })] }),
+      new TableCell({ borders: tableBorders(), width: { size: 50, type: "pct" }, children: [new Paragraph({ children: [new TextRun({ text: san(val(ww.wastewaterStaffInCharge, "No")), size: 18 })], spacing: { before: 20, after: 20 } })] })
     ]
   }));
   result.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: wwRows }));
@@ -2456,38 +2456,38 @@ function buildPart7(data) {
     sectionHeaderRow("Control track record", 2),
     new TableRow({
       children: [
-        createQtyCell("Control track recordavailable?", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(formatCB(ctr.envControlRecordsStatus), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Control track recordavailable?", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(formatCB(ctr.envControlRecordsStatus), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("If yes, how often is it updated?", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(formatCB(ctr.envUpdateFrequency), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("If yes, how often is it updated?", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(formatCB(ctr.envUpdateFrequency), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Item checked:", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(san(val(ctr.envItemChecked, "Nil")), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Item checked:", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(san(val(ctr.envItemChecked, "Nil")), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Last control date:", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(san(val(ctr.envLastControlDate, "No")), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Last control date:", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(san(val(ctr.envLastControlDate, "No")), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Findings:", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(san(val(ctr.envFindings)), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Findings:", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(san(val(ctr.envFindings)), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
       children: [
-        createQtyCell("Standard:", { align: AlignmentType.LEFT, spacing: { before: 60, after: 60 } }),
-        createQtyCell(san(val(ctr.envStandard)), { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell("Standard:", { align: AlignmentType.LEFT, spacing: { before: 20, after: 20 } }),
+        createQtyCell(san(val(ctr.envStandard)), { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ]
     }),
     new TableRow({
@@ -2507,8 +2507,8 @@ function buildPart7(data) {
   const actDesc = actions.length > 0 ? actions.map(a => san(val(a.actionDescription || a))).join("\n") : "No";
   actRows.push(new TableRow({
     children: [
-      new TableCell({ borders: tableBorders(), width: { size: 30, type: "pct" }, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: "Description of the action", size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })] }),
-      new TableCell({ borders: tableBorders(), width: { size: 70, type: "pct" }, children: actDesc.split("\n").map(l => new Paragraph({ children: [new TextRun({ text: l, size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })) })
+      new TableCell({ borders: tableBorders(), width: { size: 30, type: "pct" }, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: "Description of the action", size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })] }),
+      new TableCell({ borders: tableBorders(), width: { size: 70, type: "pct" }, children: actDesc.split("\n").map(l => new Paragraph({ children: [new TextRun({ text: l, size: 18 })], alignment: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })) })
     ]
   }));
   result.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: actRows }));
@@ -2524,15 +2524,15 @@ function buildPart7(data) {
         new TableCell({ borders: tableBorders(), width: { size: 50, type: "pct" }, children: p1.photo ? makePhotoParagraph(p1.photo, { width: 300, height: 220 }) : [new Paragraph({ children: [] })] })
       ];
       const row2Cells = [
-        createQtyCell(p1.caption || "", { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } })
+        createQtyCell(p1.caption || "", { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } })
       ];
 
       if (p2) {
         row1Cells.push(new TableCell({ borders: tableBorders(), width: { size: 50, type: "pct" }, children: p2.photo ? makePhotoParagraph(p2.photo, { width: 300, height: 220 }) : [new Paragraph({ children: [] })] }));
-        row2Cells.push(createQtyCell(p2.caption || "", { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } }));
+        row2Cells.push(createQtyCell(p2.caption || "", { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } }));
       } else {
         row1Cells.push(new TableCell({ borders: tableBorders(), width: { size: 50, type: "pct" }, children: [new Paragraph({ children: [] })] }));
-        row2Cells.push(createQtyCell("", { align: AlignmentType.CENTER, spacing: { before: 60, after: 60 } }));
+        row2Cells.push(createQtyCell("", { align: AlignmentType.CENTER, spacing: { before: 20, after: 20 } }));
       }
 
       epRows.push(new TableRow({ children: row1Cells }));
@@ -2582,7 +2582,7 @@ function buildPart7(data) {
   result.push(new Paragraph({
     children: [new TextRun({ text: "END OF THE REPORT", bold: true, size: 40, color: "FF0000", font: "Arial", underline: {} })],
     alignment: AlignmentType.CENTER,
-    spacing: { before: 400, after: 400 }
+    spacing: { before: 60, after: 60 }
   }));
 
   return result;

@@ -152,43 +152,7 @@ function App() {
   const [form, setForm] = useState(() => {
     const savedForm = localStorage.getItem("inspectionForm");
     const parsedForm = safeJsonParse(savedForm, {});
-    const savedGeneralPhoto = localStorage.getItem("inspectionGeneralPhoto") || "";
-
-    if (
-      (!parsedForm.generalPhoto || typeof parsedForm.generalPhoto !== "string") &&
-      typeof savedGeneralPhoto === "string" &&
-      savedGeneralPhoto.startsWith("data:image")
-    ) {
-      parsedForm.generalPhoto = savedGeneralPhoto;
-    }
-
     return parsedForm;
-  });
-
-  const [generalPhoto, setGeneralPhoto] = useState(() => {
-    const saved = localStorage.getItem("inspectionGeneralPhoto") || "";
-    return typeof saved === "string" && saved.startsWith("data:image") ? saved : "";
-  });
-
-  const [generalPhotoData, setGeneralPhotoData] = useState(() => {
-    const saved = safeJsonParse(localStorage.getItem("inspectionGeneralPhotoData"), null);
-    if (saved && typeof saved.preview === "string" && saved.preview.startsWith("data:image")) {
-      return saved;
-    }
-
-    const fallback = localStorage.getItem("inspectionGeneralPhoto") || "";
-    if (typeof fallback === "string" && fallback.startsWith("data:image")) {
-      return {
-        id: "general_fallback",
-        label: "",
-        fileName: "General photo",
-        preview: fallback,
-        originalSize: 0,
-        compressedSize: 0,
-      };
-    }
-
-    return null;
   });
 
   const [items, setItems] = useState(() => {
@@ -218,6 +182,7 @@ function App() {
   const { token } = useAuth();
   const location = useLocation();
   const prefillData = location.state?.task?.prefillData ?? null;
+  const taskId = location.state?.task?._id ?? null;
 
   const [prefillBannerDismissed, setPrefillBannerDismissed] = useState(false);
 
@@ -273,36 +238,6 @@ function App() {
       }
     }
   }, [form]);
-
-  useEffect(() => {
-    try {
-      if (typeof form.generalPhoto === "string" && form.generalPhoto.startsWith("data:image")) {
-        localStorage.setItem("inspectionGeneralPhoto", form.generalPhoto);
-      }
-    } catch {
-      // Ignore storage failures; runtime state still keeps the image.
-    }
-  }, [form.generalPhoto]);
-
-  useEffect(() => {
-    try {
-      if (typeof generalPhoto === "string" && generalPhoto.startsWith("data:image")) {
-        localStorage.setItem("inspectionGeneralPhoto", generalPhoto);
-      }
-    } catch {
-      // Keep runtime state even if persistence fails.
-    }
-  }, [generalPhoto]);
-
-  useEffect(() => {
-    try {
-      if (generalPhotoData && typeof generalPhotoData.preview === "string" && generalPhotoData.preview.startsWith("data:image")) {
-        localStorage.setItem("inspectionGeneralPhotoData", JSON.stringify(generalPhotoData));
-      }
-    } catch {
-      // Keep runtime state even if persistence fails.
-    }
-  }, [generalPhotoData]);
 
   useEffect(() => {
     localStorage.setItem("inspectionItems", JSON.stringify(items));
@@ -388,32 +323,6 @@ function App() {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleGeneralPhotoChange = (photo) => {
-    const preview =
-      typeof photo === "string"
-        ? photo
-        : photo && typeof photo.preview === "string"
-        ? photo.preview
-        : "";
-
-    setGeneralPhoto(preview || "");
-    setGeneralPhotoData(
-      photo && typeof photo === "object"
-        ? photo
-        : preview
-        ? {
-            id: "general_runtime",
-            label: "",
-            fileName: "General photo",
-            preview,
-            originalSize: 0,
-            compressedSize: 0,
-          }
-        : null
-    );
-    setForm((prev) => ({ ...prev, generalPhoto: preview || "" }));
-  };
-
   const handleItemChange = (index, field, value) => {
     const newItems = [...items];
     newItems[index][field] = value;
@@ -431,6 +340,7 @@ function App() {
   const handlePhotoGroupsChange = (updatedGroups) => {
     setPhotoGroups(Array.isArray(updatedGroups) ? updatedGroups : []);
   };
+
 
   const handleClientRequirementsChange = (requirements) => {
     setForm((prev) => ({
@@ -540,6 +450,21 @@ function App() {
     setPhotos(newPhotos);
   };
 
+  const handleGeneralPhotoUpload = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    try {
+      const { preview } = await compressImage(file);
+      setForm(prev => ({ ...prev, generalPhoto: preview }));
+    } catch {
+      const reader = new FileReader();
+      reader.onloadend = () => setForm(prev => ({ ...prev, generalPhoto: reader.result }));
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const clearGeneralPhoto = () => setForm(prev => ({ ...prev, generalPhoto: null }));
+
   const clearForm = () => {
     if (window.confirm("Are you sure you want to clear all data? This cannot be undone.")) {
       localStorage.removeItem("inspectionStep");
@@ -551,8 +476,6 @@ function App() {
       localStorage.removeItem("inspectionGeneralPhotoData");
       setStep(1);
       setForm({});
-      setGeneralPhoto("");
-      setGeneralPhotoData(null);
       setItems([{ name: "", orderQty: "", availableQty: "" }]);
       setPhotos([]);
       setPhotoGroups([]);
@@ -574,8 +497,6 @@ function App() {
 
     setStep(1);
     setForm({});
-    setGeneralPhoto("");
-    setGeneralPhotoData(null);
     setItems([{ name: "", orderQty: "", availableQty: "" }]);
     setPhotos([]);
     setPhotoGroups([]);
@@ -619,9 +540,6 @@ function App() {
       localStorage.setItem("inspectionPhotos", JSON.stringify(photos));
       localStorage.setItem("inspectionPhotoGroups", JSON.stringify(photoGroups));
       localStorage.setItem("inspectionStep", step.toString());
-      if (generalPhoto) localStorage.setItem("inspectionGeneralPhoto", generalPhoto);
-      if (generalPhotoData) localStorage.setItem("inspectionGeneralPhotoData", JSON.stringify(generalPhotoData));
-      
       setShowSaveToast(true);
       setTimeout(() => setShowSaveToast(false), 3000);
     } catch (error) {
@@ -661,17 +579,9 @@ function App() {
       formData.append(key, value);
     });
 
-    const generalPreview =
-      generalPhotoData && typeof generalPhotoData.preview === "string"
-        ? generalPhotoData.preview
-        : generalPhoto;
-
-    if (typeof generalPreview === "string" && generalPreview.startsWith("data:image")) {
-      formData.set("generalPhoto", generalPreview);
-    }
-
     // Add items as JSON
     formData.append("items", JSON.stringify(items));
+    if (taskId) formData.append("taskId", taskId);
 
     // Include Step 12 photos (preview + label) for report rendering.
     // Build grouped photo data: photos are organized by their group descriptions
@@ -764,19 +674,19 @@ function App() {
   };
 
   const stepNavItems = [
-    { id: 1, label: "General Information" },
-    { id: 2, label: "Inspection Summary" },
-    { id: 3, label: "Remarks" },
-    { id: 4, label: "Conclusion" },
-    { id: 5, label: "Quantity" },
-    { id: 6, label: "Workmanship" },
-    { id: 7, label: "On-Site Tests" },
-    { id: 8, label: "Product Spec" },
-    { id: 9, label: "Packing" },
-    { id: 10, label: "Marking & Labeling" },
-    { id: 11, label: "Client Requirement" },
-    { id: 12, label: "Photos" },
-    { id: 13, label: "Finalize & Download" },
+    { id: 1,  label: "General Information",  shortLabel: "General"      },
+    { id: 2,  label: "Inspection Summary",   shortLabel: "Summary"      },
+    { id: 3,  label: "Remarks",              shortLabel: "Remarks"      },
+    { id: 4,  label: "Conclusion",           shortLabel: "Conclusion"   },
+    { id: 5,  label: "Quantity",             shortLabel: "Quantity"     },
+    { id: 6,  label: "Workmanship",          shortLabel: "Workmanship"  },
+    { id: 7,  label: "On-Site Tests",        shortLabel: "On-Site"      },
+    { id: 8,  label: "Product Spec",         shortLabel: "Prod. Spec"   },
+    { id: 9,  label: "Packing",              shortLabel: "Packing"      },
+    { id: 10, label: "Marking & Labeling",   shortLabel: "Marking"      },
+    { id: 11, label: "Client Requirement",   shortLabel: "Client Req."  },
+    { id: 12, label: "Photos",               shortLabel: "Photos"       },
+    { id: 13, label: "Finalize & Download",  shortLabel: "Finalize"     },
   ];
 
   const goToStep = (targetStep) => {
@@ -789,7 +699,7 @@ function App() {
     <div style={{ 
       display: "flex",
       flexDirection: "column",
-      height: "100vh",
+      height: "100%",
       width: "100%",
       overflow: "hidden",
       background: "#f8fafc",
@@ -846,7 +756,7 @@ function App() {
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: "9px", fontWeight: "bold", flexShrink: 0
                 }}>{item.id}</span>
-                {item.label}
+                {isActive ? item.label : item.shortLabel}
               </button>
             );
           })}
@@ -857,7 +767,10 @@ function App() {
         </div>
       </div>
 
-      {/* Main Content Area - Scrollable */}
+      {/* Main Content + Photo Sidebar */}
+      <div style={{ flex: 1, overflow: "hidden", display: "flex" }}>
+
+      {/* Scrollable content */}
       <div style={{
         flex: 1,
         overflowY: "auto",
@@ -869,7 +782,7 @@ function App() {
           width: "100%",
           margin: "0",
           background: "#f8fafc",
-          padding: isMobile ? "10px 12px" : "14px 22px",
+          padding: isMobile ? "10px 12px" : "14px 16px 14px 22px",
           minHeight: "fit-content"
         }}>
 
@@ -964,7 +877,7 @@ function App() {
         )}
 
         <Suspense fallback={<ReportLoader />}>
-          {step === 1 && <GeneralInfo form={form} handleChange={handleChange} onNext={next} generalPhoto={generalPhoto} generalPhotoData={generalPhotoData} onGeneralPhotoChange={handleGeneralPhotoChange} />}
+          {step === 1 && <GeneralInfo form={form} handleChange={handleChange} onNext={next} handleGeneralPhotoUpload={handleGeneralPhotoUpload} clearGeneralPhoto={clearGeneralPhoto} />}
           {step === 2 && <InspectionSummaryTable form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
           {step === 3 && <RemarksStep form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
           {step === 4 && <ConclusionStep form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
@@ -978,10 +891,12 @@ function App() {
           {step === 12 && <Photos photos={photos} photoGroups={photoGroups} onPhotoGroupsChange={handlePhotoGroupsChange} onPhotoFileChange={handlePhotoFileChange} onRemovePhoto={removePhoto} onPrev={prev} onNext={next} />}
           {step === 13 && <FinalStep form={form} onPrev={prev} onSubmit={submit} onClearAfterDownload={clearFormAfterDownload} hasDownloaded={reportDownloaded} isGenerating={isGenerating} onToggleLoader={setIsGenerating} />}
         </Suspense>
-        
+
         </div>
       </div>
 
+
+      </div>{/* end flex row */}
 
       {isGenerating && <ReportLoader />}
       

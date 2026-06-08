@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { ENDPOINTS } from "../../config/api";
 import { colors } from "../../styles";
@@ -31,6 +32,8 @@ const safeJsonParse = (value, fallback) => {
 
 export default function DuringProductionInspection() {
   const { token } = useAuth();
+  const location = useLocation();
+  const taskId = location.state?.task?._id ?? null;
 
   const [step, setStep] = useState(() => {
     const saved = localStorage.getItem("dpiStep");
@@ -212,6 +215,7 @@ export default function DuringProductionInspection() {
   const next = () => setStep(step + 1);
   const prev = () => setStep(step - 1);
 
+
   const submit = async (format = 'docx', notify = false) => {
     setIsGenerating(true);
     const formData = new FormData();
@@ -245,6 +249,7 @@ export default function DuringProductionInspection() {
     formData.append("reportPhotoGroups", JSON.stringify(reportPhotoGroups));
 
     if (form.quantityTable) formData.append("items", JSON.stringify(form.quantityTable));
+    if (taskId) formData.append("taskId", taskId);
 
     try {
       const generateUrl = notify ? `${ENDPOINTS.GENERATE}?notify=true` : ENDPOINTS.GENERATE;
@@ -309,44 +314,54 @@ export default function DuringProductionInspection() {
   const currentStep = steps.find(s => s.id === step);
   const totalSteps = steps.length;
 
+  const stepShortLabels = {
+    1: "General",   2: "Summary",    3: "Remarks",     4: "Conclusion",
+    5: "Quantity",  6: "Workmanship", 7: "On-Site",    8: "Prod. Spec",
+    9: "Packing",  10: "Marking",   11: "Prod. Line", 12: "Client Req.",
+   13: "Schedule", 14: "Photos",    15: "Finalize",
+  };
+
   // ─── RENDER ────────────────────────────────────────────────────────────────
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", width: "100%", overflow: "hidden", background: "#f8fafc", fontFamily: "Arial, Helvetica, sans-serif" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%", overflow: "hidden", background: "#f8fafc", fontFamily: "'Outfit', Arial, sans-serif" }}>
 
       {/* Top Navigation */}
-      <div style={{ width: "100%", background: colors.headerBg, borderBottom: `1px solid ${colors.border}`, display: "flex", flexDirection: isMobile ? "column" : "row", boxShadow: "0 2px 10px rgba(0,0,0,0.05)", zIndex: 10, flexShrink: 0 }}>
-        <div style={{ flex: 1, overflowX: "auto", padding: "16px", display: "flex", gap: "8px", alignItems: "center", scrollbarWidth: "none", background: colors.surface }}>
+      <div style={{ width: "100%", background: colors.surface, borderBottom: `1px solid ${colors.border}`, boxShadow: "0 1px 4px rgba(0,0,0,0.06)", zIndex: 10, flexShrink: 0 }}>
+        <div style={{ padding: "7px 16px 3px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+            <span style={{ fontSize: "11px", color: colors.textMuted, fontWeight: 500 }}>Reports</span>
+            <span style={{ fontSize: "11px", color: colors.textMuted }}>›</span>
+            <span style={{ fontSize: "12px", fontWeight: "700", color: colors.header }}>During Production Inspection</span>
+          </div>
+          <span style={{ fontSize: "11px", color: colors.textMuted, fontWeight: 500 }}>Step {step} of {totalSteps}</span>
+        </div>
+        <div style={{ overflowX: "auto", padding: "3px 12px 6px", display: "flex", gap: "4px", scrollbarWidth: "none" }}>
           {steps.map((item) => (
-            <button key={item.id} onClick={() => setStep(item.id)} style={{ border: "none", background: step === item.id ? colors.primaryLight : "transparent", color: step === item.id ? colors.primary : colors.text, borderRadius: "8px", padding: "10px 16px", cursor: "pointer", fontSize: "13px", fontWeight: step === item.id ? "700" : "500", transition: "all 0.2s", display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap" }}>
-              <span style={{ width: "20px", height: "20px", borderRadius: "5px", background: step === item.id ? colors.primary : colors.surfaceAlt, color: step === item.id ? "#fff" : colors.textMuted, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: "bold" }}>{item.id}</span>
-              {item.label}
+            <button key={item.id} onClick={() => setStep(item.id)} style={{ border: "none", background: step === item.id ? colors.primary : colors.surfaceAlt, color: step === item.id ? "#fff" : colors.textMuted, borderRadius: "20px", padding: "4px 10px", cursor: "pointer", fontSize: "11px", fontWeight: step === item.id ? "700" : "500", transition: "all 0.2s", display: "flex", alignItems: "center", gap: "4px", whiteSpace: "nowrap" }}>
+              <span style={{ width: "15px", height: "15px", borderRadius: "50%", background: step === item.id ? "rgba(255,255,255,0.25)" : colors.border, color: step === item.id ? "#fff" : colors.textMuted, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "9px", fontWeight: "bold", flexShrink: 0 }}>{item.id}</span>
+              {step === item.id ? item.label : stepShortLabels[item.id]}
             </button>
           ))}
+        </div>
+        <div style={{ height: "3px", background: colors.border }}>
+          <div style={{ width: `${(step / totalSteps) * 100}%`, height: "100%", background: colors.primary, transition: "width 0.3s ease" }} />
         </div>
       </div>
 
       {/* Main Content */}
-      <div style={{ flex: 1, overflowY: "auto", background: colors.surface, padding: isMobile ? "20px 16px" : "40px" }}>
+      <div style={{ flex: 1, overflow: "hidden", display: "flex" }}>
+      <div style={{ flex: 1, overflowY: "auto", background: "#f8fafc", padding: isMobile ? "10px 12px" : "14px 22px" }}>
 
-        {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: "30px" }}>
-          <h1 style={{ fontSize: isMobile ? "20px" : "28px", fontWeight: "800", color: colors.header, margin: "0 0 10px 0" }}>During Production Inspection</h1>
-          <p style={{ fontSize: "13px", color: colors.textMuted, margin: "0" }}>Step {step} of {totalSteps}</p>
-          <div style={{ display: "flex", height: "4px", background: colors.border, borderRadius: "2px", marginTop: "12px", overflow: "hidden" }}>
-            <div style={{ width: `${(step / totalSteps) * 100}%`, background: colors.primary, transition: "width 0.3s ease" }} />
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div style={{ display: "flex", justifyContent: isMobile ? "center" : "flex-end", gap: "10px", marginBottom: "30px", flexWrap: "wrap" }}>
-          <button onClick={fillDemoData} style={{ padding: "10px 18px", background: colors.primary, color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "600", transition: "all 0.3s ease", boxShadow: "0 2px 8px rgba(59, 130, 246, 0.2)" }}>
-            ✨ Fill Demo Data
+        {/* Compact action buttons */}
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginBottom: "12px", flexWrap: "wrap" }}>
+          <button onClick={fillDemoData} style={{ padding: "7px 12px", background: colors.success, color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "600", boxShadow: "0 2px 6px rgba(16,185,129,0.2)" }}>
+            ✨ Quick Fill
           </button>
-          <button onClick={handleSaveDraft} style={{ padding: "10px 18px", background: colors.warning, color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "600", transition: "all 0.3s ease", boxShadow: "0 2px 8px rgba(245, 158, 11, 0.2)" }}>
+          <button onClick={handleSaveDraft} style={{ padding: "7px 12px", background: colors.warning, color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "600", boxShadow: "0 2px 6px rgba(245,158,11,0.2)" }}>
             💾 Save Draft
           </button>
-          <button onClick={clearForm} style={{ padding: "10px 18px", background: colors.danger, color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "600", transition: "all 0.3s ease", boxShadow: "0 2px 8px rgba(239, 68, 68, 0.15)" }}>
-            ⟲ Clear Form
+          <button onClick={clearForm} style={{ padding: "7px 12px", background: colors.danger, color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "600", boxShadow: "0 2px 6px rgba(239,68,68,0.15)" }}>
+            ⟲ Clear
           </button>
         </div>
 
@@ -356,17 +371,21 @@ export default function DuringProductionInspection() {
         </div>
 
         {/* Step Navigation */}
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "40px", paddingTop: "20px", borderTop: `1px solid ${colors.border}` }}>
-          <button onClick={prev} disabled={step === 1} style={{ padding: "12px 24px", borderRadius: "8px", border: `1px solid ${colors.border}`, background: step === 1 ? colors.surfaceAlt : colors.surface, color: step === 1 ? colors.textMuted : colors.text, cursor: step === 1 ? "not-allowed" : "pointer", fontWeight: "600", transition: "all 0.2s" }}>
-            ← Previous
-          </button>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "40px", paddingTop: "20px", borderTop: `1px solid ${colors.border}` }}>
+          {step > 1 && (
+            <button onClick={prev} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 24px", borderRadius: "24px", border: "none", background: colors.primary, color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 2px 8px rgba(59,130,246,0.25)" }}>
+              ← Previous
+            </button>
+          )}
           {step < totalSteps && (
-            <button onClick={next} style={{ padding: "12px 24px", borderRadius: "8px", border: "none", background: colors.primary, color: "#fff", cursor: "pointer", fontWeight: "600", transition: "all 0.2s", boxShadow: "0 4px 12px rgba(59, 130, 246, 0.25)" }}>
+            <button onClick={next} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 24px", borderRadius: "24px", border: "none", background: colors.primary, color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 2px 8px rgba(59,130,246,0.25)" }}>
               Next Step →
             </button>
           )}
         </div>
       </div>
+
+      </div>{/* end flex row */}
 
       {isGenerating && <ReportLoader />}
 

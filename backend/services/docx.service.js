@@ -80,7 +80,7 @@ async function createConclusionTable(data, isCls = false) {
                     })
                   ],
                   alignment: "left",
-                  spacing: { before: 300, after: 300 }
+                  spacing: { before: 30, after: 30 }
                 })
               ]
             })
@@ -113,7 +113,7 @@ async function createConclusionTable(data, isCls = false) {
           width: { size: 60, type: "pct" },
           borders: tableBorders(),
           children: [
-            new Paragraph({ children: [new TextRun({ text: conclusionResult, bold: true, size: 84, font: "Arial", color: isPass ? "228B22" : "CC0000" })], alignment: "left", spacing: { before: 300, after: 300 } }),
+            new Paragraph({ children: [new TextRun({ text: conclusionResult, bold: true, size: 84, font: "Arial", color: isPass ? "228B22" : "CC0000" })], alignment: "left", spacing: { before: 30, after: 30 } }),
             ...legend.map(l => new Paragraph({
               children: [
                 new TextRun({ text: l.label, bold: true, size: 18 }),
@@ -151,9 +151,9 @@ async function createConclusionTable(data, isCls = false) {
                 type: "png",
                 transformation: { width: 220, height: 160 }
               })],
-              spacing: { before: 100, after: 100 }
+              spacing: { before: 40, after: 40 }
             })
-          ] : [new Paragraph({ alignment: "center", children: [new TextRun({ text: "No photo uploaded", size: 14, color: "888888" })], spacing: { before: 400, after: 400 } })]
+          ] : [new Paragraph({ alignment: "center", children: [new TextRun({ text: "No photo uploaded", size: 14, color: "888888" })], spacing: { before: 30, after: 30 } })]
         }),
         new TableCell({
           borders: tableBorders(),
@@ -165,9 +165,9 @@ async function createConclusionTable(data, isCls = false) {
                 type: "png",
                 transformation: { width: 220, height: 160 }
               })],
-              spacing: { before: 100, after: 100 }
+              spacing: { before: 40, after: 40 }
             })
-          ] : [new Paragraph({ alignment: "center", children: [new TextRun({ text: "No photo uploaded", size: 14, color: "888888" })], spacing: { before: 400, after: 400 } })]
+          ] : [new Paragraph({ alignment: "center", children: [new TextRun({ text: "No photo uploaded", size: 14, color: "888888" })], spacing: { before: 30, after: 30 } })]
         }),
       ]
     }),
@@ -520,7 +520,7 @@ async function createReportContent(data, uploadedFiles) {
           children: [new Paragraph({
             children: [new TextRun({ text: serviceTitle, bold: true, size: 28, color: "1F4E79", font: "Arial" })],
             alignment: "center",
-            spacing: { before: 120, after: 120 }
+            spacing: { before: 40, after: 40 }
           })]
         })
       ]
@@ -535,7 +535,7 @@ async function createReportContent(data, uploadedFiles) {
           children: [new Paragraph({
             children: [new TextRun({ text: "I. GENERAL INFORMATION", bold: true, size: 22, color: "1F4E79", font: "Arial" })],
             alignment: "left",
-            spacing: { before: 80, after: 80 }
+            spacing: { before: 30, after: 30 }
           })]
         })
       ]
@@ -543,8 +543,8 @@ async function createReportContent(data, uploadedFiles) {
     // First Data Row with Photo (verticalMerge)
     new TableRow({
       children: [
-        createQtyCell(generalData[0][0], { bold: true, align: "left", shaded: true, width: { size: 25, type: "pct" }, spacing: { before: 60, after: 60 } }),
-        createQtyCell(blankIfEmpty(generalData[0][1]), { align: "left", width: { size: 35, type: "pct" }, spacing: { before: 60, after: 60 } }),
+        createQtyCell(generalData[0][0], { bold: true, align: "left", shaded: true, width: { size: 25, type: "pct" }, spacing: { before: 20, after: 20 } }),
+        createQtyCell(blankIfEmpty(generalData[0][1]), { align: "left", width: { size: 35, type: "pct" }, spacing: { before: 20, after: 20 } }),
         new TableCell({
           verticalMerge: VerticalMergeType.RESTART,
           width: { size: 40, type: "pct" },
@@ -558,8 +558,8 @@ async function createReportContent(data, uploadedFiles) {
     ...generalData.slice(1).map(([label, val]) =>
       new TableRow({
         children: [
-          createQtyCell(label, { bold: true, align: "left", shaded: true, width: { size: 25, type: "pct" }, spacing: { before: 60, after: 60 } }),
-          createQtyCell(blankIfEmpty(val), { align: "left", width: { size: 35, type: "pct" }, spacing: { before: 60, after: 60 } }),
+          createQtyCell(label, { bold: true, align: "left", shaded: true, width: { size: 25, type: "pct" }, spacing: { before: 20, after: 20 } }),
+          createQtyCell(blankIfEmpty(val), { align: "left", width: { size: 35, type: "pct" }, spacing: { before: 20, after: 20 } }),
           new TableCell({
             verticalMerge: VerticalMergeType.CONTINUE,
             borders: tableBorders(),
@@ -570,7 +570,7 @@ async function createReportContent(data, uploadedFiles) {
     )
   ];
   children.push(new Table({ width: { size: 100, type: "pct" }, rows: infoRows }));
-  children.push(new Paragraph({ children: [], spacing: { before: 100, after: 100 } }));
+  children.push(new Paragraph({ children: [], spacing: { before: 40, after: 40 } }));
 
   // II. INSPECTION SUMMARY
   const isCls = data.serviceType?.toLowerCase() === "cls";
@@ -730,7 +730,7 @@ async function createReportContent(data, uploadedFiles) {
             children: [
               new Paragraph({
                 children: [new TextRun({ text: "II. INSPECTION SUMMARY", bold: true, size: 22, color: "1F4E79", font: "Arial" })],
-                spacing: { before: 80, after: 80 }
+                spacing: { before: 30, after: 30 }
               })
             ]
           })
@@ -803,7 +803,7 @@ async function createReportContent(data, uploadedFiles) {
                 new Paragraph({
                   alignment: AlignmentType.LEFT,
                   children: [new TextRun({ text: r.label, size: 18, font: "Arial" })],
-                  spacing: { before: 60, after: 60 }
+                  spacing: { before: 20, after: 20 }
                 })
               ]
             }),
@@ -813,7 +813,7 @@ async function createReportContent(data, uploadedFiles) {
                 new Paragraph({
                   alignment: AlignmentType.CENTER,
                   children: isPassed ? [new TextRun({ text: "✓", bold: true, color: "228B22", size: 22, font: "Arial" })] : [],
-                  spacing: { before: 60, after: 60 }
+                  spacing: { before: 20, after: 20 }
                 })
               ]
             }),
@@ -823,7 +823,7 @@ async function createReportContent(data, uploadedFiles) {
                 new Paragraph({
                   alignment: AlignmentType.CENTER,
                   children: isFailed ? [new TextRun({ text: "✓", bold: true, color: "CC0000", size: 22, font: "Arial" })] : [],
-                  spacing: { before: 60, after: 60 }
+                  spacing: { before: 20, after: 20 }
                 })
               ]
             }),
@@ -833,7 +833,7 @@ async function createReportContent(data, uploadedFiles) {
                 new Paragraph({
                   alignment: AlignmentType.CENTER,
                   children: isPending ? [new TextRun({ text: "✓", bold: true, color: "F39C12", size: 22, font: "Arial" })] : [],
-                  spacing: { before: 60, after: 60 }
+                  spacing: { before: 20, after: 20 }
                 })
               ]
             }),
@@ -843,7 +843,7 @@ async function createReportContent(data, uploadedFiles) {
                 new Paragraph({
                   alignment: AlignmentType.CENTER,
                   children: isNa ? [new TextRun({ text: "✓", bold: true, color: "000000", size: 22, font: "Arial" })] : [],
-                  spacing: { before: 60, after: 60 }
+                  spacing: { before: 20, after: 20 }
                 })
               ]
             })
@@ -858,7 +858,7 @@ async function createReportContent(data, uploadedFiles) {
               new Paragraph({
                 alignment: AlignmentType.LEFT,
                 children: [new TextRun({ text: "I. Production Schedule", size: 18, font: "Arial" })],
-                spacing: { before: 60, after: 60 }
+                spacing: { before: 20, after: 20 }
               })
             ]
           }),
@@ -869,7 +869,7 @@ async function createReportContent(data, uploadedFiles) {
               new Paragraph({
                 alignment: AlignmentType.CENTER,
                 children: [new TextRun({ text: sanitizeDocxText(scheduleText), size: 18, font: "Arial" })],
-                spacing: { before: 60, after: 60 }
+                spacing: { before: 20, after: 20 }
               })
             ]
           })
@@ -913,7 +913,7 @@ async function createReportContent(data, uploadedFiles) {
     ];
   }
   children.push(new Table({ width: { size: 100, type: "pct" }, rows: summaryRows }));
-  children.push(new Paragraph({ children: [], spacing: { before: 100, after: 100 } }));
+  children.push(new Paragraph({ children: [], spacing: { before: 40, after: 40 } }));
 
   // III. REMARKS (For CLS, it goes here)
   if (isCls) {
@@ -926,13 +926,13 @@ async function createReportContent(data, uploadedFiles) {
     children.push(await createConclusionTable(data, true));
     children.push(new Paragraph({ children: [new PageBreak()] }));
     children.push(createHighFidelityQuantityTable(data));
-    children.push(new Paragraph({ children: [], spacing: { before: 200, after: 200 } }));
+    children.push(new Paragraph({ children: [], spacing: { before: 20, after: 20 } }));
     children.push(createProductConformityTable(data));
-    children.push(new Paragraph({ children: [], spacing: { before: 200, after: 200 } }));
+    children.push(new Paragraph({ children: [], spacing: { before: 20, after: 20 } }));
     children.push(createCLSPackingTable(data));
-    children.push(new Paragraph({ children: [], spacing: { before: 200, after: 200 } }));
+    children.push(new Paragraph({ children: [], spacing: { before: 20, after: 20 } }));
     children.push(...createCLSLoadingProcessTable(data));
-    children.push(new Paragraph({ children: [], spacing: { before: 200, after: 200 } }));
+    children.push(new Paragraph({ children: [], spacing: { before: 20, after: 20 } }));
     children.push(...createCLSClientRequirementTable(data));
     children.push(...(await createCLSFinalPhotosSection(data)));
   } else {
@@ -957,7 +957,7 @@ async function createReportContent(data, uploadedFiles) {
         fontSize = 18,
         width,
         verticalAlign = VerticalAlign.CENTER,
-        spacing = { before: 60, after: 60 },
+        spacing = { before: 20, after: 20 },
         font = "Arial",
         verticalMerge
       } = options;
@@ -1085,34 +1085,33 @@ async function createReportContent(data, uploadedFiles) {
       })
     ];
     children.push(new Table({ width: { size: 100, type: "pct" }, rows: wmGridRows }));
-    children.push(new Paragraph({ children: [], spacing: { before: 100, after: 100 } }));
+    children.push(new Paragraph({ children: [], spacing: { before: 40, after: 40 } }));
 
     // For PSI, Remarks goes right after Workmanship Summary
     children.push(...(await createRemarksTable(data)));
-    children.push(new Paragraph({ children: [], spacing: { before: 100, after: 100 } }));
+    children.push(new Paragraph({ children: [], spacing: { before: 40, after: 40 } }));
   }
 
   if (!isCls) {
     children.push(await createConclusionTable(data, false));
-    children.push(new Paragraph({ children: [new PageBreak()] }));
 
     // Note Paragraph
     const noteText = "Note: 1. This report reflects our findings at the time and the place of inspection based on random samples selected. 2. This inspection was carried out to the best of our knowledge and abilities, and our responsibility is limited to the exercise of reasonable one. 3. This report does not relieve the sellers from their contractual obligations nor does it prejudice buyer's right for compensation for any apparent and/or hidden defects not detected during our inspection or occurring thereafter. 4. This report does not evidence shipment. 5. Our services are subject to the General Conditions of Service of Absolute Veritas, which is shown at our website and can be sent to you upon written request. 6. This report's inspection results only relate to the samples as (randomly picked) by our inspector. 7. This report is complete and its content may not be reproduced.";
     children.push(new Paragraph({
       children: [new TextRun({ text: noteText, size: 14 })],
       alignment: "left",
-      spacing: { before: 200 }
+      spacing: { before: 40 }
     }));
 
     children.push(new Paragraph({
       children: [new TextRun({ text: "--------------------------------------------------------------------------------", size: 14 })],
-      spacing: { before: 100 }
+      spacing: { before: 30 }
     }));
 
     children.push(new Paragraph({
       children: [new TextRun({ text: "Please find our inspection details from next page (Section A - F).", size: 16 })],
       alignment: "left",
-      spacing: { before: 100 }
+      spacing: { before: 30 }
     }));
 
     children.push(new Paragraph({ children: [new PageBreak()] }));
@@ -1212,7 +1211,7 @@ async function createReportContent(data, uploadedFiles) {
     ];
     children.push(new Table({ width: { size: 100, type: "pct" }, rows: qRows }));
     // Standardizing gap after Section A table
-    children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
+    children.push(new Paragraph({ children: [], spacing: { after: 60 } }));
   }
 
 
@@ -1358,9 +1357,9 @@ async function createReportContent(data, uploadedFiles) {
       data.reportPhotoGroups = data.reportPhotoGroups.filter(g => g !== defectPhotosGroup);
     }
 
-    if (defectPhotos.length > 0) {
-      bRows.push(new TableRow({ children: [new TableCell({ columnSpan: 7, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Defect photos of Item " + (data.itemNo || data.productName || "-"), bold: true })] })] })] }));
+    bRows.push(new TableRow({ children: [new TableCell({ columnSpan: 7, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Defect photos of Item " + (data.itemNo || data.productName || "-"), bold: true })] })] })] }));
 
+    if (defectPhotos.length > 0) {
       for (let i = 0; i < defectPhotos.length; i += 2) {
         const p1 = defectPhotos[i];
         const p2 = defectPhotos[i + 1];
@@ -1378,7 +1377,7 @@ async function createReportContent(data, uploadedFiles) {
                 p1Buffer ? new Paragraph({
                   children: [new ImageRun({ data: p1Buffer, type: "png", transformation: { width: 340, height: 230 } })],
                   alignment: "center",
-                  spacing: { before: 100, after: 100 }
+                  spacing: { before: 40, after: 40 }
                 }) : new Paragraph({ children: [] })
               ]
             }),
@@ -1389,7 +1388,7 @@ async function createReportContent(data, uploadedFiles) {
                 p2Buffer ? new Paragraph({
                   children: [new ImageRun({ data: p2Buffer, type: "png", transformation: { width: 340, height: 230 } })],
                   alignment: "center",
-                  spacing: { before: 100, after: 100 }
+                  spacing: { before: 40, after: 40 }
                 }) : new Paragraph({ children: [] })
               ]
             })
@@ -1404,10 +1403,24 @@ async function createReportContent(data, uploadedFiles) {
           ]
         }));
       }
+    } else {
+      // Placeholder rows when no defect photos uploaded
+      bRows.push(new TableRow({
+        children: [
+          new TableCell({ columnSpan: 3, borders: tableBorders(), children: [new Paragraph({ alignment: "center", children: [new TextRun({ text: "[ Photo 1 ]", color: "AAAAAA", italics: true, size: 20 })], spacing: { before: 80, after: 80 } })] }),
+          new TableCell({ columnSpan: 4, borders: tableBorders(), children: [new Paragraph({ alignment: "center", children: [new TextRun({ text: "[ Photo 2 ]", color: "AAAAAA", italics: true, size: 20 })], spacing: { before: 80, after: 80 } })] }),
+        ]
+      }));
+      bRows.push(new TableRow({
+        children: [
+          new TableCell({ columnSpan: 3, borders: tableBorders(), shading: { fill: "F9F9F9" }, children: [new Paragraph({ alignment: "center", children: [new TextRun({ text: "No defect photo uploaded", color: "AAAAAA", size: 16 })] })] }),
+          new TableCell({ columnSpan: 4, borders: tableBorders(), shading: { fill: "F9F9F9" }, children: [new Paragraph({ alignment: "center", children: [new TextRun({ text: "No defect photo uploaded", color: "AAAAAA", size: 16 })] })] }),
+        ]
+      }));
     }
 
     children.push(new Table({ width: { size: 100, type: "pct" }, rows: bRows }));
-    children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
+    children.push(new Paragraph({ children: [], spacing: { after: 60 } }));
     children.push(new Paragraph({ children: [new PageBreak()] }));
   }
 
@@ -1442,7 +1455,7 @@ async function createReportContent(data, uploadedFiles) {
       new TableRow({ children: [createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(asVal(data.onSiteTestRemark), { colSpan: 4, align: "left" })] })
     ];
     children.push(new Table({ width: { size: 100, type: "pct" }, rows: osRows }));
-    children.push(new Paragraph({ children: [], spacing: { after: 200 } })); // Separator gap
+    children.push(new Paragraph({ children: [], spacing: { after: 60 } })); // Separator gap
 
 
     // D. DIMENSIONS / PRODUCT SPECIFICATION
@@ -1479,7 +1492,7 @@ async function createReportContent(data, uploadedFiles) {
         new TableRow({ children: [createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(asVal(data.productRemark), { colSpan: 5, align: "left" })] }),
       ];
       children.push(new Table({ width: { size: 100, type: "pct" }, rows: dpiSpecRows }));
-      children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
+      children.push(new Paragraph({ children: [], spacing: { after: 60 } }));
     } else {
       // PSI path: existing flat-key rendering
       const prodRes = asVal(data.productResult);
@@ -1527,7 +1540,7 @@ async function createReportContent(data, uploadedFiles) {
         new TableRow({ children: [createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(asVal(data.productRemark), { colSpan: 5, align: "left" })] })
       ];
       children.push(new Table({ width: { size: 100, type: "pct" }, rows: specItems }));
-      children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
+      children.push(new Paragraph({ children: [], spacing: { after: 60 } }));
     }
 
 
@@ -1616,7 +1629,7 @@ async function createReportContent(data, uploadedFiles) {
       new TableRow({ children: [createQtyCell("Remark:", { bold: true, colSpan: 2, align: "left" }), createQtyCell(data.packing_remark || "No packing", { colSpan: 7, align: "left" })] })
     ];
     children.push(new Table({ width: { size: 100, type: "pct" }, rows: eRows }));
-    children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
+    children.push(new Paragraph({ children: [], spacing: { after: 60 } }));
 
 
     // F. MARKING & LABELING (Detailed Implementation)
@@ -1690,7 +1703,7 @@ async function createReportContent(data, uploadedFiles) {
       new TableRow({ children: [createQtyCell("Remark:", { colSpan: 2, align: "left" }), createQtyCell(data.marking_remark || "No shipping mark, only rated label", { colSpan: 1, align: "left" })] })
     ];
     children.push(new Table({ width: { size: 100, type: "pct" }, rows: fRows }));
-    children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
+    children.push(new Paragraph({ children: [], spacing: { after: 60 } }));
 
 
     // G. PRODUCTION LINE CHECKING (DPI only)
@@ -1738,7 +1751,7 @@ async function createReportContent(data, uploadedFiles) {
         new TableRow({ children: [createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(plRemark || "-", { colSpan: 4, align: "left" })] }),
       ];
       children.push(new Table({ width: { size: 100, type: "pct" }, rows: plRows }));
-      children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
+      children.push(new Paragraph({ children: [], spacing: { after: 60 } }));
     }
 
 
@@ -1783,7 +1796,7 @@ async function createReportContent(data, uploadedFiles) {
       })
     ];
     children.push(new Table({ width: { size: 100, type: "pct" }, rows: gRows }));
-    children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
+    children.push(new Paragraph({ children: [], spacing: { after: 60 } }));
 
 
     // I. PRODUCTION SCHEDULE (DPI only)
@@ -1807,15 +1820,13 @@ async function createReportContent(data, uploadedFiles) {
         })),
       ];
       children.push(new Table({ width: { size: 100, type: "pct" }, rows: psRows }));
-      children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
+      children.push(new Paragraph({ children: [], spacing: { after: 60 } }));
     }
 
 
     // J. PHOTOS (was H) — include all photo groups for PSI/DPI reports so none are lost
     const allPhotoGroups = Array.isArray(data.reportPhotoGroups) ? data.reportPhotoGroups : (Array.isArray(data.photoGroups) ? data.photoGroups : []);
-    const finalPhotoGroups = allPhotoGroups.filter(g => {
-      return true;
-    });
+    const finalPhotoGroups = allPhotoGroups.filter(g => (g.photos || []).some(p => p.preview || p.wasabiKey || p.url));
 
     if (finalPhotoGroups.length > 0) {
       // 1. Header Table (Small, easily fits on any page)
@@ -1878,7 +1889,7 @@ async function createReportContent(data, uploadedFiles) {
         }
 
         children.push(new Table({ width: { size: 100, type: "pct" }, rows: groupRows }));
-        children.push(new Paragraph({ children: [], spacing: { after: 100 } })); // Tiny spacer between groups
+        children.push(new Paragraph({ children: [], spacing: { after: 30 } })); // Tiny spacer between groups
       }
     }
   }
@@ -1912,7 +1923,7 @@ function createDefectPhotoGrid(photos) {
             p1 && p1.preview ? new Paragraph({
               children: [new ImageRun({ data: Buffer.from(p1.preview.split(",")[1], "base64"), type: "png", transformation: { width: 340, height: 230 } })],
               alignment: "center",
-              spacing: { before: 100, after: 100 }
+              spacing: { before: 40, after: 40 }
             }) : new Paragraph({ children: [] })
           ]
         }),
@@ -1922,7 +1933,7 @@ function createDefectPhotoGrid(photos) {
             p2 && p2.preview ? new Paragraph({
               children: [new ImageRun({ data: Buffer.from(p2.preview.split(",")[1], "base64"), type: "png", transformation: { width: 340, height: 230 } })],
               alignment: "center",
-              spacing: { before: 100, after: 100 }
+              spacing: { before: 40, after: 40 }
             }) : new Paragraph({ children: [] })
           ]
         })
@@ -2180,7 +2191,7 @@ function getGroupedPhotoGridParagraphs(groups) {
   groups.forEach(g => {
     children.push(new Paragraph({
       children: [new TextRun({ text: "Group: " + (g.description || "-"), bold: true })],
-      spacing: { before: 200, after: 100 }
+      spacing: { before: 60, after: 40 }
     }));
     const photos = (g.photos || []).filter(p => p.preview);
     for (let i = 0; i < photos.length; i += 2) {
@@ -2209,7 +2220,7 @@ async function createPhotoCell(p) {
         new Paragraph({
           children: [new ImageRun({ data: imgBuffer, type: "png", transformation: { width: 340, height: 230 } })],
           alignment: "center",
-          spacing: { before: 100, after: 100 }
+          spacing: { before: 40, after: 40 }
         })
       ]
     });
@@ -2822,7 +2833,7 @@ function createCLSClientRequirementTable(data) {
         })
       ]
     }),
-    new Paragraph({ children: [], spacing: { before: 100 } }),
+    new Paragraph({ children: [], spacing: { before: 30 } }),
   ];
 
   return children;
@@ -2902,7 +2913,7 @@ async function createCLSFinalPhotosSection(data) {
 
 function createEndOfReportSection() {
   return [
-    new Paragraph({ children: [], spacing: { before: 400 } }),
+    new Paragraph({ children: [], spacing: { before: 80 } }),
     new Table({
       width: { size: 100, type: "pct" },
       rows: [
@@ -2919,7 +2930,7 @@ function createEndOfReportSection() {
                 new Paragraph({
                   children: [new TextRun({ text: "END OF REPORT", bold: true, size: 28, color: "1F4E79", font: "Arial" })],
                   alignment: "center",
-                  spacing: { before: 200, after: 200 }
+                  spacing: { before: 20, after: 20 }
                 })
               ]
             })
@@ -2927,11 +2938,11 @@ function createEndOfReportSection() {
         })
       ]
     }),
-    new Paragraph({ children: [], spacing: { before: 300 } }),
+    new Paragraph({ children: [], spacing: { before: 60 } }),
     new Paragraph({
       children: [new TextRun({ text: "Important Note:", bold: true, size: 24, color: "1F4E79" })],
       alignment: "left",
-      spacing: { after: 200 }
+      spacing: { after: 60 }
     }),
     ...[
       "1. THIS REPORT REFLECTS ABSOLUTE VERITAS FINDINGS AT THE TIME AND PLACE OF INSPECTION.",
@@ -2942,7 +2953,7 @@ function createEndOfReportSection() {
     ].map(text => new Paragraph({
       children: [new TextRun({ text, size: 18 })],
       alignment: "left",
-      spacing: { before: 100, after: 100 },
+      spacing: { before: 40, after: 40 },
       indent: { left: 440, hanging: 440 }
     }))
   ];
