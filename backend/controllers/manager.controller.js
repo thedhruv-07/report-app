@@ -138,6 +138,14 @@ exports.updateStatus = async (req, res) => {
     report.operationStatus = status;
     await report.save();
 
+    // Mirror under_review → Task so inspector sees "Under Review" badge
+    if (status === 'under_review') {
+      try {
+        const Task = require('../models/task.model');
+        await Task.findOneAndUpdate({ reportId: report._id }, { status: 'Under Review' });
+      } catch (e) { console.warn('[updateStatus] Task update failed:', e.message); }
+    }
+
     // Emit real-time update to manager room only
     getIO().to("manager_room").emit("report_status_changed", {
       reportId: report._id,
@@ -156,8 +164,8 @@ exports.requestCorrection = async (req, res) => {
     const { id } = req.params;
     const { section, comment, priority } = req.body;
 
-    let report = await Report.findById(id);
-    if (!report) report = await FactoryAudit.findById(id);
+    let report = await Report.findById(id).populate('userId', 'name email').populate('generalInfo');
+    if (!report) report = await FactoryAudit.findById(id).populate('userId', 'name email');
     if (!report) return res.status(404).json({ error: "Report not found" });
 
     report.operationStatus = "revision_required";
@@ -169,8 +177,57 @@ exports.requestCorrection = async (req, res) => {
     });
     // Increment revision round when sent for correction
     report.revisionRound += 1;
-    
+
     await report.save();
+
+    // Push correction status + feedback summary to inspector's Task, creating one if absent
+    try {
+      const Task = require('../models/task.model');
+      const feedbackSummary = report.correctionFeedback
+        .map(fb => `[${fb.section || 'General'}] ${fb.comment}`)
+        .join('\n');
+      const updated = await Task.findOneAndUpdate(
+        { reportId: report._id },
+        { status: 'Correction Requested', correctionFeedback: feedbackSummary },
+        { new: true }
+      );
+      if (!updated && report.userId?._id) {
+        const gi = report.generalInfo || {};
+        const t = (report.title || '').toLowerCase();
+        const inspType = t.includes('cls') || t.includes('container') ? 'CLS'
+          : t.includes('dpi') || t.includes('during') ? 'DPI'
+          : t.includes('factory') ? 'Factory Audit'
+          : 'PSI';
+        await Task.create({
+          assignedInspectorId: report.userId._id,
+          clientName:     gi.client      || report.title || 'Inspection Report',
+          factoryName:    gi.supplier    || gi.factory   || 'Unknown Factory',
+          factoryAddress: gi.inspectionLocation || gi.location || gi.factoryAddress || 'Unknown Location',
+          inspectionType: inspType,
+          scheduledDate:  report.submittedAt || new Date(),
+          status:         'Correction Requested',
+          reportId:       report._id,
+          correctionFeedback: feedbackSummary,
+        });
+      }
+    } catch (e) { console.warn('[requestCorrection] Task update failed:', e.message); }
+
+    // Create in-app notification for the inspector
+    try {
+      const SystemNotification = require('../models/systemNotification.model');
+      const inspectorId = report.userId?._id || report.userId;
+      if (inspectorId) {
+        await SystemNotification.create({
+          title: 'Correction Required on Your Report',
+          message: `[${section || 'General'}] ${comment || 'Please review the feedback and resubmit.'}`,
+          type: 'warning',
+          priority: 2,
+          targetUsers: [inspectorId],
+          createdBy: req.user.id,
+        });
+        getIO().to(`user_${inspectorId}`).emit('new_notification');
+      }
+    } catch (e) { console.warn('[requestCorrection] Notification creation failed:', e.message); }
 
     // Emit real-time update to manager room only
     getIO().to("manager_room").emit("report_status_changed", {
@@ -187,11 +244,13 @@ exports.requestCorrection = async (req, res) => {
       if (report.userId && report.userId.email) recipients.add(report.userId.email);
       const adminList = (process.env.NOTIFICATION_ADMIN_EMAILS || process.env.SMTP_USER || '').split(',').map(s=>s.trim()).filter(Boolean);
       adminList.forEach(e=>recipients.add(e));
+      const resubmitUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard/inspector`;
       const html = renderTemplate('report-rejected.html', {
         reportId: report._id,
         rejectedBy: req.user?.name || 'Reviewer',
         rejectedAt: new Date().toISOString(),
-        reason: (comment || '')
+        reason: (comment || ''),
+        resubmitUrl,
       });
       for (const r of Array.from(recipients)) enqueueEmail({ reportId: report._id, recipient: r, subject: `[ACTION REQUIRED] Report #${report._id} Rejected`, type: 'report_rejected', html });
     } catch (err) {
@@ -209,8 +268,8 @@ exports.finalizeReport = async (req, res) => {
   try {
     const { id } = req.params;
     
-    let report = await Report.findById(id);
-    if (!report) report = await FactoryAudit.findById(id);
+    let report = await Report.findById(id).populate('userId', 'name email');
+    if (!report) report = await FactoryAudit.findById(id).populate('userId', 'name email');
     if (!report) return res.status(404).json({ error: "Report not found" });
 
     report.operationStatus = "approved";
@@ -218,6 +277,29 @@ exports.finalizeReport = async (req, res) => {
     report.reviewedAt = new Date();
 
     await report.save();
+
+    // Push Finalized status to inspector's Task
+    try {
+      const Task = require('../models/task.model');
+      await Task.findOneAndUpdate({ reportId: report._id }, { status: 'Finalized' });
+    } catch (e) { console.warn('[finalizeReport] Task update failed:', e.message); }
+
+    // Create in-app notification for the inspector
+    try {
+      const SystemNotification = require('../models/systemNotification.model');
+      const inspectorId = report.userId?._id || report.userId;
+      if (inspectorId) {
+        await SystemNotification.create({
+          title: 'Your Report Has Been Approved',
+          message: `Report #${report._id} has been reviewed and approved by ${req.user?.name || 'the reviewer'}.`,
+          type: 'success',
+          priority: 3,
+          targetUsers: [inspectorId],
+          createdBy: req.user.id,
+        });
+        getIO().to(`user_${inspectorId}`).emit('new_notification');
+      }
+    } catch (e) { console.warn('[finalizeReport] Notification creation failed:', e.message); }
 
     // Emit real-time update to manager room only
     getIO().to("manager_room").emit("report_status_changed", {

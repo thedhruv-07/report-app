@@ -4,7 +4,12 @@ const mongoose = require("mongoose");
 const app = require("./app");
 const { PORT, MONGO_URI } = require("./config/config");
 
-mongoose.connect(MONGO_URI)
+mongoose.connect(MONGO_URI, {
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+  maxPoolSize: 10,
+  heartbeatFrequencyMS: 10000,
+})
   .then(() => {
     console.log("🟢 Connected to MongoDB");
     const server = app.listen(PORT, () => {

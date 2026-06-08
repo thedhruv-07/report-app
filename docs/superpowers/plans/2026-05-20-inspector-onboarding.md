@@ -284,7 +284,7 @@ async function seed() {
   console.log('Done.');
 }
 
-seed().catch(err => { console.error(err); process.exit(1); });
+// Seed invocation removed for repository cleanliness.
 ```
 
 - [ ] **Step 2: Run the seeder**

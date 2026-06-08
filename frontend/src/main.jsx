@@ -66,12 +66,14 @@ createRoot(document.getElementById('root')).render(
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/notifications" element={<Notifications />} />
 
-                {/* Inspection Routes */}
+                {/* Inspection Routes — inspectors must complete onboarding first */}
                 <Route element={<ProtectedRoute allowedRoles={['admin', 'operator', 'inspector', 'user']} />}>
-                  <Route path="/dashboard/pre-shipment" element={<PSIForm />} />
-                  <Route path="/dashboard/container-loading" element={<ContainerLoading />} />
-                  <Route path="/dashboard/factory-audit" element={<FactoryAudit />} />
-                  <Route path="/dashboard/during-production" element={<DuringProductionInspection />} />
+                  <Route element={<OnboardingGuard />}>
+                    <Route path="/dashboard/pre-shipment" element={<PSIForm />} />
+                    <Route path="/dashboard/container-loading" element={<ContainerLoading />} />
+                    <Route path="/dashboard/factory-audit" element={<FactoryAudit />} />
+                    <Route path="/dashboard/during-production" element={<DuringProductionInspection />} />
+                  </Route>
                 </Route>
               </Route>
             </Route>

@@ -188,10 +188,23 @@ export default function TechnicalManagerDashboard() {
       addedAt: new Date(fb.addedAt).toLocaleString()
     }));
 
+    const g   = r.generalInfo     || {};
+    const q   = r.quantityDetails || {};
+    const w   = r.workmanship     || {};
+    const ins = r.inspection      || {};
+    const mat = r.materials       || {};
+    const saf = r.safety          || {};
+    const com = r.comments        || {};
+    const med = Array.isArray(r.media) ? r.media : [];
+
+    const nonEmpty = (obj) => Object.fromEntries(
+      Object.entries(obj).filter(([, v]) => v !== null && v !== undefined && v !== "" && v !== 0)
+    );
+
     activeReport = {
       id: r._id,
       displayId: r.reportNumber || r._id,
-      clientName: r.generalInfo?.client || "Unknown",
+      clientName: g.client || r.generalInfo?.client || "Unknown",
       inspectionType: isFactoryAudit ? "Factory Audit" : (r.title || "Inspection"),
       inspectorName: r.userId?.name || "Unknown",
       submissionDate: new Date(r.submittedAt || r.updatedAt).toLocaleDateString(),
@@ -203,14 +216,96 @@ export default function TechnicalManagerDashboard() {
       correctionFeedback: mappedFeedback,
       tmRemarks: r.tmRemarks?.[r.tmRemarks.length - 1]?.text || "",
       templateData: {
-        sectionA: { title: "Inspection Summary", fields: { clientName: r.generalInfo?.client || "Unknown", orderNumber: r.generalInfo?.order_number || "N/A", productDescription: r.generalInfo?.product_description || "N/A" } },
-        sectionB: { title: "Product Workmanship", fields: {}, notes: "Review workmanship data in full report" },
-        sectionC: { title: "Quantity Verification", fields: { cartonCount: r.quantityDetails?.carton_numbers || "N/A" } },
-        sectionD: { title: "Measurement & Spec Check", fields: { measurements: [] } },
-        sectionE: { title: "Function & Safety Tests", fields: {} },
-        sectionF: { title: "Defect Classification", fields: {} },
-        sectionG: { title: "Photo Gallery", photos: [] },
-        sectionH: { title: "Inspector Declaration", fields: { inspectorName: r.userId?.name } }
+        sectionA: {
+          title: "Inspection Summary",
+          fields: nonEmpty({
+            "Client":            g.client,
+            "Supplier":          g.supplier,
+            "Factory":           g.factory,
+            "Product":           g.productName,
+            "PO Number":         g.po,
+            "Item No":           g.itemNo,
+            "Inspection Date":   g.inspectionDate,
+            "Location":          g.inspectionLocation,
+            "Country":           g.country,
+            "Reference Sample":  g.referenceSample,
+            "Service Performed": g.servicePerformed,
+          })
+        },
+        sectionB: {
+          title: "Product Workmanship",
+          fields: nonEmpty({
+            "Inspection Level":  w.inspectionLevelWM,
+            "Sample Size":       w.sampleSizeWM,
+            "AQL Critical":      w.aqlCriticalWM,
+            "AQL Major":         w.aqlMajorWM,
+            "AQL Minor":         w.aqlMinorWM,
+            "Accepted Critical": w.acceptedCritical,
+            "Accepted Major":    w.acceptedMajor,
+            "Accepted Minor":    w.acceptedMinor,
+            "Found Critical":    w.totalFoundCritical,
+            "Found Major":       w.totalFoundMajor,
+            "Found Minor":       w.totalFoundMinor,
+            "Overall Result":    w.workmanshipResult,
+          }),
+          notes: w.workmanshipRemark || null,
+          defects: w.defects || []
+        },
+        sectionC: {
+          title: "Quantity Verification",
+          fields: nonEmpty({
+            "Quantity Result":    q.quantityResult,
+            "Selected Cartons":  q.selectedCartonsCount,
+            "Remark":            q.quantityRemark,
+          }),
+          items: q.items || []
+        },
+        sectionD: {
+          title: "Measurement & Spec Check",
+          fields: {
+            measurements: (mat.specifications || []).map(s => ({
+              param:  s.description,
+              spec:   s.requirement,
+              actual: s.finding,
+              result: s.result
+            }))
+          }
+        },
+        sectionE: {
+          title: "Function & Safety Tests",
+          fields: nonEmpty({
+            "On-Site Test Result": saf.onSiteTestResult,
+            "Remark":              saf.onSiteTestRemark,
+          }),
+          safetyChecks: saf.safetyChecks || []
+        },
+        sectionF: {
+          title: "Defect Classification / Inspection Criteria",
+          fields: nonEmpty({
+            "Quantity":            ins.quantityResult,
+            "Workmanship":         ins.workmanshipResult,
+            "On-Site Tests":       ins.onSiteTestsResult,
+            "Dimensions":          ins.dimensionsResult,
+            "Packing":             ins.packingResult,
+            "Marking & Labeling":  ins.markingResult,
+            "Client Requirement":  ins.clientRequirementResult,
+          })
+        },
+        sectionG: {
+          title: "Photo Gallery",
+          photos: med.map(m => ({ url: m.url || m.signedUrl, description: m.description || m.originalName || '' })).filter(p => p.url)
+        },
+        sectionH: {
+          title: "Inspector Declaration",
+          fields: nonEmpty({
+            "Inspector":         com.inspector || r.userId?.name,
+            "Approved By":       com.approvedBy,
+            "Conclusion":        com.recommendations,
+            "Factory Comments":  com.factoryComments,
+            "Inspector Opinion": com.inspectorOpinion,
+            "Remarks":           Array.isArray(com.remarks) ? com.remarks.filter(Boolean).join(" | ") : com.remarks,
+          })
+        }
       }
     };
   }
@@ -314,18 +409,6 @@ export default function TechnicalManagerDashboard() {
         });
         
         refetchQueue();
-        
-        // Add notification locally
-        const newNotif = {
-          id: `notif-${Date.now()}`,
-          message: `Report ${report.displayId} opened. Status: Under Review`,
-          reportId: reportId,
-          isRead: false,
-          createdAt: new Date().toISOString(),
-          timeAgo: "Just now",
-          type: "review"
-        };
-        setNotifications(prev => [newNotif, ...prev]);
         addToast(`Report marked as Under Review.`, "info");
       }
     } catch (e) {
@@ -400,19 +483,6 @@ export default function TechnicalManagerDashboard() {
     try {
       await finalizeReport();
       addToast(`Report has been finalized. Admin and Inspector have been notified.`, "success");
-      
-      // Add notification
-      const newNotif = {
-        id: `notif-${Date.now()}`,
-        message: `Report finalized successfully.`,
-        reportId: activeReport.id,
-        isRead: false,
-        createdAt: new Date().toISOString(),
-        timeAgo: "Just now",
-        type: "finalize"
-      };
-      setNotifications(prev => [newNotif, ...prev]);
-
       setShowFinalizeModal(false);
       setActiveReportId(null);
       refetchQueue();
@@ -430,19 +500,6 @@ export default function TechnicalManagerDashboard() {
     // So we just need to ensure the user knows it's sent.
     
     addToast(`Correction request finalized. Inspector has been notified.`, "warning");
-    
-    // Add notification
-    const newNotif = {
-      id: `notif-${Date.now()}`,
-      message: `Correction cycle requested.`,
-      reportId: activeReport.id,
-      isRead: false,
-      createdAt: new Date().toISOString(),
-      timeAgo: "Just now",
-      type: "correction"
-    };
-    setNotifications(prev => [newNotif, ...prev]);
-
     setShowCorrectionModal(false);
     setActiveReportId(null);
     refetchQueue();

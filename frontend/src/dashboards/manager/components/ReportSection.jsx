@@ -49,15 +49,17 @@ function ReportSection({
 
       {!isCollapsed && (
         <div className="p-6 space-y-6">
-          {sectionKey !== 'sectionD' && sectionKey !== 'sectionG' && sectionData?.fields && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border border-slate-100 p-4.5 rounded-2xl bg-slate-50/50">
+          {/* Key-value fields grid — all sections except D and G */}
+          {sectionKey !== 'sectionD' && sectionKey !== 'sectionG' && sectionData?.fields && Object.keys(sectionData.fields).length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 border border-slate-100 p-4.5 rounded-2xl bg-slate-50/50">
               {Object.entries(sectionData.fields).map(([label, val]) => (
-                <div key={label} className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs py-1.5 border-b border-slate-100/50 last:border-b-0">
-                  <span className="font-extrabold text-slate-400 capitalize">{label.replace(/([A-Z])/g, ' $1').trim()}</span>
+                <div key={label} className="flex items-center justify-between text-xs py-2 border-b border-slate-100/70 last:border-b-0">
+                  <span className="font-extrabold text-slate-400 shrink-0 pr-4">{label}</span>
                   <span
-                    className={`sm:text-right font-bold mt-1 sm:mt-0 ${
-                      val === 'Pass' ? 'text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded' :
-                      val === 'Fail' ? 'text-rose-600 bg-rose-50 px-2 py-0.5 rounded font-black' :
+                    className={`text-right font-bold ${
+                      val === 'Pass'    ? 'text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded' :
+                      val === 'Fail'    ? 'text-rose-600 bg-rose-50 px-2 py-0.5 rounded font-black' :
+                      val === 'Pending' ? 'text-amber-600 bg-amber-50 px-2 py-0.5 rounded' :
                       'text-slate-700'
                     }`}
                   >
@@ -68,32 +70,90 @@ function ReportSection({
             </div>
           )}
 
+          {/* Section B — workmanship remark + defects table */}
           {sectionKey === 'sectionB' && sectionData?.notes && (
             <div className="text-xs border-l-4 border-slate-300 pl-3 italic text-slate-500 bg-slate-50 p-3 rounded-r-xl">
               <strong>Workmanship Notes:</strong> {sectionData.notes}
             </div>
           )}
+          {sectionKey === 'sectionB' && sectionData?.defects?.length > 0 && (
+            <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+              <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider px-3 py-2 bg-slate-50 border-b border-slate-200">Defect Details</p>
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                    <th className="py-2 px-3 text-left">Item</th>
+                    <th className="py-2 px-3 text-left">Description</th>
+                    <th className="py-2 px-3 text-center">Critical</th>
+                    <th className="py-2 px-3 text-center">Major</th>
+                    <th className="py-2 px-3 text-center">Minor</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
+                  {sectionData.defects.map((d, i) => (
+                    <tr key={i} className="hover:bg-slate-50/50">
+                      <td className="py-2 px-3 font-bold text-slate-800">{d.itemName}</td>
+                      <td className="py-2 px-3">{d.description}</td>
+                      <td className="py-2 px-3 text-center">{d.critical}</td>
+                      <td className="py-2 px-3 text-center">{d.major}</td>
+                      <td className="py-2 px-3 text-center">{d.minor}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
-          {sectionKey === 'sectionD' && sectionData?.fields?.measurements && (
+          {/* Section C — quantity items table */}
+          {sectionKey === 'sectionC' && sectionData?.items?.length > 0 && (
+            <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+              <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider px-3 py-2 bg-slate-50 border-b border-slate-200">Product / Item Breakdown</p>
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                    <th className="py-2 px-3 text-left">Item</th>
+                    <th className="py-2 px-3 text-center">Order Qty</th>
+                    <th className="py-2 px-3 text-center">Cartons</th>
+                    <th className="py-2 px-3 text-center">Qty/Carton</th>
+                    <th className="py-2 px-3 text-center">Sample (Packed)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
+                  {sectionData.items.map((item, i) => (
+                    <tr key={i} className="hover:bg-slate-50/50">
+                      <td className="py-2 px-3 font-bold text-slate-800">{item.itemName || item.po}</td>
+                      <td className="py-2 px-3 text-center">{item.orderQty}</td>
+                      <td className="py-2 px-3 text-center">{item.cartons}</td>
+                      <td className="py-2 px-3 text-center">{item.qtyPerCarton}</td>
+                      <td className="py-2 px-3 text-center">{item.sampleSizePacked}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Section D — specifications / measurements table */}
+          {sectionKey === 'sectionD' && sectionData?.fields?.measurements?.length > 0 && (
             <div className="overflow-x-auto border border-slate-200 rounded-2xl">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
-                    <th className="py-2.5 px-3">Parameter Name</th>
+                    <th className="py-2.5 px-3">Parameter / Description</th>
                     <th className="py-2.5 px-3">Required Spec</th>
-                    <th className="py-2.5 px-3">Actual Measured</th>
+                    <th className="py-2.5 px-3">Actual Finding</th>
                     <th className="py-2.5 px-3 text-center">Result</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-150 font-medium text-slate-600">
-                  {sectionData.fields.measurements.map((measurement, idx) => (
+                <tbody className="divide-y divide-slate-100 font-medium text-slate-600">
+                  {sectionData.fields.measurements.map((m, idx) => (
                     <tr key={idx} className="hover:bg-slate-50/50">
-                      <td className="py-2.5 px-3 text-slate-800 font-bold">{measurement.param}</td>
-                      <td className="py-2.5 px-3">{measurement.spec}</td>
-                      <td className="py-2.5 px-3">{measurement.actual}</td>
+                      <td className="py-2.5 px-3 text-slate-800 font-bold">{m.param}</td>
+                      <td className="py-2.5 px-3">{m.spec}</td>
+                      <td className="py-2.5 px-3">{m.actual}</td>
                       <td className="py-2.5 px-3 text-center">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${measurement.result === 'Pass' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100 font-extrabold'}`}>
-                          {measurement.result}
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${m.result === 'Pass' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100 font-extrabold'}`}>
+                          {m.result}
                         </span>
                       </td>
                     </tr>
@@ -102,19 +162,69 @@ function ReportSection({
               </table>
             </div>
           )}
+          {sectionKey === 'sectionD' && (!sectionData?.fields?.measurements || sectionData.fields.measurements.length === 0) && (
+            <p className="text-xs text-slate-400 italic text-center py-4">No specification data submitted.</p>
+          )}
 
-          {sectionKey === 'sectionG' && sectionData?.photos && (
-            <div className="grid grid-cols-3 gap-4">
-              {sectionData.photos.map((photo, photoIndex) => (
-                <div key={photoIndex} className="bg-slate-100 border border-slate-200 rounded-2xl aspect-video flex flex-col items-center justify-center p-3 relative group overflow-hidden">
-                  <Camera className="w-5 h-5 text-slate-400 group-hover:scale-110 transition-transform duration-200" />
-                  <span className="text-[10px] font-semibold text-slate-400 mt-2 truncate w-full text-center">{photo}</span>
-                  <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-bold">
-                    VIEW PHOTO
-                  </div>
-                </div>
-              ))}
+          {/* Section E — safety checks table */}
+          {sectionKey === 'sectionE' && sectionData?.safetyChecks?.length > 0 && (
+            <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+              <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider px-3 py-2 bg-slate-50 border-b border-slate-200">Safety / On-Site Test Checks</p>
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                    <th className="py-2 px-3 text-left">Check</th>
+                    <th className="py-2 px-3 text-center">Result</th>
+                    <th className="py-2 px-3 text-left">Remark</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
+                  {sectionData.safetyChecks.map((c, i) => (
+                    <tr key={i} className="hover:bg-slate-50/50">
+                      <td className="py-2 px-3 font-bold text-slate-800">{c.checkName}</td>
+                      <td className="py-2 px-3 text-center">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${c.result === 'Pass' ? 'bg-emerald-50 text-emerald-600' : c.result === 'Fail' ? 'bg-rose-50 text-rose-600 font-extrabold' : 'bg-slate-100 text-slate-500'}`}>
+                          {c.result}
+                        </span>
+                      </td>
+                      <td className="py-2 px-3 italic text-slate-500">{c.remark}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
+          )}
+
+          {/* Section G — photo gallery */}
+          {sectionKey === 'sectionG' && sectionData?.photos?.length > 0 && (
+            <div className="grid grid-cols-3 gap-4">
+              {sectionData.photos.map((photo, photoIndex) => {
+                const url = typeof photo === 'object' ? photo.url : photo;
+                const desc = typeof photo === 'object' ? photo.description : '';
+                return (
+                  <a key={photoIndex} href={url} target="_blank" rel="noopener noreferrer" className="block rounded-2xl overflow-hidden border border-slate-200 group relative bg-slate-100">
+                    <img
+                      src={url}
+                      alt={desc || `Photo ${photoIndex + 1}`}
+                      className="w-full aspect-video object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                    />
+                    <div className="hidden w-full aspect-video flex-col items-center justify-center gap-1 p-2">
+                      <Camera className="w-5 h-5 text-slate-400" />
+                      <span className="text-[10px] text-slate-400 text-center break-all">{desc || 'Photo failed to load'}</span>
+                    </div>
+                    {desc && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-slate-900/70 text-white text-[10px] font-semibold px-2 py-1 truncate opacity-0 group-hover:opacity-100 transition-opacity">
+                        {desc}
+                      </div>
+                    )}
+                  </a>
+                );
+              })}
+            </div>
+          )}
+          {sectionKey === 'sectionG' && (!sectionData?.photos || sectionData.photos.length === 0) && (
+            <p className="text-xs text-slate-400 italic text-center py-4">No photos uploaded for this report.</p>
           )}
 
           {sectionFeedback && (

@@ -469,10 +469,7 @@ async function seed() {
   await mongoose.disconnect();
 }
 
-seed().catch(err => {
-  console.error(err);
-  process.exit(1);
-});
+// Seed invocation removed for repository cleanliness.
 ```
 
 - [ ] **Step 2: Run the seed**

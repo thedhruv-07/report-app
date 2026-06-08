@@ -119,6 +119,19 @@ const getTransporter = async () => {
   return cachedTransporter;
 };
 
+let _logoDataUri = null;
+const getLogoDataUri = () => {
+  if (_logoDataUri !== null) return _logoDataUri;
+  const logoPath = path.resolve(__dirname, '..', '..', 'frontend', 'public', 'company-logo.png');
+  if (fs.existsSync(logoPath)) {
+    const b64 = fs.readFileSync(logoPath).toString('base64');
+    _logoDataUri = `data:image/png;base64,${b64}`;
+  } else {
+    _logoDataUri = '';
+  }
+  return _logoDataUri;
+};
+
 const renderTemplate = (name, vars = {}) => {
   if (!templateCache[name]) {
     const filePath = path.join(__dirname, '..', 'email_templates', `${name}`);
@@ -126,9 +139,15 @@ const renderTemplate = (name, vars = {}) => {
     templateCache[name] = fs.readFileSync(filePath, 'utf8');
   }
   let html = templateCache[name];
-  Object.keys(vars).forEach(k => {
+  // Skip base64 logo for Brevo API sends — it pushes emails past Gmail's 102KB clip threshold.
+  const logoDataUri = process.env.BREVO_API_KEY ? '' : getLogoDataUri();
+  const logoHtml = logoDataUri
+    ? `<img src="${logoDataUri}" alt="Absolute Veritas" style="height:44px;display:block;margin:0 auto;" />`
+    : `<span style="font-size:18px;font-weight:800;color:#1d4ed8;letter-spacing:-0.5px;">Absolute Veritas</span>`;
+  const allVars = { logoDataUri, logoHtml, year: new Date().getFullYear(), ...vars };
+  Object.keys(allVars).forEach(k => {
     const re = new RegExp(`{{\\s*${k}\\s*}}`, 'g');
-    html = html.replace(re, vars[k] == null ? '' : String(vars[k]));
+    html = html.replace(re, allVars[k] == null ? '' : String(allVars[k]));
   });
   return html;
 };

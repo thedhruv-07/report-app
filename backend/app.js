@@ -4,6 +4,7 @@ const helmet = require("helmet");
 const compression = require("compression");
 const morgan = require("morgan");
 const { authMiddleware } = require("./middleware/auth.middleware");
+const { requireOnboardingComplete } = require("./middleware/onboardingComplete.middleware");
 const reportController = require("./controllers/report.controller");
 const { sendSelfTestEmail } = require("./controllers/email.controller");
 
@@ -82,8 +83,8 @@ app.post("/api/suggest", aiAuth, reportController.suggestText);
 
 // Legacy Route Compatibility (Fixes 404 on generation)
 const upload = require("./middleware/upload.middleware");
-app.post("/api/generate", authMiddleware, upload.array("images"), reportController.generateReport);
-app.post("/generate", authMiddleware, upload.array("images"), reportController.generateReport);
+app.post("/api/generate", authMiddleware, requireOnboardingComplete, upload.array("images"), reportController.generateReport);
+app.post("/generate", authMiddleware, requireOnboardingComplete, upload.array("images"), reportController.generateReport);
 
 // Main Route Groups
 app.use("/api/auth", authRoutes);

@@ -7,7 +7,7 @@ export default function DashboardLayout() {
     <div className="h-screen flex flex-col bg-linear-to-br from-slate-50 via-white to-slate-100">
       <NotificationPopup />
       <Navbar />
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-y-auto">
         <Outlet />
       </main>
     </div>

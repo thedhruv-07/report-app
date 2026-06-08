@@ -221,6 +221,19 @@ const generateReport = async (req, res) => {
       ]);
       console.log(`✅ Saved Granular Modular Report to MongoDB with ID: ${report._id}`);
 
+      // Link the inspector's Task to this report so correction flow works
+      if (data.taskId) {
+        try {
+          const Task = require('../models/task.model');
+          await Task.findByIdAndUpdate(data.taskId, {
+            status: 'Report Submitted',
+            reportId: report._id,
+          });
+        } catch (e) {
+          console.warn('[generateReport] Task link failed:', e.message);
+        }
+      }
+
       // Dashboard + email notification for admin and manager
       const inspectorName = data.auditorName || req.user?.name || 'Inspector';
       const clientLabel = data.client || data.factory || 'Unknown Client';

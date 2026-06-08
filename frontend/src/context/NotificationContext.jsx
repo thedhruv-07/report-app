@@ -1,7 +1,8 @@
 // frontend/src/context/NotificationContext.jsx
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { ENDPOINTS } from "../config/api";
+import { io } from "socket.io-client";
+import { ENDPOINTS, API_BASE_URL } from "../config/api";
 import { useAuth } from "./AuthContext";
 
 const NotificationContext = createContext(null);
@@ -35,15 +36,30 @@ export function NotificationProvider({ children }) {
     }
   }, [user, token]);
 
-  // Fetch on login
+  // Fetch on login + poll every 30 s
   useEffect(() => {
-    if (user && token) {
-      fetchNotifications();
-    } else {
+    if (!user || !token) {
       setPopupNotifications([]);
       setBellNotifications([]);
       setUnreadCount(0);
+      return;
     }
+    fetchNotifications();
+    const poll = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(poll);
+  }, [user, token, fetchNotifications]);
+
+  // Socket: join user room and refresh on new_notification event
+  useEffect(() => {
+    if (!user || !token) return;
+    const socket = io(API_BASE_URL, { transports: ['websocket', 'polling'] });
+    socket.on('connect', () => {
+      socket.emit('join', `user_${user.id || user._id}`);
+    });
+    socket.on('new_notification', () => {
+      fetchNotifications();
+    });
+    return () => socket.disconnect();
   }, [user, token, fetchNotifications]);
 
   const markAsRead = useCallback(async (notificationId) => {

@@ -8,7 +8,7 @@ import { useNotifications } from '../../context/NotificationContext';
 import { timeAgo } from '../../utils/timeAgo';
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, logout, onboardingCompleted } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -83,8 +83,9 @@ export default function Navbar() {
           Dashboard
         </button>
 
-        {/* Show Inspector Links only if NOT on manager dashboard and user is NOT a manager */}
-        {!((user?.role === 'manager' || user?.role === 'admin') || location.pathname.startsWith("/dashboard/manager")) && (
+        {/* Show Inspector Links only if NOT on manager dashboard and user is NOT a manager, and inspector has completed onboarding */}
+        {!((user?.role === 'manager' || user?.role === 'admin') || location.pathname.startsWith("/dashboard/manager")) &&
+          !(user?.role === 'inspector' && !onboardingCompleted) && (
           <div className="relative group">
             <button className={`flex items-center gap-1.5 text-sm font-semibold transition-colors ${location.pathname.startsWith("/dashboard/") ? "text-blue-600" : "text-slate-500 hover:text-slate-800"}`}>
               Reports

@@ -1,6 +1,5 @@
 const fs = require("fs");
 const Groq = require("groq-sdk");
-const pLimit = require("p-limit");
 const { MEMORY_PATH, GROQ_API_KEY } = require("../config/config");
 
 const groq = GROQ_API_KEY ? new Groq({ apiKey: GROQ_API_KEY }) : null;
@@ -138,10 +137,9 @@ const analyzeIndividualPhotos = async (imageObjects) => {
       return imageObjects.map(() => "Inspection photo.");
     }
 
-    console.log(`📸 Analyzing ${imageObjects.length} photos with parallel processing (limit 3)...`);
-    const limit = pLimit(3); // Process 3 photos at a time to avoid timeouts and rate limits
+    console.log(`📸 Analyzing ${imageObjects.length} photos in parallel...`);
 
-    const tasks = imageObjects.map((img, i) => limit(async () => {
+    const tasks = imageObjects.map(async (img, i) => {
       const { data, fileName } = img;
       try {
         // --- LAYER 1: TRUE VISION ANALYSIS (Llama 4 Scout) ---
@@ -196,7 +194,7 @@ const analyzeIndividualPhotos = async (imageObjects) => {
         console.error(`❌ Error for photo ${i}:`, err.message);
         return "Inspection photo documentation.";
       }
-    }));
+    });
 
     return await Promise.all(tasks);
   } catch (error) {

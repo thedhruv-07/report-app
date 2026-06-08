@@ -1,4 +1,4 @@
-const FactoryAudit = require("../models/factoryAudit.model");
+  const FactoryAudit = require("../models/factoryAudit.model");
 const mongoose = require("mongoose");
 const { Document, Packer, Header, Paragraph, TextRun, PageNumber, Footer, Table, TableRow, TableCell, WidthType, BorderStyle, AlignmentType } = require("docx");
 const sharp = require('sharp');
@@ -109,6 +109,15 @@ exports.submitForReview = async (req, res) => {
       await report.save();
     }
     emitReportSubmitted(report, req.user);
+
+    // Link and update the inspector's Task
+    const { taskId } = req.body;
+    if (taskId) {
+      try {
+        const Task = require('../models/task.model');
+        await Task.findByIdAndUpdate(taskId, { status: 'Report Submitted', reportId: report._id });
+      } catch (e) { console.warn('[faSubmitForReview] Task link failed:', e.message); }
+    }
 
     const _inspectorName = req.user?.name || 'Inspector';
     const _clientLabel = report.generalInfo?.client || report.generalInfo?.factory || 'Unknown Client';
