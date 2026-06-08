@@ -87,24 +87,6 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
 
   return (
     <>
-      {/* ── Toggle buttons ── */}
-      <div style={{ display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <button type="button"
-            style={{ padding: "5px 12px", borderRadius: "6px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, color: colors.text, fontSize: "12px", cursor: "pointer", fontWeight: 600, whiteSpace: "nowrap" }}>
-            转为4档AQL (Switch to 4-grade AQL)
-          </button>
-          <span style={{ fontSize: "11px", color: colors.danger }}>如果客户没有要求，请不要使用4档AQL. If not required by client, please DO NOT use "4-grade AQL".</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <button type="button"
-            style={{ padding: "5px 12px", borderRadius: "6px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, color: colors.text, fontSize: "12px", cursor: "pointer", fontWeight: 600, whiteSpace: "nowrap" }}>
-            分款计算 (Count by item)
-          </button>
-          <span style={{ fontSize: "11px", color: colors.danger }}>如果客户没有要求，请不要使用分款计算 If not required by client, please DO NOT use "count by item"</span>
-        </div>
-      </div>
-
       {/* ── AQL Settings Table ── */}
       <div style={{ marginBottom: "20px" }}>
         <h3 style={{ ...sectionHeaderStyle, marginBottom: "0px", padding: "10px", background: colors.headerBg, color: colors.text, fontWeight: "bold", fontSize: "14px" }}>AQL</h3>
