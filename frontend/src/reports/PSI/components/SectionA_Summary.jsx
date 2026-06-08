@@ -41,7 +41,7 @@ const FIELDS = [
   { label: "P.O. No.",           name: "po",                placeholder: "8092023" },
   { label: "Item No.",           name: "itemNo",            placeholder: "30B nut forming machine..." },
   { label: "Destination Country",name: "country",           placeholder: "India" },
-  { label: "Inspection Date",    name: "inspectionDate",    placeholder: "20240516" },
+  { label: "Inspection Date",    name: "inspectionDate",    type: "date" },
   { label: "Inspection Location",name: "inspectionLocation",placeholder: "Jiangsu (CHINA)" },
   { label: "Reference Sample",   name: "referenceSample",   type: "yesNo" },
 ];
@@ -107,6 +107,16 @@ export default function GeneralInfo({ form, handleChange, onNext, handleGeneralP
                 <option value="Yes">Yes</option>
                 <option value="No">No</option>
               </select>
+            ) : field.type === "date" ? (
+              <input
+                type="date"
+                name={field.name}
+                value={form[field.name] || ""}
+                onChange={handleChange}
+                style={{ ...inputStyle }}
+                onFocus={(e) => { e.target.style.borderBottomColor = colors.primary; }}
+                onBlur={(e)  => { e.target.style.borderBottomColor = "transparent"; }}
+              />
             ) : (
               <input
                 name={field.name}
