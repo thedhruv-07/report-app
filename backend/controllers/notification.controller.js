@@ -58,7 +58,8 @@ const markAsRead = async (req, res) => {
     );
 
     if (!notification) {
-      return res.status(404).json({ error: "Notification not found" });
+      // Already marked as read — treat as success (idempotent)
+      return res.json({ success: true, alreadyRead: true });
     }
 
     res.json({ notification });

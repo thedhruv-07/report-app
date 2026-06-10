@@ -7,6 +7,8 @@ const SystemNotification = require('../models/systemNotification.model');
 const Task = require('../models/task.model');
 const { User } = require('../models/user.model');
 const { sendImmediateEmail, renderTemplate } = require('../services/email.service');
+const { createDraftNoticeFromBooking } = require('../services/bookingToNotice.service');
+const InspectionNotice = require('../models/InspectionNotice');
 
 // Maps Booking.inspectionType values to Task.inspectionType enum values
 const toTaskInspectionType = (type = '') => {
@@ -58,7 +60,23 @@ router.get('/', roleCheck(['admin', 'manager']), async (req, res) => {
       .limit(limit)
       .lean();
 
-    res.json({ bookings: bookings.map(formatBookingSummary) });
+    // Fetch related notices for these bookings
+    const bookingIds = bookings.map(b => b._id);
+    const notices = await InspectionNotice.find({ sourceBookingId: { $in: bookingIds } }).select('_id sourceBookingId').lean();
+    
+    // Map them
+    const noticeMap = {};
+    notices.forEach(n => {
+      if (n.sourceBookingId) noticeMap[String(n.sourceBookingId)] = String(n._id);
+    });
+
+    const responseBookings = bookings.map(b => {
+      const summary = formatBookingSummary(b);
+      summary.linkedNoticeId = noticeMap[String(b._id)] || null;
+      return summary;
+    });
+
+    res.json({ bookings: responseBookings });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -99,6 +117,15 @@ router.post('/', roleCheck(['admin', 'manager']), async (req, res) => {
   try {
     const booking = new Booking({ ...req.body, adminId: req.user.id });
     await booking.save();
+
+    // Auto-create a draft Inspection Notice for the CS team
+    try {
+      const notice = await createDraftNoticeFromBooking(booking, req.user.id);
+      if (notice) console.log(`[bookings] Draft notice ${notice.noticeId} created for manual booking ${booking._id}`);
+    } catch (noticeErr) {
+      console.warn('[bookings] Failed to create draft notice:', noticeErr.message);
+    }
+
     res.status(201).json(booking);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -206,6 +233,7 @@ router.post('/:id/assign', roleCheck(['admin', 'manager']), async (req, res) => 
       status: 'Pending Acceptance',
       adminInstructions: booking.specialInstructions || '',
       prefillData: taskPrefillData,
+      bookingId: booking._id,
     });
 
     // Notification in the Notification collection (inspector dashboard list)

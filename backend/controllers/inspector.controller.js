@@ -123,11 +123,33 @@ const markAllNotificationsRead = async (req, res) => {
   }
 };
 
+const addSectionSkipReason = async (req, res) => {
+  try {
+    const { step, stepLabel, reason, missingFields } = req.body;
+    if (!step || !reason) return res.status(400).json({ error: 'step and reason are required' });
+
+    const task = await Task.findOne({ _id: req.params.taskId, assignedInspectorId: req.user.id });
+    if (!task) return res.status(404).json({ error: 'Task not found' });
+
+    // Replace existing entry for this step if re-submitted, otherwise push
+    const existing = task.sectionSkipReasons.findIndex(r => r.step === step);
+    const entry = { step, stepLabel: stepLabel || `Step ${step}`, missingFields: missingFields || [], reason, skippedAt: new Date() };
+    if (existing >= 0) task.sectionSkipReasons[existing] = entry;
+    else task.sectionSkipReasons.push(entry);
+
+    await task.save();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
   getSummary,
   getTasks,
   getTaskById,
   acceptTask,
+  addSectionSkipReason,
   getNotifications,
   markNotificationRead,
   markAllNotificationsRead

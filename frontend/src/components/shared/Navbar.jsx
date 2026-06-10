@@ -55,7 +55,7 @@ export default function Navbar() {
   };
 
   // Hide the global shared Navbar when on the Manager or Admin Dashboard to allow its fully integrated premium top navbar to display exclusively.
-  if (location.pathname.startsWith("/dashboard/manager") || location.pathname.startsWith("/dashboard/admin")) {
+  if (location.pathname.startsWith("/dashboard/manager") || location.pathname.startsWith("/dashboard/admin") || location.pathname.startsWith("/admin/inspection-notices")) {
     return null;
   }
 
@@ -157,7 +157,21 @@ export default function Navbar() {
                   <div className="px-4 py-8 text-center text-sm text-slate-500">No notifications</div>
                 ) : (
                   bellNotifications.map(n => (
-                    <div key={n._id} className="px-4 py-3 border-b border-slate-50 hover:bg-slate-50 transition-colors flex gap-3">
+                    <div 
+                      key={n._id} 
+                      onClick={() => {
+                        markAsRead(n._id);
+                        setNotificationsOpen(false);
+                        if (n.relatedTaskId) {
+                          navigate(`/dashboard/inspector?task=${n.relatedTaskId}`);
+                        } else if (n.relatedBookingId) {
+                          navigate(`/dashboard/inspector`); // fallback if no task ID
+                        } else if (n.relatedReportId) {
+                          navigate(`/dashboard/manager?report=${n.relatedReportId}`);
+                        }
+                      }}
+                      className="px-4 py-3 border-b border-slate-50 hover:bg-slate-50 transition-colors flex gap-3 cursor-pointer"
+                    >
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
                         n.type === 'urgent' ? 'bg-red-100 text-red-600' :
                         n.type === 'warning' ? 'bg-amber-100 text-amber-600' :
@@ -171,7 +185,7 @@ export default function Navbar() {
                         <p className="text-xs text-slate-500 line-clamp-2 mt-0.5">{n.message}</p>
                         <p className="text-[10px] text-slate-400 mt-1">{timeAgo(n.createdAt)}</p>
                       </div>
-                      <button onClick={() => markAsRead(n._id)} className="shrink-0 self-center p-1 text-slate-300 hover:text-blue-600 transition-colors" title="Mark as read">
+                      <button onClick={(e) => { e.stopPropagation(); markAsRead(n._id); }} className="shrink-0 self-center p-1 text-slate-300 hover:text-blue-600 transition-colors" title="Mark as read">
                         <Check className="w-4 h-4" />
                       </button>
                     </div>

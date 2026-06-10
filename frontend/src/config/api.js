@@ -34,6 +34,7 @@ export const ENDPOINTS = {
     TASKS: `${API_BASE_URL}/api/inspector/tasks`,
     TASK_BY_ID: (id) => `${API_BASE_URL}/api/inspector/tasks/${id}`,
     ACCEPT_TASK: (id) => `${API_BASE_URL}/api/inspector/tasks/${id}/accept`,
+    SECTION_SKIP: (id) => `${API_BASE_URL}/api/inspector/tasks/${id}/section-skip`,
     NOTIFICATIONS: `${API_BASE_URL}/api/inspector/notifications`,
     READ_NOTIFICATION: (id) => `${API_BASE_URL}/api/inspector/notifications/${id}/read`,
     READ_ALL_NOTIFICATIONS: `${API_BASE_URL}/api/inspector/notifications/read-all`,
@@ -56,6 +57,7 @@ export const ENDPOINTS = {
   ADMIN: {
     INSPECTORS: `${API_BASE_URL}/api/admin/inspectors`,
     DELETE_INSPECTOR: (id) => `${API_BASE_URL}/api/admin/inspectors/${encodeURIComponent(id)}`,
+    TASK_PROGRESS: (bookingId) => `${API_BASE_URL}/api/admin/bookings/${encodeURIComponent(bookingId)}/task-progress`,
   },
   BOOKINGS: {
     ADMIN_LIST: `${API_BASE_URL}/api/bookings`,

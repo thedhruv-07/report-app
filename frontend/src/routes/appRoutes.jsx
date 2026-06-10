@@ -16,6 +16,10 @@ export const Signup = lazy(() => import('../pages/auth/Signup.jsx'))
 export const ForgotPassword = lazy(() => import('../pages/auth/ForgotPassword.jsx'))
 export const ResetPassword = lazy(() => import('../pages/auth/ResetPassword.jsx'))
 
+// Inspection Notices Feature
+export const InspectionNoticesList = lazy(() => import('../dashboards/admin/pages/InspectionNoticesList.jsx'))
+export const InspectionNoticeForm = lazy(() => import('../dashboards/admin/pages/InspectionNoticeForm.jsx'))
+
 export const RouteFallback = () => (
   <div style={{ minHeight: '40vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6b7280' }}>
     Loading…

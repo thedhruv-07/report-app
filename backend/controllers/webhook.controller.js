@@ -4,6 +4,7 @@ const Booking = require("../models/Booking");
 const { User } = require("../models/user.model");
 const { getIO } = require("../socket");
 const { sendImmediateEmail } = require("../services/email.service");
+const { createDraftNoticeFromBooking } = require("../services/bookingToNotice.service");
 
 const allowedEventTypes = new Set([
   "booking.payment.received",
@@ -293,6 +294,18 @@ const handleBookingWebhook = async (req, res) => {
     });
 
     await sendBookingSummaryEmail({ bookingDoc, payload });
+
+    // Auto-create a draft Inspection Notice for CS to review and complete
+    if (!existingBooking) {
+      try {
+        const notice = await createDraftNoticeFromBooking(bookingDoc, createdBy);
+        if (notice) {
+          console.log(`[webhook] Draft notice ${notice.noticeId} created for incoming booking`);
+        }
+      } catch (noticeErr) {
+        console.warn('[webhook] Failed to create draft notice from booking:', noticeErr.message);
+      }
+    }
 
     try {
       const io = getIO();

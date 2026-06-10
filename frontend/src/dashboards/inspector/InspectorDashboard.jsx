@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { useAuth } from '../../context/AuthContext';
 import { ENDPOINTS } from '../../config/api';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { clearFormStorage } from '../../shared/services';
 import {
   ClipboardList,
@@ -55,6 +55,7 @@ const getDisplayStatus = (status) => status === "Accepted" ? "Awaiting Report" :
 export default function Dashboard() {
   const { token, user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [summary, setSummary] = useState({ totalTasks: 0, pendingTasks: 0, submittedReports: 0, reviewFinalized: 0 });
   const [tasks, setTasks] = useState([]);
@@ -87,6 +88,19 @@ export default function Dashboard() {
   useEffect(() => {
     if (token) fetchDashboardData();
   }, [token, fetchDashboardData]);
+
+  // Auto-open task if ?task= param is present
+  useEffect(() => {
+    const taskId = searchParams.get('task');
+    if (taskId && tasks.length > 0 && !loading) {
+      const taskToOpen = tasks.find(t => t._id === taskId);
+      if (taskToOpen) {
+        setSelectedTask(taskToOpen);
+        // Remove param from URL without refreshing so it doesn't re-open on close
+        setSearchParams({}, { replace: true });
+      }
+    }
+  }, [searchParams, tasks, loading, setSearchParams]);
 
   const handleAcceptTask = async (taskId) => {
     try {

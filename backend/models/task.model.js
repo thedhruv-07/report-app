@@ -16,6 +16,14 @@ const taskSchema = new mongoose.Schema({
   prefillData: { type: mongoose.Schema.Types.Mixed, default: null },
   reportId: { type: mongoose.Schema.Types.ObjectId, ref: 'Report' },
   correctionFeedback: { type: String },
+  bookingId: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking', default: null },
+  sectionSkipReasons: [{
+    step:          { type: Number },
+    stepLabel:     { type: String },
+    missingFields: [{ type: String }],
+    reason:        { type: String },
+    skippedAt:     { type: Date, default: Date.now },
+  }],
 }, { timestamps: true });
 
 module.exports = mongoose.model("Task", taskSchema);

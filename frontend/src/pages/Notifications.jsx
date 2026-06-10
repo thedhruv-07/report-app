@@ -57,7 +57,17 @@ export default function Notifications() {
           return (
             <div
               key={notif._id}
-              className="bg-white rounded-2xl border border-slate-200 px-5 py-4 flex gap-4 hover:border-slate-300 transition-colors"
+              onClick={() => {
+                markAsRead(notif._id);
+                if (notif.relatedTaskId) {
+                  window.location.href = `/dashboard/inspector?task=${notif.relatedTaskId}`;
+                } else if (notif.relatedBookingId) {
+                  window.location.href = `/dashboard/inspector`;
+                } else if (notif.relatedReportId) {
+                  window.location.href = `/dashboard/manager?report=${notif.relatedReportId}`;
+                }
+              }}
+              className="bg-white rounded-2xl border border-slate-200 px-5 py-4 flex gap-4 hover:border-slate-300 transition-colors cursor-pointer"
             >
               <span className={`inline-block px-2 py-1 rounded-full text-[10px] font-bold uppercase shrink-0 mt-0.5 ${cfg.bg} ${cfg.text}`}>
                 {cfg.label}
@@ -68,7 +78,7 @@ export default function Notifications() {
                 <p className="text-xs text-slate-400 mt-2">{timeAgo(notif.createdAt)}</p>
               </div>
               <button
-                onClick={() => markAsRead(notif._id)}
+                onClick={(e) => { e.stopPropagation(); markAsRead(notif._id); }}
                 className="shrink-0 self-start text-xs font-semibold text-blue-500 hover:text-blue-700 transition-colors mt-1"
               >
                 Dismiss

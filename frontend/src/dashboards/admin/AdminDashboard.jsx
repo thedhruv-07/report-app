@@ -17,7 +17,7 @@ import NotificationPanel from './components/NotificationPanel';
 import NotificationManager from './components/NotificationManager';
 import EmailMonitoringPanel from './components/EmailMonitoringPanel';
 import BookingReviewModal from './components/BookingReviewModal';
-import NewBookingModal from './components/NewBookingModal';
+import AdminNavbar from './components/AdminNavbar';
 
 export default function AdminDashboard() {
   const { logout, user, token } = useAuth();
@@ -30,7 +30,6 @@ export default function AdminDashboard() {
   const [bookingInboxError, setBookingInboxError] = useState(null);
   const [inspectors, setInspectors] = useState([]);
   const [reviewModalBooking, setReviewModalBooking] = useState(null);
-  const [newBookingModalOpen, setNewBookingModalOpen] = useState(false);
 
   // Load and preserve active view across browser refreshes
   const [activeView, setActiveView] = useState(() => {
@@ -153,6 +152,7 @@ export default function AdminDashboard() {
       specialInstructions: booking.specialInstructions || '',
       paymentInfo: booking.paymentInfo || null,
       deliveredDate: null,
+      linkedNoticeId: booking.linkedNoticeId || null,
     }));
   }, [bookingInbox]);
 
@@ -267,128 +267,21 @@ export default function AdminDashboard() {
 
   const openReviewModal = (booking) => setReviewModalBooking(booking);
 
+  const handlePrepareNotice = (booking) => {
+    if (booking.linkedNoticeId) {
+      navigate(`/admin/inspection-notices/${booking.linkedNoticeId}`);
+    } else {
+      navigate(`/admin/inspection-notices/new?sourceBookingId=${booking.id}`);
+    }
+  };
+
   return (
     <div className="h-screen w-full flex flex-col bg-[#f8fafc] text-slate-800 antialiased overflow-hidden font-sans">
       
       {/* ==========================================
           TOP NAVBAR
           ========================================== */}
-      <header className="h-16 shrink-0 bg-white border-b border-slate-200 flex items-center justify-between px-6 z-30 shadow-sm sticky top-0">
-        
-        {/* Left: Logo */}
-        <div className="flex items-center gap-4">
-          <img 
-            src="/company-logo.png" 
-            alt="Absolute Veritas" 
-            className="h-10 w-auto object-contain cursor-pointer"
-            onClick={() => setActiveView("dashboard")}
-          />
-          <span className="hidden sm:inline-block px-2.5 py-0.5 bg-indigo-50 border border-indigo-100 rounded-full text-[10px] font-black text-indigo-600 uppercase tracking-widest">
-            Admin Console
-          </span>
-        </div>
-
-        {/* Center: Navigation Links */}
-        <nav className="hidden md:flex items-center gap-2">
-          <button
-            onClick={() => setActiveView("dashboard")}
-            className={`px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200 cursor-pointer ${
-              activeView === "dashboard" ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <LayoutDashboard className="w-4 h-4 shrink-0" />
-              <span>Overview</span>
-            </div>
-          </button>
-
-          <button
-            onClick={() => setActiveView("bookings")}
-            className={`px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200 cursor-pointer ${
-              activeView === "bookings" ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <ClipboardList className="w-4 h-4 shrink-0" />
-              <span>All Bookings</span>
-              {stats.readyToDeliver > 0 && (
-                <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                  activeView === "bookings" ? 'bg-indigo-600 text-white' : 'bg-emerald-500 text-white animate-pulse'
-                }`}>
-                  {stats.readyToDeliver} Ready
-                </span>
-              )}
-            </div>
-          </button>
-
-          <button
-            onClick={() => setActiveView("inspectors")}
-            className={`px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200 cursor-pointer ${
-              activeView === "inspectors" ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 shrink-0" />
-              <span>Inspectors</span>
-            </div>
-          </button>
-
-          <button
-            onClick={() => setActiveView("notifications")}
-            className={`px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200 cursor-pointer ${
-              activeView === "notifications" ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <Bell className="w-4 h-4 shrink-0" />
-              <span>Notifications</span>
-              {notifUnreadCount > 0 && (
-                <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                  activeView === "notifications" ? 'bg-indigo-600 text-white' : 'bg-red-500 text-white'
-                }`}>
-                  {notifUnreadCount}
-                </span>
-              )}
-            </div>
-          </button>
-
-          <button
-            onClick={() => setActiveView("emails")}
-            className={`px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200 cursor-pointer ${
-              activeView === "emails" ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <Mail className="w-4 h-4 shrink-0" />
-              <span>Email Logs</span>
-            </div>
-          </button>
-        </nav>
-
-        {/* Right: User Info & Logout */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-md text-xs">
-              AD
-            </div>
-            <div className="hidden sm:block text-left">
-              <p className="text-sm font-semibold text-slate-700 leading-none">{user?.name || "System Admin"}</p>
-              <p className="text-[11px] text-slate-500 mt-0.5">Global Admin</p>
-            </div>
-          </div>
-
-          <div className="h-6 w-px bg-slate-200 hidden sm:block"></div>
-
-          <button
-            onClick={handleLogout}
-            className="flex items-center justify-center p-2 sm:px-3 sm:py-1.5 text-rose-500 hover:bg-rose-50 rounded-xl font-semibold text-sm transition-colors cursor-pointer"
-            title="Logout"
-          >
-            <LogOut className="w-4 h-4 sm:mr-1.5" />
-            <span className="hidden sm:inline">Logout</span>
-          </button>
-        </div>
-      </header>
+      <AdminNavbar activeView={activeView} stats={stats} setActiveView={setActiveView} />
 
       {/* ==========================================
           MAIN AREA CONTENT
@@ -423,7 +316,7 @@ export default function AdminDashboard() {
             bookingInboxLoading={bookingInboxLoading}
             bookingInboxError={bookingInboxError}
             onAssignClick={openReviewModal}
-            onNewBooking={() => setNewBookingModalOpen(true)}
+            onPrepareNotice={handlePrepareNotice}
           />
 
           {/* Inspector Performance Cards */}
@@ -467,14 +360,6 @@ export default function AdminDashboard() {
         }}
         onAssigned={() => { fetchBookingInbox(); fetchNotifications?.(); }}
       />
-
-      {newBookingModalOpen && (
-        <NewBookingModal
-          token={token}
-          onClose={() => setNewBookingModalOpen(false)}
-          onCreated={() => { fetchBookingInbox(); setActiveView('bookings'); }}
-        />
-      )}
 
     </div>
   );

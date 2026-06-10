@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { colors } from '../../../styles';
 import NavButtons from '../../shared/components/NavButtons';
 import SmartTextarea from '../../../components/shared/SmartTextarea';
@@ -93,14 +93,56 @@ export default function QuantityDetails({ items, onItemChange, onAddItem, onRemo
   const updateCartonRow = (idx, k, v)  => syncRows(cartonRows.map((r, i) => i === idx ? { ...r, [k]: v } : r));
 
   const toNum = (v) => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
+
+  // ── Smart auto-calc helper ──
+  // Carton = ceil(Qty / Qty/Carton)
+  const calcCartons = (item) => {
+    const qty = toNum(item.orderQty);
+    const qpc = toNum(item.qtyPerCarton);
+    if (qty > 0 && qpc > 0) return Math.ceil(qty / qpc);
+    return toNum(item.cartons) || '';
+  };
+
+  // Distribute AQL sample size proportionally across items
+  const totalQty = items.reduce((s, i) => s + toNum(i.orderQty), 0);
+  const aqlSample = toNum(form.sampleSizeWM || form.sampleSize || 0);
+  const calcSamplePacked = (item) => {
+    // If inspector already typed a value, keep it
+    if (item.sampleSizePacked !== '' && item.sampleSizePacked !== undefined) return item.sampleSizePacked;
+    if (!aqlSample || !totalQty) return '';
+    const share = Math.round((toNum(item.orderQty) / totalQty) * aqlSample);
+    return share || '';
+  };
+
+  // Packed breakdown = orderQty by default (standard PSI assumption: all packed)
+  const calcPacked = (item) => {
+    if (item.packedBreakdown !== '' && item.packedBreakdown !== undefined) return item.packedBreakdown;
+    return item.orderQty || '';
+  };
+
+  // Handle field change — when Qty or Qty/Carton changes, recalculate Carton and propagate
+  const handleItemChange = (idx, field, value) => {
+    onItemChange(idx, field, value);
+    // Auto-fill Packed when Qty is set and Packed hasn't been manually edited
+    if (field === 'orderQty') {
+      const item = items[idx];
+      if (!item.packedBreakdown) {
+        setTimeout(() => onItemChange(idx, 'packedBreakdown', value), 0);
+      }
+    }
+  };
+
   const totals = {
     orderQty:      items.reduce((s, i) => s + toNum(i.orderQty), 0),
-    packed:        items.reduce((s, i) => s + toNum(i.packedBreakdown), 0),
+    packed:        items.reduce((s, i) => s + toNum(i.packedBreakdown || i.orderQty), 0),
     unpacked:      items.reduce((s, i) => s + toNum(i.unpackedBreakdown), 0),
     unfinished:    items.reduce((s, i) => s + toNum(i.unfinishedBreakdown), 0),
-    samplePacked:  items.reduce((s, i) => s + toNum(i.sampleSizePacked), 0),
+    samplePacked:  items.reduce((s, i) => s + toNum(i.sampleSizePacked || calcSamplePacked(i)), 0),
     sampleUnpacked:items.reduce((s, i) => s + toNum(i.sampleSizeUnpacked), 0),
   };
+
+  // Style for auto-calculated read-only cells
+  const autoStyle = { ...cellInput(), color: colors.primary, fontWeight: 600, background: '#f0f7ff' };
 
   return (
     <>
@@ -136,7 +178,7 @@ export default function QuantityDetails({ items, onItemChange, onAddItem, onRemo
                 <th style={th({ textAlign: "left", paddingLeft: "8px" })} rowSpan={2}>Item</th>
                 <th style={th()} rowSpan={2}>Qty</th>
                 <th style={th()} rowSpan={2}>Qty/Carton</th>
-                <th style={th()} rowSpan={2}>Carton</th>
+                <th style={th({ color: colors.primary })} rowSpan={2}>Carton <span style={{ fontSize: '9px', fontWeight: 400 }}>auto</span></th>
                 <th style={th()} rowSpan={2}>Selected Cartons</th>
                 <th colSpan={3} style={th()}>Quantity Breakdown</th>
                 <th colSpan={2} style={th()}>Sample Size</th>
@@ -149,73 +191,93 @@ export default function QuantityDetails({ items, onItemChange, onAddItem, onRemo
                 </th>
               </tr>
               <tr>
-                <th style={th({ fontSize: "10px" })}>Packed</th>
+                <th style={th({ fontSize: "10px", color: colors.primary })}>Packed <span style={{ fontSize: '8px', fontWeight: 400 }}>auto</span></th>
                 <th style={th({ fontSize: "10px" })}>Unpacked</th>
                 <th style={th({ fontSize: "10px" })}>Unfinished</th>
-                <th style={th({ fontSize: "10px" })}>Packed</th>
+                <th style={th({ fontSize: "10px", color: colors.primary })}>Packed <span style={{ fontSize: '8px', fontWeight: 400 }}>auto</span></th>
                 <th style={th({ fontSize: "10px" })}>Unpacked</th>
               </tr>
             </thead>
             <tbody>
-              {items.map((item, idx) => (
+              {items.map((item, idx) => {
+                const autoCarton = calcCartons(item);
+                const autoPacked = calcPacked(item);
+                const autoSamplePacked = calcSamplePacked(item);
+                return (
                 <tr key={idx} style={{ background: idx % 2 === 0 ? "#fff" : "#fafbfc" }}>
                   <td style={td({ textAlign: "center", color: colors.textMuted, fontSize: "11px", padding: "5px 4px" })}>{idx + 1}</td>
                   <td style={td()}>
-                    <input type="text" value={item.po || ""} onChange={(e) => onItemChange(idx, "po", e.target.value)}
+                    <input type="text" value={item.po || ""} onChange={(e) => handleItemChange(idx, "po", e.target.value)}
                       style={cellInput({ textAlign: "left", paddingLeft: "6px" })} placeholder="P.O." />
                   </td>
                   <td style={td()}>
-                    <input type="text" value={item.itemName || ""} onChange={(e) => onItemChange(idx, "itemName", e.target.value)}
+                    <input type="text" value={item.itemName || ""} onChange={(e) => handleItemChange(idx, "itemName", e.target.value)}
                       style={cellInput({ textAlign: "left", paddingLeft: "6px" })} placeholder="Item no." />
                   </td>
                   <td style={td()}>
-                    <input type="number" min="0" value={item.orderQty || ""} onChange={(e) => onItemChange(idx, "orderQty", e.target.value)}
+                    <input type="number" min="0" value={item.orderQty || ""} onChange={(e) => handleItemChange(idx, "orderQty", e.target.value)}
                       style={cellInput()} />
                   </td>
                   <td style={td()}>
-                    <input type="number" min="0" value={item.qtyPerCarton || ""} onChange={(e) => onItemChange(idx, "qtyPerCarton", e.target.value)}
+                    <input type="number" min="0" value={item.qtyPerCarton || ""} onChange={(e) => handleItemChange(idx, "qtyPerCarton", e.target.value)}
                       style={cellInput()} />
                   </td>
-                  <td style={td()}>
-                    <input type="number" min="0" value={item.cartons || ""} onChange={(e) => onItemChange(idx, "cartons", e.target.value)}
-                      style={cellInput()} />
+                  {/* Carton — auto-calculated, editable to override */}
+                  <td style={td({ background: '#f0f7ff' })}>
+                    <input type="number" min="0"
+                      value={item.cartons !== '' && item.cartons !== undefined ? item.cartons : autoCarton}
+                      onChange={(e) => handleItemChange(idx, "cartons", e.target.value)}
+                      style={autoStyle}
+                      title="Auto: Qty ÷ Qty/Carton — click to override"
+                    />
                   </td>
                   <td style={td()}>
-                    <input type="number" min="0" value={item.selectedCartons || ""} onChange={(e) => onItemChange(idx, "selectedCartons", e.target.value)}
+                    <input type="number" min="0" value={item.selectedCartons || ""} onChange={(e) => handleItemChange(idx, "selectedCartons", e.target.value)}
                       style={cellInput()} placeholder="0" />
                   </td>
+                  {/* Packed breakdown — auto = full Qty, editable */}
+                  <td style={td({ background: '#f0f7ff' })}>
+                    <input type="number" min="0"
+                      value={autoPacked}
+                      onChange={(e) => handleItemChange(idx, "packedBreakdown", e.target.value)}
+                      style={autoStyle}
+                      title="Auto: defaults to full Qty — click to override"
+                    />
+                  </td>
                   <td style={td()}>
-                    <input type="number" min="0" value={item.packedBreakdown || ""} onChange={(e) => onItemChange(idx, "packedBreakdown", e.target.value)}
+                    <input type="number" min="0" value={item.unpackedBreakdown || ""} onChange={(e) => handleItemChange(idx, "unpackedBreakdown", e.target.value)}
                       style={cellInput()} />
                   </td>
                   <td style={td()}>
-                    <input type="number" min="0" value={item.unpackedBreakdown || ""} onChange={(e) => onItemChange(idx, "unpackedBreakdown", e.target.value)}
+                    <input type="number" min="0" value={item.unfinishedBreakdown || ""} onChange={(e) => handleItemChange(idx, "unfinishedBreakdown", e.target.value)}
                       style={cellInput()} />
                   </td>
-                  <td style={td()}>
-                    <input type="number" min="0" value={item.unfinishedBreakdown || ""} onChange={(e) => onItemChange(idx, "unfinishedBreakdown", e.target.value)}
-                      style={cellInput()} />
+                  {/* Sample Size Packed — auto-distributed from AQL total */}
+                  <td style={td({ background: '#f0f7ff' })}>
+                    <input type="number" min="0"
+                      value={item.sampleSizePacked !== '' && item.sampleSizePacked !== undefined ? item.sampleSizePacked : autoSamplePacked}
+                      onChange={(e) => handleItemChange(idx, "sampleSizePacked", e.target.value)}
+                      style={autoStyle}
+                      title="Auto: proportional share of AQL sample size — click to override"
+                    />
                   </td>
                   <td style={td()}>
-                    <input type="number" min="0" value={item.sampleSizePacked || ""} onChange={(e) => onItemChange(idx, "sampleSizePacked", e.target.value)}
-                      style={cellInput()} />
-                  </td>
-                  <td style={td()}>
-                    <input type="number" min="0" value={item.sampleSizeUnpacked || ""} onChange={(e) => onItemChange(idx, "sampleSizeUnpacked", e.target.value)}
+                    <input type="number" min="0" value={item.sampleSizeUnpacked || ""} onChange={(e) => handleItemChange(idx, "sampleSizeUnpacked", e.target.value)}
                       style={cellInput()} />
                   </td>
                   <td style={td({ textAlign: "center", padding: "4px" })}>
                     <RemoveRowButton onClick={() => onRemoveItem(idx)} />
                   </td>
                 </tr>
-              ))}
+                );
+              })}
 
               {/* Totals row */}
               <tr style={{ background: "#f1f5f9", fontWeight: 700 }}>
                 <td colSpan={3} style={{ ...td({ background: "#f1f5f9", padding: "5px 8px" }), textAlign: "right", fontSize: "11px", color: colors.header }}>Total</td>
                 <td style={{ ...td({ background: "#f1f5f9", padding: "5px 6px" }), textAlign: "center", color: colors.primary }}>{totals.orderQty || "—"}</td>
                 <td style={{ ...td({ background: "#f1f5f9", padding: "5px 6px" }), textAlign: "center", color: colors.textMuted }}>—</td>
-                <td style={{ ...td({ background: "#f1f5f9", padding: "5px 6px" }), textAlign: "center", color: colors.textMuted }}>—</td>
+                <td style={{ ...td({ background: "#f1f5f9", padding: "5px 6px" }), textAlign: "center", color: colors.primary }}>{items.reduce((s, i) => s + toNum(i.cartons !== '' && i.cartons !== undefined ? i.cartons : calcCartons(i)), 0) || "—"}</td>
                 <td style={{ ...td({ background: "#f1f5f9", padding: "5px 6px" }), textAlign: "center", color: colors.textMuted }}>—</td>
                 <td style={{ ...td({ background: "#f1f5f9", padding: "5px 6px" }), textAlign: "center", color: colors.success }}>{totals.packed || "—"}</td>
                 <td style={{ ...td({ background: "#f1f5f9", padding: "5px 6px" }), textAlign: "center", color: colors.warning }}>{totals.unpacked || "—"}</td>

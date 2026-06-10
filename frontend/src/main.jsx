@@ -25,6 +25,8 @@ import {
   ForgotPassword,
   ResetPassword,
   RouteFallback,
+  InspectionNoticesList,
+  InspectionNoticeForm,
 } from './routes/appRoutes'
 
 createRoot(document.getElementById('root')).render(
@@ -48,6 +50,9 @@ createRoot(document.getElementById('root')).render(
                 {/* Role-Protected Dashboard Views */}
                 <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
                   <Route path="/dashboard/admin" element={<AdminDashboard />} />
+                  <Route path="/admin/inspection-notices" element={<InspectionNoticesList />} />
+                  <Route path="/admin/inspection-notices/new" element={<InspectionNoticeForm />} />
+                  <Route path="/admin/inspection-notices/:id" element={<InspectionNoticeForm />} />
                 </Route>
                 
                 <Route element={<ProtectedRoute allowedRoles={['manager', 'admin']} />}>

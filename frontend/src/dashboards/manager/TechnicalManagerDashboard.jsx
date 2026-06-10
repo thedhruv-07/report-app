@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import { useManagerNotifications } from './hooks/useManagerNotifications';
@@ -58,6 +58,7 @@ const ManagerChrome = lazy(() => import('./components/ManagerChrome'));
 
 export default function TechnicalManagerDashboard() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const auth = useAuth();
   
   const currentUser = auth?.user || {
@@ -127,7 +128,7 @@ export default function TechnicalManagerDashboard() {
   const notifications = bellNotifications.map(n => ({
     id: n._id,
     message: n.message,
-    reportId: null,
+    reportId: n.relatedReportId || null,
     isRead: false,
     createdAt: n.createdAt,
     timeAgo: n.createdAt ? new Date(n.createdAt).toLocaleString() : 'Recently',
@@ -153,6 +154,18 @@ export default function TechnicalManagerDashboard() {
       sessionStorage.removeItem("managerActiveReportId");
     }
   }, [activeReportId]);
+
+  // Auto-open report if ?report= param is present
+  useEffect(() => {
+    const reportId = searchParams.get('report');
+    if (reportId && reports.length > 0) {
+      const reportToOpen = reports.find(r => r.id === reportId);
+      if (reportToOpen && activeReportId !== reportId) {
+        handleOpenReport(reportId);
+        setSearchParams({}, { replace: true });
+      }
+    }
+  }, [searchParams, reports, activeReportId, setSearchParams]);
   
   // Navigation & UI States
   const [notificationsPanelOpen, setNotificationsPanelOpen] = useState(false);

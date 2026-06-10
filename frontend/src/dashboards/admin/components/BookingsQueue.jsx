@@ -25,6 +25,7 @@ export default function BookingsQueue({
   bookingInboxLoading,
   bookingInboxError,
   onAssignClick,
+  onPrepareNotice,
   onNewBooking,
 }) {
   const statusStylesFor = (status) => STATUS_COLORS[status] || STATUS_COLORS.new || {
@@ -155,14 +156,6 @@ export default function BookingsQueue({
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               </div>
-
-              <button
-                onClick={onNewBooking}
-                className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg font-bold text-sm shadow-sm transition-all cursor-pointer whitespace-nowrap"
-              >
-                <Plus className="w-4 h-4" />
-                New Booking
-              </button>
             </div>
           </div>
 
@@ -236,11 +229,11 @@ export default function BookingsQueue({
                         <td className="px-6 py-4 text-right">
                           {booking.status === 'new' || booking.status === 'assigned' || booking.status === 'viewed' || booking.status === 'accepted' ? (
                             <button
-                              onClick={(e) => { e.stopPropagation(); onAssignClick?.(booking); }}
+                              onClick={(e) => { e.stopPropagation(); onPrepareNotice?.(booking); }}
                               className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-sm transition-all cursor-pointer ml-auto"
                             >
-                              <UserPlus className="w-4 h-4" />
-                              {booking.assignedInspectorId ? 'Review & Reassign' : 'Review & Assign'}
+                              <ClipboardList className="w-4 h-4" />
+                              Prepare Notice
                             </button>
                           ) : booking.status === 'Ready to Deliver' ? (
                             <button 
@@ -256,11 +249,11 @@ export default function BookingsQueue({
                             </span>
                           ) : (
                             <button
-                              onClick={(e) => { e.stopPropagation(); onAssignClick?.(booking); }}
+                              onClick={(e) => { e.stopPropagation(); onPrepareNotice?.(booking); }}
                               className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-sm transition-all cursor-pointer ml-auto"
                             >
-                              <UserPlus className="w-4 h-4" />
-                              Review & Assign
+                              <ClipboardList className="w-4 h-4" />
+                              Prepare Notice
                             </button>
                           )}
                         </td>

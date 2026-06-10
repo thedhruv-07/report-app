@@ -45,6 +45,7 @@ export default function BookingReviewModal({ booking, inspectors, token, onClose
   const [selectedInspectorId, setSelectedInspectorId] = useState('');
   const [assigning, setAssigning] = useState(false);
   const [assignError, setAssignError] = useState('');
+  const [taskProgress, setTaskProgress] = useState(null);
 
   // Populate draft from booking on open
   useEffect(() => {
@@ -79,6 +80,17 @@ export default function BookingReviewModal({ booking, inspectors, token, onClose
     setSaveError('');
     setSavedOk(false);
     setAssignError('');
+    setTaskProgress(null);
+
+    // Fetch inspector section-skip progress if booking has an assigned inspector
+    if (booking.assignedInspectorId && booking.id) {
+      fetch(ENDPOINTS.ADMIN.TASK_PROGRESS(booking.id), {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { if (data?.task) setTaskProgress(data.task); })
+        .catch(() => {});
+    }
   }, [booking]);
 
   if (!booking) return null;
@@ -378,6 +390,31 @@ export default function BookingReviewModal({ booking, inspectors, token, onClose
             </div>
             {assignError && <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#dc2626' }}>{assignError}</p>}
           </div>
+
+          {/* Inspector Progress — section skip reasons */}
+          {taskProgress?.sectionSkipReasons?.length > 0 && (
+            <div style={{ marginTop: '20px', padding: '16px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px' }}>
+              <div style={{ fontSize: '12px', fontWeight: '700', color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                ⚠️ Inspector Skipped Sections
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {taskProgress.sectionSkipReasons.map((r, i) => (
+                  <div key={i} style={{ background: '#fff', border: '1px solid #fcd34d', borderRadius: '8px', padding: '10px 12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '12px', fontWeight: '700', color: '#b45309' }}>{r.stepLabel || `Step ${r.step}`}</span>
+                      <span style={{ fontSize: '11px', color: '#94a3b8' }}>{r.skippedAt ? new Date(r.skippedAt).toLocaleString() : ''}</span>
+                    </div>
+                    {r.missingFields?.length > 0 && (
+                      <div style={{ fontSize: '11px', color: '#dc2626', marginBottom: '4px' }}>
+                        Missing: {r.missingFields.join(', ')}
+                      </div>
+                    )}
+                    <div style={{ fontSize: '12px', color: '#374151', fontStyle: 'italic' }}>"{r.reason}"</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
         </div>
 

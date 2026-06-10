@@ -5,6 +5,7 @@ import { ENDPOINTS } from '../../config/api';
 import { colors } from '../../styles';
 import { ReportMetaContext } from '../../context/ReportMetaContext';
 import { readImagePreview } from '../../utils/fileUtils';
+import { useAuth } from '../../context/AuthContext';
 
 const GeneralInfo = lazy(() => import('./components/SectionA_Summary'));
 const InspectionSummaryTable = lazy(() => import('./components/InspectionSummaryTable'));
@@ -20,6 +21,45 @@ const ClientSpecialRequirement = lazy(() => import('./components/ClientSpecialRe
 const Photos = lazy(() => import('./components/Photos'));
 const ReportReview = lazy(() => import('../shared/components/ReportReview'));
 const FinalStep = lazy(() => import('./components/FinalStep'));
+const SectionCompletionModal = lazy(() => import('./components/SectionCompletionModal'));
+
+// Required fields per step — only steps with mandatory fields are listed
+const STEP_LABELS = {
+  1: 'General Information', 2: 'Inspection Summary', 4: 'Conclusion',
+  5: 'Quantity Details', 6: 'Workmanship Defects', 7: 'On-Site Tests',
+  8: 'Product Specification', 9: 'Packing', 10: 'Marking & Labeling',
+  11: 'Client Special Requirements',
+};
+const STEP_REQUIRED = {
+  1: [
+    { key: 'client',            label: 'Client Name' },
+    { key: 'factory',           label: 'Factory Name' },
+    { key: 'productName',       label: 'Product Name' },
+    { key: 'inspectionDate',    label: 'Inspection Date' },
+    { key: 'inspectionLocation',label: 'Inspection Location' },
+  ],
+  2: [
+    { key: 'inspectionLevel', label: 'Inspection Level' },
+    { key: 'sampleSize',      label: 'Sample Size' },
+    { key: 'acceptPoint',     label: 'Accept Point' },
+    { key: 'rejectPoint',     label: 'Reject Point' },
+  ],
+  4:  [{ key: 'conclusionStatus',        label: 'Conclusion' }],
+  6:  [{ key: 'workmanshipResult',       label: 'Workmanship Result' }],
+  7:  [{ key: 'onSiteTestResult',        label: 'Overall Result' }],
+  8:  [{ key: 'productResult',           label: 'Product Spec Result' }],
+  9:  [{ key: 'packing_result',          label: 'Packing Result' }],
+  10: [{ key: 'marking_result_final',    label: 'Marking Result' }],
+  11: [{ key: 'client_requirement_result', label: 'Client Req. Result' }],
+};
+const getMissingFields = (step, form, items) => {
+  if (step === 5) {
+    return items.some(it => Number(it.orderQty) > 0) ? [] : [{ label: 'Order Quantity (at least one item)' }];
+  }
+  const required = STEP_REQUIRED[step];
+  if (!required) return [];
+  return required.filter(f => !form[f.key] || !String(form[f.key]).trim());
+};
 
 // --- BACKEND KEEP-ALIVE ---
 function useBackendKeepAlive() {
@@ -38,7 +78,6 @@ function useBackendKeepAlive() {
   }, []);
 }
 
-import { useAuth } from '../../context/AuthContext';
 
 const safeJsonParse = (value, fallback) => {
   try {
@@ -46,6 +85,37 @@ const safeJsonParse = (value, fallback) => {
   } catch {
     return fallback;
   }
+};
+
+// Ensure no field in the saved form is a plain object (e.g. aql.inspectionStandard
+// shipped as {critical, major, minor}). Objects cannot be rendered as React children.
+const FIELD_DEFAULTS = {
+  inspectionStandard:   'ANSI/ASQ Z1.4 (ISO 2859-1)',
+  inspectionStandardWM: 'ANSI/ASQ Z1.4 (ISO 2859-1)',
+  samplingPlan:         'Normal, Single',
+  samplingPlanWM:       'Normal, Single',
+  aqlCriticalWM:        'Not Allowed',
+  aqlMajorWM:           '2.5',
+  aqlMinorWM:           '4.0',
+  inspectionLevel:      'Level II',
+  inspectionLevelWM:    'Level II',
+};
+
+const sanitizeForm = (form) => {
+  if (!form || typeof form !== 'object') return {};
+  const result = { ...form };
+  Object.keys(FIELD_DEFAULTS).forEach(key => {
+    const val = result[key];
+    // Case 1: value is a plain object (e.g. {critical, major, minor}) — replace with default
+    if (val !== null && val !== undefined && typeof val === 'object') {
+      result[key] = FIELD_DEFAULTS[key];
+    }
+    // Case 2: value is a string that looks like the old wrong conversion "Critical: X, Major: Y..."
+    if (typeof val === 'string' && /^Critical:/i.test(val.trim())) {
+      result[key] = FIELD_DEFAULTS[key];
+    }
+  });
+  return result;
 };
 
 const stripLargeImageFieldsForStorage = (obj) => {
@@ -184,7 +254,7 @@ function App() {
   const [form, setForm] = useState(() => {
     const savedForm = localStorage.getItem("inspectionForm");
     const parsedForm = safeJsonParse(savedForm, {});
-    return parsedForm;
+    return sanitizeForm(parsedForm);
   });
 
   const [items, setItems] = useState(() => {
@@ -218,6 +288,8 @@ function App() {
   const [reportDownloaded, setReportDownloaded] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showSaveToast, setShowSaveToast] = useState(false);
+  const [sectionReasons, setSectionReasons] = useState({});
+  const [completionModal, setCompletionModal] = useState(null); // { step, stepLabel, missing }
 
   const { token } = useAuth();
   const location = useLocation();
@@ -254,10 +326,25 @@ function App() {
 
   // Number of on-site test rows pre-filled by admin (these rows are locked for inspector)
   const lockedTestCount = prefillData?.onSiteTests?.length ?? 0;
-  // Number of client requirement rows pre-filled by admin (descriptions locked)
   const lockedRequirementsCount = useMemo(() => {
-    if (!prefillData?.clientRequirements) return 0;
-    return prefillData.clientRequirements.split('\n').map(l => l.trim()).filter(Boolean).length;
+    let count = 0;
+    const scr = prefillData || {};
+    if (scr.colorMaterialFinish) count++;
+    if (scr.dimensionWeight) count++;
+    if (scr.logoLabel) count++;
+    if (scr.packingMaterial) count++;
+    if (scr.shippingMark) count++;
+    if (scr.customerSpecialRequirements) {
+      count += scr.customerSpecialRequirements.split('\n').map(l => l.trim()).filter(Boolean).length;
+    }
+    if (scr.clientRequirements) {
+      if (typeof scr.clientRequirements === 'string') {
+        count += scr.clientRequirements.split('\n').map(l => l.trim()).filter(Boolean).length;
+      } else if (Array.isArray(scr.clientRequirements)) {
+        count += scr.clientRequirements.length;
+      }
+    }
+    return count;
   }, [prefillData]);
 
   const [prefillBannerDismissed, setPrefillBannerDismissed] = useState(false);
@@ -271,34 +358,73 @@ function App() {
     ].filter(Boolean).join(', ');
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setForm(prev => {
+      // Build locked client requirement rows from SCR + general requirement
+      const buildClientRequirements = () => {
+        const scrRows = [];
+        const scr = prefillData;
+        // Structured SCR fields become labelled locked rows
+        if (scr.colorMaterialFinish)        scrRows.push({ index: 0, requirement: `Color / Material / Finish: ${scr.colorMaterialFinish}`, result: '' });
+        if (scr.dimensionWeight)            scrRows.push({ index: 0, requirement: `Dimension / Weight: ${scr.dimensionWeight}`, result: '' });
+        if (scr.logoLabel)                  scrRows.push({ index: 0, requirement: `Logo / Label: ${scr.logoLabel}`, result: '' });
+        if (scr.packingMaterial)            scrRows.push({ index: 0, requirement: `Packing Material: ${scr.packingMaterial}`, result: '' });
+        if (scr.shippingMark)               scrRows.push({ index: 0, requirement: `Shipping Mark: ${scr.shippingMark}`, result: '' });
+        if (scr.customerSpecialRequirements) scr.customerSpecialRequirements.split('\n').map(l => l.trim()).filter(Boolean).forEach(r => scrRows.push({ index: 0, requirement: r, result: '' }));
+
+        // General requirement lines (from TM/CS instructions)
+        const genRows = prefillData.clientRequirements
+          ? (typeof prefillData.clientRequirements === 'string'
+              ? prefillData.clientRequirements.split('\n').map(l => l.trim()).filter(Boolean).map(r => ({ index: 0, requirement: r, result: '' }))
+              : Array.isArray(prefillData.clientRequirements) ? prefillData.clientRequirements : [])
+          : [];
+
+        const allRows = [...scrRows, ...genRows];
+        if (allRows.length === 0) return prev.clientRequirements;
+        return allRows.map((r, i) => ({ ...r, index: i + 1 }));
+      };
+
       const update = {
         ...prev,
         servicePerformed:   prefillData.serviceType             || prev.servicePerformed || 'Pre-Shipment Inspection',
         client:             prefillData.client?.name            || prev.client,
-        supplier:           prefillData.factory?.name           || prev.supplier,
+        supplier:           prefillData.supplier?.name          || prefillData.factory?.name || prev.supplier,
         factory:            prefillData.factory?.name           || prev.factory,
+        factoryContact:     prefillData.factory?.contact        || prev.factoryContact || '',
+        factoryPhone:       prefillData.factory?.phone          || prefillData.factory?.mobile || prev.factoryPhone || '',
+        factoryWorkingTime: prefillData.factory?.workingTime    || prev.factoryWorkingTime || '',
         inspectionLocation: factoryAddress                      || prev.inspectionLocation,
         inspectionDate:     prefillData.inspectionDate?.slice(0, 10) || prev.inspectionDate,
+        inspectionDateTo:   prefillData.inspectionDateTo ? String(prefillData.inspectionDateTo).slice(0, 10) : prev.inspectionDateTo || '',
+        shipmentDate:       prefillData.shipmentDate ? String(prefillData.shipmentDate).slice(0, 10) : prev.shipmentDate || '',
         productName:        prefillData.product?.description    || prev.productName,
         po:                 prefillData.product?.poNumber       || prev.po,
-        country:            prefillData.countryOfOrigin         || prev.country,
+        itemNo:             prefillData.product?.itemNo         || prev.itemNo || '',
+        country:            prefillData.country                 || prefillData.countryOfOrigin || prev.country,
         orderQuantity:      String(prefillData.product?.quantity ?? prev.orderQuantity ?? ''),
+        orderRemarks:       prefillData.orderRemarks            || prev.orderRemarks || '',
         inspectionLevel:    prefillData.aql?.inspectionLevel    || prev.inspectionLevel,
-        sampleSize:         String(prefillData.aql?.sampleSize  ?? prev.sampleSize ?? ''),
-        acceptPoint:        String(prefillData.aql?.acceptPoint ?? prev.acceptPoint ?? ''),
-        rejectPoint:        String(prefillData.aql?.rejectPoint ?? prev.rejectPoint ?? ''),
+        sampleSize:         String(prefillData.aql?.sampleSize ?? prefillData.aql?.sampledQuantity ?? prev.sampleSize ?? ''),
+        acceptPoint:        String(prefillData.aql?.acceptPoint ?? prefillData.aql?.acceptedCritical ?? prev.acceptPoint ?? ''),
+        rejectPoint:        String(prefillData.aql?.rejectPoint ?? prefillData.aql?.acceptedMajor ?? prev.rejectPoint ?? ''),
         // Mirror into WorkmanshipDefects AQL fields
-        inspectionLevelWM:   prefillData.aql?.inspectionLevel    || prev.inspectionLevelWM,
-        sampleSizeWM:        String(prefillData.aql?.sampleSize  ?? prev.sampleSizeWM ?? ''),
-        // Inspection standard & sampling plan (Step 2 + Step 6)
-        inspectionStandard:  prefillData.aql?.inspectionStandard || prev.inspectionStandard,
-        inspectionStandardWM:prefillData.aql?.inspectionStandard || prev.inspectionStandardWM,
-        samplingPlan:        prefillData.aql?.samplingPlan       || prev.samplingPlan,
-        samplingPlanWM:      prefillData.aql?.samplingPlan       || prev.samplingPlanWM,
-        // Client special requirements (rows will be locked for description edits)
-        clientRequirements:  prefillData.clientRequirements
-          ? prefillData.clientRequirements.split('\n').map(l => l.trim()).filter(Boolean).map((req, i) => ({ index: i + 1, requirement: req, result: '' }))
-          : prev.clientRequirements,
+        inspectionLevelWM:   prefillData.aql?.inspectionLevel || prefillData.aql?.samplingLevel || prev.inspectionLevelWM,
+        sampleSizeWM:        String(prefillData.aql?.sampleSize ?? prefillData.aql?.sampledQuantity ?? prev.sampleSizeWM ?? ''),
+        aqlCriticalWM:       prefillData.aql?.aqlCritical     || prev.aqlCriticalWM || 'Not Allowed',
+        aqlMajorWM:          prefillData.aql?.aqlMajor        || prev.aqlMajorWM    || '2.5',
+        aqlMinorWM:          prefillData.aql?.aqlMinor        || prev.aqlMinorWM    || '4.0',
+        acceptedCritical:    prefillData.aql?.acceptedCritical || prev.acceptedCritical || '0',
+        acceptedMajor:       prefillData.aql?.acceptedMajor   || prev.acceptedMajor   || '0',
+        acceptedMinor:       prefillData.aql?.acceptedMinor   || prev.acceptedMinor   || '0',
+        // Inspection standard & sampling plan — always strings (Step 2 + Step 6)
+        inspectionStandard:  typeof prefillData.aql?.inspectionStandard === 'string'
+          ? prefillData.aql.inspectionStandard
+          : prev.inspectionStandard || 'ANSI/ASQ Z1.4 (ISO 2859-1)',
+        inspectionStandardWM: typeof prefillData.aql?.inspectionStandard === 'string'
+          ? prefillData.aql.inspectionStandard
+          : prev.inspectionStandardWM || 'ANSI/ASQ Z1.4 (ISO 2859-1)',
+        samplingPlan:        prefillData.aql?.samplingPlan    || prev.samplingPlan   || 'Normal, Single',
+        samplingPlanWM:      prefillData.aql?.samplingPlan    || prev.samplingPlanWM || 'Normal, Single',
+        // Client special requirements — SCR rows locked, inspector can only fill Result column
+        clientRequirements: buildClientRequirements(),
         // Seed first barcode row location with the inspection site
         barcode_location_1: prev.barcode_location_1 || factoryAddress || '',
       };
@@ -312,11 +438,39 @@ function App() {
       }
       return update;
     });
-    // Seed first quantity row's PO field from booking PO number
-    if (prefillData.product?.poNumber) {
-      setItems(prev => prev.map((item, i) =>
-        i === 0 && !item.po ? { ...item, po: prefillData.product.poNumber } : item
-      ));
+
+    // Seed quantity rows from all products in the notice
+    const prefillProducts = prefillData.products?.length
+      ? prefillData.products
+      : prefillData.product
+        ? [{ productName: prefillData.product.description || prefillData.product.name || '', quantity: prefillData.product.quantity || '', orderNo: prefillData.product.poNumber || '' }]
+        : null;
+
+    if (prefillProducts?.length) {
+      const totalQty = prefillProducts.reduce((s, p) => s + Number(p.quantity || 0), 0);
+      const totalPacked = prefillData.quantityPacked || 0;
+      const totalFinished = prefillData.quantityFinished || 0;
+      setItems(prefillProducts.map(p => {
+        const qty = Number(p.quantity || 0);
+        const share = totalQty > 0 ? qty / totalQty : 1;
+        const packedShare  = totalPacked   ? String(Math.round(totalPacked   * share)) : '';
+        const finishedShare= totalFinished ? String(Math.round(totalFinished * share)) : '';
+        return {
+          po:               p.orderNo || '',
+          itemName:         p.productName || p.name || '',
+          orderQty:         String(qty || ''),
+          qtyPerCarton:     '',
+          cartons:          '',
+          selectedCartons:  '',
+          packedBreakdown:  packedShare,
+          unpackedBreakdown: '',
+          unfinishedBreakdown: finishedShare
+            ? String(Math.max(0, qty - Number(finishedShare)))
+            : '',
+          sampleSizePacked: '',
+          sampleSizeUnpacked: '',
+        };
+      }));
     }
     // Sync test row count to match prefilled tests
     if (prefillData.onSiteTests?.length) {
@@ -650,7 +804,29 @@ function App() {
     }
   };
 
-  const next = () => setStep(step + 1);
+  const next = () => {
+    const missing = getMissingFields(step, form, items);
+    if (missing.length > 0) {
+      setCompletionModal({ step, stepLabel: STEP_LABELS[step] || `Step ${step}`, missing });
+    } else {
+      setStep(step + 1);
+    }
+  };
+
+  const handleSkipConfirm = async (reason) => {
+    const entry = { reason, missingFields: completionModal.missing.map(f => f.label), skippedAt: new Date().toISOString() };
+    setSectionReasons(prev => ({ ...prev, [completionModal.step]: entry }));
+    setCompletionModal(null);
+    setStep(step + 1);
+    if (taskId) {
+      fetch(ENDPOINTS.INSPECTOR.SECTION_SKIP(taskId), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ step: completionModal.step, stepLabel: completionModal.stepLabel, reason, missingFields: entry.missingFields }),
+      }).catch(() => {});
+    }
+  };
+
   const prev = () => setStep(step - 1);
 
   const submit = async (format = 'docx', notify = false) => {
@@ -1107,6 +1283,17 @@ function App() {
       </div>{/* end flex row */}
 
       {isGenerating && <ReportLoader />}
+
+      {completionModal && (
+        <Suspense fallback={null}>
+          <SectionCompletionModal
+            stepLabel={completionModal.stepLabel}
+            missingFields={completionModal.missing.map(f => f.label)}
+            onConfirm={handleSkipConfirm}
+            onGoBack={() => setCompletionModal(null)}
+          />
+        </Suspense>
+      )}
       
       {/* Save Toast Notification */}
       {showSaveToast && (
