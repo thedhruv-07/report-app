@@ -139,10 +139,12 @@ const renderTemplate = (name, vars = {}) => {
     templateCache[name] = fs.readFileSync(filePath, 'utf8');
   }
   let html = templateCache[name];
-  // Skip base64 logo for Brevo API sends — it pushes emails past Gmail's 102KB clip threshold.
+  // Brevo API: skip base64 (pushes past Gmail 102KB clip) — use hosted public URL instead.
   const logoDataUri = process.env.BREVO_API_KEY ? '' : getLogoDataUri();
-  const logoHtml = logoDataUri
-    ? `<img src="${logoDataUri}" alt="Absolute Veritas" style="height:44px;display:block;margin:0 auto;" />`
+  const logoSrc = logoDataUri
+    || (process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL.replace(/\/$/, '')}/company-logo.png` : '');
+  const logoHtml = logoSrc
+    ? `<img src="${logoSrc}" alt="Absolute Veritas" style="height:44px;display:block;margin:0 auto;" />`
     : `<span style="font-size:18px;font-weight:800;color:#1d4ed8;letter-spacing:-0.5px;">Absolute Veritas</span>`;
   const allVars = { logoDataUri, logoHtml, year: new Date().getFullYear(), ...vars };
   Object.keys(allVars).forEach(k => {
