@@ -1,16 +1,20 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { colors } from '../../../styles';
 import NavButtons from '../../shared/components/NavButtons';
 import SmartTextarea from '../../../components/shared/SmartTextarea';
 
-const Packing = ({ form, handleChange, onPrev, onNext }) => {
+const Packing = ({ form, handleChange, quantityItems = [], onPrev, onNext }) => {
   const setField = (name, value) => handleChange({ target: { name, value } });
-  const [items, setItems] = useState([
-    { id: 1, name: "30B nut forming machine (Model: 30B-6S-40)" },
-    { id: 2, name: "Mould M10" },
-    { id: 3, name: "" }
-  ]);
-  const [nextId, setNextId] = useState(4);
+
+  // Initialise packing rows from quantity items (step 5) if available, otherwise 3 empty rows
+  const [items, setItems] = useState(() => {
+    const base = quantityItems.filter(qi => qi.name?.trim());
+    if (base.length > 0) return base.map((qi, i) => ({ id: i + 1, name: qi.name }));
+    return [{ id: 1, name: '' }, { id: 2, name: '' }, { id: 3, name: '' }];
+  });
+  const [nextId, setNextId] = useState(() =>
+    Math.max(quantityItems.filter(qi => qi.name?.trim()).length, 3) + 1
+  );
 
   const addItem = () => {
     setItems([...items, { id: nextId, name: "" }]);
@@ -136,7 +140,7 @@ const Packing = ({ form, handleChange, onPrev, onNext }) => {
                   <input
                     type="text"
                     name={`packing_item_${item.id}`}
-                    value={form[`packing_item_${item.id}`] || item.name}
+                    value={form[`packing_item_${item.id}`] ?? item.name}
                     onChange={handleChange}
                     style={{ ...inputBase, textAlign: "left" }}
                   />

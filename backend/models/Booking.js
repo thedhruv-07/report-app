@@ -20,9 +20,23 @@ const bookingSchema = new mongoose.Schema({
     enum: ['new', 'assigned', 'viewed', 'accepted', 'in_progress', 'submitted', 'under_review', 'correction_requested', 'finalized', 'delivered'],
     default: 'new',
   },
+  poNumber:             { type: String },
+  countryOfOrigin:      { type: String },
+  aqlInspectionLevel:    { type: String },
+  aqlSampleSize:         { type: Number },
+  aqlAcceptPoint:        { type: Number },
+  aqlRejectPoint:        { type: Number },
+  aqlInspectionStandard: { type: String },
+  aqlSamplingPlan:       { type: String },
   adminNotes:           { type: String },
+  clientRequirements:   { type: String },
   onlineBookingId:      { type: String, default: null },
   prefillData:          { type: mongoose.Schema.Types.Mixed, default: null },
+  onSiteTests: [{
+    description: { type: String, default: '' },
+    method:      { type: String, default: '' },
+    sampleSize:  { type: String, default: '' },
+  }],
 }, { timestamps: true });
 
 module.exports = mongoose.model('Booking', bookingSchema);

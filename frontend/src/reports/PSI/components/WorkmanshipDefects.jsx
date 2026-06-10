@@ -3,6 +3,7 @@ import { inputStyle, colors, sectionHeaderStyle } from '../../../styles';
 import NavButtons from '../../shared/components/NavButtons';
 import SmartTextarea from '../../../components/shared/SmartTextarea';
 import { AddRowButton, RemoveRowButton, AddIconButton } from '../../shared/components/RowButtons';
+import { Lock } from 'lucide-react';
 
 const DefectPhotosPanel = lazy(() => import('./DefectPhotosPanel'));
 
@@ -11,7 +12,7 @@ const toNum = (v) => { const n = Number(v); return Number.isFinite(n) ? n : 0; }
 const newRow  = () => ({ id: Date.now() + Math.random(), description: "", critical: "", major: "", minor: "" });
 const newGroup = (itemName = "", sampleSize = "") => ({ id: Date.now() + Math.random(), itemName, sampleSize, rows: [newRow()] });
 
-export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext, onWorkmanshipDefectsChange, onWorkmanshipPhotosChange, items }) {
+export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext, onWorkmanshipDefectsChange, onWorkmanshipPhotosChange, items, lockedAql = false }) {
   const setField = (name, value) => handleChange({ target: { name, value } });
 
   /* ── grouped defect state ── */
@@ -28,9 +29,9 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
       return Object.values(map);
     }
     if (Array.isArray(items) && items.length > 0) {
-      return items.map(item => newGroup(item.itemName || item.name || "", item.sampleSizePacked || ""));
+      return items.map(item => newGroup(item.itemName || item.name || "", item.sampleSizePacked || form.sampleSizeWM || ""));
     }
-    return [newGroup()];
+    return [newGroup("", form.sampleSizeWM || "")];
   });
 
   const [defectPhotos, setDefectPhotos] = useState(() => {
@@ -84,6 +85,12 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
     <input type="text" name={name} value={value} onChange={handleChange} placeholder={placeholder}
       style={{ width: w, border: "none", background: "transparent", color: colors.text, fontSize: "12px", outline: "none", padding: "6px" }} />
   );
+  const lockedVal = (value) => (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "6px", fontSize: "12px", color: colors.text, fontWeight: 600 }}>
+      {value || "—"}
+      <Lock size={10} color="#7c3aed" title="Set by CS — not editable" />
+    </span>
+  );
 
   return (
     <>
@@ -103,13 +110,15 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
           <tbody>
             {/* Row 1: Inspection Level + Critical */}
             <tr>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, fontWeight: "bold", color: colors.text, width: "140px" }}>Inspection Level</td>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface }}>
-                {txtIn("inspectionLevelWM", form.inspectionLevelWM || "Level II")}
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, fontWeight: "bold", color: colors.text, width: "140px" }}>
+                Inspection Level {lockedAql && <Lock size={9} color="#7c3aed" style={{ verticalAlign: "middle", marginLeft: "3px" }} />}
+              </td>
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: lockedAql ? "#f5f3ff" : colors.surface }}>
+                {lockedAql ? lockedVal(form.inspectionLevelWM || "Level II") : txtIn("inspectionLevelWM", form.inspectionLevelWM || "Level II")}
               </td>
               <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, color: colors.text }}>
                 <span style={{ fontWeight: "bold" }}>Critical: </span>
-                {txtIn("aqlCriticalWM", form.aqlCriticalWM || "Not Allowed", "65%")}
+                {lockedAql ? lockedVal(form.aqlCriticalWM || "Not Allowed") : txtIn("aqlCriticalWM", form.aqlCriticalWM || "Not Allowed", "65%")}
               </td>
               <td style={cellSt}>{numIn("acceptedCritical", form.acceptedCritical || "0")}</td>
               <td style={cellSt}>{numIn("totalFoundCritical", form.totalFoundCritical || "0")}</td>
@@ -130,7 +139,7 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
               </td>
               <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, color: colors.text }}>
                 <span style={{ fontWeight: "bold" }}>Major: </span>
-                {txtIn("aqlMajorWM", form.aqlMajorWM || "1.5", "65%")}
+                {lockedAql ? lockedVal(form.aqlMajorWM || "1.5") : txtIn("aqlMajorWM", form.aqlMajorWM || "1.5", "65%")}
               </td>
               <td style={cellSt}>{numIn("acceptedMajor", form.acceptedMajor || "0")}</td>
               <td style={cellSt}>{numIn("totalFoundMajor", form.totalFoundMajor || "0")}</td>
@@ -151,7 +160,7 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
               </td>
               <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, color: colors.text }}>
                 <span style={{ fontWeight: "bold" }}>Minor: </span>
-                {txtIn("aqlMinorWM", form.aqlMinorWM || "4.0", "65%")}
+                {lockedAql ? lockedVal(form.aqlMinorWM || "4.0") : txtIn("aqlMinorWM", form.aqlMinorWM || "4.0", "65%")}
               </td>
               <td style={cellSt}>{numIn("acceptedMinor", form.acceptedMinor || "0")}</td>
               <td style={cellSt}>{numIn("totalFoundMinor", form.totalFoundMinor || "0")}</td>
@@ -166,9 +175,11 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
             </tr>
             {/* Row 4: Sample Size */}
             <tr>
-              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, fontWeight: "bold", color: colors.text }}>Sample Size</td>
-              <td colSpan={5} style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surface }}>
-                {txtIn("sampleSizeWM", form.sampleSizeWM || "315")}
+              <td style={{ padding: "8px", border: `1px solid ${colors.border}`, background: colors.surfaceAlt, fontWeight: "bold", color: colors.text }}>
+                Sample Size {lockedAql && <Lock size={9} color="#7c3aed" style={{ verticalAlign: "middle", marginLeft: "3px" }} />}
+              </td>
+              <td colSpan={5} style={{ padding: "8px", border: `1px solid ${colors.border}`, background: lockedAql ? "#f5f3ff" : colors.surface }}>
+                {lockedAql ? lockedVal(form.sampleSizeWM || "315") : txtIn("sampleSizeWM", form.sampleSizeWM || "315")}
               </td>
             </tr>
           </tbody>
@@ -303,9 +314,12 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
             {/* Sample Size */}
             <tr>
               <td colSpan={2} style={{ padding: "8px 12px", border: `1px solid ${colors.border}`, background: colors.headerBg, fontWeight: "bold", color: colors.text, textAlign: "right" }}>Sample Size:</td>
-              <td colSpan={3} style={{ padding: "0", border: `1px solid ${colors.border}`, textAlign: "center", background: "#f8fafc" }}>
-                <input type="text" name="sampleSizeWM" value={form.sampleSizeWM || ""} onChange={handleChange}
-                  style={{ width: "100%", padding: "8px 0", border: "none", textAlign: "center", background: "transparent", color: colors.text, fontWeight: "bold", outline: "none" }} />
+              <td colSpan={3} style={{ padding: "0", border: `1px solid ${colors.border}`, textAlign: "center", background: lockedAql ? "#f5f3ff" : "#f8fafc" }}>
+                {lockedAql
+                  ? <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "8px 0", fontWeight: "bold", color: colors.text, fontSize: "12px" }}>{form.sampleSizeWM || "315"} <Lock size={10} color="#7c3aed" /></span>
+                  : <input type="text" name="sampleSizeWM" value={form.sampleSizeWM || ""} onChange={handleChange}
+                      style={{ width: "100%", padding: "8px 0", border: "none", textAlign: "center", background: "transparent", color: colors.text, fontWeight: "bold", outline: "none" }} />
+                }
               </td>
               <td style={{ border: `1px solid ${colors.border}`, background: colors.headerBg }}></td>
             </tr>

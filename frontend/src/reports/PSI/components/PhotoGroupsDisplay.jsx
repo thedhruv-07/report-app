@@ -1,7 +1,7 @@
 import React from 'react';
 import SmartTextarea from '../../../components/shared/SmartTextarea';
 import { colors } from '../../../styles';
-import { formatFileSize } from '../../../utils/imageCompression';
+import { formatFileSize } from '../../../utils/fileUtils';
 
 export default function PhotoGroupsDisplay({ groups, getGroupPhotos, editingGroupId, editingDescription, startEditGroup, saveGroupDescription, setEditingDescription, deleteGroup, removePhotoFromGroup }) {
   return (

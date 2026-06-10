@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { colors } from '../../../styles';
 import NavButtons from '../../shared/components/NavButtons';
 import SmartTextarea from '../../../components/shared/SmartTextarea';
@@ -11,7 +11,15 @@ const MarkingLabeling = ({ form, handleChange, onPrev, onNext }) => {
   const [certItems, setCertItems] = useState([{ id: 1 }]);
   const [nextCertId, setNextCertId] = useState(2);
 
-  const addBarcode = () => { setBarcodeItems([...barcodeItems, { id: nextBarcodeId }]); setNextBarcodeId(nextBarcodeId + 1); };
+  const addBarcode = () => {
+    const newId = nextBarcodeId;
+    setBarcodeItems([...barcodeItems, { id: newId }]);
+    setNextBarcodeId(newId + 1);
+    // Auto-seed location from inspection site
+    if (form.inspectionLocation && !form[`barcode_location_${newId}`]) {
+      setField(`barcode_location_${newId}`, form.inspectionLocation);
+    }
+  };
   const removeBarcode = (id) => { if (barcodeItems.length > 1) setBarcodeItems(barcodeItems.filter(item => item.id !== id)); };
 
   const addCert = () => { setCertItems([...certItems, { id: nextCertId }]); setNextCertId(nextCertId + 1); };

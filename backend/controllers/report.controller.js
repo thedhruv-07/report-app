@@ -471,6 +471,12 @@ const generateReport = async (req, res) => {
             default: new Header({
               children: [
                 createHeaderTable(data),
+              ],
+            }),
+          },
+          footers: {
+            default: new Footer({
+              children: [
                 new Paragraph({
                   children: [
                     new TextRun({ text: "Page ", bold: true, size: 18, color: "333333" }),
@@ -479,26 +485,15 @@ const generateReport = async (req, res) => {
                     new TextRun({ children: [PageNumber.TOTAL_PAGES], bold: true, size: 18, color: "333333" }),
                   ],
                   alignment: "right",
-                  spacing: { before: 100, after: 0 },
-                }),
-              ],
-            }),
-          },
-          footers: {
-            default: new Footer({
-              children: [
-                new Paragraph({
-                  children: [new TextRun({ text: "India | China | Bangladesh |", size: 20, color: "333333" })],
-                  alignment: "left",
-                  spacing: { before: 0, after: 120 },
-                }),
-                new Paragraph({
-                  children: [new TextRun({ text: "www.absoluteveritas.com", size: 18, color: "333333" })],
-                  alignment: "right",
                   spacing: { before: 0, after: 40 },
                 }),
                 new Paragraph({
-                  children: [new TextRun({ text: "Absolute Veritas Copyright © All Rights Reserved", size: 20, color: "333333" })],
+                  children: [new TextRun({ text: "India | China | Bangladesh | www.absoluteveritas.com", size: 18, color: "333333" })],
+                  alignment: "left",
+                  spacing: { before: 0, after: 20 },
+                }),
+                new Paragraph({
+                  children: [new TextRun({ text: "Absolute Veritas Copyright © All Rights Reserved", size: 18, color: "333333" })],
                   alignment: "right",
                   spacing: { before: 0, after: 0 },
                 }),
@@ -508,9 +503,9 @@ const generateReport = async (req, res) => {
           properties: {
             page: {
               margin: {
-                top: convertInchesToTwip(1.6),
+                top: convertInchesToTwip(1.1),
                 right: convertInchesToTwip(0.6),
-                bottom: convertInchesToTwip(0.6),
+                bottom: convertInchesToTwip(0.8),
                 left: convertInchesToTwip(0.6),
                 header: convertInchesToTwip(0.3),
                 footer: convertInchesToTwip(0.3),
@@ -643,9 +638,9 @@ const getReportById = async (req, res) => {
 
 const suggestText = async (req, res) => {
   try {
-    const { context, partialText } = req.body;
+    const { context, partialText, photos, reportMeta } = req.body;
     const { getAISuggestion } = require("../services/ai.service");
-    const suggestion = await getAISuggestion(context, partialText);
+    const suggestion = await getAISuggestion(context, partialText, photos || [], reportMeta || {});
     res.json({ suggestion });
   } catch (error) {
     res.json({ suggestion: "" });

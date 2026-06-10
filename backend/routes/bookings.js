@@ -18,21 +18,34 @@ router.use(authMiddleware);
 
 const formatBookingSummary = (booking) => ({
   id: String(booking._id),
-  clientName: booking.clientName,
-  clientEmail: booking.clientEmail,
-  inspectionType: booking.inspectionType,
-  factoryName: booking.factoryName || '',
-  factoryAddress: booking.factoryAddress || '',
-  scheduledDate: booking.scheduledDate || null,
-  scheduledTime: booking.scheduledTime || '',
-  orderQuantity: booking.orderQuantity || null,
-  specialInstructions: booking.specialInstructions || '',
-  assignedInspectorId: booking.assignedInspectorId?._id ? String(booking.assignedInspectorId._id) : (booking.assignedInspectorId ? String(booking.assignedInspectorId) : null),
-  inspectorName: booking.assignedInspectorId?.name || booking.assignedInspectorId?.email || '',
-  status: booking.status,
-  onlineBookingId: booking.onlineBookingId || null,
-  createdAt: booking.createdAt,
-  updatedAt: booking.updatedAt
+  clientName:            booking.clientName,
+  clientEmail:           booking.clientEmail,
+  clientPhone:           booking.clientPhone           || '',
+  inspectionType:        booking.inspectionType,
+  factoryName:           booking.factoryName           || '',
+  factoryAddress:        booking.factoryAddress        || '',
+  scheduledDate:         booking.scheduledDate         || null,
+  scheduledTime:         booking.scheduledTime         || '',
+  productDescription:    booking.productDescription    || '',
+  orderQuantity:         booking.orderQuantity         ?? null,
+  poNumber:              booking.poNumber              || '',
+  countryOfOrigin:       booking.countryOfOrigin       || '',
+  aqlInspectionLevel:    booking.aqlInspectionLevel    || '',
+  aqlSampleSize:         booking.aqlSampleSize         ?? null,
+  aqlAcceptPoint:        booking.aqlAcceptPoint        ?? null,
+  aqlRejectPoint:        booking.aqlRejectPoint        ?? null,
+  aqlInspectionStandard: booking.aqlInspectionStandard || '',
+  aqlSamplingPlan:       booking.aqlSamplingPlan       || '',
+  adminNotes:            booking.adminNotes            || '',
+  specialInstructions:   booking.specialInstructions   || '',
+  clientRequirements:    booking.clientRequirements    || '',
+  onSiteTests:           Array.isArray(booking.onSiteTests) ? booking.onSiteTests : [],
+  assignedInspectorId:   booking.assignedInspectorId?._id ? String(booking.assignedInspectorId._id) : (booking.assignedInspectorId ? String(booking.assignedInspectorId) : null),
+  inspectorName:         booking.assignedInspectorId?.name || booking.assignedInspectorId?.email || '',
+  status:                booking.status,
+  onlineBookingId:       booking.onlineBookingId       || null,
+  createdAt:             booking.createdAt,
+  updatedAt:             booking.updatedAt,
 });
 
 // GET /api/bookings — Admin/manager can list bookings received by the report app
@@ -48,6 +61,36 @@ router.get('/', roleCheck(['admin', 'manager']), async (req, res) => {
     res.json({ bookings: bookings.map(formatBookingSummary) });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/bookings/:id — Admin edits booking details (including AQL fields)
+router.patch('/:id', roleCheck(['admin', 'manager']), async (req, res) => {
+  try {
+    const allowed = [
+      'clientName', 'clientEmail', 'clientPhone', 'inspectionType',
+      'factoryName', 'factoryAddress', 'scheduledDate', 'scheduledTime',
+      'productDescription', 'orderQuantity', 'poNumber', 'countryOfOrigin',
+      'specialInstructions', 'adminNotes',
+      'aqlInspectionLevel', 'aqlSampleSize', 'aqlAcceptPoint', 'aqlRejectPoint',
+      'aqlInspectionStandard', 'aqlSamplingPlan',
+      'clientRequirements',
+    ];
+    const updates = {};
+    allowed.forEach(f => { if (req.body[f] !== undefined) updates[f] = req.body[f]; });
+    // onSiteTests is an array — handle separately
+    if (req.body.onSiteTests !== undefined) {
+      updates.onSiteTests = Array.isArray(req.body.onSiteTests) ? req.body.onSiteTests : [];
+    }
+    const booking = await Booking.findByIdAndUpdate(
+      req.params.id,
+      { $set: updates },
+      { new: true, runValidators: false }
+    );
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+    res.json(booking);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
 });
 
@@ -124,6 +167,35 @@ router.post('/:id/assign', roleCheck(['admin', 'manager']), async (req, res) => 
         error: `Cannot assign booking: unrecognised inspection type "${booking.inspectionType}". Expected one of: PSI, CLS, DPI, factory_audit, social_audit.`,
       });
     }
+    // Build prefillData from booking fields so the inspector's report auto-fills
+    const SERVICE_TYPE_LABELS = {
+      PSI:          'Pre-Shipment Inspection',
+      CLS:          'Container Loading Supervision',
+      DPI:          'During Production Inspection',
+      factory_audit: 'Factory Audit',
+      social_audit:  'Social Audit',
+    };
+    const taskPrefillData = {
+      serviceType: SERVICE_TYPE_LABELS[booking.inspectionType] || booking.inspectionType || '',
+      client:   { name: booking.clientName },
+      factory:  { name: booking.factoryName, address: booking.factoryAddress },
+      contact:  { name: booking.clientName, email: booking.clientEmail, phone: booking.clientPhone || '' },
+      inspectionDate: booking.scheduledDate,
+      countryOfOrigin: booking.countryOfOrigin || '',
+      product:  { description: booking.productDescription, quantity: booking.orderQuantity, poNumber: booking.poNumber || '' },
+      aql: {
+        inspectionLevel:    booking.aqlInspectionLevel    || null,
+        sampleSize:         booking.aqlSampleSize         || null,
+        acceptPoint:        booking.aqlAcceptPoint        || null,
+        rejectPoint:        booking.aqlRejectPoint        || null,
+        inspectionStandard: booking.aqlInspectionStandard || null,
+        samplingPlan:       booking.aqlSamplingPlan       || null,
+      },
+      specialInstructions: booking.specialInstructions || '',
+      clientRequirements:  booking.clientRequirements  || '',
+      onSiteTests: booking.onSiteTests?.length ? booking.onSiteTests : [],
+    };
+
     await Task.create({
       assignedInspectorId,
       clientName: booking.clientName || 'Unknown Client',
@@ -133,6 +205,7 @@ router.post('/:id/assign', roleCheck(['admin', 'manager']), async (req, res) => 
       scheduledDate: booking.scheduledDate || new Date(),
       status: 'Pending Acceptance',
       adminInstructions: booking.specialInstructions || '',
+      prefillData: taskPrefillData,
     });
 
     // Notification in the Notification collection (inspector dashboard list)

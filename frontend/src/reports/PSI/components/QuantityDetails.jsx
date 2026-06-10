@@ -239,6 +239,7 @@ export default function QuantityDetails({ items, onItemChange, onAddItem, onRemo
           <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
             <input
               type="number"
+              min="0"
               name="selectedCartonsCount"
               value={form.selectedCartonsCount || ""}
               onChange={handleChange}

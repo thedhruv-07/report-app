@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { inputStyle, colors } from '../../../styles';
 import NavButtons from '../../shared/components/NavButtons';
-import { compressImage } from '../../../utils/imageCompression';
+import { readImagePreview } from '../../../utils/fileUtils';
+import Lightbox from '../../../components/shared/Lightbox';
 
 const card = {
   background: "#fff",
@@ -37,6 +39,7 @@ const cardTitle = {
 const cardBody = { padding: "14px 16px" };
 
 export default function ConclusionStep({ form, handleChange, onPrev, onNext }) {
+  const [lightboxSrc, setLightboxSrc] = useState(null);
   const setField = (name, value) => handleChange({ target: { name, value } });
   const conclusionPhotos = Array.isArray(form.conclusionPhotos) ? form.conclusionPhotos : [];
   const conclusionReviewerPhotos = Array.isArray(form.conclusionReviewerPhotos) ? form.conclusionReviewerPhotos : [];
@@ -48,15 +51,10 @@ export default function ConclusionStep({ form, handleChange, onPrev, onNext }) {
       selectedFiles.map(async (file, index) => {
         const id = `${prefix}_${Date.now()}_${Math.random()}_${index}`;
         try {
-          const { file: compressedFile, preview, originalSize, compressedSize } = await compressImage(file);
-          return { id, label: "", fileName: compressedFile.name, preview, originalSize, compressedSize };
+          const preview = await readImagePreview(file);
+          return { id, label: "", fileName: file.name, preview, originalSize: file.size, compressedSize: file.size };
         } catch {
-          const preview = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.readAsDataURL(file);
-          });
-          return { id, label: "", fileName: file.name, preview, originalSize: file.size, compressedSize: file.size, error: true };
+          return { id, label: "", fileName: file.name, preview: "", originalSize: file.size, compressedSize: file.size, error: true };
         }
       })
     );
@@ -67,7 +65,7 @@ export default function ConclusionStep({ form, handleChange, onPrev, onNext }) {
     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "10px", marginTop: "12px" }}>
       {photos.map((photo) => (
         <div key={photo.id} style={{ border: `1px solid ${colors.border}`, borderRadius: "6px", overflow: "hidden", background: colors.surfaceAlt }}>
-          <img src={photo.preview} alt={photo.fileName || "photo"} style={{ width: "100%", height: "100px", objectFit: "cover", display: "block" }} />
+          <img src={photo.preview} alt={photo.fileName || "photo"} onClick={() => setLightboxSrc(photo.preview)} style={{ width: "100%", height: "100px", objectFit: "cover", display: "block", cursor: "zoom-in" }} />
           <div style={{ padding: "6px" }}>
             <input
               type="text"
@@ -94,6 +92,7 @@ export default function ConclusionStep({ form, handleChange, onPrev, onNext }) {
 
   return (
     <div>
+      <Lightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
 
       {/* Conclusion status */}
       <div style={card}>

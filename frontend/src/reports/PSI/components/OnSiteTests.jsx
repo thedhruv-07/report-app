@@ -1,16 +1,14 @@
-import React, { useState } from "react";
+import { Lock } from 'lucide-react';
 import { colors } from '../../../styles';
 import NavButtons from '../../shared/components/NavButtons';
 import SmartTextarea from '../../../components/shared/SmartTextarea';
 
-const OnSiteTests = ({ form, handleChange, onPrev, onNext }) => {
+const OnSiteTests = ({ form, handleChange, testRows, setTestRows, testNextId, setTestNextId, lockedTestCount = 0, onPrev, onNext }) => {
   const setField = (name, value) => handleChange({ target: { name, value } });
-  const [testRows, setTestRows] = useState([{ id: 1 }]);
-  const [nextId, setNextId] = useState(2);
 
   const addRow = () => {
-    setTestRows([...testRows, { id: nextId }]);
-    setNextId(nextId + 1);
+    setTestRows([...testRows, { id: testNextId }]);
+    setTestNextId(testNextId + 1);
   };
 
   const removeRow = (id) => {
@@ -82,24 +80,36 @@ const OnSiteTests = ({ form, handleChange, onPrev, onNext }) => {
             {/* Data Rows */}
             {testRows.map((row, idx) => {
               const num = idx + 1;
+              const locked = row.id <= lockedTestCount;
+              const lockedCell = { padding: "8px", border: cellBorder, background: locked ? "#f8fafc" : colors.surface, color: locked ? "#64748b" : colors.text };
+              const lockedInput = { width: "100%", padding: "4px", background: locked ? "#f1f5f9" : colors.surface, color: locked ? "#64748b" : colors.text, border: "none", borderRadius: "2px", fontSize: "12px", cursor: locked ? "not-allowed" : "text" };
               return (
                 <tr key={row.id}>
-                  <td style={{ padding: "8px", border: cellBorder, background: colors.surface, textAlign: "center", color: colors.text, fontWeight: "bold" }}>{num}</td>
-                  <td style={{ padding: "8px", border: cellBorder, background: colors.surface, color: colors.text }}>
-                    <input type="text" name={`testDesc${row.id}`} value={form[`testDesc${row.id}`] || ""} onChange={handleChange} placeholder="Enter description" style={{ width: "100%", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", fontSize: "12px" }} />
+                  <td style={{ ...lockedCell, textAlign: "center", fontWeight: "bold" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
+                      {num}
+                      {locked && <Lock size={9} color="#6366f1" />}
+                    </div>
                   </td>
-                  <td style={{ padding: "8px", border: cellBorder, background: colors.surface, color: colors.text }}>
-                    <SmartTextarea
-                      name={`testMethod${row.id}`}
-                      value={form[`testMethod${row.id}`] || ""}
-                      onChange={(e) => setField(`testMethod${row.id}`, e.target.value)}
-                      placeholder="Enter method"
-                      context="quality control test method and procedure"
-                      style={{ width: "100%", minHeight: "60px", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", fontFamily: "inherit", fontSize: "11px", boxSizing: "border-box" }}
-                    />
+                  <td style={lockedCell}>
+                    <input type="text" name={`testDesc${row.id}`} value={form[`testDesc${row.id}`] || ""} onChange={handleChange} readOnly={locked} placeholder="Enter description" style={lockedInput} />
                   </td>
-                  <td style={{ padding: "8px", border: cellBorder, background: colors.surface, color: colors.text }}>
-                    <input type="text" name={`testSample${row.id}`} value={form[`testSample${row.id}`] || ""} onChange={handleChange} placeholder="Sample size" style={{ width: "100%", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", textAlign: "center", fontSize: "12px" }} />
+                  <td style={lockedCell}>
+                    {locked ? (
+                      <textarea readOnly value={form[`testMethod${row.id}`] || ""} style={{ ...lockedInput, minHeight: "44px", resize: "none", fontFamily: "inherit", fontSize: "11px", boxSizing: "border-box" }} />
+                    ) : (
+                      <SmartTextarea
+                        name={`testMethod${row.id}`}
+                        value={form[`testMethod${row.id}`] || ""}
+                        onChange={(e) => setField(`testMethod${row.id}`, e.target.value)}
+                        placeholder="Enter method"
+                        context="quality control test method and procedure"
+                        style={{ width: "100%", minHeight: "60px", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", fontFamily: "inherit", fontSize: "11px", boxSizing: "border-box" }}
+                      />
+                    )}
+                  </td>
+                  <td style={lockedCell}>
+                    <input type="text" name={`testSample${row.id}`} value={form[`testSample${row.id}`] || ""} onChange={handleChange} readOnly={locked} placeholder="Sample size" style={{ ...lockedInput, textAlign: "center" }} />
                   </td>
                   <td style={{ padding: "8px", border: cellBorder, background: colors.surface }}>
                     <select
@@ -118,10 +128,11 @@ const OnSiteTests = ({ form, handleChange, onPrev, onNext }) => {
                   <td style={{ padding: "8px", border: cellBorder, background: colors.surface, textAlign: "center" }}>
                     <button
                       onClick={() => removeRow(row.id)}
-                      disabled={testRows.length === 1}
-                      style={{ padding: "4px 8px", background: testRows.length === 1 ? colors.border : colors.danger, color: "#fff", border: "none", borderRadius: "2px", cursor: testRows.length === 1 ? "not-allowed" : "pointer", fontSize: "11px", transition: "all 0.3s ease" }}
+                      disabled={locked || testRows.length === 1}
+                      title={locked ? "Admin-set row cannot be deleted" : ""}
+                      style={{ padding: "4px 8px", background: (locked || testRows.length === 1) ? colors.border : colors.danger, color: "#fff", border: "none", borderRadius: "2px", cursor: (locked || testRows.length === 1) ? "not-allowed" : "pointer", fontSize: "11px" }}
                     >
-                      Delete
+                      {locked ? <Lock size={10} /> : "Delete"}
                     </button>
                   </td>
                 </tr>

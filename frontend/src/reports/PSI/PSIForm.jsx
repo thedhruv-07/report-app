@@ -1,9 +1,10 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react";
 import { useLocation } from "react-router-dom";
 import ReportLoader from '../../components/shared/ReportLoader';
 import { ENDPOINTS } from '../../config/api';
 import { colors } from '../../styles';
-import { compressImage } from '../../utils/imageCompression';
+import { ReportMetaContext } from '../../context/ReportMetaContext';
+import { readImagePreview } from '../../utils/fileUtils';
 
 const GeneralInfo = lazy(() => import('./components/SectionA_Summary'));
 const InspectionSummaryTable = lazy(() => import('./components/InspectionSummaryTable'));
@@ -17,6 +18,7 @@ const Packing = lazy(() => import('./components/FinalDetails'));
 const MarkingLabeling = lazy(() => import('./components/MarkingLabeling'));
 const ClientSpecialRequirement = lazy(() => import('./components/ClientSpecialRequirement'));
 const Photos = lazy(() => import('./components/Photos'));
+const ReportReview = lazy(() => import('../shared/components/ReportReview'));
 const FinalStep = lazy(() => import('./components/FinalStep'));
 
 // --- BACKEND KEEP-ALIVE ---
@@ -76,6 +78,36 @@ const hasMeaningfulValue = (value) => {
 };
 
 const getTodayIsoDate = () => new Date().toISOString().slice(0, 10);
+
+// ISO 2859-1 AQL sample size lookup (Normal Inspection Level II as baseline)
+const AQL_TABLE = [
+  { max: 8,       size: 2   },
+  { max: 15,      size: 3   },
+  { max: 25,      size: 5   },
+  { max: 50,      size: 8   },
+  { max: 90,      size: 13  },
+  { max: 150,     size: 20  },
+  { max: 280,     size: 32  },
+  { max: 500,     size: 50  },
+  { max: 1200,    size: 80  },
+  { max: 3200,    size: 125 },
+  { max: 10000,   size: 200 },
+  { max: 35000,   size: 315 },
+  { max: 150000,  size: 500 },
+  { max: 500000,  size: 800 },
+  { max: Infinity,size: 1250},
+];
+
+const calcAqlSampleSize = (totalQty, inspectionLevel) => {
+  if (!totalQty || totalQty <= 0) return null;
+  const lvl = String(inspectionLevel || '').toUpperCase();
+  let idx = AQL_TABLE.findIndex(r => totalQty <= r.max);
+  if (idx < 0) idx = AQL_TABLE.length - 1;
+  // Level I: one step down; Level III: one step up
+  if (lvl.includes('I') && !lvl.includes('II') && !lvl.includes('III')) idx = Math.max(0, idx - 1);
+  else if (lvl.includes('III')) idx = Math.min(AQL_TABLE.length - 1, idx + 1);
+  return AQL_TABLE[idx].size;
+};
 
 const buildQuickFillData = () => ({
   servicePerformed: "Pre-Shipment Inspection",
@@ -171,6 +203,14 @@ function App() {
     return safeJsonParse(savedGroups, []);
   });
 
+  const [testRows, setTestRows] = useState(() =>
+    safeJsonParse(localStorage.getItem("inspectionTestRows"), [{ id: 1 }])
+  );
+  const [testNextId, setTestNextId] = useState(() => {
+    const rows = safeJsonParse(localStorage.getItem("inspectionTestRows"), [{ id: 1 }]);
+    return Math.max(...rows.map(r => r.id), 1) + 1;
+  });
+
   const [savedSuggestion, setSavedSuggestion] = useState(() =>
     safeJsonParse(localStorage.getItem("inspectionLastSubmittedTemplate"), null)
   );
@@ -184,6 +224,42 @@ function App() {
   const prefillData = location.state?.task?.prefillData ?? null;
   const taskId = location.state?.task?._id ?? null;
 
+  // Persist the locked-AQL flag so it survives page refresh
+  const [aqlLocked, setAqlLocked] = useState(() => {
+    return localStorage.getItem("inspectionAqlLocked") === "true";
+  });
+
+  useEffect(() => {
+    if (prefillData) {
+      localStorage.setItem("inspectionAqlLocked", "true");
+      setAqlLocked(true);
+    }
+  }, [prefillData]);
+
+  // Fields that came from admin booking — inspector cannot edit these
+  const lockedFields = useMemo(() => {
+    if (!prefillData) return new Set();
+    const locked = new Set();
+    if (prefillData.client?.name)       locked.add('client');
+    if (prefillData.factory?.name)      { locked.add('supplier'); locked.add('factory'); }
+    if (prefillData.factory?.address || prefillData.factory?.city || prefillData.factory?.country) locked.add('inspectionLocation');
+    if (prefillData.inspectionDate)     locked.add('inspectionDate');
+    if (prefillData.product?.description) locked.add('productName');
+    if (prefillData.product?.poNumber)  locked.add('po');
+    if (prefillData.countryOfOrigin)    locked.add('country');
+    if (prefillData.product?.quantity != null && prefillData.product?.quantity !== '') locked.add('orderQuantity');
+    if (prefillData.serviceType)        locked.add('servicePerformed');
+    return locked;
+  }, [prefillData]);
+
+  // Number of on-site test rows pre-filled by admin (these rows are locked for inspector)
+  const lockedTestCount = prefillData?.onSiteTests?.length ?? 0;
+  // Number of client requirement rows pre-filled by admin (descriptions locked)
+  const lockedRequirementsCount = useMemo(() => {
+    if (!prefillData?.clientRequirements) return 0;
+    return prefillData.clientRequirements.split('\n').map(l => l.trim()).filter(Boolean).length;
+  }, [prefillData]);
+
   const [prefillBannerDismissed, setPrefillBannerDismissed] = useState(false);
 
   useEffect(() => {
@@ -194,20 +270,60 @@ function App() {
       prefillData.factory?.country,
     ].filter(Boolean).join(', ');
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setForm(prev => ({
-      ...prev,
-      client:             prefillData.client?.name            || prev.client,
-      supplier:           prefillData.factory?.name           || prev.supplier,
-      factory:            prefillData.factory?.name           || prev.factory,
-      inspectionLocation: factoryAddress                      || prev.inspectionLocation,
-      inspectionDate:     prefillData.inspectionDate          || prev.inspectionDate,
-      productName:        prefillData.product?.description    || prev.productName,
-      orderQuantity:      String(prefillData.product?.quantity ?? prev.orderQuantity ?? ''),
-      inspectionLevel:    prefillData.aql?.inspectionLevel    || prev.inspectionLevel,
-      sampleSize:         String(prefillData.aql?.sampleSize  ?? prev.sampleSize ?? ''),
-      acceptPoint:        String(prefillData.aql?.acceptPoint ?? prev.acceptPoint ?? ''),
-      rejectPoint:        String(prefillData.aql?.rejectPoint ?? prev.rejectPoint ?? ''),
-    }));
+    setForm(prev => {
+      const update = {
+        ...prev,
+        servicePerformed:   prefillData.serviceType             || prev.servicePerformed || 'Pre-Shipment Inspection',
+        client:             prefillData.client?.name            || prev.client,
+        supplier:           prefillData.factory?.name           || prev.supplier,
+        factory:            prefillData.factory?.name           || prev.factory,
+        inspectionLocation: factoryAddress                      || prev.inspectionLocation,
+        inspectionDate:     prefillData.inspectionDate?.slice(0, 10) || prev.inspectionDate,
+        productName:        prefillData.product?.description    || prev.productName,
+        po:                 prefillData.product?.poNumber       || prev.po,
+        country:            prefillData.countryOfOrigin         || prev.country,
+        orderQuantity:      String(prefillData.product?.quantity ?? prev.orderQuantity ?? ''),
+        inspectionLevel:    prefillData.aql?.inspectionLevel    || prev.inspectionLevel,
+        sampleSize:         String(prefillData.aql?.sampleSize  ?? prev.sampleSize ?? ''),
+        acceptPoint:        String(prefillData.aql?.acceptPoint ?? prev.acceptPoint ?? ''),
+        rejectPoint:        String(prefillData.aql?.rejectPoint ?? prev.rejectPoint ?? ''),
+        // Mirror into WorkmanshipDefects AQL fields
+        inspectionLevelWM:   prefillData.aql?.inspectionLevel    || prev.inspectionLevelWM,
+        sampleSizeWM:        String(prefillData.aql?.sampleSize  ?? prev.sampleSizeWM ?? ''),
+        // Inspection standard & sampling plan (Step 2 + Step 6)
+        inspectionStandard:  prefillData.aql?.inspectionStandard || prev.inspectionStandard,
+        inspectionStandardWM:prefillData.aql?.inspectionStandard || prev.inspectionStandardWM,
+        samplingPlan:        prefillData.aql?.samplingPlan       || prev.samplingPlan,
+        samplingPlanWM:      prefillData.aql?.samplingPlan       || prev.samplingPlanWM,
+        // Client special requirements (rows will be locked for description edits)
+        clientRequirements:  prefillData.clientRequirements
+          ? prefillData.clientRequirements.split('\n').map(l => l.trim()).filter(Boolean).map((req, i) => ({ index: i + 1, requirement: req, result: '' }))
+          : prev.clientRequirements,
+        // Seed first barcode row location with the inspection site
+        barcode_location_1: prev.barcode_location_1 || factoryAddress || '',
+      };
+      // Pre-fill On-Site Tests table rows from booking data
+      if (prefillData.onSiteTests?.length) {
+        prefillData.onSiteTests.forEach((t, i) => {
+          update[`testDesc${i + 1}`]   = t.description || '';
+          update[`testMethod${i + 1}`] = t.method      || '';
+          update[`testSample${i + 1}`] = t.sampleSize  || '';
+        });
+      }
+      return update;
+    });
+    // Seed first quantity row's PO field from booking PO number
+    if (prefillData.product?.poNumber) {
+      setItems(prev => prev.map((item, i) =>
+        i === 0 && !item.po ? { ...item, po: prefillData.product.poNumber } : item
+      ));
+    }
+    // Sync test row count to match prefilled tests
+    if (prefillData.onSiteTests?.length) {
+      const rows = prefillData.onSiteTests.map((_, i) => ({ id: i + 1 }));
+      setTestRows(rows);
+      setTestNextId(rows.length + 1);
+    }
   }, [prefillData]);
 
   // Responsiveness Support
@@ -250,6 +366,10 @@ function App() {
   useEffect(() => {
     localStorage.setItem("inspectionPhotoGroups", JSON.stringify(photoGroups));
   }, [photoGroups]);
+
+  useEffect(() => {
+    localStorage.setItem("inspectionTestRows", JSON.stringify(testRows));
+  }, [testRows]);
 
   // Add global styles
   useEffect(() => {
@@ -319,14 +439,34 @@ function App() {
   }, []);
 
   const handleChange = (e) => {
-    console.log("handleChange fired:", e.target.name, "=", e.target.value);
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    setForm(prev => {
+      const update = { ...prev, [name]: value };
+      // Keep AQL params consistent between InspectionSummaryTable (step 2) and WorkmanshipDefects (step 6)
+      if (name === 'inspectionLevel') update.inspectionLevelWM = value;
+      if (name === 'sampleSize') update.sampleSizeWM = value;
+      return update;
+    });
   };
 
   const handleItemChange = (index, field, value) => {
     const newItems = [...items];
     newItems[index][field] = value;
     setItems(newItems);
+
+    // When order quantity changes, recalculate AQL sample size (unless locked by booking)
+    if (field === 'orderQty' && !aqlLocked) {
+      const totalQty = newItems.reduce((s, it) => s + (Number(it.orderQty) || 0), 0);
+      const newSize = calcAqlSampleSize(totalQty, form.inspectionLevel);
+      if (newSize !== null) {
+        setForm(prev => ({
+          ...prev,
+          orderQuantity: String(totalQty),
+          sampleSize: String(newSize),
+          sampleSizeWM: String(newSize),
+        }));
+      }
+    }
   };
 
   const addItem = () => {
@@ -342,37 +482,36 @@ function App() {
   };
 
 
-  const handleClientRequirementsChange = (requirements) => {
+  const handleClientRequirementsChange = useCallback((requirements) => {
     setForm((prev) => ({
       ...prev,
       clientRequirements: Array.isArray(requirements) ? requirements : [],
     }));
-  };
+  }, []);
 
-  const handleWorkmanshipDefectsChange = (defects) => {
+  const handleWorkmanshipDefectsChange = useCallback((defects) => {
     setForm((prev) => ({
       ...prev,
       workmanshipDefects: Array.isArray(defects) ? defects : [],
     }));
-  };
+  }, []);
 
-  const handleWorkmanshipPhotosChange = (photos) => {
+  const handleWorkmanshipPhotosChange = useCallback((photos) => {
     setForm((prev) => ({
       ...prev,
       workmanshipPhotos: Array.isArray(photos) ? photos : [],
     }));
-  };
+  }, []);
 
-  const handlePhotoFileChange = async (files, description = "") => {
-    // Generate group entry for the batch
-    const groupId = `group_${Date.now()}_${Math.random()}`;
+  const handlePhotoFileChange = async (files, description = "", existingGroupId = null) => {
+    const groupId = existingGroupId || `group_${Date.now()}_${Math.random()}`;
     const photoIds = [];
     const itemsArray = Array.from(files).filter(item => item !== null && item !== undefined);
 
     // Sequential processing to avoid browser lag with large batches
     for (let index = 0; index < itemsArray.length; index++) {
       const item = itemsArray[index];
-      
+
       // If it's already a processed object (restored from localStorage)
       if (item && item.preview && !item.file) {
         setPhotos(prevPhotos => [
@@ -390,59 +529,36 @@ function App() {
         continue;
       }
 
-      // Otherwise extract the File object (it might be nested if coming from Staging Area)
+      // Otherwise extract the File object
       const file = item.file || item;
       const uniqueId = item.id || `${Date.now()}_${Math.random()}_${index}`;
       photoIds.push(uniqueId);
-      
+
       try {
-        const result = await compressImage(file);
+        const preview = await readImagePreview(file);
         setPhotos(prevPhotos => [
           ...prevPhotos,
-          { 
-            id: uniqueId, 
-            label: item.label || description, 
-            file: result.file, 
-            preview: result.preview,
-            originalSize: result.originalSize,
-            compressedSize: result.compressedSize
-          }
+          { id: uniqueId, label: item.label || description, file, preview, originalSize: file.size, compressedSize: file.size }
         ]);
       } catch (error) {
-        console.error(`Failed to compress image: ${file.name}`, error);
-        // Fallback: Read as data URL without compression if compression fails
-        const reader = new FileReader();
-        const fallbackPromise = new Promise((resolve) => {
-          reader.onloadend = () => {
-            setPhotos(prevPhotos => [
-              ...prevPhotos,
-              { 
-                id: uniqueId, 
-                label: item.label || description, 
-                file: file, 
-                preview: reader.result,
-                originalSize: file.size,
-                compressedSize: file.size,
-                error: true
-              }
-            ]);
-            resolve();
-          };
-          reader.readAsDataURL(file);
-        });
-        await fallbackPromise;
+        console.error(`Failed to read image: ${file.name}`, error);
       }
     }
 
-    // Create the group entry
-    setPhotoGroups(prevGroups => [
-      ...prevGroups,
-      {
-        id: groupId,
-        description: description,
-        photoIds: photoIds,
-      }
-    ]);
+    if (existingGroupId) {
+      // Append photos to existing group
+      setPhotoGroups(prevGroups => prevGroups.map(g =>
+        g.id === existingGroupId
+          ? { ...g, photoIds: [...(g.photoIds || []), ...photoIds] }
+          : g
+      ));
+    } else {
+      // Create a new group
+      setPhotoGroups(prevGroups => [
+        ...prevGroups,
+        { id: groupId, description, photoIds },
+      ]);
+    }
   };
 
   const removePhoto = (id) => {
@@ -450,39 +566,20 @@ function App() {
     setPhotos(newPhotos);
   };
 
+  const handleUpdatePhotoLabel = (photoId, label) => {
+    setPhotos(prev => prev.map(p => p.id === photoId ? { ...p, label } : p));
+  };
+
   const handleGeneralPhotoUpload = async (e) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
     try {
-      const { preview } = await compressImage(file);
+      const preview = await readImagePreview(file);
       setForm(prev => ({ ...prev, generalPhoto: preview }));
-    } catch {
-      const reader = new FileReader();
-      reader.onloadend = () => setForm(prev => ({ ...prev, generalPhoto: reader.result }));
-      reader.readAsDataURL(file);
-    }
+    } catch { /* ignore */ }
   };
 
   const clearGeneralPhoto = () => setForm(prev => ({ ...prev, generalPhoto: null }));
-
-  const clearForm = () => {
-    if (window.confirm("Are you sure you want to clear all data? This cannot be undone.")) {
-      localStorage.removeItem("inspectionStep");
-      localStorage.removeItem("inspectionForm");
-      localStorage.removeItem("inspectionItems");
-      localStorage.removeItem("inspectionPhotos");
-      localStorage.removeItem("inspectionPhotoGroups");
-      localStorage.removeItem("inspectionGeneralPhoto");
-      localStorage.removeItem("inspectionGeneralPhotoData");
-      setStep(1);
-      setForm({});
-      setItems([{ name: "", orderQty: "", availableQty: "" }]);
-      setPhotos([]);
-      setPhotoGroups([]);
-      setSavedSuggestionDismissed(false);
-      setReportDownloaded(false);
-    }
-  };
 
   const clearFormAfterDownload = () => {
     if (!window.confirm("Start a new report? This will clear all current sections.")) return;
@@ -494,14 +591,19 @@ function App() {
     localStorage.removeItem("inspectionPhotoGroups");
     localStorage.removeItem("inspectionGeneralPhoto");
     localStorage.removeItem("inspectionGeneralPhotoData");
+    localStorage.removeItem("inspectionAqlLocked");
+    localStorage.removeItem("inspectionTestRows");
 
     setStep(1);
     setForm({});
     setItems([{ name: "", orderQty: "", availableQty: "" }]);
     setPhotos([]);
     setPhotoGroups([]);
+    setTestRows([{ id: 1 }]);
+    setTestNextId(2);
     setSavedSuggestionDismissed(false);
     setReportDownloaded(false);
+    setAqlLocked(false);
   };
 
   const quickFillForm = () => {
@@ -695,8 +797,17 @@ function App() {
   };
 
 
+  const reportMeta = useMemo(() => ({
+    product:        form.productName    || '',
+    client:         form.client         || '',
+    factory:        form.factory        || '',
+    inspectionType: form.servicePerformed || 'Pre-Shipment Inspection',
+    inspectionDate: form.inspectionDate || '',
+  }), [form.productName, form.client, form.factory, form.servicePerformed, form.inspectionDate]);
+
   return (
-    <div style={{ 
+    <ReportMetaContext.Provider value={reportMeta}>
+    <div style={{
       display: "flex",
       flexDirection: "column",
       height: "100%",
@@ -723,7 +834,7 @@ function App() {
             <span style={{ fontSize: "11px", color: colors.textMuted }}>›</span>
             <span style={{ fontSize: "12px", fontWeight: "700", color: colors.header }}>Pre-Shipment Inspection</span>
           </div>
-          <span style={{ fontSize: "11px", color: colors.textMuted, fontWeight: 500 }}>Step {step} of 13</span>
+          <span style={{ fontSize: "11px", color: colors.textMuted, fontWeight: 500 }}>Step {step} of 14</span>
         </div>
         {/* Tab pills */}
         <div style={{ overflowX: "auto", padding: "3px 12px 6px", display: "flex", gap: "4px", scrollbarWidth: "none" }}>
@@ -763,7 +874,7 @@ function App() {
         </div>
         {/* Progress bar */}
         <div style={{ height: "3px", background: colors.border }}>
-          <div style={{ width: `${(step / 13) * 100}%`, height: "100%", background: colors.primary, transition: "width 0.3s ease" }} />
+          <div style={{ width: `${(step / 14) * 100}%`, height: "100%", background: colors.primary, transition: "width 0.3s ease" }} />
         </div>
       </div>
 
@@ -808,12 +919,6 @@ function App() {
           >
             💾 Save Draft
           </button>
-          <button
-            onClick={clearForm}
-            style={{ padding: "7px 12px", background: colors.danger, color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "600", boxShadow: "0 2px 6px rgba(239,68,68,0.15)" }}
-          >
-            ⟲ Clear
-          </button>
         </div>
 
         {!savedSuggestionDismissed && savedSuggestion && step === 1 && !hasMeaningfulValue(form) && (
@@ -850,12 +955,20 @@ function App() {
             borderRadius: "10px",
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "center",
+            alignItems: "flex-start",
             gap: "10px",
           }}>
-            <span style={{ fontSize: "13px", color: "#1e40af", fontWeight: "600" }}>
-              Auto-filled from Online Booking — review all fields before submitting
-            </span>
+            <div style={{ flex: 1 }}>
+              <span style={{ fontSize: "13px", color: "#1e40af", fontWeight: "600" }}>
+                Auto-filled from Online Booking — review all fields before submitting
+              </span>
+              {prefillData.specialInstructions && (
+                <div style={{ marginTop: "6px", padding: "8px 10px", background: "#eff6ff", borderRadius: "6px", border: "1px solid #bfdbfe" }}>
+                  <span style={{ fontSize: "11px", fontWeight: "700", color: "#1d4ed8", textTransform: "uppercase", letterSpacing: "0.05em" }}>Admin Instructions: </span>
+                  <span style={{ fontSize: "12px", color: "#1e40af" }}>{prefillData.specialInstructions}</span>
+                </div>
+              )}
+            </div>
             <button
               onClick={() => setPrefillBannerDismissed(true)}
               style={{
@@ -877,19 +990,114 @@ function App() {
         )}
 
         <Suspense fallback={<ReportLoader />}>
-          {step === 1 && <GeneralInfo form={form} handleChange={handleChange} onNext={next} handleGeneralPhotoUpload={handleGeneralPhotoUpload} clearGeneralPhoto={clearGeneralPhoto} />}
-          {step === 2 && <InspectionSummaryTable form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
+          {step === 1 && <GeneralInfo form={form} handleChange={handleChange} onNext={next} handleGeneralPhotoUpload={handleGeneralPhotoUpload} clearGeneralPhoto={clearGeneralPhoto} lockedFields={lockedFields} />}
+          {step === 2 && <InspectionSummaryTable form={form} handleChange={handleChange} onPrev={prev} onNext={next} lockedAql={aqlLocked} lockedOrderQty={lockedFields.has('orderQuantity')} />}
           {step === 3 && <RemarksStep form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
           {step === 4 && <ConclusionStep form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
           {step === 5 && <QuantityDetails items={items} onItemChange={handleItemChange} onAddItem={addItem} onRemoveItem={removeItem} form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
-          {step === 6 && <WorkmanshipDefects form={form} handleChange={handleChange} onPrev={prev} onNext={next} onWorkmanshipDefectsChange={handleWorkmanshipDefectsChange} onWorkmanshipPhotosChange={handleWorkmanshipPhotosChange} items={items} />}
-          {step === 7 && <OnSiteTests form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
+          {step === 6 && <WorkmanshipDefects form={form} handleChange={handleChange} onPrev={prev} onNext={next} onWorkmanshipDefectsChange={handleWorkmanshipDefectsChange} onWorkmanshipPhotosChange={handleWorkmanshipPhotosChange} items={items} lockedAql={aqlLocked} />}
+          {step === 7 && <OnSiteTests form={form} handleChange={handleChange} testRows={testRows} setTestRows={setTestRows} testNextId={testNextId} setTestNextId={setTestNextId} lockedTestCount={lockedTestCount} onPrev={prev} onNext={next} />}
           {step === 8 && <ProductSpecification form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
-          {step === 9 && <Packing form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
+          {step === 9 && <Packing form={form} handleChange={handleChange} quantityItems={items} onPrev={prev} onNext={next} />}
           {step === 10 && <MarkingLabeling form={form} handleChange={handleChange} onPrev={prev} onNext={next} />}
-          {step === 11 && <ClientSpecialRequirement form={form} handleChange={handleChange} onPrev={prev} onNext={next} onRequirementsChange={handleClientRequirementsChange} />}
-          {step === 12 && <Photos photos={photos} photoGroups={photoGroups} onPhotoGroupsChange={handlePhotoGroupsChange} onPhotoFileChange={handlePhotoFileChange} onRemovePhoto={removePhoto} onPrev={prev} onNext={next} />}
-          {step === 13 && <FinalStep form={form} onPrev={prev} onSubmit={submit} onClearAfterDownload={clearFormAfterDownload} hasDownloaded={reportDownloaded} isGenerating={isGenerating} onToggleLoader={setIsGenerating} />}
+          {step === 11 && <ClientSpecialRequirement form={form} handleChange={handleChange} onPrev={prev} onNext={next} onRequirementsChange={handleClientRequirementsChange} lockedRequirementsCount={lockedRequirementsCount} />}
+          {step === 12 && <Photos photos={photos} photoGroups={photoGroups} onPhotoGroupsChange={handlePhotoGroupsChange} onPhotoFileChange={handlePhotoFileChange} onRemovePhoto={removePhoto} onUpdatePhotoLabel={handleUpdatePhotoLabel} onPrev={prev} onNext={next} />}
+          {step === 13 && <ReportReview
+            conclusion={form.conclusionStatus}
+            onEditStep={(s) => setStep(s)}
+            allPhotos={photos}
+            onPrev={prev}
+            onNext={next}
+            sections={[
+              {
+                title: 'General Information', icon: '📋', stepIndex: 1,
+                fields: [
+                  { label: 'Service', value: form.servicePerformed },
+                  { label: 'Client', value: form.client },
+                  { label: 'Supplier', value: form.supplier },
+                  { label: 'Factory', value: form.factory },
+                  { label: 'Inspection Location', value: form.inspectionLocation },
+                  { label: 'Inspection Date', value: form.inspectionDate },
+                  { label: 'Product', value: form.productName },
+                  { label: 'PO Number', value: form.po },
+                  { label: 'Country of Origin', value: form.country },
+                ],
+              },
+              {
+                title: 'AQL & Standards', icon: '📐', stepIndex: 2,
+                fields: [
+                  { label: 'Inspection Level', value: form.inspectionLevel },
+                  { label: 'Sample Size', value: form.sampleSize },
+                  { label: 'Accept Point', value: form.acceptPoint },
+                  { label: 'Reject Point', value: form.rejectPoint },
+                  { label: 'Inspection Standard', value: form.inspectionStandardWM },
+                  { label: 'Sampling Plan', value: form.samplingPlanWM },
+                ],
+              },
+              {
+                title: 'Quantity Details', icon: '📦', stepIndex: 5,
+                type: 'items',
+                items: items,
+                fields: [
+                  { label: 'Selected Cartons', value: form.selectedCartonsCount },
+                  { label: 'Quantity Result', value: form.quantityResult },
+                ],
+              },
+              {
+                title: 'Workmanship Defects', icon: '🔍', stepIndex: 6,
+                fields: [
+                  { label: 'Sample Size', value: form.sampleSizeWM },
+                  { label: 'Critical AQL', value: form.aqlCriticalWM },
+                  { label: 'Major AQL', value: form.aqlMajorWM },
+                  { label: 'Minor AQL', value: form.aqlMinorWM },
+                  { label: 'Critical Found', value: form.totalFoundCritical },
+                  { label: 'Major Found', value: form.totalFoundMajor },
+                  { label: 'Minor Found', value: form.totalFoundMinor },
+                  { label: 'Result', value: form.workmanshipResult },
+                ],
+              },
+              {
+                title: 'On-Site Tests', icon: '🧪', stepIndex: 7,
+                fields: [
+                  ...testRows
+                    .filter(row => form[`testDesc${row.id}`])
+                    .map((row, i) => ({
+                      label: `Test ${i + 1}`,
+                      value: [
+                        form[`testDesc${row.id}`],
+                        form[`testMethod${row.id}`] && `Method: ${form[`testMethod${row.id}`]}`,
+                        form[`testSample${row.id}`] && `Sample: ${form[`testSample${row.id}`]}`,
+                        form[`testResult${row.id}`] && `Result: ${form[`testResult${row.id}`]}`,
+                      ].filter(Boolean).join(' | '),
+                    })),
+                  { label: 'Overall Result', value: form.onSiteTestResult },
+                  { label: 'Remark', value: form.onSiteTestRemark },
+                ],
+              },
+              {
+                title: 'Packing & Marking', icon: '🏷️', stepIndex: 9,
+                fields: [
+                  { label: 'Packing Result', value: form.packing_result },
+                  { label: 'Marking Result', value: form.marking_result_final },
+                  { label: 'Client Req. Result', value: form.client_requirement_result },
+                ],
+              },
+              {
+                title: 'Remarks & Conclusion', icon: '📝', stepIndex: 3,
+                fields: [
+                  { label: 'Conclusion', value: form.conclusionStatus },
+                  { label: 'Recommendation', value: form.recommendationText },
+                  ...(Array.isArray(form.remarks) ? form.remarks.map((r, i) => ({ label: `Remark ${i + 1}`, value: r })).filter(r => r.value) : []),
+                ],
+              },
+              {
+                title: 'Photos', icon: '📷', stepIndex: 12,
+                type: 'photos',
+                groups: photoGroups,
+              },
+            ]}
+          />}
+          {step === 14 && <FinalStep form={form} onPrev={prev} onSubmit={submit} onClearAfterDownload={clearFormAfterDownload} hasDownloaded={reportDownloaded} isGenerating={isGenerating} onToggleLoader={setIsGenerating} />}
         </Suspense>
 
         </div>
@@ -930,6 +1138,7 @@ function App() {
         </div>
       )}
     </div>
+    </ReportMetaContext.Provider>
   );
 }
 

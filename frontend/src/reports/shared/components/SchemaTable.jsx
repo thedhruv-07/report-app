@@ -1,13 +1,15 @@
 import { colors } from '../../../styles';
 import { Trash2, UploadCloud, X, Image as ImageIcon } from "lucide-react";
 import SmartTextarea from '../../../components/shared/SmartTextarea';
-import { compressImage } from '../../../utils/imageCompression';
+import { readImagePreview } from '../../../utils/fileUtils';
 import { useState } from "react";
 import { AddRowButton, RemoveRowButton } from './RowButtons';
+import Lightbox from '../../../components/shared/Lightbox';
 
 export default function SchemaTable({ title, config, formData, onChange, dataKey, ai = true }) {
   const rows = Array.isArray(formData[dataKey]) ? formData[dataKey] : [];
   const [isUploading, setIsUploading] = useState(null);
+  const [lightboxSrc, setLightboxSrc] = useState(null);
 
   const handleRowChange = (index, field, value) => {
     const newRows = [...rows];
@@ -21,8 +23,8 @@ export default function SchemaTable({ title, config, formData, onChange, dataKey
 
     try {
       setIsUploading(`${index}_${field}`);
-      const compressed = await compressImage(file);
-      handleRowChange(index, field, compressed);
+      const preview = await readImagePreview(file);
+      handleRowChange(index, field, preview);
     } catch (error) {
       console.error("Upload failed:", error);
       alert("Photo processing failed.");
@@ -43,6 +45,7 @@ export default function SchemaTable({ title, config, formData, onChange, dataKey
 
   return (
     <div style={{ marginBottom: "30px", border: `1px solid ${colors.border}`, borderRadius: "8px", overflow: "hidden" }}>
+      <Lightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
       <div style={{ padding: "12px", background: colors.headerBg, borderBottom: `1px solid ${colors.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h3 style={{ fontSize: "16px", fontWeight: "700", color: colors.text, margin: 0 }}>
           {title}
@@ -82,7 +85,7 @@ export default function SchemaTable({ title, config, formData, onChange, dataKey
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px", alignItems: "center", minWidth: "100px" }}>
                           {row[col.name] ? (
                             <div style={{ position: "relative", width: "80px", height: "60px", border: `1px solid ${colors.border}`, borderRadius: "4px", overflow: "hidden" }}>
-                              <img src={row[col.name]} alt="Machine" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              <img src={row[col.name]} alt="Machine" onClick={() => setLightboxSrc(row[col.name])} style={{ width: "100%", height: "100%", objectFit: "cover", cursor: "zoom-in" }} />
                               <button
                                 onClick={() => handleRowChange(index, col.name, "")}
                                 style={{ position: "absolute", top: "2px", right: "2px", background: "#ef4444", color: "white", border: "none", borderRadius: "50%", width: "18px", height: "18px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}

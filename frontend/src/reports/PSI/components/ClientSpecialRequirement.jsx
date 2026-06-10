@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { colors } from '../../../styles';
 import NavButtons from '../../shared/components/NavButtons';
 import SmartTextarea from '../../../components/shared/SmartTextarea';
+import { Lock } from 'lucide-react';
 
 const normalizeRequirements = (value) => {
   if (!Array.isArray(value) || value.length === 0) {
@@ -15,7 +16,7 @@ const normalizeRequirements = (value) => {
   }));
 };
 
-const ClientSpecialRequirement = ({ form, handleChange, onPrev, onNext, onRequirementsChange }) => {
+const ClientSpecialRequirement = ({ form, handleChange, onPrev, onNext, onRequirementsChange, lockedRequirementsCount = 0 }) => {
   const [requirements, setRequirements] = useState(() => normalizeRequirements(form.clientRequirements));
 
   const persistRequirements = (newRequirements) => {
@@ -115,17 +116,24 @@ const ClientSpecialRequirement = ({ form, handleChange, onPrev, onNext, onRequir
           </thead>
           <tbody>
             {/* Dynamic Rows */}
-            {requirements.map((req, idx) => (
+            {requirements.map((req, idx) => {
+              const locked = idx < lockedRequirementsCount;
+              const lockedBg = locked ? "#f8fafc" : colors.surface;
+              return (
               <tr key={idx}>
-                <td style={{ padding: "8px", background: colors.surface, border: cellBorder, textAlign: "center", color: colors.text, fontWeight: "bold" }}>
-                  {req.index}
+                <td style={{ padding: "8px", background: lockedBg, border: cellBorder, textAlign: "center", color: colors.text, fontWeight: "bold" }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
+                    {req.index}
+                    {locked && <Lock size={9} color="#6366f1" />}
+                  </div>
                 </td>
-                <td style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
+                <td style={{ padding: "8px", background: lockedBg, border: cellBorder }}>
                   <input
                     type="text"
                     value={req.requirement}
                     onChange={(e) => handleRequirementChange(idx, "requirement", e.target.value)}
-                    style={inputBase}
+                    readOnly={locked}
+                    style={{ ...inputBase, cursor: locked ? "not-allowed" : "text", color: locked ? "#64748b" : colors.text, background: lockedBg }}
                     placeholder="-"
                   />
                 </td>
@@ -145,14 +153,16 @@ const ClientSpecialRequirement = ({ form, handleChange, onPrev, onNext, onRequir
                 <td style={{ padding: "8px", background: colors.surface, border: cellBorder, textAlign: "center" }}>
                   <button
                     onClick={() => removeRequirement(idx)}
-                    disabled={requirements.length === 1}
-                    style={{ background: "transparent", color: requirements.length === 1 ? "#ccc" : colors.danger, border: "none", cursor: requirements.length === 1 ? "not-allowed" : "pointer", fontWeight: "bold", fontSize: "14px" }}
+                    disabled={locked || requirements.length === 1}
+                    title={locked ? "Admin-set row cannot be deleted" : ""}
+                    style={{ background: "transparent", color: locked || requirements.length === 1 ? "#ccc" : colors.danger, border: "none", cursor: locked || requirements.length === 1 ? "not-allowed" : "pointer", fontWeight: "bold", fontSize: "14px" }}
                   >
                     x
                   </button>
                 </td>
               </tr>
-            ))}
+              );
+            })}
 
             {/* (Result & Remark moved below) */}
           </tbody>
@@ -179,7 +189,7 @@ const ClientSpecialRequirement = ({ form, handleChange, onPrev, onNext, onRequir
                   <option value="Passed">Passed</option>
                   <option value="Failed">Failed</option>
                   <option value="Pending">Pending</option>
-                  <option value="N/A">N/A</option>
+                  <option value="N/A"></option>
                 </select>
               </td>
             </tr>
@@ -190,7 +200,7 @@ const ClientSpecialRequirement = ({ form, handleChange, onPrev, onNext, onRequir
               <td style={{ padding: "8px", border: cellBorder, background: colors.surface }}>
                 <SmartTextarea
                   name="client_requirement_remark"
-                  value={form.client_requirement_remark || "NA"}
+                  value={form.client_requirement_remark  }
                   onChange={(e) => handleChange({ target: { name: "client_requirement_remark", value: e.target.value } })}
                   context="client special requirement verification remark"
                   style={{ width: "100%", minHeight: "40px", padding: "4px", background: colors.surface, color: colors.text, border: "none", borderRadius: "2px", fontFamily: "inherit", fontSize: "12px", boxSizing: "border-box" }}

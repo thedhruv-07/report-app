@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { colors } from '../../../styles';
-import { compressImage } from '../../../utils/imageCompression';
+import { readImagePreview } from '../../../utils/fileUtils';
 
 const PSI_SECTIONS = [
   "General", "Quantity", "Workmanship", "On-Site Tests",
@@ -29,7 +29,7 @@ export default function PhotoSidebar({ photos = [], photoGroups = [], onAddPhoto
     setUploading(true);
     for (const file of files) {
       try {
-        const { preview } = await compressImage(file);
+        const preview = await readImagePreview(file);
         const id = `sb_${Date.now()}_${Math.random().toString(36).slice(2)}`;
         onAddPhoto({ id, preview, section, label: section });
       } catch { /* skip broken file */ }

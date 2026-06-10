@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { colors } from '../../../styles';
 import SmartTextarea from '../../../components/shared/SmartTextarea';
-import { compressImage } from '../../../utils/imageCompression';
+import { readImagePreview } from '../../../utils/fileUtils';
 import { UploadCloud } from "lucide-react";
+import Lightbox from '../../../components/shared/Lightbox';
 
 const LABEL_W = "150px";
 
@@ -27,8 +29,10 @@ const baseInputStyle = {
 };
 
 export default function SchemaSection({ title, fields, formData, onChange, ai = true }) {
+  const [lightboxSrc, setLightboxSrc] = useState(null);
   return (
     <div style={{ marginBottom: "16px", background: "#fff", borderRadius: "10px", border: `1px solid ${colors.border}`, boxShadow: "0 1px 6px rgba(0,0,0,0.05)", overflow: "hidden" }}>
+      <Lightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
 
       {/* Card header */}
       <div style={{ padding: "9px 16px", borderBottom: "1px solid #edf0f5", background: "#f8fafc", display: "flex", alignItems: "center", gap: "8px" }}>
@@ -74,7 +78,7 @@ export default function SchemaSection({ title, fields, formData, onChange, ai = 
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   {formData[field.name] ? (
                     <div style={{ position: "relative", width: "140px" }}>
-                      <img src={formData[field.name]} alt="Preview" style={{ width: "140px", height: "110px", objectFit: "contain", borderRadius: "6px", border: `1px solid ${colors.border}`, background: "#f8f9fa" }} />
+                      <img src={formData[field.name]} alt="Preview" onClick={() => setLightboxSrc(formData[field.name])} style={{ width: "140px", height: "110px", objectFit: "contain", borderRadius: "6px", border: `1px solid ${colors.border}`, background: "#f8f9fa", cursor: "zoom-in" }} />
                       <button
                         type="button"
                         onClick={() => onChange({ target: { name: field.name, value: "" } })}
@@ -89,7 +93,7 @@ export default function SchemaSection({ title, fields, formData, onChange, ai = 
                         const file = e.target.files[0];
                         if (file) {
                           try {
-                            const { preview } = await compressImage(file);
+                            const preview = await readImagePreview(file);
                             onChange({ target: { name: field.name, value: preview } });
                           } catch { alert("Failed to process image"); }
                         }

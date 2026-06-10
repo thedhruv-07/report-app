@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { colors } from '../../../styles';
 import NavButtons from '../../shared/components/NavButtons';
-import { compressImage, formatFileSize } from '../../../utils/imageCompression';
+import { readImagePreview, formatFileSize } from '../../../utils/fileUtils';
 import SmartTextarea from '../../../components/shared/SmartTextarea';
 import RemarksExtras from '../../shared/components/RemarksExtras';
+import Lightbox from '../../../components/shared/Lightbox';
 
 function CardHeader({ title }) {
   return (
@@ -19,6 +21,7 @@ const cardStyle = {
 };
 
 export default function RemarksStep({ form, handleChange, onPrev, onNext }) {
+  const [lightboxSrc, setLightboxSrc] = useState(null);
   const setField = (name, value) => handleChange({ target: { name, value } });
 
   const getRemarkPhotosByIndex = () => form.remarkPhotosByIndex || {};
@@ -30,11 +33,10 @@ export default function RemarksStep({ form, handleChange, onPrev, onNext }) {
     const processed = await Promise.all(selectedFiles.map(async (file, idx) => {
       const id = `remark_${rowIndex}_${Date.now()}_${idx}`;
       try {
-        const { file: cf, preview, originalSize, compressedSize } = await compressImage(file);
-        return { id, label: "", fileName: cf.name, preview, originalSize, compressedSize };
+        const preview = await readImagePreview(file);
+        return { id, label: "", fileName: file.name, preview, originalSize: file.size, compressedSize: file.size };
       } catch {
-        const preview = await new Promise(r => { const fr = new FileReader(); fr.onloadend = () => r(fr.result); fr.readAsDataURL(file); });
-        return { id, label: "", fileName: file.name, preview, originalSize: file.size, compressedSize: file.size, error: true };
+        return { id, label: "", fileName: file.name, preview: "", originalSize: file.size, compressedSize: file.size, error: true };
       }
     }));
     const byIndex = getRemarkPhotosByIndex();
@@ -77,6 +79,7 @@ export default function RemarksStep({ form, handleChange, onPrev, onNext }) {
 
   return (
     <div>
+      <Lightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
 
       {/* ── Card: Problem Remarks ── */}
       <div style={cardStyle}>
@@ -98,6 +101,7 @@ export default function RemarksStep({ form, handleChange, onPrev, onNext }) {
                   placeholder="Enter remark or defect finding…"
                   context="factory inspection defect finding or observation"
                   minHeight={52}
+                  photos={getPhotosForRow(i).map(p => p.preview).filter(Boolean)}
                   style={{ width: "100%", border: "none", borderBottom: "1px solid transparent", outline: "none", background: "transparent", color: colors.text, fontSize: "13px", padding: "1px 4px", fontFamily: "inherit", transition: "border-color 0.2s" }}
                   onFocus={(e) => { e.target.style.borderBottomColor = colors.primary; }}
                   onBlur={(e)  => { e.target.style.borderBottomColor = "transparent"; }}
@@ -118,7 +122,7 @@ export default function RemarksStep({ form, handleChange, onPrev, onNext }) {
                   <div style={{ marginTop: "8px", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: "8px" }}>
                     {getPhotosForRow(i).map(photo => (
                       <div key={photo.id} style={{ borderRadius: "6px", overflow: "hidden", border: `1px solid ${colors.border}`, background: "#f8f9fa" }}>
-                        <img src={photo.preview} alt={photo.fileName} style={{ width: "100%", height: "80px", objectFit: "cover", display: "block" }} />
+                        <img src={photo.preview} alt={photo.fileName} onClick={() => setLightboxSrc(photo.preview)} style={{ width: "100%", height: "80px", objectFit: "cover", display: "block", cursor: "zoom-in" }} />
                         <div style={{ padding: "5px" }}>
                           <input type="text" value={photo.label || ""} placeholder="Photo note" onChange={e => updateRemarkPhotoLabel(i, photo.id, e.target.value)}
                             style={{ width: "100%", border: `1px solid ${colors.border}`, borderRadius: "4px", fontSize: "10px", padding: "3px 5px", boxSizing: "border-box", marginBottom: "4px" }} />

@@ -20,8 +20,9 @@ import {
   OverallConclusionStep,
   CombinedRemarksStep,
 } from './components';
+import ReportReview from '../shared/components/ReportReview';
 
-import { compressImage, formatFileSize } from "../../utils/imageCompression";
+import { readImagePreview, formatFileSize } from "../../utils/fileUtils";
 
 const safeJsonParse = (value, fallback) => {
   try { return value ? JSON.parse(value) : fallback; } catch { return fallback; }
@@ -35,24 +36,6 @@ export default function FactoryAudit() {
   const taskId = location.state?.task?._id ?? null;
 
   const [prefillBannerDismissed, setPrefillBannerDismissed] = useState(false);
-
-  useEffect(() => {
-    if (!prefillData) return;
-    const factoryAddress = [
-      prefillData.factory?.address,
-      prefillData.factory?.city,
-      prefillData.factory?.country,
-    ].filter(Boolean).join(', ');
-    setForm(prev => ({
-      ...prev,
-      factory:        prefillData.factory?.name   || prev.factory,
-      factoryAddress: factoryAddress              || prev.factoryAddress,
-      contactPerson:  prefillData.contact?.name   || prev.contactPerson,
-      email:          prefillData.contact?.email  || prev.email,
-      phone:          prefillData.contact?.phone  || prev.phone,
-      auditDate:      prefillData.inspectionDate  || prev.auditDate,
-    }));
-  }, [prefillData]);
 
   const [step, setStep] = useState(() => {
     const savedStep = localStorage.getItem("faStep");
@@ -76,9 +59,26 @@ export default function FactoryAudit() {
     preventiveActions: []
   };
 
+  // Prefill is applied once inside the initializer — no useEffect needed,
+  // so there's no setForm → new-object → effect-re-evaluates loop.
   const [form, setForm] = useState(() => {
     const savedForm = localStorage.getItem("faForm");
-    return safeJsonParse(savedForm, initialFormState);
+    const base = safeJsonParse(savedForm, initialFormState);
+    if (!prefillData) return base;
+    const factoryAddress = [
+      prefillData.factory?.address,
+      prefillData.factory?.city,
+      prefillData.factory?.country,
+    ].filter(Boolean).join(', ');
+    return {
+      ...base,
+      factory:        prefillData.factory?.name              || base.factory,
+      factoryAddress: factoryAddress                         || base.factoryAddress,
+      contactPerson:  prefillData.contact?.name             || base.contactPerson,
+      email:          prefillData.contact?.email            || base.email,
+      phone:          prefillData.contact?.phone            || base.phone,
+      auditDate:      prefillData.inspectionDate?.slice(0, 10) || base.auditDate,
+    };
   });
 
   const [showSaveToast, setShowSaveToast] = useState(false);
@@ -646,37 +646,21 @@ export default function FactoryAudit() {
     if (!file) return;
     setIsPhotoProcessing(true);
     try {
-      const { preview, originalSize, compressedSize } = await compressImage(file);
+      const preview = await readImagePreview(file);
       setForm(prev => ({
         ...prev,
         generalPhoto: preview,
-        generalPhotoMeta: {
-          fileName: file.name,
-          size: formatFileSize(originalSize),
-          compressedSize: formatFileSize(compressedSize),
-          type: file.type
-        }
+        generalPhotoMeta: { fileName: file.name, size: formatFileSize(file.size), type: file.type }
       }));
     } catch (error) {
-      console.error("Compression error:", error);
-      alert("Failed to process image.");
+      console.error("Photo read error:", error);
+      alert("Failed to read image.");
     } finally {
       setIsPhotoProcessing(false);
     }
   };
 
 
-  const clearForm = () => {
-    if (window.confirm("Are you sure you want to clear all data? This cannot be undone.")) {
-      localStorage.removeItem("faStep");
-      localStorage.removeItem("faForm");
-      localStorage.removeItem("faReportId");
-      setStep(1);
-      setForm(initialFormState);
-      setReportId("");
-    }
-  };
-  
   const clearFormAfterDownload = () => {
     localStorage.removeItem("faStep");
     localStorage.removeItem("faForm");
@@ -715,7 +699,50 @@ export default function FactoryAudit() {
     { id: 9,  label: "Part 5: QA/QC System",     component: <QAQCSystem form={formWithSchema} handleChange={handleChange} setForm={setForm} /> },
     { id: 10, label: "Part 6: R&D Capacity",     component: <RDCapacity form={formWithSchema} handleChange={handleChange} setForm={setForm} /> },
     { id: 11, label: "Part 7: Environment",      component: <Environment form={formWithSchema} handleChange={handleChange} setForm={setForm} /> },
-    { id: 12, label: "Finalize & Download",      component: (
+    { id: 12, label: "Review", component: (
+      <ReportReview
+        conclusion={form.auditOverview?.overallConclusion || form.overallConclusion}
+        onEditStep={setStep}
+        hideNav={true}
+        sections={[
+          {
+            title: 'General Information', icon: '📋', stepIndex: 1,
+            fields: [
+              { label: 'Factory', value: form.factory },
+              { label: 'Factory Address', value: form.factoryAddress },
+              { label: 'Audit Date', value: form.auditDate },
+              { label: 'Contact Person', value: form.contactPerson },
+              { label: 'Email', value: form.email },
+              { label: 'Phone', value: form.phone },
+            ],
+          },
+          {
+            title: 'Overall Conclusion', icon: '🏆', stepIndex: 3,
+            fields: [
+              { label: 'Result', value: form.auditOverview?.overallConclusion || form.overallConclusion },
+            ],
+          },
+          {
+            title: 'Supplier Profile', icon: '🏭', stepIndex: 5,
+            fields: [
+              { label: 'Factory Name', value: form.supplierProfile?.factoryName || form.factory },
+              { label: 'Total Employees', value: form.supplierProfile?.totalEmployees },
+              { label: 'Year Established', value: form.supplierProfile?.yearEstablished },
+              { label: 'Main Products', value: form.supplierProfile?.mainProducts },
+            ],
+          },
+          {
+            title: 'QA/QC System', icon: '🔬', stepIndex: 9,
+            fields: [
+              { label: 'QC Staff', value: form.qualityControl?.qcStaff },
+              { label: 'Lab Equipment', value: form.qualityControl?.labEquipment },
+              { label: 'Certifications', value: form.qualityControl?.certifications },
+            ],
+          },
+        ]}
+      />
+    ) },
+    { id: 13, label: "Finalize & Download",      component: (
       <FinalStep
         reportDownloaded={reportDownloaded}
         clearFormAfterDownload={clearFormAfterDownload}
@@ -733,7 +760,7 @@ export default function FactoryAudit() {
   const stepShortLabels = {
     1:  "General",     2:  "Overview",    3:  "Conclusion",  4:  "Remarks",
     5:  "Supplier",    6:  "Org. Chart",  7:  "Prod. Lines", 8:  "Machinery",
-    9:  "QA/QC",       10: "R&D",         11: "Environment", 12: "Finalize",
+    9:  "QA/QC",       10: "R&D",         11: "Environment", 12: "Review",     13: "Finalize",
   };
 
   return (
@@ -771,7 +798,6 @@ export default function FactoryAudit() {
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginBottom: "12px", flexWrap: "wrap" }}>
             <button onClick={autofillDemoData} style={{ padding: "7px 12px", background: colors.success, color: "#fff", border: "none", borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "12px", boxShadow: "0 2px 6px rgba(16,185,129,0.2)" }}>⚡ Quick Fill</button>
             <button onClick={handleSaveDraft} style={{ padding: "7px 12px", background: colors.warning, color: "#fff", border: "none", borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "12px", boxShadow: "0 2px 6px rgba(245,158,11,0.2)" }}>💾 Save Draft</button>
-            <button onClick={clearForm} style={{ padding: "7px 12px", background: colors.danger, color: "#fff", border: "none", borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "12px", boxShadow: "0 2px 6px rgba(239,68,68,0.15)" }}>⟲ Clear</button>
           </div>
           
           {prefillData && !prefillBannerDismissed && (

@@ -1,6 +1,6 @@
 import React from 'react';
-import { 
-  ClipboardList, Send, CheckCircle, Search, ChevronDown, Filter, Mail, ArrowRight, UserPlus 
+import {
+  ClipboardList, Send, CheckCircle, Search, ChevronDown, Filter, Mail, ArrowRight, UserPlus, Plus
 } from 'lucide-react';
 
 export default function BookingsQueue({
@@ -24,7 +24,8 @@ export default function BookingsQueue({
   error,
   bookingInboxLoading,
   bookingInboxError,
-  onAssignClick
+  onAssignClick,
+  onNewBooking,
 }) {
   const statusStylesFor = (status) => STATUS_COLORS[status] || STATUS_COLORS.new || {
     bg: 'bg-slate-100',
@@ -130,9 +131,9 @@ export default function BookingsQueue({
               />
             </div>
             
-            <div className="flex gap-3 w-full md:w-auto">
+            <div className="flex gap-3 w-full md:w-auto items-center">
               <div className="relative flex-1 md:w-48">
-                <select 
+                <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                   className="w-full appearance-none pl-4 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
@@ -142,9 +143,9 @@ export default function BookingsQueue({
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               </div>
-              
+
               <div className="relative flex-1 md:w-48">
-                <select 
+                <select
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value)}
                   className="w-full appearance-none pl-4 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
@@ -154,6 +155,14 @@ export default function BookingsQueue({
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               </div>
+
+              <button
+                onClick={onNewBooking}
+                className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg font-bold text-sm shadow-sm transition-all cursor-pointer whitespace-nowrap"
+              >
+                <Plus className="w-4 h-4" />
+                New Booking
+              </button>
             </div>
           </div>
 
@@ -199,7 +208,7 @@ export default function BookingsQueue({
                     </tr>
                   ) : (
                     filteredBookings.map(booking => (
-                      <tr key={booking.id} className="hover:bg-slate-50 transition-colors group cursor-pointer">
+                      <tr key={booking.id} onClick={() => onAssignClick?.(booking)} className="hover:bg-slate-50 transition-colors group cursor-pointer">
                         <td className="px-6 py-4">
                           <p className="font-extrabold text-slate-800">{booking.id}</p>
                           <p className="text-[11px] text-slate-500 mt-0.5">{booking.createdDate}</p>
@@ -226,12 +235,12 @@ export default function BookingsQueue({
                         </td>
                         <td className="px-6 py-4 text-right">
                           {booking.status === 'new' || booking.status === 'assigned' || booking.status === 'viewed' || booking.status === 'accepted' ? (
-                            <button 
+                            <button
                               onClick={(e) => { e.stopPropagation(); onAssignClick?.(booking); }}
                               className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-sm transition-all cursor-pointer ml-auto"
                             >
                               <UserPlus className="w-4 h-4" />
-                              {booking.assignedInspectorId ? 'Reassign' : 'Assign Inspector'}
+                              {booking.assignedInspectorId ? 'Review & Reassign' : 'Review & Assign'}
                             </button>
                           ) : booking.status === 'Ready to Deliver' ? (
                             <button 
@@ -246,12 +255,12 @@ export default function BookingsQueue({
                               <CheckCircle className="w-4 h-4" /> Delivered {booking.deliveredDate}
                             </span>
                           ) : (
-                            <button 
+                            <button
                               onClick={(e) => { e.stopPropagation(); onAssignClick?.(booking); }}
                               className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-sm transition-all cursor-pointer ml-auto"
                             >
                               <UserPlus className="w-4 h-4" />
-                              Assign Inspector
+                              Review & Assign
                             </button>
                           )}
                         </td>

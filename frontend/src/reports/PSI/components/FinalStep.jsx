@@ -21,36 +21,15 @@ const FinalStep = ({ form, onPrev, onSubmit, onClearAfterDownload, hasDownloaded
           <div
             style={{
               marginBottom: "30px",
-              padding: "14px 16px",
+              padding: "12px 16px",
               border: `1px solid ${colors.success}`,
               borderRadius: "8px",
               background: "rgba(16, 185, 129, 0.08)",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: "12px",
-              flexWrap: "wrap",
             }}
           >
             <span style={{ color: colors.text, fontWeight: "600", fontSize: "14px" }}>
-              Report downloaded successfully. Ready to start a new one?
+              Report downloaded successfully.
             </span>
-            <button
-              type="button"
-              onClick={onClearAfterDownload}
-              style={{
-                padding: "8px 16px",
-                background: colors.danger,
-                border: "none",
-                borderRadius: "6px",
-                color: "#fff",
-                fontWeight: "600",
-                cursor: "pointer",
-                fontSize: "13px",
-              }}
-            >
-              Clear Form
-            </button>
           </div>
         )}
 

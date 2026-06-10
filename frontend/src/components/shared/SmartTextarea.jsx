@@ -1,112 +1,79 @@
-import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
+import { useState, useLayoutEffect, useRef } from "react";
 import { colors } from '../../styles';
 import { ENDPOINTS } from '../../config/api';
+import { useReportMeta } from '../../context/ReportMetaContext';
 
-export default function SmartTextarea({ 
-  value, 
-  onChange, 
-  context = "report writing", 
+export default function SmartTextarea({
+  value,
+  onChange,
+  context = "report writing",
   placeholder,
   minHeight = 52,
-  ...props 
+  photos = [],
+  ...props
 }) {
+  const reportMeta = useReportMeta();
   const [suggestion, setSuggestion] = useState("");
+  const [loading, setLoading] = useState(false);
   const [manualHeight, setManualHeight] = useState(null);
   const textareaRef = useRef(null);
-  const containerRef = useRef(null);
   const dragRef = useRef({ dragging: false, startY: 0, startH: 0 });
 
-  // ─── Auto-grow: runs synchronously after every DOM update ─────────────────
+  // ─── Auto-grow ─────────────────────────────────────────────────────────────
   useLayoutEffect(() => {
     if (manualHeight !== null) return;
     const el = textareaRef.current;
     if (!el) return;
-    // Setting to "1px" forces the browser to expose the true scrollHeight
     el.style.height = "1px";
-    const next = Math.max(minHeight, el.scrollHeight);
-    el.style.height = next + "px";
+    el.style.height = Math.max(minHeight, el.scrollHeight) + "px";
   }, [value, manualHeight, minHeight]);
 
-  // Apply manual height
   useLayoutEffect(() => {
     if (manualHeight === null) return;
     const el = textareaRef.current;
     if (el) el.style.height = manualHeight + "px";
   }, [manualHeight]);
 
-  // ─── Drag-to-resize handle ─────────────────────────────────────────────────
+  // ─── Drag-to-resize ────────────────────────────────────────────────────────
   const onDragStart = (e) => {
     e.preventDefault();
     const el = textareaRef.current;
     if (!el) return;
-    dragRef.current = {
-      dragging: true,
-      startY: e.clientY,
-      startH: el.getBoundingClientRect().height,
-    };
-
+    dragRef.current = { dragging: true, startY: e.clientY, startH: el.getBoundingClientRect().height };
     const onMove = (ev) => {
       if (!dragRef.current.dragging) return;
-      const delta = ev.clientY - dragRef.current.startY;
-      const next = Math.max(minHeight, dragRef.current.startH + delta);
-      setManualHeight(next);
+      setManualHeight(Math.max(minHeight, dragRef.current.startH + ev.clientY - dragRef.current.startY));
     };
-
     const onUp = () => {
       dragRef.current.dragging = false;
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
     };
-
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
   };
 
-  // Double-click handle → reset to auto-grow
-  const onDragDblClick = () => setManualHeight(null);
-
-  // Suggestion fetcher (hoisted so useEffect can call it)
-  const fetchSuggestion = useCallback(async (partialText = "") => {
+  // ─── Manual AI suggestion (button-only) ────────────────────────────────────
+  const fetchSuggestion = async () => {
+    setLoading(true);
+    setSuggestion("");
     try {
       const token = sessionStorage.getItem("token") || sessionStorage.getItem("reportToken");
       const res = await fetch(ENDPOINTS.SUGGEST, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": token ? `Bearer ${token}` : ""
+          "Authorization": token ? `Bearer ${token}` : "",
         },
-        body: JSON.stringify({ context, partialText }),
+        body: JSON.stringify({ context, partialText: value || "", photos, reportMeta }),
       });
       const data = await res.json();
       if (data.suggestion) setSuggestion(data.suggestion);
     } catch {
       // fail silently
+    } finally {
+      setLoading(false);
     }
-  }, [context]);
-
-  // ─── AI suggestion debounce ────────────────────────────────────────────────
-  useEffect(() => {
-    if (!value || typeof value !== "string" || value.trim() === "" || /[.\n]$/.test(value)) return;
-
-    const timer = setTimeout(() => fetchSuggestion(value), 600);
-
-    return () => clearTimeout(timer);
-  }, [value, fetchSuggestion]);
-
-  const handleSuggestClick = () => {
-    setSuggestion("Generating...");
-    fetchSuggestion("");
-  };
-
-  // ─── Tab / Right Arrow to accept suggestion ────────────────────────────────
-  const handleKeyDown = (e) => {
-    const isAtEnd = e.target.selectionStart === value.length;
-    if ((e.key === "Tab" || (e.key === "ArrowRight" && isAtEnd)) && suggestion) {
-      e.preventDefault();
-      e.stopPropagation();
-      acceptSuggestion();
-    }
-    if (props.onKeyDown) props.onKeyDown(e);
   };
 
   const acceptSuggestion = () => {
@@ -118,7 +85,6 @@ export default function SmartTextarea({
       stopPropagation: () => {},
     });
     setSuggestion("");
-    // cursor to end on next tick
     setTimeout(() => {
       if (textareaRef.current) {
         textareaRef.current.setSelectionRange(newValue.length, newValue.length);
@@ -127,38 +93,37 @@ export default function SmartTextarea({
     }, 0);
   };
 
+  // ─── Tab / Right Arrow accepts suggestion ──────────────────────────────────
+  const handleKeyDown = (e) => {
+    const isAtEnd = e.target.selectionStart === (value || "").length;
+    if ((e.key === "Tab" || (e.key === "ArrowRight" && isAtEnd)) && suggestion) {
+      e.preventDefault();
+      e.stopPropagation();
+      acceptSuggestion();
+    }
+    if (props.onKeyDown) props.onKeyDown(e);
+  };
+
   return (
-    <div ref={containerRef} style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+    <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
       {/* Suggestion preview strip */}
       {suggestion && (
-        <div
-          style={{
-            fontSize: "11px",
-            color: "#9ca3af",
-            fontStyle: "italic",
-            padding: "2px 2px 4px",
-            lineHeight: "1.4",
-            borderLeft: `2px solid ${colors.primary}`,
-            paddingLeft: "6px",
-            marginBottom: "3px",
-            maxHeight: "60px",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-        >
+        <div style={{
+          fontSize: "11px", color: "#9ca3af", fontStyle: "italic",
+          padding: "2px 6px 4px", lineHeight: "1.4",
+          borderLeft: `2px solid ${colors.primary}`, marginBottom: "3px",
+          maxHeight: "60px", overflow: "hidden",
+        }}>
           {suggestion}
         </div>
       )}
 
-      {/* The real textarea — height is controlled by useLayoutEffect */}
+      {/* Textarea */}
       <textarea
         ref={textareaRef}
         {...props}
         value={value}
-        onChange={(e) => {
-          setSuggestion("");
-          onChange(e);
-        }}
+        onChange={(e) => { setSuggestion(""); onChange(e); }}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         style={{
@@ -167,111 +132,52 @@ export default function SmartTextarea({
           minHeight: minHeight + "px",
           boxSizing: "border-box",
           display: "block",
-          overflow: "hidden",  // hides scrollbar while height adjusts
-          resize: "none",       // we provide our own handle
+          overflow: "hidden",
+          resize: "none",
           transition: "height 0.1s ease",
         }}
       />
 
-      {/* Bottom bar: Accept button + drag handle */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          height: "16px",
-          marginTop: "1px",
-        }}
-      >
-        {/* Accept Suggestion button */}
-        {suggestion ? (
-          suggestion === "Generating..." ? (
-            <span style={{ fontSize: "10px", color: colors.textMuted, fontStyle: "italic", marginLeft: "4px" }}>
-              ✨ Thinking...
-            </span>
+      {/* Bottom bar */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "18px", marginTop: "2px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+          {loading ? (
+            <span style={{ fontSize: "10px", color: colors.textMuted, fontStyle: "italic" }}>✨ Thinking...</span>
+          ) : suggestion ? (
+            <>
+              <button type="button" onClick={acceptSuggestion} style={{ background: colors.primary, color: "#fff", border: "none", borderRadius: "4px", fontSize: "10px", fontWeight: "bold", padding: "2px 10px", cursor: "pointer" }}>
+                ✓ Accept (Tab)
+              </button>
+              <button type="button" onClick={() => setSuggestion("")} style={{ background: "transparent", color: colors.textMuted, border: `1px solid ${colors.border}`, borderRadius: "4px", fontSize: "11px", fontWeight: "bold", padding: "1px 6px", cursor: "pointer", lineHeight: 1 }}>
+                ✕
+              </button>
+            </>
           ) : (
             <button
               type="button"
-              onClick={acceptSuggestion}
-              style={{
-                background: colors.primary,
-                color: "#fff",
-                border: "none",
-                borderRadius: "4px",
-                fontSize: "10px",
-                fontWeight: "bold",
-                padding: "2px 10px",
-                cursor: "pointer",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
-                letterSpacing: "0.3px",
-              }}
+              onClick={fetchSuggestion}
+              style={{ background: "transparent", color: colors.primary, border: `1px solid ${colors.primary}`, borderRadius: "4px", fontSize: "10px", fontWeight: "bold", padding: "1px 8px", cursor: "pointer", transition: "all 0.2s" }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = colors.primary; e.currentTarget.style.color = "#fff"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = colors.primary; }}
             >
-              ✓ Accept Suggestion (Tab)
+              ✨ AI Suggest
             </button>
-          )
-        ) : (
-          !value && (
-            <button
-              type="button"
-              onClick={handleSuggestClick}
-              style={{
-                background: "transparent",
-                color: colors.primary,
-                border: `1px solid ${colors.primary}`,
-                borderRadius: "4px",
-                fontSize: "10px",
-                fontWeight: "bold",
-                padding: "1px 8px",
-                cursor: "pointer",
-                transition: "all 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = colors.primary;
-                e.currentTarget.style.color = "#fff";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent";
-                e.currentTarget.style.color = colors.primary;
-              }}
-            >
-              ✨ Suggest Remark
-            </button>
-          )
-        )}
+          )}
+        </div>
 
         {/* Drag-to-resize grip */}
         <div
           onMouseDown={onDragStart}
-          onDoubleClick={onDragDblClick}
+          onDoubleClick={() => setManualHeight(null)}
           title="Drag to resize · Double-click to auto-fit"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "3px",
-            cursor: "ns-resize",
-            userSelect: "none",
-            padding: "2px 6px",
-            borderRadius: "3px",
-            opacity: 0.5,
-            transition: "opacity 0.2s",
-          }}
+          style={{ display: "flex", alignItems: "center", gap: "3px", cursor: "ns-resize", userSelect: "none", padding: "2px 6px", borderRadius: "3px", opacity: 0.5, transition: "opacity 0.2s" }}
           onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
           onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.5")}
         >
           {[0, 1, 2, 3].map((i) => (
-            <div
-              key={i}
-              style={{
-                width: "3px",
-                height: "3px",
-                borderRadius: "50%",
-                background: colors.textMuted,
-              }}
-            />
+            <div key={i} style={{ width: "3px", height: "3px", borderRadius: "50%", background: colors.textMuted }} />
           ))}
-          <span style={{ fontSize: "9px", color: colors.textMuted, marginLeft: "2px" }}>
-            drag
-          </span>
+          <span style={{ fontSize: "9px", color: colors.textMuted, marginLeft: "2px" }}>drag</span>
         </div>
       </div>
     </div>

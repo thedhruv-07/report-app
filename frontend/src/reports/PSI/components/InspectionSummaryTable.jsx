@@ -1,5 +1,6 @@
 import { colors } from '../../../styles';
 import NavButtons from '../../shared/components/NavButtons';
+import { Lock } from 'lucide-react';
 
 const LABEL_W = "180px";
 
@@ -89,7 +90,16 @@ const CRITERIA_ROWS = [
 
 const RESULT_COLOR = { Passed: colors.success, Failed: colors.danger, Pending: colors.warning };
 
-export default function InspectionSummaryTable({ form, handleChange, onPrev, onNext }) {
+function LockedValue({ value, label }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '1px 4px' }}>
+      <span style={{ fontSize: '13px', color: colors.text, fontWeight: 600 }}>{value || '—'}</span>
+      <Lock size={11} color="#7c3aed" title={`${label} set by CS — not editable`} />
+    </div>
+  );
+}
+
+export default function InspectionSummaryTable({ form, handleChange, onPrev, onNext, lockedAql = false, lockedOrderQty = false }) {
   const setField = (name, value) => handleChange({ target: { name, value } });
 
   return (
@@ -131,18 +141,27 @@ export default function InspectionSummaryTable({ form, handleChange, onPrev, onN
 
         {/* Rows with 3 extra columns */}
         {[
-          { label: "Inspection Standard", name: "inspectionStandard", c: "aqlCritical",      m: "aqlMajor",      mi: "aqlMinor"      },
-          { label: "Sampling Plan",        name: "samplingPlan",       c: "aqlCritical",      m: "aqlMajor",      mi: "aqlMinor"      },
-          { label: "Inspection Level",     name: "inspectionLevel",    c: "acceptedCritical", m: "acceptedMajor", mi: "acceptedMinor" },
-          { label: "Order Quantity",       name: "orderQuantity",      c: "foundCritical",    m: "foundMajor",    mi: "foundMinor"    },
+          { label: "Inspection Standard", name: "inspectionStandard", c: "aqlCritical",      m: "aqlMajor",      mi: "aqlMinor",      aql: true },
+          { label: "Sampling Plan",        name: "samplingPlan",       c: "aqlCritical",      m: "aqlMajor",      mi: "aqlMinor",      aql: true },
+          { label: "Inspection Level",     name: "inspectionLevel",    c: "acceptedCritical", m: "acceptedMajor", mi: "acceptedMinor", aql: true },
+          { label: "Order Quantity",       name: "orderQuantity",      c: "foundCritical",    m: "foundMajor",    mi: "foundMinor",    oqty: true },
         ].map((row) => (
           <div key={row.name}
             style={{ display: "grid", gridTemplateColumns: `${LABEL_W} 240px 90px 90px 90px`, gap: 0, padding: "7px 16px", borderBottom: "1px solid #edf0f5", alignItems: "center", transition: "background 0.15s" }}
             onMouseEnter={(e) => { e.currentTarget.style.background = "#fafbfc"; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
           >
-            <div style={{ fontSize: "12px", color: colors.textLight, fontWeight: 600 }}>{row.label}</div>
-            <div style={{ paddingRight: "8px" }}><TextInput name={row.name} value={form[row.name]} onChange={handleChange} placeholder="—" /></div>
+            <div style={{ fontSize: "12px", color: colors.textLight, fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              {row.label}
+              {row.aql && lockedAql && <Lock size={10} color="#7c3aed" title="Set by CS" />}
+              {row.oqty && lockedOrderQty && <Lock size={10} color="#7c3aed" title="Set by CS" />}
+            </div>
+            <div style={{ paddingRight: "8px" }}>
+              {(row.aql && lockedAql) || (row.oqty && lockedOrderQty)
+                ? <LockedValue value={form[row.name]} label={row.label} />
+                : <TextInput name={row.name} value={form[row.name]} onChange={handleChange} placeholder="—" />
+              }
+            </div>
             <div style={{ paddingRight: "4px" }}><TextInput name={row.c}    value={form[row.c]}    onChange={handleChange} placeholder="—" /></div>
             <div style={{ paddingRight: "4px" }}><TextInput name={row.m}    value={form[row.m]}    onChange={handleChange} placeholder="—" /></div>
             <div><TextInput name={row.mi} value={form[row.mi]} onChange={handleChange} placeholder="—" /></div>
@@ -153,8 +172,15 @@ export default function InspectionSummaryTable({ form, handleChange, onPrev, onN
         <Row label="Available Quantity">
           <TextInput name="availableQuantity" value={form.availableQuantity} onChange={handleChange} placeholder="Enter quantity" />
         </Row>
-        <Row label="Sample Size">
-          <TextInput name="sampleSize" value={form.sampleSize} onChange={handleChange} placeholder="Enter size" />
+        <Row label={
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            Sample Size {lockedAql && <Lock size={10} color="#7c3aed" title="Set by CS" />}
+          </span>
+        }>
+          {lockedAql
+            ? <LockedValue value={form.sampleSize} label="Sample Size" />
+            : <TextInput name="sampleSize" value={form.sampleSize} onChange={handleChange} placeholder="Enter size" />
+          }
         </Row>
 
         {/* Result */}

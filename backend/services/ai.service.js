@@ -30,36 +30,88 @@ const learnFromReport = (data) => {
   } catch (e) { console.error("Local Learning Error:", e); }
 };
 
-const getAISuggestion = async (context, partialText = "") => {
+const buildSystemPrompt = (reportMeta = {}) => {
+  const parts = ["You are a professional factory inspection report assistant."];
+  const { inspectionType, product, client, factory, inspectionDate } = reportMeta;
+  if (inspectionType || product || client || factory) {
+    const details = [
+      inspectionType && `Inspection type: ${inspectionType}`,
+      product        && `Product: ${product}`,
+      client         && `Client: ${client}`,
+      factory        && `Factory: ${factory}`,
+      inspectionDate && `Date: ${inspectionDate}`,
+    ].filter(Boolean).join('. ');
+    parts.push(`Current inspection — ${details}.`);
+    parts.push("All remarks must be specific to this product and inspection context.");
+  }
+  parts.push("Reply with ONLY the requested text — one sentence, no preamble, no lists, no examples.");
+  return parts.join(' ');
+};
+
+const getAISuggestion = async (context, partialText = "", photos = [], reportMeta = {}) => {
   try {
-    // 1. Local Memory Match (using cache)
+    if (!groq) return "";
+
+    // --- Photo-aware suggestion (vision model) ---
+    if (photos && photos.length > 0) {
+      const imageContents = photos.slice(0, 3).map(p => ({
+        type: "image_url",
+        image_url: { url: p.startsWith("data:") ? p : `data:image/jpeg;base64,${p}` }
+      }));
+
+      const { product, client, factory } = reportMeta;
+      const metaHint = [product, client && `for ${client}`, factory && `at ${factory}`].filter(Boolean).join(' ');
+      const prompt = partialText
+        ? `Based on these inspection photos${metaHint ? ` of ${metaHint}` : ''}, continue this remark in ONE sentence: "${partialText}". Output ONLY the continuation.`
+        : `Look at these inspection photos${metaHint ? ` of ${metaHint}` : ''} and write ONE professional observation remark describing what you see. Output ONLY the single sentence.`;
+
+      try {
+        const response = await groq.chat.completions.create({
+          messages: [{
+            role: "user",
+            content: [{ type: "text", text: prompt }, ...imageContents]
+          }],
+          model: "meta-llama/llama-4-scout-17b-16e-instruct",
+          max_tokens: 100,
+          temperature: 0.3,
+        });
+        const suggestion = response.choices[0]?.message?.content?.trim() || "";
+        return suggestion.replace(/^["']|["']$/g, '');
+      } catch (e) {
+        console.warn("Vision suggestion failed, falling back to text:", e.message);
+      }
+    }
+
+    // --- Text-only suggestion ---
+    // 1. Local memory match (only when user has typed something)
     if (partialText) {
       const localMatch = localMemoryCache.find(m => m.toLowerCase().startsWith(partialText.toLowerCase()));
       if (localMatch && typeof localMatch === "string") return localMatch.slice(partialText.length);
     }
 
-    // 2. Groq AI Match
-    if (groq) {
-      try {
-        const prompt = partialText
-          ? `The user is typing a remark about "${context}". They have typed: "${partialText}". Complete their sentence professionally.`
-          : `Generate a professional, concise initial sentence for a factory inspection report remark regarding "${context}". Focus on standard findings or observations.`;
+    // 2. Groq text model with grounded context
+    try {
+      const systemPrompt = buildSystemPrompt(reportMeta);
+      const { product, client, factory } = reportMeta;
+      const metaHint = [product, client && `for ${client}`, factory && `at ${factory}`].filter(Boolean).join(' ');
+      const fullContext = [context, metaHint].filter(Boolean).join(' — ');
 
-        const completion = await groq.chat.completions.create({
-          messages: [
-            { role: "system", content: "You are a professional quality control inspector assistant. Provide concise, factual, and industry-standard completions or suggestions." },
-            { role: "user", content: prompt }
-          ],
-          model: "llama-3.1-8b-instant",
-          max_tokens: 100,
-        });
-        const suggestion = completion.choices[0]?.message?.content?.trim() || "";
-        // Remove quotes if the AI wraps the suggestion
-        return suggestion.replace(/^["']|["']$/g, '');
-      } catch (e) {
-        console.error("Groq Error:", e);
-        throw e; // 🔥 DON'T SILENTLY FAIL
-      }
+      const prompt = partialText
+        ? `Continue this inspection remark in ONE sentence only. Text so far: "${partialText}". Output ONLY the continuation text, nothing else.`
+        : `Write ONE professional inspection remark about: "${fullContext}". Output ONLY the single sentence, no intro, no numbering, no explanation.`;
+
+      const completion = await groq.chat.completions.create({
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: prompt }
+        ],
+        model: "llama-3.1-8b-instant",
+        max_tokens: 80,
+      });
+      const suggestion = completion.choices[0]?.message?.content?.trim() || "";
+      return suggestion.replace(/^["']|["']$/g, '');
+    } catch (e) {
+      console.error("Groq text suggestion error:", e);
     }
 
     return "";

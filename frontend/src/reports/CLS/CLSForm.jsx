@@ -6,21 +6,22 @@ import { colors } from "../../styles";
 import { clsSchema } from "../../shared/formSchemas";
 import ReportLoader from '../../components/shared/ReportLoader';
 
-import { 
-  GeneralInfo, 
-  InspectionSummary, 
-  Remarks, 
-  Conclusion, 
-  QuantityDetails, 
-  ProductConformity, 
-  Packing, 
-  LoadingProcess, 
-  ClientRequirement, 
-  FinalPhotos, 
-  FinalStep 
+import {
+  GeneralInfo,
+  InspectionSummary,
+  Remarks,
+  Conclusion,
+  QuantityDetails,
+  ProductConformity,
+  Packing,
+  LoadingProcess,
+  ClientRequirement,
+  FinalPhotos,
+  FinalStep
 } from './components';
+import ReportReview from '../shared/components/ReportReview';
 
-import { compressImage, formatFileSize } from "../../utils/imageCompression";
+import { readImagePreview, formatFileSize } from "../../utils/fileUtils";
 
 const safeJsonParse = (value, fallback) => {
   try { return value ? JSON.parse(value) : fallback; } catch { return fallback; }
@@ -47,7 +48,7 @@ export default function ContainerLoading() {
       supplier:       prefillData.factory?.name                                      || prev.supplier,
       factory:        prefillData.factory?.name                                      || prev.factory,
       location:       factoryAddress                                                 || prev.location,
-      inspectionDate: prefillData.inspectionDate                                     || prev.inspectionDate,
+      inspectionDate: prefillData.inspectionDate?.slice(0, 10)                       || prev.inspectionDate,
       productName:    prefillData.product?.name || prefillData.product?.description  || prev.productName,
       orderQuantity:  String(prefillData.product?.quantity ?? prev.orderQuantity ?? ''),
     }));
@@ -185,15 +186,6 @@ export default function ContainerLoading() {
     alert("Demo data has been filled!");
   };
 
-  const clearForm = () => {
-    if (window.confirm("Are you sure you want to clear all data? This cannot be undone.")) {
-      localStorage.removeItem("clsStep");
-      localStorage.removeItem("clsForm");
-      setStep(1);
-      setForm({});
-    }
-  };
-
   const clearFormAfterDownload = () => {
     localStorage.removeItem("clsStep");
     localStorage.removeItem("clsForm");
@@ -216,11 +208,11 @@ export default function ContainerLoading() {
     if (!file) return;
     setIsPhotoProcessing(true);
     try {
-      const { file: compressedFile, preview, originalSize, compressedSize } = await compressImage(file);
+      const preview = await readImagePreview(file);
       setForm(prev => ({
         ...prev,
         generalPhoto: preview,
-        generalPhotoMeta: { fileName: compressedFile.name, originalSize, compressedSize }
+        generalPhotoMeta: { fileName: file.name, originalSize: file.size, compressedSize: file.size }
       }));
     } catch (error) {
       console.error("Photo upload failed:", error);
@@ -318,12 +310,63 @@ export default function ContainerLoading() {
     { id: 8, label: "Loading Process", component: <LoadingProcess form={formWithSchema} handleChange={handleChange} /> },
     { id: 9, label: "Client Requirement", component: <ClientRequirement form={formWithSchema} handleChange={handleChange} /> },
     { id: 10, label: "Final Photos", component: <FinalPhotos form={formWithSchema} handleChange={handleChange} /> },
-    { id: 11, label: "Finalize & Download", component: (
-      <FinalStep 
-        reportDownloaded={reportDownloaded} 
-        clearFormAfterDownload={clearFormAfterDownload} 
-        submit={submit} 
-        isGenerating={isGenerating} 
+    { id: 11, label: "Review", component: (
+      <ReportReview
+        conclusion={form.conclusion}
+        onEditStep={setStep}
+        hideNav={true}
+        sections={[
+          {
+            title: 'General Information', icon: '📋', stepIndex: 1,
+            fields: [
+              { label: 'Service', value: form.servicePerformed },
+              { label: 'Client', value: form.client },
+              { label: 'Supplier', value: form.supplier },
+              { label: 'Factory', value: form.factory },
+              { label: 'Location', value: form.location },
+              { label: 'Inspection Date', value: form.inspectionDate },
+              { label: 'Product', value: form.productName },
+              { label: 'PO Number', value: form.po },
+              { label: 'Destination', value: form.destinationCountry },
+            ],
+          },
+          {
+            title: 'Inspection Results', icon: '✅', stepIndex: 2,
+            fields: [
+              { label: 'Quantity', value: form.quantity },
+              { label: 'Product Conformity', value: form.productConformity },
+              { label: 'Packing', value: form.packing },
+              { label: 'Loading Process', value: form.loadingProcess },
+              { label: 'Client Requirement', value: form.clientRequirement },
+            ],
+          },
+          {
+            title: 'Container Details', icon: '🚢', stepIndex: 8,
+            fields: [
+              { label: 'Container No.', value: form.containerNo },
+              { label: 'Container Type', value: form.containerType },
+              { label: 'Seal No.', value: form.sealNo },
+              { label: 'AV Seal No.', value: form.avSealNo },
+              { label: 'Loading Start', value: form.loadingStartTime },
+              { label: 'Loading End', value: form.loadingEndTime },
+            ],
+          },
+          {
+            title: 'Conclusion', icon: '📝', stepIndex: 4,
+            fields: [
+              { label: 'Overall Result', value: form.conclusion },
+              { label: 'Sample Collection', value: form.sampleCollection },
+            ],
+          },
+        ]}
+      />
+    ) },
+    { id: 12, label: "Finalize & Download", component: (
+      <FinalStep
+        reportDownloaded={reportDownloaded}
+        clearFormAfterDownload={clearFormAfterDownload}
+        submit={submit}
+        isGenerating={isGenerating}
       />
     ) },
   ];
@@ -333,7 +376,7 @@ export default function ContainerLoading() {
   const stepShortLabels = {
     1: "General", 2: "Summary", 3: "Remarks", 4: "Conclusion",
     5: "Quantity", 6: "Conformity", 7: "Packing", 8: "Loading",
-    9: "Client Req.", 10: "Photos", 11: "Finalize",
+    9: "Client Req.", 10: "Photos", 11: "Review", 12: "Finalize",
   };
 
   return (
@@ -373,9 +416,6 @@ export default function ContainerLoading() {
           </button>
           <button onClick={handleSaveDraft} style={{ padding: "7px 12px", background: colors.warning, color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "600", boxShadow: "0 2px 6px rgba(245,158,11,0.2)" }}>
             💾 Save Draft
-          </button>
-          <button onClick={clearForm} style={{ padding: "7px 12px", background: colors.danger, color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "600", boxShadow: "0 2px 6px rgba(239,68,68,0.15)" }}>
-            ⟲ Clear
           </button>
         </div>
 

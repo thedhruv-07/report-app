@@ -1847,25 +1847,24 @@ async function createReportContent(data, uploadedFiles) {
       }));
 
       // 2. Individual Tables for each Group (Allows page breaks between groups)
-      for (const group of finalPhotoGroups) {
+      for (let gi = 0; gi < finalPhotoGroups.length; gi++) {
+        const group = finalPhotoGroups[gi];
         const photos = (group.photos || []).filter(p => p.preview || p.wasabiKey || p.url);
         if (photos.length === 0) continue;
 
         const groupRows = [];
 
-        // Group sub-header
-        if (group.description) {
-          groupRows.push(new TableRow({
-            children: [
-              new TableCell({
-                columnSpan: 2,
-                shading: { fill: "F2F2F2" },
-                borders: tableBorders(),
-                children: [new Paragraph({ children: [new TextRun({ text: `Group: ${group.description}`, bold: true })] })]
-              })
-            ]
-          }));
-        }
+        // Group sub-header with sequential number
+        groupRows.push(new TableRow({
+          children: [
+            new TableCell({
+              columnSpan: 2,
+              shading: { fill: "F2F2F2" },
+              borders: tableBorders(),
+              children: [new Paragraph({ children: [new TextRun({ text: `${gi + 1}. ${group.description || "Inspection Photos"}`, bold: true })] })]
+            })
+          ]
+        }));
 
         for (let i = 0; i < photos.length; i += 2) {
           const p1 = photos[i];
@@ -2188,9 +2187,9 @@ function getPhotoContent(photoData, uploadedFiles, allData = {}) {
 function getGroupedPhotoGridParagraphs(groups) {
   if (!Array.isArray(groups) || groups.length === 0) return [];
   const children = [new Paragraph({ children: [new TextRun({ text: "H. PHOTOS", bold: true, size: 22, color: "1F4E79" })] })];
-  groups.forEach(g => {
+  groups.forEach((g, gi) => {
     children.push(new Paragraph({
-      children: [new TextRun({ text: "Group: " + (g.description || "-"), bold: true })],
+      children: [new TextRun({ text: `${gi + 1}. ${g.description || "Inspection Photos"}`, bold: true })],
       spacing: { before: 60, after: 40 }
     }));
     const photos = (g.photos || []).filter(p => p.preview);

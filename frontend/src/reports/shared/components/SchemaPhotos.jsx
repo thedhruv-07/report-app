@@ -1,5 +1,5 @@
 import { colors } from '../../../styles';
-import { compressImage, formatFileSize } from '../../../utils/imageCompression';
+import { readImagePreview, formatFileSize } from '../../../utils/fileUtils';
 import { UploadCloud, FolderUp, X, Camera, Sparkles, CheckSquare, Square, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { ENDPOINTS } from '../../../config/api';
@@ -82,15 +82,10 @@ export default function SchemaPhotos({ config, formData, onChange }) {
       const file = selectedFiles[index];
       const uniqueId = `${groupId}_${Date.now()}_${Math.random()}_${index}`;
       try {
-        const { file: compressedFile, preview, originalSize, compressedSize } = await compressImage(file);
-        processedPhotos.push({ id: uniqueId, label: "", fileName: compressedFile.name, preview, originalSize, compressedSize });
+        const preview = await readImagePreview(file);
+        processedPhotos.push({ id: uniqueId, label: "", fileName: file.name, preview, originalSize: file.size, compressedSize: file.size });
       } catch {
-        const preview = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.readAsDataURL(file);
-        });
-        processedPhotos.push({ id: uniqueId, label: "", fileName: file.name, preview, originalSize: file.size, compressedSize: file.size, error: true });
+        processedPhotos.push({ id: uniqueId, label: "", fileName: file.name, preview: "", originalSize: file.size, compressedSize: file.size, error: true });
       }
     }
 

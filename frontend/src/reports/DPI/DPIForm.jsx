@@ -6,25 +6,26 @@ import { colors } from "../../styles";
 import { dpiSchema } from "../../shared/dpiSchema";
 import ReportLoader from '../../components/shared/ReportLoader';
 
-import { 
-  GeneralInfo, 
-  InspectionSummary, 
-  Remarks, 
-  Conclusion, 
-  QuantityDetails, 
-  Workmanship, 
-  OnSiteTests, 
-  Dimensions, 
-  Packing, 
-  Marking, 
-  ProductionLine, 
-  ClientRequirement, 
-  ProductionSchedule, 
-  Photos, 
-  FinalStep 
+import {
+  GeneralInfo,
+  InspectionSummary,
+  Remarks,
+  Conclusion,
+  QuantityDetails,
+  Workmanship,
+  OnSiteTests,
+  Dimensions,
+  Packing,
+  Marking,
+  ProductionLine,
+  ClientRequirement,
+  ProductionSchedule,
+  Photos,
+  FinalStep
 } from './components';
+import ReportReview from '../shared/components/ReportReview';
 
-import { compressImage, formatFileSize } from "../../utils/imageCompression";
+import { readImagePreview, formatFileSize } from "../../utils/fileUtils";
 
 const safeJsonParse = (value, fallback) => {
   try { return value ? JSON.parse(value) : fallback; } catch { return fallback; }
@@ -70,15 +71,6 @@ export default function DuringProductionInspection() {
       setShowSaveToast(true);
       setTimeout(() => setShowSaveToast(false), 3000);
     } catch { alert("Failed to save draft locally."); }
-  };
-
-  const clearForm = () => {
-    if (window.confirm("Are you sure you want to clear all data? This cannot be undone.")) {
-      localStorage.removeItem("dpiStep");
-      localStorage.removeItem("dpiForm");
-      setStep(1);
-      setForm({});
-    }
   };
 
   const clearFormAfterDownload = () => {
@@ -194,11 +186,11 @@ export default function DuringProductionInspection() {
     if (!file) return;
     setIsPhotoProcessing(true);
     try {
-      const { file: compressedFile, preview, originalSize, compressedSize } = await compressImage(file);
+      const preview = await readImagePreview(file);
       setForm(prev => ({
         ...prev,
         generalPhoto: preview,
-        generalPhotoMeta: { fileName: compressedFile.name, originalSize, compressedSize }
+        generalPhotoMeta: { fileName: file.name, originalSize: file.size, compressedSize: file.size }
       }));
     } catch (error) {
       console.error("Photo upload failed:", error);
@@ -301,12 +293,71 @@ export default function DuringProductionInspection() {
     { id: 12, label: "H. Client Req.", component: <ClientRequirement form={formWithSchema} handleChange={handleChange} /> },
     { id: 13, label: "I. Prod. Schedule", component: <ProductionSchedule form={formWithSchema} handleChange={handleChange} /> },
     { id: 14, label: "J. Photos", component: <Photos form={formWithSchema} handleChange={handleChange} /> },
-    { id: 15, label: "Finalize", component: (
-      <FinalStep 
-        reportDownloaded={reportDownloaded} 
-        clearFormAfterDownload={clearFormAfterDownload} 
-        submit={submit} 
-        isGenerating={isGenerating} 
+    { id: 15, label: "Review", component: (
+      <ReportReview
+        conclusion={form.conclusion}
+        onEditStep={setStep}
+        hideNav={true}
+        sections={[
+          {
+            title: 'General Information', icon: '📋', stepIndex: 1,
+            fields: [
+              { label: 'Client', value: form.client },
+              { label: 'Supplier', value: form.supplier },
+              { label: 'Factory', value: form.factory },
+              { label: 'Location', value: form.location },
+              { label: 'Inspection Date', value: form.inspectionDate },
+              { label: 'Product', value: form.productName },
+              { label: 'PO Number', value: form.po },
+            ],
+          },
+          {
+            title: 'Inspection Summary', icon: '✅', stepIndex: 2,
+            fields: [
+              { label: 'Quantity', value: form.summaryQuantity },
+              { label: 'Workmanship', value: form.summaryWorkmanship },
+              { label: 'On-Site Tests', value: form.summaryOnSiteTests },
+              { label: 'Dimensions', value: form.summaryDimensions },
+              { label: 'Packing', value: form.summaryPacking },
+              { label: 'Marking & Labeling', value: form.summaryMarkingLabeling },
+              { label: 'Product Conformity', value: form.summaryProductConformity },
+              { label: 'Client Requirement', value: form.summaryClientRequirement },
+            ],
+          },
+          {
+            title: 'Workmanship', icon: '🔍', stepIndex: 6,
+            fields: [
+              { label: 'Order Quantity', value: form.wmOrderQuantity },
+              { label: 'Available Quantity', value: form.wmAvailableQuantity },
+              { label: 'Sample Size', value: form.wmSampleSize },
+              { label: 'Result', value: form.wmResult },
+            ],
+          },
+          {
+            title: 'Production Schedule', icon: '🏭', stepIndex: 13,
+            fields: [
+              { label: 'Lines Available', value: form.psLinesAvailable },
+              { label: 'Workers per Line', value: form.psWorkersPerLine },
+              { label: 'Max Output/Day', value: form.psMaxOutputPerDay },
+              { label: 'Est. PSI Date', value: form.psEstimatedPSIDate },
+            ],
+          },
+          {
+            title: 'Conclusion', icon: '📝', stepIndex: 4,
+            fields: [
+              { label: 'Overall Result', value: form.conclusion },
+              { label: 'Inspector', value: form.inspectorName },
+            ],
+          },
+        ]}
+      />
+    )},
+    { id: 16, label: "Finalize", component: (
+      <FinalStep
+        reportDownloaded={reportDownloaded}
+        clearFormAfterDownload={clearFormAfterDownload}
+        submit={submit}
+        isGenerating={isGenerating}
       />
     )},
   ];
@@ -318,7 +369,7 @@ export default function DuringProductionInspection() {
     1: "General",   2: "Summary",    3: "Remarks",     4: "Conclusion",
     5: "Quantity",  6: "Workmanship", 7: "On-Site",    8: "Prod. Spec",
     9: "Packing",  10: "Marking",   11: "Prod. Line", 12: "Client Req.",
-   13: "Schedule", 14: "Photos",    15: "Finalize",
+   13: "Schedule", 14: "Photos",    15: "Review",     16: "Finalize",
   };
 
   // ─── RENDER ────────────────────────────────────────────────────────────────
@@ -359,9 +410,6 @@ export default function DuringProductionInspection() {
           </button>
           <button onClick={handleSaveDraft} style={{ padding: "7px 12px", background: colors.warning, color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "600", boxShadow: "0 2px 6px rgba(245,158,11,0.2)" }}>
             💾 Save Draft
-          </button>
-          <button onClick={clearForm} style={{ padding: "7px 12px", background: colors.danger, color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "600", boxShadow: "0 2px 6px rgba(239,68,68,0.15)" }}>
-            ⟲ Clear
           </button>
         </div>
 

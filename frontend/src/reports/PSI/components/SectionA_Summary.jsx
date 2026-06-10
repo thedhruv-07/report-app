@@ -1,4 +1,4 @@
-import { UploadCloud } from 'lucide-react';
+import { UploadCloud, Lock } from 'lucide-react';
 import { colors } from '../../../styles';
 
 const LABEL_W = "150px";
@@ -17,6 +17,9 @@ const labelStyle = {
   fontSize: "12px",
   color: colors.textLight,
   fontWeight: 600,
+  display: "flex",
+  alignItems: "center",
+  gap: "4px",
 };
 
 const inputStyle = {
@@ -30,6 +33,16 @@ const inputStyle = {
   padding: "1px 4px",
   fontFamily: "inherit",
   transition: "border-color 0.2s",
+};
+
+const lockedInputStyle = {
+  ...inputStyle,
+  background: "#f1f5f9",
+  color: "#64748b",
+  cursor: "not-allowed",
+  borderRadius: "4px",
+  borderBottom: "1px solid #e2e8f0",
+  padding: "1px 6px",
 };
 
 const FIELDS = [
@@ -72,7 +85,9 @@ function GeneralPhotoCard({ photo, onUpload, onRemove }) {
   );
 }
 
-export default function GeneralInfo({ form, handleChange, onNext, handleGeneralPhotoUpload, clearGeneralPhoto }) {
+export default function GeneralInfo({ form, handleChange, onNext, handleGeneralPhotoUpload, clearGeneralPhoto, lockedFields }) {
+  const isLocked = (name) => lockedFields?.has(name);
+
   return (
     <div style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
 
@@ -88,48 +103,57 @@ export default function GeneralInfo({ form, handleChange, onNext, handleGeneralP
         </div>
 
         {/* Field rows */}
-        {FIELDS.map((field, i) => (
-          <div
-            key={field.name}
-            style={rowStyle(i === FIELDS.length - 1)}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "#fafbfc"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-          >
-            <div style={labelStyle}>{field.label}</div>
-            {field.type === "yesNo" ? (
-              <select
-                name={field.name}
-                value={form[field.name] || ""}
-                onChange={handleChange}
-                style={{ ...inputStyle, cursor: "pointer" }}
-              >
-                <option value="">—</option>
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
-              </select>
-            ) : field.type === "date" ? (
-              <input
-                type="date"
-                name={field.name}
-                value={form[field.name] || ""}
-                onChange={handleChange}
-                style={{ ...inputStyle }}
-                onFocus={(e) => { e.target.style.borderBottomColor = colors.primary; }}
-                onBlur={(e)  => { e.target.style.borderBottomColor = "transparent"; }}
-              />
-            ) : (
-              <input
-                name={field.name}
-                placeholder={field.placeholder}
-                value={form[field.name] || ""}
-                onChange={handleChange}
-                style={{ ...inputStyle }}
-                onFocus={(e) => { e.target.style.borderBottomColor = colors.primary; }}
-                onBlur={(e)  => { e.target.style.borderBottomColor = "transparent"; }}
-              />
-            )}
-          </div>
-        ))}
+        {FIELDS.map((field, i) => {
+          const locked = isLocked(field.name);
+          return (
+            <div
+              key={field.name}
+              style={{ ...rowStyle(i === FIELDS.length - 1), background: locked ? "#fafbff" : undefined }}
+              onMouseEnter={(e) => { if (!locked) e.currentTarget.style.background = "#fafbfc"; }}
+              onMouseLeave={(e) => { if (!locked) e.currentTarget.style.background = "transparent"; }}
+            >
+              <div style={labelStyle}>
+                {field.label}
+                {locked && <Lock size={10} color="#6366f1" />}
+              </div>
+              {field.type === "yesNo" ? (
+                <select
+                  name={field.name}
+                  value={form[field.name] || ""}
+                  onChange={handleChange}
+                  disabled={locked}
+                  style={{ ...inputStyle, cursor: locked ? "not-allowed" : "pointer", ...(locked ? { background: "#f1f5f9", color: "#64748b", borderRadius: "4px" } : {}) }}
+                >
+                  <option value="">—</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              ) : field.type === "date" ? (
+                <input
+                  type="date"
+                  name={field.name}
+                  value={form[field.name] || ""}
+                  onChange={handleChange}
+                  readOnly={locked}
+                  style={locked ? lockedInputStyle : inputStyle}
+                  onFocus={(e) => { if (!locked) e.target.style.borderBottomColor = colors.primary; }}
+                  onBlur={(e)  => { if (!locked) e.target.style.borderBottomColor = "transparent"; }}
+                />
+              ) : (
+                <input
+                  name={field.name}
+                  placeholder={field.placeholder}
+                  value={form[field.name] || ""}
+                  onChange={handleChange}
+                  readOnly={locked}
+                  style={locked ? lockedInputStyle : inputStyle}
+                  onFocus={(e) => { if (!locked) e.target.style.borderBottomColor = colors.primary; }}
+                  onBlur={(e)  => { if (!locked) e.target.style.borderBottomColor = "transparent"; }}
+                />
+              )}
+            </div>
+          );
+        })}
 
         {/* Next button */}
         <div style={{ padding: "10px 16px", borderTop: `1px solid #edf0f5`, background: "#f8fafc", display: "flex", justifyContent: "flex-end" }}>
