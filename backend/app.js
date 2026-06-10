@@ -66,6 +66,11 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 
+// Serve static assets (logo etc.) — used by email templates
+const path = require('path');
+const fs = require('fs');
+app.use('/assets', express.static(path.join(__dirname, 'assets')));
+
 // Health check
 app.get("/", (req, res) => {
   res.json({ status: "success", message: "Veritas Report API is live!" });

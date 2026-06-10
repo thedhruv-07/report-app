@@ -141,8 +141,9 @@ const renderTemplate = (name, vars = {}) => {
   let html = templateCache[name];
   // Brevo API: skip base64 (pushes past Gmail 102KB clip) — use hosted public URL instead.
   const logoDataUri = process.env.BREVO_API_KEY ? '' : getLogoDataUri();
+  const backendBase = (process.env.BACKEND_URL || process.env.FRONTEND_URL || '').replace(/\/$/, '');
   const logoSrc = logoDataUri
-    || (process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL.replace(/\/$/, '')}/company-logo.png` : '');
+    || (backendBase ? `${backendBase}/assets/company-logo.png` : '');
   const logoHtml = logoSrc
     ? `<img src="${logoSrc}" alt="Absolute Veritas" style="height:44px;display:block;margin:0 auto;" />`
     : `<span style="font-size:18px;font-weight:800;color:#1d4ed8;letter-spacing:-0.5px;">Absolute Veritas</span>`;
