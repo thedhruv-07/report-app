@@ -11,9 +11,9 @@ import {
   AlertTriangle,
   Clock,
   ArrowLeft,
-  Info,
   ChevronRight
 } from 'lucide-react';
+import ToastList from '../../../components/shared/ToastList';
 
 export default function ManagerChrome({
   currentUser,
@@ -36,7 +36,7 @@ export default function ManagerChrome({
   handleMarkAsRead,
   handleOpenReport,
   handleMarkAllRead,
-  setToasts,
+  dismissToast,
   setShowFinalizeModal,
   setShowCorrectionModal,
   confirmFinalizeReport,
@@ -221,31 +221,7 @@ export default function ManagerChrome({
         )}
       </div>
 
-      <div className="fixed bottom-4 right-4 z-3000 flex flex-col gap-2 pointer-events-none">
-        {toasts.map(toast => (
-          <div
-            key={toast.id}
-            className={`flex items-center gap-3 px-4.5 py-3 rounded-2xl shadow-xl transition-all duration-300 transform scale-100 pointer-events-auto max-w-sm ${
-              toast.type === 'success' ? 'bg-emerald-500 text-white shadow-emerald-200/50' :
-              toast.type === 'warning' ? 'bg-amber-500 text-white shadow-amber-200/50' :
-              toast.type === 'error' ? 'bg-rose-500 text-white shadow-rose-200/50' :
-              'bg-blue-500 text-white shadow-blue-200/50'
-            }`}
-          >
-            {toast.type === 'success' && <CheckCircle className="w-5 h-5 shrink-0" />}
-            {toast.type === 'warning' && <AlertTriangle className="w-5 h-5 shrink-0" />}
-            {toast.type === 'error' && <X className="w-5 h-5 shrink-0" />}
-            {toast.type === 'info' && <Info className="w-5 h-5 shrink-0" />}
-            <span className="text-xs font-bold leading-normal">{toast.message}</span>
-            <button
-              onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
-              className="text-white hover:opacity-80 transition-opacity ml-auto"
-            >
-              <X className="w-4 h-4 shrink-0" />
-            </button>
-          </div>
-        ))}
-      </div>
+      <ToastList toasts={toasts} onDismiss={dismissToast} />
 
       {showFinalizeModal && activeReport && (
         <div className="fixed inset-0 z-2000 flex items-center justify-center p-4">

@@ -4,7 +4,6 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { io } from "socket.io-client";
 import { ENDPOINTS, API_BASE_URL } from "../config/api";
 import { useAuth } from "./AuthContext";
-import { motion, AnimatePresence } from "framer-motion";
 import { Bell, X } from "lucide-react";
 
 const NotificationContext = createContext(null);
@@ -39,18 +38,32 @@ export function NotificationProvider({ children }) {
       if (initialLoadDone.current) {
         const prevUnreadIds = new Set(previousNotifsRef.current.filter(n => !n.isRead).map(n => n._id));
         const trulyNew = newUnread.filter(n => !prevUnreadIds.has(n._id));
-        
         trulyNew.forEach(notif => {
-          const bannerId = Math.random().toString(36).substr(2, 9);
+          const bannerId = Math.random().toString(36).slice(2, 11);
           setActiveBanners(prev => [...prev, { ...notif, bannerId }]);
-          
-          // Auto dismiss after 5 seconds
           setTimeout(() => {
             setActiveBanners(prev => prev.filter(b => b.bannerId !== bannerId));
           }, 5000);
         });
       } else {
         initialLoadDone.current = true;
+        if (newUnread.length > 0) {
+          const alreadyShown = sessionStorage.getItem("notif_popup_shown");
+          if (!alreadyShown) {
+            const bannerId = Math.random().toString(36).slice(2, 11);
+            const summary = {
+              bannerId,
+              title: `${newUnread.length} unread notification${newUnread.length !== 1 ? 's' : ''}`,
+              message: newUnread[0].message || newUnread[0].title || 'Check your notification panel for details.',
+              type: 'info',
+            };
+            setActiveBanners(prev => [...prev, summary]);
+            sessionStorage.setItem("notif_popup_shown", "true");
+            setTimeout(() => {
+              setActiveBanners(prev => prev.filter(b => b.bannerId !== bannerId));
+            }, 6000);
+          }
+        }
       }
       previousNotifsRef.current = notifs;
 
@@ -146,39 +159,49 @@ export function NotificationProvider({ children }) {
     }}>
       {children}
       
-      {/* Global Notification Banners */}
-      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-3 pointer-events-none w-full max-w-sm px-4">
-        <AnimatePresence>
+      {/* Global Notification Banners — slide-down from top, auto-dismiss */}
+      {activeBanners.length > 0 && (
+        <div style={{ position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 10000, display: 'flex', flexDirection: 'column', gap: '10px', pointerEvents: 'none', alignItems: 'center' }}>
+          <style>{`
+            @keyframes notif-drop-in {
+              0%   { transform: translateY(-120%); opacity: 0; }
+              60%  { transform: translateY(6px);   opacity: 1; }
+              100% { transform: translateY(0);      opacity: 1; }
+            }
+            @keyframes notif-drop-out {
+              from { transform: translateY(0);      opacity: 1; }
+              to   { transform: translateY(-120%);  opacity: 0; }
+            }
+          `}</style>
           {activeBanners.map(banner => (
-            <motion.div
-              key={banner.bannerId}
-              initial={{ opacity: 0, y: -50, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
-              className="pointer-events-auto bg-white border border-indigo-100 shadow-xl rounded-2xl p-4 flex gap-3 items-start w-full relative overflow-hidden"
-            >
-              {/* Left Accent border */}
-              <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500" />
-              
-              <div className="shrink-0 mt-0.5 bg-indigo-50 p-2 rounded-full text-indigo-600">
-                <Bell className="w-4 h-4" />
+            <div key={banner.bannerId} style={{
+              display: 'flex', alignItems: 'flex-start', gap: '12px',
+              padding: '14px 18px',
+              borderRadius: '14px',
+              background: '#1e1b4b',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.3), 0 2px 10px rgba(99,102,241,0.25)',
+              color: '#fff',
+              minWidth: '320px',
+              maxWidth: '460px',
+              pointerEvents: 'auto',
+              animation: 'notif-drop-in 0.45s cubic-bezier(0.22,1,0.36,1) both',
+              borderBottom: '3px solid #6366f1',
+            }}>
+              <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'rgba(99,102,241,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Bell size={16} style={{ color: '#818cf8' }} />
               </div>
-              
-              <div className="flex-1 pr-6">
-                <p className="font-bold text-slate-800 text-sm">{banner.title || 'New Notification'}</p>
-                <p className="text-sm text-slate-600 mt-0.5 leading-snug">{banner.message}</p>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#e0e7ff', lineHeight: '1.3' }}>{banner.title || 'New Notification'}</p>
+                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#a5b4fc', lineHeight: '1.5' }}>{banner.message}</p>
               </div>
-              
-              <button 
-                onClick={() => removeBanner(banner.bannerId)}
-                className="absolute top-3 right-3 p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-              >
-                <X className="w-4 h-4" />
+              <button onClick={() => removeBanner(banner.bannerId)}
+                style={{ background: 'rgba(255,255,255,0.08)', border: 'none', cursor: 'pointer', color: '#a5b4fc', padding: '4px 7px', borderRadius: '6px', flexShrink: 0, lineHeight: 1, marginTop: '2px' }}>
+                <X size={14} />
               </button>
-            </motion.div>
+            </div>
           ))}
-        </AnimatePresence>
-      </div>
+        </div>
+      )}
     </NotificationContext.Provider>
   );
 }

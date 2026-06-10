@@ -209,7 +209,7 @@ export default function Photos({ photos = [], photoGroups = [], onPhotoGroupsCha
             onClick={() => photo.preview && setLightboxSrc(photo.preview)}
           >
             {photo.preview
-              ? <img src={photo.preview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              ? <img src={photo.preview} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', background: '#f8fafc' }} />
               : <div style={{ width: '100%', height: '100%', background: '#e2e8f0' }} />
             }
             {photo.preview && (
@@ -350,7 +350,7 @@ export default function Photos({ photos = [], photoGroups = [], onPhotoGroupsCha
                       onClick={() => photo.preview && setLightboxSrc(photo.preview)}
                       style={{ borderRadius: 7, overflow: 'hidden', aspectRatio: '1', background: '#e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', cursor: photo.preview ? 'zoom-in' : 'default' }}
                     >
-                      {photo.preview && <img src={photo.preview} alt={photo.label || ''} title={photo.label || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
+                      {photo.preview && <img src={photo.preview} alt={photo.label || ''} title={photo.label || ''} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', background: '#f8fafc' }} />}
                     </div>
                   ))}
                 </div>

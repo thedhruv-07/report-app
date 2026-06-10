@@ -106,7 +106,7 @@ export default function PhotoGroupsDisplay({ groups, getGroupPhotos, editingGrou
                 <div key={photo.id} style={{ border: `1px solid ${colors.border}`, borderRadius: '6px', overflow: 'hidden', background: colors.surface, transition: 'all 0.2s ease', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', position: 'relative' }}>
                   <div style={{ width: '100%', height: '110px', background: colors.surfaceAlt, overflow: 'hidden' }}>
                     {photo.preview ? (
-                      <img src={photo.preview} alt="photo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={photo.preview} alt="photo" style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#f8fafc' }} />
                     ) : (
                       <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.textMuted, fontSize: '11px' }}>Loading...</div>
                     )}

@@ -6,6 +6,7 @@ import { colors } from '../../styles';
 import { ReportMetaContext } from '../../context/ReportMetaContext';
 import { readImagePreview } from '../../utils/fileUtils';
 import { useAuth } from '../../context/AuthContext';
+import PrefillToast from '../shared/components/PrefillToast';
 
 const GeneralInfo = lazy(() => import('./components/SectionA_Summary'));
 const InspectionSummaryTable = lazy(() => import('./components/InspectionSummaryTable'));
@@ -25,10 +26,10 @@ const SectionCompletionModal = lazy(() => import('./components/SectionCompletion
 
 // Required fields per step — only steps with mandatory fields are listed
 const STEP_LABELS = {
-  1: 'General Information', 2: 'Inspection Summary', 4: 'Conclusion',
-  5: 'Quantity Details', 6: 'Workmanship Defects', 7: 'On-Site Tests',
-  8: 'Product Specification', 9: 'Packing', 10: 'Marking & Labeling',
-  11: 'Client Special Requirements',
+  1: 'General Information', 2: 'Inspection Summary', 3: 'Remarks',
+  4: 'Conclusion', 5: 'Quantity Details', 6: 'Workmanship Defects',
+  7: 'On-Site Tests', 8: 'Product Specification', 9: 'Packing',
+  10: 'Marking & Labeling', 11: 'Client Special Requirements',
 };
 const STEP_REQUIRED = {
   1: [
@@ -39,10 +40,8 @@ const STEP_REQUIRED = {
     { key: 'inspectionLocation',label: 'Inspection Location' },
   ],
   2: [
-    { key: 'inspectionLevel', label: 'Inspection Level' },
-    { key: 'sampleSize',      label: 'Sample Size' },
-    { key: 'acceptPoint',     label: 'Accept Point' },
-    { key: 'rejectPoint',     label: 'Reject Point' },
+    { key: 'sampleSize',    label: 'Sample Size' },
+    { key: 'overallResult', label: 'Overall Result' },
   ],
   4:  [{ key: 'conclusionStatus',        label: 'Conclusion' }],
   6:  [{ key: 'workmanshipResult',       label: 'Workmanship Result' }],
@@ -53,6 +52,10 @@ const STEP_REQUIRED = {
   11: [{ key: 'client_requirement_result', label: 'Client Req. Result' }],
 };
 const getMissingFields = (step, form, items) => {
+  if (step === 3) {
+    const remarks = Array.isArray(form.remarks) ? form.remarks : [];
+    return remarks.some(r => String(r || '').trim()) ? [] : [{ label: 'At least one Remark' }];
+  }
   if (step === 5) {
     return items.some(it => Number(it.orderQty) > 0) ? [] : [{ label: 'Order Quantity (at least one item)' }];
   }
@@ -351,6 +354,24 @@ function App() {
 
   useEffect(() => {
     if (!prefillData) return;
+
+    // If this is a different task than the last saved session, wipe stale form data
+    // so the inspector starts clean instead of seeing a previous inspection's values.
+    const savedTaskId = localStorage.getItem('inspectionTaskId');
+    const isNewTask = !!taskId && savedTaskId !== taskId;
+    if (isNewTask) {
+      ['inspectionForm','inspectionItems','inspectionPhotos','inspectionPhotoGroups',
+       'inspectionAqlLocked','inspectionTestRows','inspectionStep'].forEach(k => localStorage.removeItem(k));
+      localStorage.setItem('inspectionTaskId', taskId);
+      setItems([{ name: '', orderQty: '', availableQty: '' }]);
+      setPhotos([]);
+      setPhotoGroups([]);
+      setTestRows([{ id: 1 }]);
+      setTestNextId(2);
+      setStep(1);
+      setAqlLocked(false);
+    }
+
     const factoryAddress = [
       prefillData.factory?.address,
       prefillData.factory?.city,
@@ -358,6 +379,7 @@ function App() {
     ].filter(Boolean).join(', ');
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setForm(prev => {
+      const base = isNewTask ? {} : prev;
       // Build locked client requirement rows from SCR + general requirement
       const buildClientRequirements = () => {
         const scrRows = [];
@@ -383,50 +405,50 @@ function App() {
       };
 
       const update = {
-        ...prev,
-        servicePerformed:   prefillData.serviceType             || prev.servicePerformed || 'Pre-Shipment Inspection',
-        client:             prefillData.client?.name            || prev.client,
-        supplier:           prefillData.supplier?.name          || prefillData.factory?.name || prev.supplier,
-        factory:            prefillData.factory?.name           || prev.factory,
-        factoryContact:     prefillData.factory?.contact        || prev.factoryContact || '',
-        factoryPhone:       prefillData.factory?.phone          || prefillData.factory?.mobile || prev.factoryPhone || '',
-        factoryWorkingTime: prefillData.factory?.workingTime    || prev.factoryWorkingTime || '',
-        inspectionLocation: factoryAddress                      || prev.inspectionLocation,
-        inspectionDate:     prefillData.inspectionDate?.slice(0, 10) || prev.inspectionDate,
-        inspectionDateTo:   prefillData.inspectionDateTo ? String(prefillData.inspectionDateTo).slice(0, 10) : prev.inspectionDateTo || '',
-        shipmentDate:       prefillData.shipmentDate ? String(prefillData.shipmentDate).slice(0, 10) : prev.shipmentDate || '',
-        productName:        prefillData.product?.description    || prev.productName,
-        po:                 prefillData.product?.poNumber       || prev.po,
-        itemNo:             prefillData.product?.itemNo         || prev.itemNo || '',
-        country:            prefillData.country                 || prefillData.countryOfOrigin || prev.country,
-        orderQuantity:      String(prefillData.product?.quantity ?? prev.orderQuantity ?? ''),
-        orderRemarks:       prefillData.orderRemarks            || prev.orderRemarks || '',
-        inspectionLevel:    prefillData.aql?.inspectionLevel    || prev.inspectionLevel,
-        sampleSize:         String(prefillData.aql?.sampleSize ?? prefillData.aql?.sampledQuantity ?? prev.sampleSize ?? ''),
-        acceptPoint:        String(prefillData.aql?.acceptPoint ?? prefillData.aql?.acceptedCritical ?? prev.acceptPoint ?? ''),
-        rejectPoint:        String(prefillData.aql?.rejectPoint ?? prefillData.aql?.acceptedMajor ?? prev.rejectPoint ?? ''),
+        ...base,
+        servicePerformed:   prefillData.serviceType             || base.servicePerformed || 'Pre-Shipment Inspection',
+        client:             prefillData.client?.name            || base.client,
+        supplier:           prefillData.supplier?.name          || prefillData.factory?.name || base.supplier,
+        factory:            prefillData.factory?.name           || base.factory,
+        factoryContact:     prefillData.factory?.contact        || base.factoryContact || '',
+        factoryPhone:       prefillData.factory?.phone          || prefillData.factory?.mobile || base.factoryPhone || '',
+        factoryWorkingTime: prefillData.factory?.workingTime    || base.factoryWorkingTime || '',
+        inspectionLocation: factoryAddress                      || base.inspectionLocation,
+        inspectionDate:     prefillData.inspectionDate?.slice(0, 10) || base.inspectionDate,
+        inspectionDateTo:   prefillData.inspectionDateTo ? String(prefillData.inspectionDateTo).slice(0, 10) : base.inspectionDateTo || '',
+        shipmentDate:       prefillData.shipmentDate ? String(prefillData.shipmentDate).slice(0, 10) : base.shipmentDate || '',
+        productName:        prefillData.product?.description    || base.productName,
+        po:                 prefillData.product?.poNumber       || base.po,
+        itemNo:             prefillData.product?.itemNo         || base.itemNo || '',
+        country:            prefillData.country                 || prefillData.countryOfOrigin || base.country,
+        orderQuantity:      String(prefillData.product?.quantity ?? base.orderQuantity ?? ''),
+        orderRemarks:       prefillData.orderRemarks            || base.orderRemarks || '',
+        inspectionLevel:    prefillData.aql?.inspectionLevel    || base.inspectionLevel,
+        sampleSize:         String(prefillData.aql?.sampleSize ?? prefillData.aql?.sampledQuantity ?? base.sampleSize ?? ''),
+        acceptPoint:        String(prefillData.aql?.acceptPoint ?? prefillData.aql?.acceptedCritical ?? base.acceptPoint ?? ''),
+        rejectPoint:        String(prefillData.aql?.rejectPoint ?? prefillData.aql?.acceptedMajor ?? base.rejectPoint ?? ''),
         // Mirror into WorkmanshipDefects AQL fields
-        inspectionLevelWM:   prefillData.aql?.inspectionLevel || prefillData.aql?.samplingLevel || prev.inspectionLevelWM,
-        sampleSizeWM:        String(prefillData.aql?.sampleSize ?? prefillData.aql?.sampledQuantity ?? prev.sampleSizeWM ?? ''),
-        aqlCriticalWM:       prefillData.aql?.aqlCritical     || prev.aqlCriticalWM || 'Not Allowed',
-        aqlMajorWM:          prefillData.aql?.aqlMajor        || prev.aqlMajorWM    || '2.5',
-        aqlMinorWM:          prefillData.aql?.aqlMinor        || prev.aqlMinorWM    || '4.0',
-        acceptedCritical:    prefillData.aql?.acceptedCritical || prev.acceptedCritical || '0',
-        acceptedMajor:       prefillData.aql?.acceptedMajor   || prev.acceptedMajor   || '0',
-        acceptedMinor:       prefillData.aql?.acceptedMinor   || prev.acceptedMinor   || '0',
+        inspectionLevelWM:   prefillData.aql?.inspectionLevel || prefillData.aql?.samplingLevel || base.inspectionLevelWM,
+        sampleSizeWM:        String(prefillData.aql?.sampleSize ?? prefillData.aql?.sampledQuantity ?? base.sampleSizeWM ?? ''),
+        aqlCriticalWM:       prefillData.aql?.aqlCritical     || base.aqlCriticalWM || 'Not Allowed',
+        aqlMajorWM:          prefillData.aql?.aqlMajor        || base.aqlMajorWM    || '2.5',
+        aqlMinorWM:          prefillData.aql?.aqlMinor        || base.aqlMinorWM    || '4.0',
+        acceptedCritical:    prefillData.aql?.acceptedCritical || base.acceptedCritical || '0',
+        acceptedMajor:       prefillData.aql?.acceptedMajor   || base.acceptedMajor   || '0',
+        acceptedMinor:       prefillData.aql?.acceptedMinor   || base.acceptedMinor   || '0',
         // Inspection standard & sampling plan — always strings (Step 2 + Step 6)
         inspectionStandard:  typeof prefillData.aql?.inspectionStandard === 'string'
           ? prefillData.aql.inspectionStandard
-          : prev.inspectionStandard || 'ANSI/ASQ Z1.4 (ISO 2859-1)',
+          : base.inspectionStandard || 'ANSI/ASQ Z1.4 (ISO 2859-1)',
         inspectionStandardWM: typeof prefillData.aql?.inspectionStandard === 'string'
           ? prefillData.aql.inspectionStandard
-          : prev.inspectionStandardWM || 'ANSI/ASQ Z1.4 (ISO 2859-1)',
-        samplingPlan:        prefillData.aql?.samplingPlan    || prev.samplingPlan   || 'Normal, Single',
-        samplingPlanWM:      prefillData.aql?.samplingPlan    || prev.samplingPlanWM || 'Normal, Single',
+          : base.inspectionStandardWM || 'ANSI/ASQ Z1.4 (ISO 2859-1)',
+        samplingPlan:        prefillData.aql?.samplingPlan    || base.samplingPlan   || 'Normal, Single',
+        samplingPlanWM:      prefillData.aql?.samplingPlan    || base.samplingPlanWM || 'Normal, Single',
         // Client special requirements — SCR rows locked, inspector can only fill Result column
         clientRequirements: buildClientRequirements(),
         // Seed first barcode row location with the inspection site
-        barcode_location_1: prev.barcode_location_1 || factoryAddress || '',
+        barcode_location_1: base.barcode_location_1 || factoryAddress || '',
       };
       // Pre-fill On-Site Tests table rows from booking data
       if (prefillData.onSiteTests?.length) {
@@ -584,6 +606,7 @@ function App() {
         cursor: pointer;
         accent-color: ${colors.primary};
       }
+
     `;
     document.head.appendChild(styleTag);
 
@@ -747,6 +770,7 @@ function App() {
     localStorage.removeItem("inspectionGeneralPhotoData");
     localStorage.removeItem("inspectionAqlLocked");
     localStorage.removeItem("inspectionTestRows");
+    localStorage.removeItem("inspectionTaskId");
 
     setStep(1);
     setForm({});
@@ -969,6 +993,14 @@ function App() {
 
   const goToStep = (targetStep) => {
     if (targetStep < 1 || targetStep > 13) return;
+    // Jumping forward — enforce the same check as the Next button
+    if (targetStep > step) {
+      const missing = getMissingFields(step, form, items);
+      if (missing.length > 0) {
+        setCompletionModal({ step, stepLabel: STEP_LABELS[step] || `Step ${step}`, missing });
+        return;
+      }
+    }
     setStep(targetStep);
   };
 
@@ -1122,48 +1154,7 @@ function App() {
           </div>
         )}
 
-        {prefillData && !prefillBannerDismissed && (
-          <div style={{
-            marginBottom: "16px",
-            padding: "12px 16px",
-            background: "#dbeafe",
-            border: "1px solid #93c5fd",
-            borderRadius: "10px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            gap: "10px",
-          }}>
-            <div style={{ flex: 1 }}>
-              <span style={{ fontSize: "13px", color: "#1e40af", fontWeight: "600" }}>
-                Auto-filled from Online Booking — review all fields before submitting
-              </span>
-              {prefillData.specialInstructions && (
-                <div style={{ marginTop: "6px", padding: "8px 10px", background: "#eff6ff", borderRadius: "6px", border: "1px solid #bfdbfe" }}>
-                  <span style={{ fontSize: "11px", fontWeight: "700", color: "#1d4ed8", textTransform: "uppercase", letterSpacing: "0.05em" }}>Admin Instructions: </span>
-                  <span style={{ fontSize: "12px", color: "#1e40af" }}>{prefillData.specialInstructions}</span>
-                </div>
-              )}
-            </div>
-            <button
-              onClick={() => setPrefillBannerDismissed(true)}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                color: "#1e40af",
-                fontSize: "18px",
-                lineHeight: "1",
-                padding: "2px 6px",
-                borderRadius: "4px",
-                flexShrink: 0,
-              }}
-              aria-label="Dismiss"
-            >
-              ×
-            </button>
-          </div>
-        )}
+        <PrefillToast prefillData={prefillData} dismissed={prefillBannerDismissed} onDismiss={() => setPrefillBannerDismissed(true)} />
 
         <Suspense fallback={<ReportLoader />}>
           {step === 1 && <GeneralInfo form={form} handleChange={handleChange} onNext={next} handleGeneralPhotoUpload={handleGeneralPhotoUpload} clearGeneralPhoto={clearGeneralPhoto} lockedFields={lockedFields} />}

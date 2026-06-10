@@ -35,6 +35,7 @@ import {
 
 import { useReportQueue } from './hooks/useReportQueue';
 import { useReportReview } from './hooks/useReportReview';
+import useToast from '../../hooks/useToast';
 
 // ==========================================
 // MOCK SEED DATA REMOVED
@@ -169,7 +170,7 @@ export default function TechnicalManagerDashboard() {
   
   // Navigation & UI States
   const [notificationsPanelOpen, setNotificationsPanelOpen] = useState(false);
-  const [toasts, setToasts] = useState([]);
+  const { toasts, addToast, dismiss: dismissToast } = useToast();
   
   // Modal states
   const [showFinalizeModal, setShowFinalizeModal] = useState(false);
@@ -352,14 +353,6 @@ export default function TechnicalManagerDashboard() {
     }
   }, [activeReportId, activeReportRemarks]);
 
-  // Toast adder helper
-  const addToast = (message, type = 'info') => {
-    const id = Date.now();
-    setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
-    }, 4000);
-  };
 
   // Status computation for stats from backend
   const stats = useMemo(() => ({
@@ -602,7 +595,7 @@ export default function TechnicalManagerDashboard() {
           handleMarkAsRead={handleMarkAsRead}
           handleOpenReport={handleOpenReport}
           handleMarkAllRead={handleMarkAllRead}
-          setToasts={setToasts}
+          dismissToast={dismissToast}
           setShowFinalizeModal={setShowFinalizeModal}
           setShowCorrectionModal={setShowCorrectionModal}
           confirmFinalizeReport={confirmFinalizeReport}

@@ -5,6 +5,7 @@ import { ENDPOINTS } from "../../config/api";
 import { colors } from "../../styles";
 import { faSchema } from "../../shared/faSchema";
 import ReportLoader from '../../components/shared/ReportLoader';
+import PrefillToast from '../shared/components/PrefillToast';
 
 import {
   GeneralInfo,
@@ -800,40 +801,7 @@ export default function FactoryAudit() {
             <button onClick={handleSaveDraft} style={{ padding: "7px 12px", background: colors.warning, color: "#fff", border: "none", borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "12px", boxShadow: "0 2px 6px rgba(245,158,11,0.2)" }}>💾 Save Draft</button>
           </div>
           
-          {prefillData && !prefillBannerDismissed && (
-            <div style={{
-              marginBottom: "16px",
-              padding: "12px 16px",
-              background: "#dbeafe",
-              border: "1px solid #93c5fd",
-              borderRadius: "10px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: "10px",
-            }}>
-              <span style={{ fontSize: "13px", color: "#1e40af", fontWeight: "600" }}>
-                Auto-filled from Online Booking — review all fields before submitting
-              </span>
-              <button
-                onClick={() => setPrefillBannerDismissed(true)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "#1e40af",
-                  fontSize: "18px",
-                  lineHeight: "1",
-                  padding: "2px 6px",
-                  borderRadius: "4px",
-                  flexShrink: 0,
-                }}
-                aria-label="Dismiss"
-              >
-                ×
-              </button>
-            </div>
-          )}
+          <PrefillToast prefillData={prefillData} dismissed={prefillBannerDismissed} onDismiss={() => setPrefillBannerDismissed(true)} />
 
           <div style={{ animation: "fadeIn 0.4s ease-out" }}>
             {currentStep?.component}

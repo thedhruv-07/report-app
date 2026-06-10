@@ -1,10 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import SmartTextarea from '../../../components/shared/SmartTextarea';
 import { colors } from '../../../styles';
+import Lightbox from '../../../components/shared/Lightbox';
 
 export default function DefectPhotosPanel({ defectPhotos, removeDefectPhoto, updateDefectPhoto, handleDefectPhotoUpload, addDefectPhoto }) {
+  const [lightboxSrc, setLightboxSrc] = useState(null);
+
   return (
     <div style={{ marginBottom: '20px' }}>
+      <Lightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
+      
       <h4 style={{ marginBottom: '15px', fontWeight: 'bold', color: colors.text }}>Defect Photos:</h4>
 
       {defectPhotos.map((photo, index) => (
@@ -24,7 +29,7 @@ export default function DefectPhotosPanel({ defectPhotos, removeDefectPhoto, upd
 
               {photo.preview && (
                 <div style={{ marginTop: '8px' }}>
-                  <img src={photo.preview} alt={`Defect preview ${index + 1}`} style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '8px', border: `1px solid ${colors.border}`, display: 'block' }} />
+                  <img src={photo.preview} alt={`Defect preview ${index + 1}`} onClick={() => setLightboxSrc(photo.preview)} style={{ width: '100%', height: '150px', objectFit: 'contain', borderRadius: '8px', border: `1px solid ${colors.border}`, display: 'block', background: '#f8fafc', cursor: 'zoom-in' }} />
                 </div>
               )}
             </div>

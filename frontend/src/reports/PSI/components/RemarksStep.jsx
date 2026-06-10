@@ -121,8 +121,8 @@ export default function RemarksStep({ form, handleChange, onPrev, onNext }) {
                 {getPhotosForRow(i).length > 0 && (
                   <div style={{ marginTop: "8px", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: "8px" }}>
                     {getPhotosForRow(i).map(photo => (
-                      <div key={photo.id} style={{ borderRadius: "6px", overflow: "hidden", border: `1px solid ${colors.border}`, background: "#f8f9fa" }}>
-                        <img src={photo.preview} alt={photo.fileName} onClick={() => setLightboxSrc(photo.preview)} style={{ width: "100%", height: "80px", objectFit: "cover", display: "block", cursor: "zoom-in" }} />
+                      <div key={photo.id} style={{ borderRadius: "6px", overflow: "hidden", border: `1px solid ${colors.border}`, background: "#f8fafc" }}>
+                        <img src={photo.preview} alt={photo.fileName} onClick={() => setLightboxSrc(photo.preview)} style={{ width: "100%", height: "120px", objectFit: "contain", display: "block", cursor: "zoom-in", background: "#f8fafc" }} />
                         <div style={{ padding: "5px" }}>
                           <input type="text" value={photo.label || ""} placeholder="Photo note" onChange={e => updateRemarkPhotoLabel(i, photo.id, e.target.value)}
                             style={{ width: "100%", border: `1px solid ${colors.border}`, borderRadius: "4px", fontSize: "10px", padding: "3px 5px", boxSizing: "border-box", marginBottom: "4px" }} />

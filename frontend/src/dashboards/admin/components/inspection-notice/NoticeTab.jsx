@@ -3,6 +3,20 @@ import SectionCard from './SectionCard';
 import { Plus, X, ExternalLink, Calculator } from 'lucide-react';
 import { calculateAQL } from '../../../../utils/aqlCalculator';
 
+// Reusable component for the table-style layout
+const TableRow = ({ label, children }) => (
+  <div className="flex flex-col sm:flex-row border-b border-slate-200 last:border-0 hover:bg-slate-50/50 transition-colors group">
+    <div className="w-full sm:w-1/3 bg-slate-50 p-4 flex items-center border-r border-slate-200 group-hover:bg-slate-100/50 transition-colors">
+      <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">{label}</span>
+    </div>
+    <div className="w-full sm:w-2/3 p-4 flex items-center">
+      <div className="w-full">
+        {children}
+      </div>
+    </div>
+  </div>
+);
+
 export default function NoticeTab({ formData, updateSection, updateRootField, inspectorOptions = [] }) {
   const basicInfo = formData.basicInfo || {};
   const teamAssignment = formData.teamAssignment || { cs: {}, cse: {}, previewManager: {}, scheduler: {}, inspectors: [] };
@@ -14,27 +28,13 @@ export default function NoticeTab({ formData, updateSection, updateRootField, in
   const inspectionInfo = formData.inspectionInfo || { generalWorkInstructions: [], operationalWorkInstructions: [] };
   const attachments = formData.attachments || { clientFiles: [], supplierFiles: [] };
   const toolsInfo = formData.inspectionTools || { tools: [], equipment: [], trainingMaterials: [] };
-  const onSiteTests = formData.onSiteTests || [];
-  const defects = formData.defectClassifications || [];
+  const onSiteTests = Array.isArray(formData.onSiteTests) ? formData.onSiteTests : [];
+  const defects = Array.isArray(formData.defectClassifications) ? formData.defectClassifications : [];
   const supplierInfo = formData.supplierInfo || { statusEntries: [] };
   const factoryInfo = formData.factoryInfo || { abnormalStatusEntries: [] };
 
   const inputClass = "w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#6C47FF] focus:border-transparent outline-none";
   const labelClass = "block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1";
-
-  // Reusable component for the table-style layout
-  const TableRow = ({ label, children }) => (
-    <div className="flex flex-col sm:flex-row border-b border-slate-200 last:border-0 hover:bg-slate-50/50 transition-colors group">
-      <div className="w-full sm:w-1/3 bg-slate-50 p-4 flex items-center border-r border-slate-200 group-hover:bg-slate-100/50 transition-colors">
-        <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">{label}</span>
-      </div>
-      <div className="w-full sm:w-2/3 p-4 flex items-center">
-        <div className="w-full">
-          {children}
-        </div>
-      </div>
-    </div>
-  );
 
   // Auto-calculate Total Quantity whenever products array changes
   useEffect(() => {
@@ -65,19 +65,37 @@ export default function NoticeTab({ formData, updateSection, updateRootField, in
     aql.inspectionStandard?.minor
   ]);
 
-  // Helpers to safely update arrays
+  // Helpers to safely update arrays.
+  // When arrayName is empty, the target is a root-level array (e.g. onSiteTests),
+  // so we use updateRootField instead of updateSection to avoid corrupting the array.
   const addArrayItem = (section, arrayName, newItem) => {
-    const currentArray = formData[section]?.[arrayName] || [];
-    updateSection(section, { [arrayName]: [...currentArray, newItem] });
+    if (!arrayName) {
+      const cur = Array.isArray(formData[section]) ? formData[section] : [];
+      updateRootField(section, [...cur, newItem]);
+    } else {
+      const currentArray = formData[section]?.[arrayName] || [];
+      updateSection(section, { [arrayName]: [...currentArray, newItem] });
+    }
   };
   const removeArrayItem = (section, arrayName, index) => {
-    const currentArray = formData[section]?.[arrayName] || [];
-    updateSection(section, { [arrayName]: currentArray.filter((_, i) => i !== index) });
+    if (!arrayName) {
+      const cur = Array.isArray(formData[section]) ? formData[section] : [];
+      updateRootField(section, cur.filter((_, i) => i !== index));
+    } else {
+      const currentArray = formData[section]?.[arrayName] || [];
+      updateSection(section, { [arrayName]: currentArray.filter((_, i) => i !== index) });
+    }
   };
   const updateArrayItem = (section, arrayName, index, field, value) => {
-    const currentArray = [...(formData[section]?.[arrayName] || [])];
-    currentArray[index] = { ...currentArray[index], [field]: value };
-    updateSection(section, { [arrayName]: currentArray });
+    if (!arrayName) {
+      const cur = [...(Array.isArray(formData[section]) ? formData[section] : [])];
+      cur[index] = { ...cur[index], [field]: value };
+      updateRootField(section, cur);
+    } else {
+      const currentArray = [...(formData[section]?.[arrayName] || [])];
+      currentArray[index] = { ...currentArray[index], [field]: value };
+      updateSection(section, { [arrayName]: currentArray });
+    }
   };
 
   return (
@@ -357,7 +375,7 @@ export default function NoticeTab({ formData, updateSection, updateRootField, in
               <div>
                 <div className="text-[10px] text-slate-500 uppercase font-bold mb-1">Critical</div>
                 <select className={inputClass} value={aql.inspectionStandard?.critical || 'Not Allowed'} onChange={e => updateSection('aql', { inspectionStandard: { ...aql.inspectionStandard, critical: e.target.value } })}>
-                  <option>Not Allowed</option><option>0.065</option><option>0.10</option><option>0.15</option><option>0.25</option><option>0.40</option><option>0.65</option><option>1.0</option><option>1.5</option><option>2.5</option><option>4.0</option><option>6.5</option>
+                  <option>Not Allowed</option><option>0.065</option><option>0.10</option><option>0.15</option><option>0.25</option><option>0.40</option><option>0.65</option><option>1.0</option><option>1.5</option><option>2.5</option><option>4.0</option><option>6.5</option><option>10</option>
                 </select>
               </div>
               <div>
@@ -374,15 +392,15 @@ export default function NoticeTab({ formData, updateSection, updateRootField, in
             <div className="grid grid-cols-3 gap-3 max-w-md">
               <div>
                 <div className="text-[10px] text-slate-500 uppercase font-bold mb-1">Critical</div>
-                <input type="number" min="0" className={inputClass} value={aql.acceptedQuantity?.critical === 0 ? '' : (aql.acceptedQuantity?.critical ?? '')} onChange={e => updateSection('aql', { acceptedQuantity: { ...aql.acceptedQuantity, critical: e.target.value === '' ? 0 : Number(e.target.value) } })} />
+                <input type="number" min="0" className={inputClass} value={aql.acceptedQuantity?.critical ?? ''} onChange={e => updateSection('aql', { acceptedQuantity: { ...aql.acceptedQuantity, critical: e.target.value === '' ? 0 : Number(e.target.value) } })} />
               </div>
               <div>
                 <div className="text-[10px] text-slate-500 uppercase font-bold mb-1">Major</div>
-                <input type="number" min="0" className={inputClass} value={aql.acceptedQuantity?.major === 0 ? '' : (aql.acceptedQuantity?.major ?? '')} onChange={e => updateSection('aql', { acceptedQuantity: { ...aql.acceptedQuantity, major: e.target.value === '' ? 0 : Number(e.target.value) } })} />
+                <input type="number" min="0" className={inputClass} value={aql.acceptedQuantity?.major ?? ''} onChange={e => updateSection('aql', { acceptedQuantity: { ...aql.acceptedQuantity, major: e.target.value === '' ? 0 : Number(e.target.value) } })} />
               </div>
               <div>
                 <div className="text-[10px] text-slate-500 uppercase font-bold mb-1">Minor</div>
-                <input type="number" min="0" className={inputClass} value={aql.acceptedQuantity?.minor === 0 ? '' : (aql.acceptedQuantity?.minor ?? '')} onChange={e => updateSection('aql', { acceptedQuantity: { ...aql.acceptedQuantity, minor: e.target.value === '' ? 0 : Number(e.target.value) } })} />
+                <input type="number" min="0" className={inputClass} value={aql.acceptedQuantity?.minor ?? ''} onChange={e => updateSection('aql', { acceptedQuantity: { ...aql.acceptedQuantity, minor: e.target.value === '' ? 0 : Number(e.target.value) } })} />
               </div>
             </div>
           </TableRow>

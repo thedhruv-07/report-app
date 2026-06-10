@@ -62,21 +62,24 @@ export default function ConclusionStep({ form, handleChange, onPrev, onNext }) {
   };
 
   const photoGrid = (photos, onLabelChange, onRemove) => (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "10px", marginTop: "12px" }}>
+    <div style={{ display: "flex", justifyContent: "center", marginTop: "12px" }}>
       {photos.map((photo) => (
-        <div key={photo.id} style={{ border: `1px solid ${colors.border}`, borderRadius: "6px", overflow: "hidden", background: colors.surfaceAlt }}>
-          <img src={photo.preview} alt={photo.fileName || "photo"} onClick={() => setLightboxSrc(photo.preview)} style={{ width: "100%", height: "100px", objectFit: "cover", display: "block", cursor: "zoom-in" }} />
-          <div style={{ padding: "6px" }}>
+        <div key={photo.id} style={{ border: `1px solid ${colors.border}`, borderRadius: "8px", overflow: "hidden", background: colors.surfaceAlt, width: "100%", maxWidth: "450px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+          <img src={photo.preview} alt={photo.fileName || "photo"} onClick={() => setLightboxSrc(photo.preview)} style={{ width: "100%", height: "auto", maxHeight: "350px", objectFit: "contain", display: "block", cursor: "zoom-in", background: "#f8fafc" }} />
+          <div style={{ padding: "10px" }}>
             <input
               type="text"
               value={photo.label || ""}
-              placeholder="Description"
+              placeholder="Photo Description"
               onChange={(e) => onLabelChange(photo.id, e.target.value)}
-              style={{ width: "100%", border: `1px solid ${colors.border}`, borderRadius: "4px", background: "#fff", color: colors.text, fontSize: "11px", padding: "4px 6px", boxSizing: "border-box", marginBottom: "4px" }}
+              style={{ width: "100%", border: `1px solid ${colors.border}`, borderRadius: "6px", background: "#fff", color: colors.text, fontSize: "12px", padding: "8px", boxSizing: "border-box", marginBottom: "8px" }}
             />
             <button type="button" onClick={() => onRemove(photo.id)}
-              style={{ width: "100%", border: "none", borderRadius: "4px", background: colors.danger, color: "#fff", fontSize: "11px", padding: "4px", cursor: "pointer" }}>
-              Remove
+              style={{ width: "100%", border: "none", borderRadius: "6px", background: colors.danger, color: "#fff", fontSize: "12px", fontWeight: "bold", padding: "8px", cursor: "pointer", transition: "opacity 0.2s" }}
+              onMouseOver={(e) => e.target.style.opacity = 0.9}
+              onMouseOut={(e) => e.target.style.opacity = 1}
+            >
+              Remove Photo
             </button>
           </div>
         </div>
@@ -121,11 +124,13 @@ export default function ConclusionStep({ form, handleChange, onPrev, onNext }) {
         <div style={cardHeader}>
           <div style={accent} />
           <span style={{ ...cardTitle, flex: 1 }}>Report Reviewer Photos</span>
-          <label style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", borderRadius: "20px", border: "none", background: colors.primary, color: "#fff", fontSize: "11px", fontWeight: 700, cursor: "pointer" }}>
-            + Upload
-            <input type="file" accept="image/*" multiple style={{ display: "none" }}
-              onChange={(e) => { handlePhotoUpload(e.target.files, "conclusionReviewerPhotos", "reviewer", conclusionReviewerPhotos); e.target.value = ""; }} />
-          </label>
+          {conclusionReviewerPhotos.length === 0 && (
+            <label style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", borderRadius: "20px", border: "none", background: colors.primary, color: "#fff", fontSize: "11px", fontWeight: 700, cursor: "pointer" }}>
+              + Upload Photo
+              <input type="file" accept="image/*" style={{ display: "none" }}
+                onChange={(e) => { handlePhotoUpload(e.target.files, "conclusionReviewerPhotos", "reviewer", conclusionReviewerPhotos); e.target.value = ""; }} />
+            </label>
+          )}
         </div>
         <div style={cardBody}>
           {conclusionReviewerPhotos.length === 0
@@ -169,11 +174,13 @@ export default function ConclusionStep({ form, handleChange, onPrev, onNext }) {
         <div style={cardHeader}>
           <div style={accent} />
           <span style={{ ...cardTitle, flex: 1 }}>Conclusion Photos (Inspector Upload)</span>
-          <label style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", borderRadius: "20px", border: "none", background: colors.primary, color: "#fff", fontSize: "11px", fontWeight: 700, cursor: "pointer" }}>
-            + Upload
-            <input type="file" accept="image/*" multiple style={{ display: "none" }}
-              onChange={(e) => { handlePhotoUpload(e.target.files, "conclusionPhotos", "conclusion", conclusionPhotos); e.target.value = ""; }} />
-          </label>
+          {conclusionPhotos.length === 0 && (
+            <label style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", borderRadius: "20px", border: "none", background: colors.primary, color: "#fff", fontSize: "11px", fontWeight: 700, cursor: "pointer" }}>
+              + Upload Photo
+              <input type="file" accept="image/*" style={{ display: "none" }}
+                onChange={(e) => { handlePhotoUpload(e.target.files, "conclusionPhotos", "conclusion", conclusionPhotos); e.target.value = ""; }} />
+            </label>
+          )}
         </div>
         <div style={cardBody}>
           {conclusionPhotos.length === 0

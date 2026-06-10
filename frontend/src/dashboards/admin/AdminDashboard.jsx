@@ -18,6 +18,8 @@ import NotificationManager from './components/NotificationManager';
 import EmailMonitoringPanel from './components/EmailMonitoringPanel';
 import BookingReviewModal from './components/BookingReviewModal';
 import AdminNavbar from './components/AdminNavbar';
+import ToastList from '../../components/shared/ToastList';
+import useToast from '../../hooks/useToast';
 
 export default function AdminDashboard() {
   const { logout, user, token } = useAuth();
@@ -36,6 +38,7 @@ export default function AdminDashboard() {
     return sessionStorage.getItem("adminActiveView") || "dashboard";
   });
   const [notificationsPanelOpen, setNotificationsPanelOpen] = useState(false);
+  const { toasts, addToast, dismiss: dismissToast } = useToast();
 
   useEffect(() => {
     sessionStorage.setItem("adminActiveView", activeView);
@@ -257,10 +260,11 @@ export default function AdminDashboard() {
         })
       });
       fetchNotifications?.();
+      addToast('Report marked as delivered.', 'success');
     } catch (err) {
-      console.error('Failed to create delivery notification:', err);
+      addToast(err.message || 'Failed to deliver report.', 'error');
     }
-    
+
     setDeliveryModalOpen(false);
     setActiveBooking(null);
   };
@@ -358,9 +362,10 @@ export default function AdminDashboard() {
           const updated = fresh.find(b => b.id === reviewModalBooking?.id);
           if (updated) setReviewModalBooking(updated);
         }}
-        onAssigned={() => { fetchBookingInbox(); fetchNotifications?.(); }}
+        onAssigned={() => { fetchBookingInbox(); fetchNotifications?.(); addToast('Booking assigned to inspector.', 'success'); }}
       />
 
+    <ToastList toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }
