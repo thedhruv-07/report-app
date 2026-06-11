@@ -1,9 +1,10 @@
 const jwt = require("jsonwebtoken");
 
-const JWT_SECRET = process.env.JWT_SECRET || "veritas-report-app-secret-key-2026";
 if (!process.env.JWT_SECRET) {
-  console.warn("WARNING: JWT_SECRET is not defined in environment variables! Using a temporary fallback secret.");
+  console.error("FATAL: JWT_SECRET environment variable is not set. Refusing to start.");
+  process.exit(1);
 }
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = "7d";
 
 

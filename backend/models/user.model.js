@@ -147,6 +147,11 @@ const resetPassword = async (token, newPassword) => {
 const findOrCreateGoogleUser = async ({ name, email, googleId }) => {
   let user = await findByEmail(email);
   if (user) {
+    if (!user.googleId) {
+      user.googleId = googleId;
+      user.provider = "google";
+      await user.save();
+    }
     return { id: user._id.toString(), name: user.name, email: user.email, provider: user.provider, role: user.role };
   }
 

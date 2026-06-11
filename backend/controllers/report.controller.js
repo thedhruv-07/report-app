@@ -618,7 +618,8 @@ const getReportById = async (req, res) => {
     const userId = req.user.id || req.user._id;
     const { id } = req.params;
     
-    const report = await Report.findOne({ _id: id, userId })
+    const isPrivileged = ["admin", "manager"].includes(req.user.role);
+    const report = await Report.findOne(isPrivileged ? { _id: id } : { _id: id, userId })
       .populate('generalInfo')
       .populate('quantityDetails')
       .populate('workmanship')
