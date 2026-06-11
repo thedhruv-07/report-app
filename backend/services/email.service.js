@@ -141,12 +141,11 @@ const renderTemplate = (name, vars = {}) => {
   let html = templateCache[name];
   // Brevo API: skip base64 (pushes past Gmail 102KB clip) — use hosted public URL instead.
   const logoDataUri = process.env.BREVO_API_KEY ? '' : getLogoDataUri();
-  const backendBase = (process.env.BACKEND_URL || process.env.FRONTEND_URL || '').replace(/\/$/, '');
+  const backendBase = (process.env.BACKEND_URL || '').replace(/\/$/, '');
+  const frontendBase = (process.env.FRONTEND_URL || 'https://absolute-veritas.netlify.app').replace(/\/$/, '');
   const logoSrc = logoDataUri
-    || (backendBase ? `${backendBase}/assets/company-logo.png` : '');
-  const logoHtml = logoSrc
-    ? `<img src="${logoSrc}" alt="Absolute Veritas" style="height:44px;display:block;margin:0 auto;" />`
-    : `<span style="font-size:18px;font-weight:800;color:#1d4ed8;letter-spacing:-0.5px;">Absolute Veritas</span>`;
+    || (backendBase ? `${backendBase}/assets/company-logo.png` : `${frontendBase}/company-logo.png`);
+  const logoHtml = `<img src="${logoSrc}" alt="Absolute Veritas" style="height:44px;display:block;margin:0 auto;" />`;
   const allVars = { logoDataUri, logoHtml, year: new Date().getFullYear(), ...vars };
   Object.keys(allVars).forEach(k => {
     const re = new RegExp(`{{\\s*${k}\\s*}}`, 'g');
