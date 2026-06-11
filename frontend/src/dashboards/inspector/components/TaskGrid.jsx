@@ -61,9 +61,15 @@ export default function TaskGrid({
                   </span>
                 </div>
 
-                <h3 className="text-base font-bold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors line-clamp-1">
-                  {task.clientName}
-                </h3>
+                {task.clientCode ? (
+                  <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[11px] font-bold uppercase tracking-wider">
+                    {task.clientCode}
+                  </span>
+                ) : (
+                  <h3 className="text-base font-bold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors line-clamp-1">
+                    {task.clientName}
+                  </h3>
+                )}
 
                 <div className="space-y-2 mt-3">
                   <div className="flex items-start gap-2 text-sm text-slate-500">
