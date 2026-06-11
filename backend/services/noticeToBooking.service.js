@@ -79,10 +79,13 @@ function buildPrefillData(notice) {
       description: firstProduct.productName || '',
       quantity: pi.totalQuantity || firstProduct.quantity || 0,
       poNumber: firstProduct.orderNo || '',
-      itemNo: firstProduct.itemNo || '',
+      itemNo: firstProduct.itemNo || firstProduct.orderNo || '',
       unit: firstProduct.unit || 'pcs',
     },
-    products: pi.products || [],
+    products: (pi.products || []).map(p => ({
+      ...p.toObject ? p.toObject() : p,
+      itemNo: p.itemNo || p.orderNo || '',
+    })),
     quantityFinished: pi.quantityFinished || 0,
     quantityPacked:   pi.quantityPacked   || 0,
     shipmentDate:     pi.shipmentDate     || null,
@@ -133,6 +136,8 @@ function buildPrefillData(notice) {
     // Source reference so the inspector's report can show the notice link
     inspectionNoticeId: String(notice._id),
     noticeId: notice.noticeId || '',
+    // Passed through to DOCX header as "Inspection Number"
+    inspectionNumber: notice.noticeId || '',
   };
 }
 
