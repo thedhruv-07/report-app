@@ -30,7 +30,18 @@ app.use('/assets', express.static(path.join(__dirname, 'assets')));
 // Security & Performance Middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
-  contentSecurityPolicy: false, // Disable CSP if it interferes with frontend loading
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc:  ["'self'", "'unsafe-inline'"],
+      styleSrc:   ["'self'", "'unsafe-inline'"],
+      imgSrc:     ["'self'", "data:", "blob:", "https:"],
+      connectSrc: ["'self'", "ws:", "wss:", "https:"],
+      fontSrc:    ["'self'", "data:", "https:"],
+      objectSrc:  ["'none'"],
+      frameSrc:   ["'none'"],
+    },
+  },
 }));
 app.use(compression());
 app.use(morgan("dev"));
@@ -81,7 +92,7 @@ app.get("/", (req, res) => {
 // - Otherwise, open the endpoints automatically when not in production
 //   (convenience for local dev only). In production, a valid token is
 //   required so AI endpoints remain protected.
-const allowAnonAI = process.env.ALLOW_ANON_AI === 'true' || process.env.NODE_ENV !== 'production';
+const allowAnonAI = process.env.ALLOW_ANON_AI === 'true';
 const aiAuth = allowAnonAI ? ((req, res, next) => next()) : authMiddleware;
 
 app.post("/api/ai-describe", aiAuth, reportController.analyzePhoto);
@@ -125,8 +136,10 @@ app.use("/api/manager", managerRoutes);
 const notificationRoutes = require('./routes/notification.routes');
 app.use('/api/notifications', notificationRoutes);
 
-// Email self-test route: any authenticated user can verify delivery to their own mailbox
+// Email self-test routes: any authenticated user can verify delivery to their own mailbox
+const { sendLogoTestEmail } = require('./controllers/email.controller');
 app.post('/api/emails/test-self', authMiddleware, sendSelfTestEmail);
+app.post('/api/emails/test-logo', authMiddleware, sendLogoTestEmail);
 
 // Email logs & admin controls
 const emailRoutes = require('./routes/email.routes');

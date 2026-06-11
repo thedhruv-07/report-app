@@ -1,6 +1,6 @@
 const EmailLog = require('../models/emailLog.model');
 const { enqueueEmail } = require('../services/email.queue');
-const { sendImmediateEmail } = require('../services/email.service');
+const { sendImmediateEmail, renderTemplate } = require('../services/email.service');
 
 const listEmails = async (req, res) => {
   try {
@@ -143,4 +143,22 @@ const getRawEmail = async (req, res) => {
   }
 };
 
-module.exports = { listEmails, retryEmail, sendTestEmail, sendSelfTestEmail, getRawEmail };
+const sendLogoTestEmail = async (req, res) => {
+  try {
+    const recipient = req.user?.email;
+    if (!recipient) return res.status(400).json({ error: 'No authenticated email' });
+    const html = renderTemplate('task-accepted.html', {
+      inspectorName: req.user?.name || recipient,
+      inspectionType: 'PSI',
+      clientName: 'Logo Test Client',
+      acceptedAt: new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      dashboardLink: process.env.FRONTEND_URL || '#',
+    });
+    await sendImmediateEmail({ to: recipient, subject: '[LOGO TEST] Absolute Veritas', html });
+    return res.json({ message: 'Logo test email sent', recipient });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+module.exports = { listEmails, retryEmail, sendTestEmail, sendSelfTestEmail, getRawEmail, sendLogoTestEmail };
