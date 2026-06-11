@@ -15,6 +15,7 @@ const Booking = require('../models/Booking');
 const Task = require('../models/task.model');
 const Notification = require('../models/notification.model');
 const SystemNotification = require('../models/systemNotification.model');
+const { generateClientCode } = require('../utils/clientCode');
 
 // Map Inspection Notice service types → Booking.inspectionType enum
 const SERVICE_TYPE_TO_BOOKING = {
@@ -158,6 +159,11 @@ async function provisionFromNotice(notice, adminId) {
   const taskType   = SERVICE_TYPE_TO_TASK[bi.serviceType]   || 'PSI';
   const prefillData = buildPrefillData(notice);
 
+  const clientCode = notice.clientCode || generateClientCode(
+    bi.customerName || '',
+    bi.inspectionLocation || ''
+  );
+
   const createdBookings = [];
   const createdTasks    = [];
 
@@ -194,6 +200,7 @@ async function provisionFromNotice(notice, adminId) {
       status:              inspectorId ? 'assigned' : 'new',
       prefillData,
       onlineBookingId:     String(notice._id), // link back to source notice
+      clientCode,
     });
 
     await booking.save();
@@ -210,6 +217,7 @@ async function provisionFromNotice(notice, adminId) {
         scheduledDate:  bi.inspectionDateFrom || new Date(),
         status:         'Pending Acceptance',
         adminInstructions: notice.inspectionRequirements?.technicalManagerRemarks || '',
+        clientCode,
         prefillData,
       });
       createdTasks.push(task);
