@@ -26,7 +26,6 @@ export default function BookingsQueue({
   bookingInboxError,
   onAssignClick,
   onPrepareNotice,
-  onNewBooking,
 }) {
   const statusStylesFor = (status) => STATUS_COLORS[status] || STATUS_COLORS.new || {
     bg: 'bg-slate-100',
@@ -207,7 +206,14 @@ export default function BookingsQueue({
                           <p className="text-[11px] text-slate-500 mt-0.5">{booking.createdDate}</p>
                         </td>
                         <td className="px-6 py-4">
-                          <p className="font-bold text-slate-700">{booking.clientName}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-slate-700">{booking.clientName}</p>
+                            {booking.clientCode && (
+                              <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] font-bold tracking-wider">
+                                {booking.clientCode}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-[11px] text-slate-500 mt-0.5 font-mono">{booking.poNumber}</p>
                         </td>
                         <td className="px-6 py-4">
