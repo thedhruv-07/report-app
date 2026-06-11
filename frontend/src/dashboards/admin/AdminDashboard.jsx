@@ -22,7 +22,7 @@ import ToastList from '../../components/shared/ToastList';
 import useToast from '../../hooks/useToast';
 
 export default function AdminDashboard() {
-  const { logout, user, token } = useAuth();
+  const { logout, token } = useAuth();
   const { bellNotifications, unreadCount: notifUnreadCount, markAllAsRead: markAllNotifRead, fetchNotifications } = useNotifications();
   const navigate = useNavigate();
 
@@ -84,15 +84,6 @@ export default function AdminDashboard() {
     fetchBookingInbox();
     fetchInspectors();
   }, [token, fetchBookingInbox, fetchInspectors]);
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (err) {
-      console.error("Failed to log out:", err);
-    }
-  };
 
   // Filters State for Bookings View
   const [searchTerm, setSearchTerm] = useState('');
@@ -156,6 +147,7 @@ export default function AdminDashboard() {
       paymentInfo: booking.paymentInfo || null,
       deliveredDate: null,
       linkedNoticeId: booking.linkedNoticeId || null,
+      clientCode: booking.clientCode || '',
     }));
   }, [bookingInbox]);
 
