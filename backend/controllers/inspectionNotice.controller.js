@@ -1,19 +1,26 @@
 const InspectionNotice = require("../models/InspectionNotice");
 const { provisionFromNotice } = require("../services/noticeToBooking.service");
+const { generateClientCode } = require("../utils/clientCode");
 
 exports.createNotice = async (req, res) => {
   try {
     const { noticeId } = req.body;
-    
+
     // Ensure noticeId is unique
     const existing = await InspectionNotice.findOne({ noticeId });
     if (existing) {
       return res.status(400).json({ error: "Notice ID already exists." });
     }
 
+    const clientCode = generateClientCode(
+      req.body.basicInfo?.customerName || '',
+      req.body.basicInfo?.inspectionLocation || ''
+    );
+
     const newNotice = new InspectionNotice({
       ...req.body,
       createdBy: req.user.id || req.user._id,
+      clientCode,
     });
     
     await newNotice.save();
@@ -98,6 +105,16 @@ exports.updateNotice = async (req, res) => {
 
     if (!updatedNotice) {
       return res.status(404).json({ error: "Inspection Notice not found" });
+    }
+
+    // Recompute clientCode if basicInfo changed
+    const newCode = generateClientCode(
+      updatedNotice.basicInfo?.customerName || '',
+      updatedNotice.basicInfo?.inspectionLocation || ''
+    );
+    if (newCode !== updatedNotice.clientCode) {
+      await InspectionNotice.findByIdAndUpdate(id, { $set: { clientCode: newCode } });
+      updatedNotice.clientCode = newCode;
     }
 
     // Provision bookings/tasks when notice transitions INTO 'scheduled' for the first time
