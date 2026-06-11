@@ -4,7 +4,6 @@ import { Plus, X } from 'lucide-react';
 
 export default function ReportTab({ formData, updateSection }) {
   const executionInfo = formData.reportExecutionInfo || {};
-  const reportUploads = formData.reportUploads || {};
 
   const inputClass = "w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#6C47FF] focus:border-transparent outline-none";
   const labelClass = "block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1";

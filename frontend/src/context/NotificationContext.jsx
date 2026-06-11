@@ -96,7 +96,7 @@ export function NotificationProvider({ children }) {
   // Socket: join user room and refresh on new_notification event
   useEffect(() => {
     if (!user || !token) return;
-    const socket = io(API_BASE_URL, { transports: ['websocket', 'polling'] });
+    const socket = io(API_BASE_URL, { transports: ['websocket', 'polling'], auth: { token } });
     socket.on('connect', () => {
       socket.emit('join', `user_${user.id || user._id}`);
     });

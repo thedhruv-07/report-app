@@ -26,7 +26,6 @@ export default function NoticeTab({ formData, updateSection, updateRootField, in
   const specialReqs = formData.specialClientRequirements || {};
   const customerSamples = formData.customerSamples || { samples: [] };
   const inspectionInfo = formData.inspectionInfo || { generalWorkInstructions: [], operationalWorkInstructions: [] };
-  const attachments = formData.attachments || { clientFiles: [], supplierFiles: [] };
   const toolsInfo = formData.inspectionTools || { tools: [], equipment: [], trainingMaterials: [] };
   const onSiteTests = Array.isArray(formData.onSiteTests) ? formData.onSiteTests : [];
   const defects = Array.isArray(formData.defectClassifications) ? formData.defectClassifications : [];
@@ -42,7 +41,8 @@ export default function NoticeTab({ formData, updateSection, updateRootField, in
     if (sum > 0 && formData.productInfo?.totalQuantity !== sum) {
       updateSection('productInfo', { totalQuantity: sum });
     }
-  }, [formData.productInfo?.products]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.productInfo?.products, formData.productInfo?.totalQuantity]);
 
   // Auto-calculate AQL Sample Size and Accepted Quantities
   useEffect(() => {
@@ -57,13 +57,8 @@ export default function NoticeTab({ formData, updateSection, updateRootField, in
         acceptedQuantity: result.acceptedQuantity
       });
     }
-  }, [
-    formData.productInfo?.totalQuantity, 
-    aql.samplingLevel, 
-    aql.inspectionStandard?.critical, 
-    aql.inspectionStandard?.major, 
-    aql.inspectionStandard?.minor
-  ]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.productInfo?.totalQuantity, aql.samplingLevel, aql.inspectionStandard?.critical, aql.inspectionStandard?.major, aql.inspectionStandard?.minor]);
 
   // Helpers to safely update arrays.
   // When arrayName is empty, the target is a root-level array (e.g. onSiteTests),
@@ -105,10 +100,10 @@ export default function NoticeTab({ formData, updateSection, updateRootField, in
       <SectionCard title="SECTION 1: Basic Information">
         <div className="border border-slate-200 rounded-xl overflow-hidden">
           <TableRow label="Inspection No.">
-            <input 
-              className={`${inputClass} bg-slate-100`} 
-              readOnly 
-              value={formData.noticeId || ''} 
+            <input
+              className={inputClass}
+              value={formData.noticeId || ''}
+              onChange={e => updateRootField('noticeId', e.target.value)}
             />
           </TableRow>
           <TableRow label="Customer Name">

@@ -166,6 +166,7 @@ export default function TechnicalManagerDashboard() {
         setSearchParams({}, { replace: true });
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, reports, activeReportId, setSearchParams]);
   
   // Navigation & UI States

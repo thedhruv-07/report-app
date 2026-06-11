@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { ChevronRight, Save, Send, CheckCircle } from 'lucide-react';
@@ -215,7 +215,7 @@ export default function InspectionNoticeForm() {
         const err = await res.json();
         setSaveMsg({ type: 'error', text: 'Error saving: ' + (err.error || 'Unknown error') });
       }
-    } catch(err) {
+    } catch {
       setSaveMsg({ type: 'error', text: 'Network error. Please try again.' });
     } finally {
       setSaving(false);

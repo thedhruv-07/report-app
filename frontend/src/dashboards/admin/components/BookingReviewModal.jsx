@@ -29,13 +29,6 @@ const inputCls = {
   outline: 'none', transition: 'border-color 0.15s',
 };
 
-const lockedCls = {
-  ...inputCls,
-  background: '#f1f5f9',
-  color: '#475569',
-  cursor: 'not-allowed',
-  borderColor: '#e2e8f0',
-};
 
 export default function BookingReviewModal({ booking, inspectors, token, onClose, onSaved, onAssigned }) {
   const [draft, setDraft] = useState({});
@@ -91,7 +84,7 @@ export default function BookingReviewModal({ booking, inspectors, token, onClose
         .then(data => { if (data?.task) setTaskProgress(data.task); })
         .catch(() => {});
     }
-  }, [booking]);
+  }, [booking, token]);
 
   if (!booking) return null;
 
