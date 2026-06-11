@@ -1,5 +1,4 @@
 import React, { useState, useRef } from 'react';
-import { colors } from '../../../styles';
 import NavButtons from '../../shared/components/NavButtons';
 import { ENDPOINTS } from '../../../config/api';
 import { useAuth } from '../../../context/AuthContext';
@@ -21,8 +20,11 @@ export default function Photos({ photos = [], photoGroups = [], onPhotoGroupsCha
   const [uploading, setUploading] = useState(false);
   const [describingGroupId, setDescribingGroupId] = useState(null);
   const [lightboxSrc, setLightboxSrc] = useState(null);
+  const [bulkDragOver, setBulkDragOver] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState(null); // { current, total, folderName }
   const fileInputRef = useRef(null);
   const folderInputRef = useRef(null);
+  const bulkFolderInputRef = useRef(null);
 
   const border = '#e2e8f0';
 
@@ -108,6 +110,86 @@ export default function Photos({ photos = [], photoGroups = [], onPhotoGroupsCha
     onPhotoGroupsChange(photoGroups.map(g =>
       g.id === groupId ? { ...g, photoIds: (g.photoIds || []).filter(id => id !== photoId) } : g
     ));
+  };
+
+  // ── Bulk folder upload ────────────────────────────────────────────────────
+  const readFolderFiles = (dirEntry) => new Promise((resolve) => {
+    const files = [];
+    const reader = dirEntry.createReader();
+    const readBatch = () => {
+      reader.readEntries((entries) => {
+        if (entries.length === 0) { resolve(files); return; }
+        let pending = 0;
+        for (const entry of entries) {
+          if (entry.isFile && /\.(jpe?g|png|webp|gif|bmp)$/i.test(entry.name)) {
+            pending++;
+            entry.file((file) => {
+              files.push(file);
+              pending--;
+              if (pending === 0) readBatch();
+            }, () => { pending--; if (pending === 0) readBatch(); });
+          }
+        }
+        if (pending === 0) readBatch();
+      }, () => resolve(files));
+    };
+    readBatch();
+  });
+
+  const handleFolderBatch = async (foldersData) => {
+    const valid = foldersData.filter(f => f.files.length > 0);
+    if (!valid.length) return;
+    setBulkProgress({ current: 0, total: valid.length, folderName: '' });
+    const groupMap = [];
+    const newGroups = [];
+    for (const { name, files } of valid) {
+      const existing = photoGroups.find(g => g.description === name);
+      if (existing) {
+        groupMap.push({ groupId: existing.id, groupName: name, files });
+      } else {
+        const groupId = `group_${Date.now()}_${newGroups.length}`;
+        newGroups.push({ id: groupId, description: name, photoIds: [] });
+        groupMap.push({ groupId, groupName: name, files });
+      }
+    }
+    if (newGroups.length > 0) onPhotoGroupsChange([...photoGroups, ...newGroups]);
+    for (let i = 0; i < groupMap.length; i++) {
+      const { groupId, groupName, files } = groupMap[i];
+      setBulkProgress({ current: i + 1, total: groupMap.length, folderName: groupName });
+      await onPhotoFileChange(files, groupName, groupId);
+    }
+    setBulkProgress(null);
+  };
+
+  const handleBulkDrop = async (e) => {
+    e.preventDefault();
+    setBulkDragOver(false);
+    const items = Array.from(e.dataTransfer.items || []);
+    const foldersData = [];
+    for (const item of items) {
+      const entry = item.webkitGetAsEntry?.();
+      if (!entry) continue;
+      if (entry.isDirectory) {
+        const files = await readFolderFiles(entry);
+        if (files.length > 0) foldersData.push({ name: entry.name, files });
+      }
+    }
+    if (foldersData.length > 0) await handleFolderBatch(foldersData);
+  };
+
+  const handleSingleFolderInput = async (e) => {
+    const files = Array.from(e.target.files).filter(f => f.type?.startsWith('image/'));
+    e.target.value = '';
+    if (!files.length) return;
+    const folderMap = {};
+    files.forEach(file => {
+      const parts = (file.webkitRelativePath || file.name).split('/');
+      const folderName = parts.length > 1 ? parts[parts.length - 2] : 'Uploaded Photos';
+      if (!folderMap[folderName]) folderMap[folderName] = [];
+      folderMap[folderName].push(file);
+    });
+    const foldersData = Object.entries(folderMap).map(([name, fs]) => ({ name, files: fs }));
+    await handleFolderBatch(foldersData);
   };
 
   // ── Upload zone ────────────────────────────────────────────────────────────
@@ -324,11 +406,62 @@ export default function Photos({ photos = [], photoGroups = [], onPhotoGroupsCha
   // ── All view ───────────────────────────────────────────────────────────────
   const renderAllView = () => (
     <div>
+      {/* Bulk folder drop zone */}
+      <div
+        onDrop={handleBulkDrop}
+        onDragOver={(e) => { e.preventDefault(); setBulkDragOver(true); }}
+        onDragLeave={() => setBulkDragOver(false)}
+        style={{
+          border: `2px dashed ${bulkDragOver ? '#3b82f6' : '#cbd5e1'}`,
+          borderRadius: 12,
+          background: bulkDragOver ? '#eff6ff' : '#f8fafc',
+          padding: '14px 18px',
+          marginBottom: 20,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 14,
+          transition: 'all 0.18s',
+        }}
+      >
+        {bulkProgress ? (
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#1d4ed8', marginBottom: 6 }}>
+              Uploading folder {bulkProgress.current} of {bulkProgress.total}: &quot;{bulkProgress.folderName}&quot;
+            </div>
+            <div style={{ height: 6, background: '#dbeafe', borderRadius: 3, overflow: 'hidden' }}>
+              <div style={{ width: `${(bulkProgress.current / bulkProgress.total) * 100}%`, height: '100%', background: '#3b82f6', transition: 'width 0.3s ease' }} />
+            </div>
+          </div>
+        ) : (
+          <>
+            <span style={{ fontSize: 26, flexShrink: 0 }}>📂</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: bulkDragOver ? '#1d4ed8' : '#374151' }}>
+                {bulkDragOver ? 'Release to import folders' : 'Drop folders here to auto-create groups'}
+              </div>
+              <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
+                Each folder becomes a photo group — folder names become group names
+              </div>
+            </div>
+            <button
+              onClick={() => bulkFolderInputRef.current?.click()}
+              style={{
+                padding: '7px 16px', borderRadius: 8, flexShrink: 0,
+                border: '1.5px solid #3b82f6', background: '#fff',
+                fontSize: 12, fontWeight: 700, color: '#3b82f6', cursor: 'pointer',
+              }}
+            >
+              Select Folder
+            </button>
+          </>
+        )}
+      </div>
+
       {photoGroups.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '56px 24px' }}>
+        <div style={{ textAlign: 'center', padding: '40px 24px' }}>
           <div style={{ fontSize: 36, marginBottom: 10 }}>🗂️</div>
           <div style={{ fontSize: 14, fontWeight: 700, color: '#374151', marginBottom: 6 }}>No photo groups yet</div>
-          <div style={{ fontSize: 13, color: '#94a3b8' }}>Add a group from the left panel, then upload photos to it.</div>
+          <div style={{ fontSize: 13, color: '#94a3b8' }}>Drop folders above, or add a group from the left panel.</div>
         </div>
       ) : (
         photoGroups.map((group, idx) => {
@@ -498,6 +631,16 @@ export default function Photos({ photos = [], photoGroups = [], onPhotoGroupsCha
           {activeGroupId === 'all' ? renderAllView() : renderGroupView()}
         </div>
       </div>
+
+      <input
+        ref={bulkFolderInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        webkitdirectory=""
+        hidden
+        onChange={handleSingleFolderInput}
+      />
 
       <NavButtons onPrev={onPrev} onNext={onNext} />
 
