@@ -9,6 +9,7 @@ const { User } = require('../models/user.model');
 const { sendImmediateEmail, renderTemplate } = require('../services/email.service');
 const { createDraftNoticeFromBooking } = require('../services/bookingToNotice.service');
 const InspectionNotice = require('../models/InspectionNotice');
+const { generateClientCode } = require('../utils/clientCode');
 
 // Maps Booking.inspectionType values to Task.inspectionType enum values
 const toTaskInspectionType = (type = '') => {
@@ -46,6 +47,7 @@ const formatBookingSummary = (booking) => ({
   inspectorName:         booking.assignedInspectorId?.name || booking.assignedInspectorId?.email || '',
   status:                booking.status,
   onlineBookingId:       booking.onlineBookingId       || null,
+  clientCode:            booking.clientCode            || '',
   createdAt:             booking.createdAt,
   updatedAt:             booking.updatedAt,
 });
@@ -100,6 +102,13 @@ router.patch('/:id', roleCheck(['admin', 'manager']), async (req, res) => {
     if (req.body.onSiteTests !== undefined) {
       updates.onSiteTests = Array.isArray(req.body.onSiteTests) ? req.body.onSiteTests : [];
     }
+    // Regenerate clientCode whenever clientName or countryOfOrigin changes
+    if (req.body.clientName !== undefined || req.body.countryOfOrigin !== undefined) {
+      const existing = await Booking.findById(req.params.id).select('clientName countryOfOrigin').lean();
+      const name = req.body.clientName      ?? existing?.clientName      ?? '';
+      const loc  = req.body.countryOfOrigin ?? existing?.countryOfOrigin ?? '';
+      updates.clientCode = generateClientCode(name, loc);
+    }
     const booking = await Booking.findByIdAndUpdate(
       req.params.id,
       { $set: updates },
@@ -115,7 +124,8 @@ router.patch('/:id', roleCheck(['admin', 'manager']), async (req, res) => {
 // POST /api/bookings — Admin creates a booking (manual or from online system)
 router.post('/', roleCheck(['admin', 'manager']), async (req, res) => {
   try {
-    const booking = new Booking({ ...req.body, adminId: req.user.id });
+    const clientCode = generateClientCode(req.body.clientName || '', req.body.countryOfOrigin || '');
+    const booking = new Booking({ ...req.body, adminId: req.user.id, clientCode });
     await booking.save();
 
     // Auto-create a draft Inspection Notice for the CS team
@@ -174,8 +184,8 @@ router.post('/:id/assign', roleCheck(['admin', 'manager']), async (req, res) => 
       }
     }
 
-    await Booking.updateOne(
-      { _id: booking._id },
+    const updatedBooking = await Booking.findByIdAndUpdate(
+      booking._id,
       {
         $set: {
           assignedInspectorId: booking.assignedInspectorId,
@@ -183,7 +193,7 @@ router.post('/:id/assign', roleCheck(['admin', 'manager']), async (req, res) => 
           prefillData: booking.prefillData
         }
       },
-      { runValidators: false }
+      { new: true, runValidators: false }
     );
 
     // Create Task so the booking appears in the inspector's task list
@@ -233,6 +243,7 @@ router.post('/:id/assign', roleCheck(['admin', 'manager']), async (req, res) => 
       status: 'Pending Acceptance',
       adminInstructions: booking.specialInstructions || '',
       prefillData: taskPrefillData,
+      clientCode: booking.clientCode || '',
       bookingId: booking._id,
     });
 
@@ -314,7 +325,7 @@ router.post('/:id/assign', roleCheck(['admin', 'manager']), async (req, res) => 
         </div>
       `;
 
-      sendImmediateEmail({
+      await sendImmediateEmail({
         to: inspector.email,
         subject: `New inspection assigned — ${booking.clientName}`,
         html: emailHtml || fallbackHtml,
@@ -333,7 +344,7 @@ router.post('/:id/assign', roleCheck(['admin', 'manager']), async (req, res) => 
       console.warn('Failed to send inspector assignment email:', emailError.message);
     }
 
-    res.json(booking);
+    res.json(updatedBooking);
   } catch (err) {
     console.error('Assign booking error:', err);
     res.status(500).json({ error: err.message });
