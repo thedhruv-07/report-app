@@ -6,6 +6,7 @@ const InspectionNoticeSchema = new mongoose.Schema({
   status: { type: String, enum: ['draft', 'scheduled', 'in_progress', 'completed', 'cancelled'], default: 'draft' },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   sourceBookingId: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking', default: null }, // auto-created from booking
+  clientCode: { type: String, default: '' },
 
   // SECTION 1: Basic Information
   basicInfo: {
@@ -245,7 +246,6 @@ const InspectionNoticeSchema = new mongoose.Schema({
     tmReports: [{ reportNo: String, creationDate: Date, finishDate: Date, confirmationTime: Date, url: String }]
   },
 
-  clientCode: { type: String, default: '' },
 
 }, { timestamps: true });
 
