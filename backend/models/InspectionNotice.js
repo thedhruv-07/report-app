@@ -243,7 +243,9 @@ const InspectionNoticeSchema = new mongoose.Schema({
     auditorUploads: [{ fileName: String, size: String, uploadTime: Date, uploadedBy: String, timeViewed: Date, viewedBy: String, url: String }],
     inspectorReports: [{ reportNo: String, creationDate: Date, finishDate: Date, confirmationTime: Date, url: String }],
     tmReports: [{ reportNo: String, creationDate: Date, finishDate: Date, confirmationTime: Date, url: String }]
-  }
+  },
+
+  clientCode: { type: String, default: '' },
 
 }, { timestamps: true });
 

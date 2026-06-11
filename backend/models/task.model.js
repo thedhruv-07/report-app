@@ -13,6 +13,7 @@ const taskSchema = new mongoose.Schema({
     default: 'Pending Acceptance'
   },
   adminInstructions: { type: String },
+  clientCode: { type: String, default: '' },
   prefillData: { type: mongoose.Schema.Types.Mixed, default: null },
   reportId: { type: mongoose.Schema.Types.ObjectId, ref: 'Report' },
   correctionFeedback: { type: String },

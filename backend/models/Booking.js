@@ -31,6 +31,7 @@ const bookingSchema = new mongoose.Schema({
   adminNotes:           { type: String },
   clientRequirements:   { type: String },
   onlineBookingId:      { type: String, default: null },
+  clientCode:           { type: String, default: '' },
   prefillData:          { type: mongoose.Schema.Types.Mixed, default: null },
   onSiteTests: [{
     description: { type: String, default: '' },
