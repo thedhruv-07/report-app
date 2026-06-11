@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { colors } from '../../../styles';
 
-const FinalStep = ({ form, onPrev, onSubmit, onClearAfterDownload, hasDownloaded, isGenerating }) => {
+const FinalStep = ({ form, onPrev, onSubmit, hasDownloaded, isGenerating }) => {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {

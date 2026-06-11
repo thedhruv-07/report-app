@@ -99,7 +99,7 @@ function LockedValue({ value, label }) {
   );
 }
 
-export default function InspectionSummaryTable({ form, handleChange, onPrev, onNext, lockedAql = false, lockedOrderQty = false }) {
+export default function InspectionSummaryTable({ form, handleChange, onPrev, onNext, lockedAql = false, lockedOrderQty = false, lockedAvailableQty = false }) {
   const setField = (name, value) => handleChange({ target: { name, value } });
 
   return (
@@ -141,8 +141,8 @@ export default function InspectionSummaryTable({ form, handleChange, onPrev, onN
 
         {/* Rows with 3 extra columns */}
         {[
-          { label: "Inspection Standard", name: "inspectionStandard", c: "aqlCritical",      m: "aqlMajor",      mi: "aqlMinor",      aql: true },
-          { label: "Sampling Plan",        name: "samplingPlan",       c: "aqlCritical",      m: "aqlMajor",      mi: "aqlMinor",      aql: true },
+          { label: "Inspection Standard", name: "inspectionStandard", c: "aqlCriticalWM",      m: "aqlMajorWM",      mi: "aqlMinorWM",      aql: true },
+          { label: "Sampling Plan",        name: "samplingPlan",                                                                      aql: true },
           { label: "Inspection Level",     name: "inspectionLevel",    c: "acceptedCritical", m: "acceptedMajor", mi: "acceptedMinor", aql: true },
           { label: "Order Quantity",       name: "orderQuantity",      c: "foundCritical",    m: "foundMajor",    mi: "foundMinor",    oqty: true },
         ].map((row) => (
@@ -169,8 +169,15 @@ export default function InspectionSummaryTable({ form, handleChange, onPrev, onN
         ))}
 
         {/* Simple rows */}
-        <Row label="Available Quantity">
-          <TextInput name="availableQuantity" value={form.availableQuantity} onChange={handleChange} placeholder="Enter quantity" />
+        <Row label={
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            Available Quantity {lockedAvailableQty && <Lock size={10} color="#7c3aed" title="Set by CS" />}
+          </span>
+        }>
+          {lockedAvailableQty
+            ? <LockedValue value={form.availableQuantity} label="Available Quantity" />
+            : <TextInput name="availableQuantity" value={form.availableQuantity} onChange={handleChange} placeholder="Enter quantity" />
+          }
         </Row>
         <Row label={
           <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>

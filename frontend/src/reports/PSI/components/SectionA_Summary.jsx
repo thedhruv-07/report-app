@@ -52,6 +52,7 @@ const FIELDS = [
   { label: "Factory",            name: "factory",           placeholder: "JUFENG" },
   { label: "Product Name",       name: "productName",       placeholder: "Nut Forming Machine & Moulds" },
   { label: "P.O. No.",           name: "po",                placeholder: "8092023" },
+  { label: "Inspection No.",     name: "inspectionNumber",  placeholder: "e.g. PSI-GRIM-2506-001" },
   { label: "Item No.",           name: "itemNo",            placeholder: "30B nut forming machine..." },
   { label: "Destination Country",name: "country",           placeholder: "India" },
   { label: "Inspection Date",    name: "inspectionDate",    type: "date" },

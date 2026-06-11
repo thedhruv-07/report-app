@@ -8,12 +8,12 @@ const Packing = ({ form, handleChange, quantityItems = [], onPrev, onNext }) => 
 
   // Initialise packing rows from quantity items (step 5) if available, otherwise 3 empty rows
   const [items, setItems] = useState(() => {
-    const base = quantityItems.filter(qi => qi.name?.trim());
-    if (base.length > 0) return base.map((qi, i) => ({ id: i + 1, name: qi.name }));
+    const base = quantityItems.filter(qi => (qi.itemName || qi.name)?.trim());
+    if (base.length > 0) return base.map((qi, i) => ({ id: i + 1, name: qi.itemName || qi.name }));
     return [{ id: 1, name: '' }, { id: 2, name: '' }, { id: 3, name: '' }];
   });
   const [nextId, setNextId] = useState(() =>
-    Math.max(quantityItems.filter(qi => qi.name?.trim()).length, 3) + 1
+    Math.max(quantityItems.filter(qi => (qi.itemName || qi.name)?.trim()).length, 3) + 1
   );
 
   const addItem = () => {

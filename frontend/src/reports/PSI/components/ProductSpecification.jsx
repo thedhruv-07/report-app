@@ -3,10 +3,19 @@ import { colors } from '../../../styles';
 import NavButtons from '../../shared/components/NavButtons';
 import SmartTextarea from '../../../components/shared/SmartTextarea';
 
-const ProductSpecification = ({ form, handleChange, onPrev, onNext }) => {
+const ProductSpecification = ({ form, handleChange, onPrev, onNext, quantityItems = [] }) => {
   const setField = (name, value) => handleChange({ target: { name, value } });
-  const [items, setItems] = useState([{ id: 1 }, { id: 2 }]);
-  const [nextId, setNextId] = useState(3);
+
+  // One fixed "Item No." row covers the first product; dynamic rows cover the rest.
+  const [items, setItems] = useState(() => {
+    const extra = quantityItems.filter(qi => (qi.itemName || qi.name)?.trim()).slice(1);
+    const count = extra.length > 0 ? extra.length : 2;
+    return Array.from({ length: count }, (_, i) => ({ id: i + 1 }));
+  });
+  const [nextId, setNextId] = useState(() => {
+    const extra = quantityItems.filter(qi => (qi.itemName || qi.name)?.trim()).slice(1);
+    return Math.max(extra.length, 2) + 1;
+  });
 
   const addItem = () => {
     setItems([...items, { id: nextId }]);
@@ -72,16 +81,30 @@ const ProductSpecification = ({ form, handleChange, onPrev, onNext }) => {
             </tr>
           </thead>
           <tbody>
-            {/* First Item No. Row */}
+            {/* First product: Item No. row */}
             <tr>
               <td style={{ padding: "8px", background: subHeaderBg, border: cellBorder, color: colors.text, fontWeight: "bold", textAlign: "left" }}>Item No.:</td>
+              <td colSpan={6} style={{ padding: "8px", background: colors.surface, border: cellBorder, textAlign: "center", fontWeight: "bold" }}>
+                <input
+                  type="text"
+                  name="item_0_no"
+                  value={form['item_0_no'] || ""}
+                  onChange={handleChange}
+                  placeholder="e.g. 70800"
+                  style={{ ...inputBase, textAlign: "center", fontWeight: "bold" }}
+                />
+              </td>
+            </tr>
+            {/* First product: Item Name row */}
+            <tr>
+              <td style={{ padding: "8px", background: subHeaderBg, border: cellBorder, color: colors.text, fontWeight: "bold", textAlign: "left" }}>Item Name:</td>
               <td colSpan={6} style={{ padding: "8px", background: colors.surface, border: cellBorder, textAlign: "center", fontWeight: "bold" }}>
                 <input
                   type="text"
                   name="productDescription"
                   value={form.productDescription || ""}
                   onChange={handleChange}
-                  placeholder="30B nut forming machine (Model: 30B-6S-40)"
+                  placeholder="e.g. chair"
                   style={{ ...inputBase, textAlign: "center", fontWeight: "bold" }}
                 />
               </td>
@@ -90,7 +113,7 @@ const ProductSpecification = ({ form, handleChange, onPrev, onNext }) => {
             {/* Blank Editable Row */}
             <tr>
               <td style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
-                <input type="text" name="blank_row_0" value={form.blank_row_0 || ""} onChange={handleChange} style={inputBase} />
+                <input type="text" name="blank_row_0" value={form.blank_row_0 || ""} onChange={handleChange} placeholder="Check point" style={inputBase} />
               </td>
               <td style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
                 <input type="text" name="blank_row_c0" value={form.blank_row_c0 || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "center" }} />
@@ -117,16 +140,30 @@ const ProductSpecification = ({ form, handleChange, onPrev, onNext }) => {
             {/* Dynamic Item rows (Item No. header + data row pairs) */}
             {items.map((item) => (
               <React.Fragment key={item.id}>
-                {/* Item No. Header Row */}
+                {/* Item No. row */}
                 <tr>
                   <td style={{ padding: "8px", background: subHeaderBg, border: cellBorder, color: colors.text, fontWeight: "bold", textAlign: "left" }}>Item No.:</td>
+                  <td colSpan={6} style={{ padding: "8px", background: colors.surface, border: cellBorder, textAlign: "center", fontWeight: "bold" }}>
+                    <input
+                      type="text"
+                      name={`item_${item.id}_no`}
+                      value={form[`item_${item.id}_no`] || ""}
+                      onChange={handleChange}
+                      placeholder="e.g. 70801"
+                      style={{ ...inputBase, textAlign: "center", fontWeight: "bold" }}
+                    />
+                  </td>
+                </tr>
+                {/* Item Name row */}
+                <tr>
+                  <td style={{ padding: "8px", background: subHeaderBg, border: cellBorder, color: colors.text, fontWeight: "bold", textAlign: "left" }}>Item Name:</td>
                   <td colSpan={6} style={{ padding: "8px", background: colors.surface, border: cellBorder, textAlign: "center", fontWeight: "bold" }}>
                     <input
                       type="text"
                       name={`item_${item.id}_desc`}
                       value={form[`item_${item.id}_desc`] || ""}
                       onChange={handleChange}
-                      placeholder="e.g. Mould M10"
+                      placeholder="e.g. table"
                       style={{ ...inputBase, textAlign: "center", fontWeight: "bold" }}
                     />
                   </td>
@@ -135,7 +172,7 @@ const ProductSpecification = ({ form, handleChange, onPrev, onNext }) => {
                 {/* Data Row */}
                 <tr>
                   <td style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
-                    <input type="text" name={`item_${item.id}_name`} value={form[`item_${item.id}_name`] || ""} onChange={handleChange} placeholder="Item name" style={inputBase} />
+                    <input type="text" name={`item_${item.id}_name`} value={form[`item_${item.id}_name`] || ""} onChange={handleChange} placeholder="Check point" style={inputBase} />
                   </td>
                   <td style={{ padding: "8px", background: colors.surface, border: cellBorder }}>
                     <input type="text" name={`item_${item.id}_c0`} value={form[`item_${item.id}_c0`] || ""} onChange={handleChange} style={{ ...inputBase, textAlign: "center" }} />
