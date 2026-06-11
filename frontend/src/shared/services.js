@@ -6,7 +6,7 @@
  */
 
 const FORM_STORAGE_KEYS = {
-  '/dashboard/pre-shipment':    ['inspectionStep','inspectionForm','inspectionItems','inspectionPhotos','inspectionPhotoGroups','inspectionGeneralPhoto','inspectionGeneralPhotoData','inspectionLastSubmittedTemplate'],
+  '/dashboard/pre-shipment':    ['inspectionStep','inspectionForm','inspectionItems','inspectionPhotos','inspectionPhotoGroups','inspectionGeneralPhoto','inspectionGeneralPhotoData','inspectionLastSubmittedTemplate','inspectionTaskId','inspectionAqlLocked','inspectionTestRows'],
   '/dashboard/container-loading': ['clsStep','clsForm'],
   '/dashboard/during-production': ['dpiStep','dpiForm'],
   '/dashboard/factory-audit':   ['faStep','faForm','faReportId'],
@@ -15,6 +15,9 @@ const FORM_STORAGE_KEYS = {
 
 export const clearFormStorage = (route) => {
   (FORM_STORAGE_KEYS[route] || []).forEach(k => localStorage.removeItem(k));
+  if (route === '/dashboard/pre-shipment') {
+    import('../utils/idb.js').then(({ idbRemove }) => idbRemove("inspectionPhotos"));
+  }
 };
 
 export const services = [

@@ -131,7 +131,13 @@ export default function Dashboard() {
   })[type] || '/dashboard/pre-shipment';
 
   const handleStartReport = (task) => {
-    clearFormStorage(getInspectionRoute(task.inspectionType));
+    // Only wipe storage if the inspector is switching to a DIFFERENT task.
+    // If they click "Start Report" for the same task they were already working on,
+    // preserve their progress (step, form data, photos, etc.).
+    const savedTaskId = localStorage.getItem('inspectionTaskId');
+    if (savedTaskId !== task._id) {
+      clearFormStorage(getInspectionRoute(task.inspectionType));
+    }
     navigate(getInspectionRoute(task.inspectionType), { state: { task } });
   };
 
