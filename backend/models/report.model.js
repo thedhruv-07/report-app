@@ -51,6 +51,7 @@ const reportSchema = new mongoose.Schema({
   operationComment: { type: String, default: "" },
   reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   reviewedAt: { type: Date },
+  assignedTM: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   submittedAt: { type: Date },
   
   // Technical Manager Review Fields

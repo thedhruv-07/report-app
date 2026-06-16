@@ -19,6 +19,7 @@ const { Comments } = require("../models/sections/comments.model");
 const { Media } = require("../models/sections/media.model");
 const { SectionStatus } = require("../models/sections/sectionStatus.model");
 const { ReportV2 } = require("../models/v2/report.model");
+const FactoryAudit = require('../models/factoryAudit.model');
 
 const generateReport = async (req, res) => {
   console.log("📥 Generating full report and saving to granular modular database...");
@@ -707,6 +708,153 @@ const getStats = async (req, res) => {
   }
 };
 
+const getAdminQueue = async (req, res) => {
+  try {
+    const { status = 'all', type = 'all', reviewedBy = 'all', fromDate, toDate } = req.query;
+
+    let query = {
+      operationStatus: { $in: ['submitted', 'under_review', 'revision_required', 'approved'] },
+    };
+    if (status && status !== 'all') query.operationStatus = status;
+
+    const [reports, factoryAudits] = await Promise.all([
+      Report.find(query)
+        .populate('userId', 'name email')
+        .populate('generalInfo')
+        .populate('assignedTM', 'name')
+        .populate('reviewedBy', 'name')
+        .sort({ submittedAt: -1, updatedAt: -1 })
+        .lean(),
+      FactoryAudit.find(query)
+        .populate('userId', 'name email')
+        .populate('assignedTM', 'name')
+        .populate('reviewedBy', 'name')
+        .sort({ submittedAt: -1, updatedAt: -1 })
+        .lean(),
+    ]);
+
+    const normalized = [
+      ...reports.map(r => ({
+        id: r._id,
+        reportId: r.reportNumber || `RPT-${r._id.toString().slice(-6).toUpperCase()}`,
+        clientName: r.generalInfo?.client || 'Unknown Client',
+        inspectionType: r.title || 'Standard Inspection',
+        inspectorName: r.userId?.name || 'Unknown Inspector',
+        submittedAt: r.submittedAt || r.updatedAt,
+        status: r.operationStatus,
+        revisionRound: r.revisionRound || 1,
+        type: 'standard',
+        assignedTMName: r.assignedTM?.name || null,
+        reviewedByName: r.reviewedBy?.name || null,
+      })),
+      ...factoryAudits.map(fa => ({
+        id: fa._id,
+        reportId: `FA-${fa._id.toString().slice(-6).toUpperCase()}`,
+        clientName: fa.generalInfo?.client || 'Unknown Client',
+        inspectionType: fa.title || 'Factory Audit',
+        inspectorName: fa.userId?.name || 'Unknown Inspector',
+        submittedAt: fa.submittedAt || fa.updatedAt,
+        status: fa.operationStatus,
+        revisionRound: fa.revisionRound || 1,
+        type: 'factoryAudit',
+        assignedTMName: fa.assignedTM?.name || null,
+        reviewedByName: fa.reviewedBy?.name || null,
+      })),
+    ].sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+
+    // Apply type filter
+    let filtered = normalized;
+    if (type && type !== 'all') {
+      if (type === 'factory_audit') {
+        filtered = normalized.filter(r => r.type === 'factoryAudit');
+      } else {
+        filtered = normalized.filter(r => r.inspectionType.includes(type));
+      }
+    }
+
+    // Apply reviewedBy filter (TM name)
+    if (reviewedBy && reviewedBy !== 'all') {
+      filtered = filtered.filter(
+        r => r.assignedTMName === reviewedBy || r.reviewedByName === reviewedBy
+      );
+    }
+
+    if (fromDate) {
+      filtered = filtered.filter(r => new Date(r.submittedAt) >= new Date(fromDate));
+    }
+    if (toDate) {
+      filtered = filtered.filter(r => new Date(r.submittedAt) <= new Date(toDate));
+    }
+
+    const stats = {
+      totalReports: normalized.length,
+      pendingReview: normalized.filter(r => r.status === 'submitted').length,
+      underReview: normalized.filter(r => r.status === 'under_review').length,
+      sentForCorrection: normalized.filter(r => r.status === 'revision_required').length,
+      finalizedToday: normalized.filter(r => {
+        if (r.status !== 'approved') return false;
+        const today = new Date();
+        return new Date(r.submittedAt).toDateString() === today.toDateString();
+      }).length,
+    };
+
+    res.json({ reports: filtered, stats });
+  } catch (err) {
+    console.error('getAdminQueue error:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const assignTM = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { technicalManagerId, note } = req.body;
+
+    if (!technicalManagerId) {
+      return res.status(400).json({ error: 'technicalManagerId is required' });
+    }
+
+    const { User } = require('../models/user.model');
+    const tm = await User.findById(technicalManagerId).select('name role').lean();
+    if (!tm || tm.role !== 'manager') {
+      return res.status(400).json({ error: 'Invalid Technical Manager ID' });
+    }
+
+    let doc = await Report.findById(id);
+    let isFA = false;
+    if (!doc) {
+      doc = await FactoryAudit.findById(id);
+      isFA = true;
+    }
+    if (!doc) return res.status(404).json({ error: 'Report not found' });
+
+    doc.assignedTM = technicalManagerId;
+    if (doc.operationStatus === 'submitted') {
+      doc.operationStatus = 'under_review';
+    }
+    if (note && !isFA && Array.isArray(doc.tmRemarks)) {
+      doc.tmRemarks.push({
+        text: `[Admin Note] ${note}`,
+        addedBy: req.user._id || req.user.id,
+        addedAt: new Date(),
+      });
+    }
+    await doc.save();
+
+    res.json({
+      success: true,
+      report: {
+        id: doc._id,
+        assignedTMName: tm.name,
+        status: doc.operationStatus,
+      },
+    });
+  } catch (err) {
+    console.error('assignTM error:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
   generateReport,
   getReports,
@@ -715,4 +863,6 @@ module.exports = {
   analyzePhoto,
   getStats,
   deleteReport,
+  getAdminQueue,
+  assignTM,
 };

@@ -58,6 +58,9 @@ export const ENDPOINTS = {
     INSPECTORS: `${API_BASE_URL}/api/admin/inspectors`,
     DELETE_INSPECTOR: (id) => `${API_BASE_URL}/api/admin/inspectors/${encodeURIComponent(id)}`,
     TASK_PROGRESS: (bookingId) => `${API_BASE_URL}/api/admin/bookings/${encodeURIComponent(bookingId)}/task-progress`,
+    REPORT_QUEUE: `${API_BASE_URL}/api/reports/admin/all`,
+    ASSIGN_TM: (id) => `${API_BASE_URL}/api/reports/${encodeURIComponent(id)}/assign-tm`,
+    USERS_BY_ROLE: (role) => `${API_BASE_URL}/api/admin/users?role=${encodeURIComponent(role)}`,
   },
   BOOKINGS: {
     ADMIN_LIST: `${API_BASE_URL}/api/bookings`,

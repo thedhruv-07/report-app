@@ -2,9 +2,9 @@ import React from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { useNotifications } from '../../../context/NotificationContext';
-import { LayoutDashboard, ClipboardList, Users, Bell, Mail, LogOut } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, Users, Bell, Mail, LogOut, FileText } from 'lucide-react';
 
-export default function AdminNavbar({ activeView, stats = { readyToDeliver: 0 }, setActiveView }) {
+export default function AdminNavbar({ activeView, stats = { readyToDeliver: 0, pendingReports: 0 }, setActiveView }) {
   const { logout, user } = useAuth();
   const { unreadCount: notifUnreadCount } = useNotifications();
   const navigate = useNavigate();
@@ -75,6 +75,21 @@ export default function AdminNavbar({ activeView, stats = { readyToDeliver: 0 },
               (activeView === "bookings" && location.pathname === '/dashboard/admin') ? 'bg-indigo-600 text-white' : 'bg-emerald-500 text-white animate-pulse'
             }`}>
               {stats.readyToDeliver} Ready
+            </span>
+          )}
+        </button>
+
+        <button
+          onClick={() => navigate('/admin/report-queue')}
+          className={navItemClass(location.pathname.startsWith('/admin/report-queue'))}
+        >
+          <FileText className="w-4 h-4 shrink-0" />
+          <span>Report Queue</span>
+          {(stats.pendingReports || 0) > 0 && (
+            <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+              location.pathname.startsWith('/admin/report-queue') ? 'bg-indigo-600 text-white' : 'bg-red-500 text-white'
+            }`}>
+              {stats.pendingReports}
             </span>
           )}
         </button>

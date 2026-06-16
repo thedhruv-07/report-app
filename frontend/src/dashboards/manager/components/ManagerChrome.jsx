@@ -15,6 +15,16 @@ import {
 } from 'lucide-react';
 import ToastList from '../../../components/shared/ToastList';
 
+const getInitials = (name, role) => {
+  if (name) {
+    const parts = name.trim().split(' ').filter(Boolean);
+    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  }
+  const roleMap = { technical_manager: 'TM', manager: 'TM', admin: 'AD', inspector: 'IN' };
+  return roleMap[role?.toLowerCase()] || 'U';
+};
+
 export default function ManagerChrome({
   currentUser,
   activeView,
@@ -145,8 +155,8 @@ export default function ManagerChrome({
           <div className="h-6 w-px bg-slate-200 hidden sm:block" />
 
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold text-white">
-              SC
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ background: '#6C47FF' }}>
+              {getInitials(currentUser?.name, currentUser?.role)}
             </div>
             <div className="hidden sm:block text-left">
               <p className="text-sm font-semibold text-slate-700 leading-none">{currentUser.name}</p>

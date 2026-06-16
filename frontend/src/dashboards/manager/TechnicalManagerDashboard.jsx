@@ -607,7 +607,7 @@ export default function TechnicalManagerDashboard() {
       {/* ==========================================
           MAIN AREA CONTENT
           ========================================== */}
-      <main className="flex-1 overflow-y-auto relative p-6 bg-slate-50">
+      <main className="flex-1 overflow-y-auto relative bg-[#F4F5F7]">
           
           {/* VIEW: DASHBOARD (Home Screen) */}
           {activeView === "dashboard" && !activeReportId && (
@@ -620,13 +620,14 @@ export default function TechnicalManagerDashboard() {
                 handleOpenReport={handleOpenReport}
                 getTypeBadgeClass={getTypeBadgeClass}
                 getStatusBadgeClass={getStatusBadgeClass}
+                userName={currentUser.name}
               />
             </Suspense>
           )}
 
           {/* VIEW: REPORT QUEUE */}
           {activeView === "queue" && !activeReportId && (
-            <Suspense fallback={<div className="max-w-6xl mx-auto h-144 bg-white border border-slate-200 rounded-3xl animate-pulse" />}>
+            <Suspense fallback={<div className="max-w-7xl mx-auto px-6 py-8"><div className="h-144 bg-white border border-slate-200 rounded-xl animate-pulse" /></div>}>
               <QueueView
                 queueFilters={queueFilters}
                 setQueueFilters={setQueueFilters}
@@ -643,7 +644,7 @@ export default function TechnicalManagerDashboard() {
           {activeReportId && activeReport && (
             <Suspense
               fallback={(
-                <div className="h-full max-w-7xl mx-auto animate-pulse space-y-6">
+                <div className="px-6 py-6 h-full max-w-7xl mx-auto animate-pulse space-y-6">
                   <div className="h-40 bg-white border border-slate-200 rounded-3xl" />
                   <div className="grid lg:grid-cols-[minmax(0,1fr)_35%] gap-6">
                     <div className="h-160 bg-white border border-slate-200 rounded-3xl" />
@@ -652,7 +653,7 @@ export default function TechnicalManagerDashboard() {
                 </div>
               )}
             >
-              <div className="h-full flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto animate-in zoom-in-95 duration-200 overflow-hidden">
+              <div className="px-6 py-6 h-full flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto animate-in zoom-in-95 duration-200 overflow-hidden">
                 <ReviewContentPane
                   activeReport={activeReport}
                   collapsedSections={collapsedSections}
@@ -683,7 +684,7 @@ export default function TechnicalManagerDashboard() {
 
           {/* VIEW: NOTIFICATIONS (Full list view) */}
           {activeView === "notifications" && !activeReportId && (
-            <div className="max-w-3xl mx-auto bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-6 animate-in fade-in duration-300">
+            <div className="px-6 py-8"><div className="max-w-3xl mx-auto bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-6 animate-in fade-in duration-300">
               
               <div className="flex items-center justify-between border-b border-slate-150 pb-4">
                 <div>
@@ -746,16 +747,25 @@ export default function TechnicalManagerDashboard() {
                 ))}
               </div>
 
-            </div>
+            </div></div>
           )}
 
           {/* VIEW: PROFILE */}
           {activeView === "profile" && !activeReportId && (
-            <div className="max-w-2xl mx-auto bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-6 animate-in fade-in duration-300">
+            <div className="px-6 py-8"><div className="max-w-2xl mx-auto bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-6 animate-in fade-in duration-300">
               
               <div className="text-center space-y-3 pb-6 border-b border-slate-150">
-                <div className="w-20 h-20 rounded-full bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-extrabold text-white text-3xl mx-auto shadow-lg shadow-blue-200">
-                  SC
+                <div className="w-20 h-20 rounded-full flex items-center justify-center font-extrabold text-white text-3xl mx-auto shadow-lg" style={{ background: '#6C47FF' }}>
+                  {(() => {
+                    const name = currentUser.name;
+                    if (name) {
+                      const parts = name.trim().split(' ').filter(Boolean);
+                      if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                      if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+                    }
+                    const roleMap = { technical_manager: 'TM', manager: 'TM', admin: 'AD', inspector: 'IN' };
+                    return roleMap[currentUser.role?.toLowerCase()] || 'TM';
+                  })()}
                 </div>
                 <h3 className="text-xl font-bold text-slate-800">{currentUser.name}</h3>
                 <span className="bg-blue-50 text-blue-600 text-xs px-3 py-1 rounded-full font-bold border border-blue-100 uppercase tracking-wider">
@@ -795,7 +805,7 @@ export default function TechnicalManagerDashboard() {
                 </div>
               </div>
 
-            </div>
+            </div></div>
           )}
 
         </main>

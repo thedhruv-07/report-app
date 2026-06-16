@@ -275,6 +275,7 @@ const FactoryAuditSchema = new mongoose.Schema({
   },
   operationComment: { type: String, default: "" },
   reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  assignedTM: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   reviewedAt: { type: Date },
   submittedAt: { type: Date },
 

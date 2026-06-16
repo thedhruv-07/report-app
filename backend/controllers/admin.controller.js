@@ -27,4 +27,19 @@ const deleteInspector = async (req, res) => {
   }
 };
 
-module.exports = { getInspectors, deleteInspector };
+const getUsers = async (req, res) => {
+  try {
+    const { role } = req.query;
+    if (!role) return res.status(400).json({ error: 'role query param is required' });
+    const users = await User.find({ role })
+      .select('name email')
+      .sort({ name: 1 })
+      .lean();
+    res.json({ users: users.map(u => ({ id: u._id, name: u.name, email: u.email })) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+module.exports = { getInspectors, deleteInspector, getUsers };

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 
 export default function SectionCompletionModal({ stepLabel, missingFields, onConfirm, onGoBack }) {

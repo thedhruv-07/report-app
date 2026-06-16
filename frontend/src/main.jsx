@@ -27,6 +27,7 @@ import {
   RouteFallback,
   InspectionNoticesList,
   InspectionNoticeForm,
+  AdminReportQueue,
 } from './routes/appRoutes'
 
 createRoot(document.getElementById('root')).render(
@@ -53,6 +54,7 @@ createRoot(document.getElementById('root')).render(
                   <Route path="/admin/inspection-notices" element={<InspectionNoticesList />} />
                   <Route path="/admin/inspection-notices/new" element={<InspectionNoticeForm />} />
                   <Route path="/admin/inspection-notices/:id" element={<InspectionNoticeForm />} />
+                  <Route path="/admin/report-queue" element={<AdminReportQueue />} />
                 </Route>
                 
                 <Route element={<ProtectedRoute allowedRoles={['manager', 'admin']} />}>

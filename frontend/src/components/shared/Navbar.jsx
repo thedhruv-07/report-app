@@ -55,7 +55,11 @@ export default function Navbar() {
   };
 
   // Hide the global shared Navbar when on the Manager or Admin Dashboard to allow its fully integrated premium top navbar to display exclusively.
-  if (location.pathname.startsWith("/dashboard/manager") || location.pathname.startsWith("/dashboard/admin") || location.pathname.startsWith("/admin/inspection-notices")) {
+  if (
+    location.pathname.startsWith("/dashboard/manager") ||
+    location.pathname.startsWith("/dashboard/admin") ||
+    location.pathname.startsWith("/admin/")
+  ) {
     return null;
   }
 
