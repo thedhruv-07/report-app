@@ -1,5 +1,5 @@
 const UserModel = require("../models/user.model");
-const { generateToken } = require("../middleware/auth.middleware");
+const { generateToken, verifyToken } = require("../middleware/auth.middleware");
 const { sendResetEmail } = require("../services/email.service");
 const { OAuth2Client } = require("google-auth-library");
 const { GOOGLE_CLIENT_ID } = require("../config/config");
@@ -9,6 +9,13 @@ const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 // ─── Signup ────────────────────────────────────────────────────────────────────
 const signup = async (req, res) => {
   try {
+    const authHeader = req.headers.authorization;
+    const rawToken = authHeader && authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
+    const decoded = rawToken ? verifyToken(rawToken) : null;
+    if (!decoded || decoded.role !== "superadmin") {
+      return res.status(403).json({ error: "Account creation is restricted to administrators" });
+    }
+
     const { name, email: rawEmail, password } = req.body;
     const email = rawEmail ? rawEmail.trim().toLowerCase() : "";
 
