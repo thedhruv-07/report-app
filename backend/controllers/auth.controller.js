@@ -10,9 +10,10 @@ const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 const signup = async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
-    const rawToken = authHeader && authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
-    const decoded = rawToken ? verifyToken(rawToken) : null;
+    const authToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    const decoded = authToken ? verifyToken(authToken) : null;
     if (!decoded || decoded.role !== "superadmin") {
+      console.warn(`Unauthorized signup attempt — token: ${authToken ? "present" : "missing"}, role: ${decoded?.role || "none"}`);
       return res.status(403).json({ error: "Account creation is restricted to administrators" });
     }
 
