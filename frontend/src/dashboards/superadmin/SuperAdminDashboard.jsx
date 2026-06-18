@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
@@ -33,7 +33,7 @@ export default function SuperAdminDashboard() {
   const [roleLoading, setRoleLoading] = useState(false);
   const [roleError, setRoleError] = useState('');
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -48,9 +48,9 @@ export default function SuperAdminDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
-  useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
   const stats = useMemo(() => ({
     total: users.length,
@@ -93,9 +93,13 @@ export default function SuperAdminDashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to update role');
       setRoleModal(null);
-      fetchUsers();
+      await fetchUsers();
     } catch (err) {
-      setRoleError(err.message);
+      if (!roleModal) {
+        setError(err.message);
+      } else {
+        setRoleError(err.message);
+      }
     } finally {
       setRoleLoading(false);
     }
