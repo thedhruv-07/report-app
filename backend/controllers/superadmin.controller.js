@@ -1,11 +1,16 @@
 const bcrypt = require("bcryptjs");
 const { User } = require("../models/user.model");
+const { setResetToken } = require("../models/user.model");
+const { sendResetEmail } = require("../services/email.service");
+const { Report } = require("../models/report.model");
+const FactoryAudit = require("../models/factoryAudit.model");
+const Booking = require("../models/Booking");
 
 const ALLOWED_ROLES = ["inspector", "manager", "admin", "operator", "superadmin"];
 
 const listUsers = async (req, res) => {
   try {
-    const users = await User.find({}, "_id name email role provider createdAt").lean();
+    const users = await User.find({}, "_id name email role provider isActive createdAt onboarding").lean();
     res.json({ users });
   } catch (err) {
     console.error("listUsers error:", err);
@@ -82,6 +87,36 @@ const updateRole = async (req, res) => {
   }
 };
 
+const updateStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isActive } = req.body;
+
+    if (typeof isActive !== "boolean") {
+      return res.status(400).json({ error: "isActive must be a boolean" });
+    }
+    if (id.toString() === req.user.id.toString()) {
+      return res.status(400).json({ error: "You cannot suspend your own account" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { isActive },
+      { new: true, select: "_id name email isActive" }
+    );
+    if (!user) return res.status(404).json({ error: "User not found" });
+    console.log(`[superadmin] Status updated: ${user.email} → isActive=${isActive} by ${req.user.email}`);
+
+    res.json({
+      message: isActive ? "Account unsuspended" : "Account suspended",
+      user: { id: user._id.toString(), name: user.name, email: user.email, isActive: user.isActive },
+    });
+  } catch (err) {
+    console.error("updateStatus error:", err);
+    res.status(500).json({ error: "Failed to update status" });
+  }
+};
+
 const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -101,4 +136,46 @@ const deleteUser = async (req, res) => {
   }
 };
 
-module.exports = { listUsers, createUser, updateRole, deleteUser };
+const forcePasswordReset = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    if (user.provider !== "local") {
+      return res.status(400).json({ error: "Password reset is only available for local accounts" });
+    }
+
+    const token = await setResetToken(user.email);
+    if (!token) return res.status(500).json({ error: "Failed to generate reset token" });
+
+    await sendResetEmail(user.email, token);
+    console.log(`[superadmin] Force password reset sent: ${user.email} by ${req.user.email}`);
+
+    res.json({ message: "Password reset email sent" });
+  } catch (err) {
+    console.error("forcePasswordReset error:", err);
+    res.status(500).json({ error: "Failed to send reset email" });
+  }
+};
+
+const getStats = async (req, res) => {
+  try {
+    const [totalReports, totalFaReports, pendingBookings, activeInspectors] = await Promise.all([
+      Report.countDocuments(),
+      FactoryAudit.countDocuments(),
+      Booking.countDocuments({ status: "pending" }),
+      User.countDocuments({ role: "inspector", isActive: true }),
+    ]);
+
+    res.json({
+      totalReports: totalReports + totalFaReports,
+      activeInspectors,
+      pendingBookings,
+    });
+  } catch (err) {
+    console.error("getStats error:", err);
+    res.status(500).json({ error: "Failed to fetch stats" });
+  }
+};
+
+module.exports = { listUsers, createUser, updateRole, updateStatus, deleteUser, forcePasswordReset, getStats };

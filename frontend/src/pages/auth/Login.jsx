@@ -100,16 +100,12 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold text-sm rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 hover:brightness-110 active:scale-[0.98] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full py-2.5 bg-blue-600 text-white font-semibold text-sm rounded-xl hover:bg-blue-700 active:scale-[0.98] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? "Logging in..." : "Log In"}
             </button>
           </form>
 
-          <p className="text-center mt-6 text-sm text-slate-500">
-            Don't have an account?{" "}
-            <Link to="/signup" className="font-semibold text-blue-600 hover:text-blue-700">Create Account</Link>
-          </p>
         </div>
       </div>
     </div>

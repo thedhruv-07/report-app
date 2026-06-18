@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const BASE = import.meta.env.VITE_API_BASE_URL;
 
-const ROLES = ['inspector', 'manager', 'admin', 'operator', 'superadmin'];
+const ROLES = ['inspector', 'manager', 'admin', 'superadmin'];
 
 const ROLE_BADGE = {
   inspector: 'bg-blue-100 text-blue-700',
@@ -23,6 +23,14 @@ export default function SuperAdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const [platformStats, setPlatformStats] = useState(null);
+  const [statsError, setStatsError] = useState('');
+
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
+
+  const [toast, setToast] = useState('');
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [addForm, setAddForm] = useState({ name: '', email: '', password: '', role: 'inspector' });
   const [addError, setAddError] = useState('');
@@ -32,6 +40,11 @@ export default function SuperAdminDashboard() {
   const [newRole, setNewRole] = useState('');
   const [roleLoading, setRoleLoading] = useState(false);
   const [roleError, setRoleError] = useState('');
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 3500);
+  };
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -50,7 +63,24 @@ export default function SuperAdminDashboard() {
     }
   }, [token]);
 
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  const fetchStats = useCallback(async () => {
+    setStatsError('');
+    try {
+      const res = await fetch(`${BASE}/api/superadmin/stats`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load stats');
+      setPlatformStats(data);
+    } catch (err) {
+      setStatsError(err.message);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    fetchUsers();
+    fetchStats();
+  }, [fetchUsers, fetchStats]);
 
   const stats = useMemo(() => ({
     total: users.length,
@@ -58,6 +88,17 @@ export default function SuperAdminDashboard() {
     managers: users.filter(u => u.role === 'manager').length,
     admins: users.filter(u => u.role === 'admin').length,
   }), [users]);
+
+  const filteredUsers = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return users.filter(u => {
+      const matchesSearch = !q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+      const matchesRole = !roleFilter || u.role === roleFilter;
+      return matchesSearch && matchesRole;
+    });
+  }, [users, search, roleFilter]);
+
+  const isFiltering = search.trim() !== '' || roleFilter !== '';
 
   const handleAddSubmit = async (e) => {
     e.preventDefault();
@@ -122,13 +163,53 @@ export default function SuperAdminDashboard() {
     }
   };
 
+  const handleToggleStatus = async (targetUser) => {
+    const willSuspend = targetUser.isActive !== false;
+    const action = willSuspend ? 'Suspend' : 'Unsuspend';
+    if (!window.confirm(`${action} ${targetUser.name}?`)) return;
+    try {
+      const res = await fetch(`${BASE}/api/superadmin/users/${targetUser._id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ isActive: !willSuspend }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update status');
+      showToast(data.message);
+      fetchUsers();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleResetPassword = async (targetUser) => {
+    if (!window.confirm(`Send password reset email to ${targetUser.name}?`)) return;
+    try {
+      const res = await fetch(`${BASE}/api/superadmin/users/${targetUser._id}/reset-password`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send reset email');
+      showToast(data.message);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="h-screen overflow-y-auto bg-slate-50">
+      {toast && (
+        <div className="fixed top-4 right-4 z-50 px-4 py-3 bg-green-600 text-white text-sm font-semibold rounded-xl shadow-lg">
+          {toast}
+        </div>
+      )}
+
       <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
         <h1 className="text-lg font-bold text-slate-800">Super Admin — User Management</h1>
         <div className="flex items-center gap-3">
@@ -157,6 +238,23 @@ export default function SuperAdminDashboard() {
           ))}
         </div>
 
+        <div className="grid grid-cols-3 gap-4">
+          {statsError ? (
+            <div className="col-span-3 p-3 bg-red-50 border border-red-100 rounded-lg text-sm text-red-600">{statsError}</div>
+          ) : (
+            [
+              { label: 'Total Reports', value: platformStats?.totalReports ?? '—' },
+              { label: 'Active Inspectors', value: platformStats?.activeInspectors ?? '—' },
+              { label: 'Pending Bookings', value: platformStats?.pendingBookings ?? '—' },
+            ].map(s => (
+              <div key={s.label} className="bg-white rounded-xl border border-slate-200 p-5">
+                <p className="text-2xl font-bold text-slate-800">{s.value}</p>
+                <p className="text-sm text-slate-500 mt-1">{s.label}</p>
+              </div>
+            ))
+          )}
+        </div>
+
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
           <div className="px-5 py-4 flex items-center justify-between border-b border-slate-100">
             <h2 className="font-semibold text-slate-700">All Users</h2>
@@ -167,6 +265,32 @@ export default function SuperAdminDashboard() {
               + Add User
             </button>
           </div>
+
+          <div className="px-5 py-3 flex items-center gap-3 border-b border-slate-100 bg-slate-50/60">
+            <input
+              type="text"
+              placeholder="Search name or email..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="flex-1 px-3 py-2 rounded-lg border border-slate-200 text-sm focus:border-blue-400 outline-none bg-white"
+            />
+            <select
+              value={roleFilter}
+              onChange={e => setRoleFilter(e.target.value)}
+              className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:border-blue-400 outline-none bg-white"
+            >
+              <option value="">All Roles</option>
+              {['inspector', 'manager', 'admin', 'operator', 'superadmin'].map(r => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          </div>
+
+          {isFiltering && (
+            <div className="px-5 py-2 text-xs text-slate-500 border-b border-slate-100">
+              {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''} found
+            </div>
+          )}
 
           {error && (
             <div className="mx-5 mt-4 p-3 bg-red-50 border border-red-100 rounded-lg text-sm text-red-600">{error}</div>
@@ -180,29 +304,46 @@ export default function SuperAdminDashboard() {
             <table className="w-full text-sm">
               <thead className="bg-slate-50 border-b border-slate-100">
                 <tr>
-                  {['Name', 'Email', 'Role', 'Provider', 'Created', 'Actions'].map(h => (
+                  {['Name', 'Email', 'Role', 'Onboarding', 'Provider', 'Created', 'Actions'].map(h => (
                     <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {users.map(u => {
+                {filteredUsers.map(u => {
                   const isSelf = u._id === user?.id;
+                  const isSuspended = u.isActive === false;
                   return (
-                    <tr key={u._id} className="hover:bg-slate-50/50 transition-colors">
+                    <tr key={u._id} className={`hover:bg-slate-50/50 transition-colors${isSuspended ? ' opacity-50' : ''}`}>
                       <td className="px-5 py-3.5 font-medium text-slate-800">{u.name}</td>
                       <td className="px-5 py-3.5 text-slate-600">{u.email}</td>
                       <td className="px-5 py-3.5">
-                        <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${ROLE_BADGE[u.role] || 'bg-slate-100 text-slate-600'}`}>
-                          {u.role}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${ROLE_BADGE[u.role] || 'bg-slate-100 text-slate-600'}`}>
+                            {u.role}
+                          </span>
+                          {isSuspended && (
+                            <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-200 text-slate-500">
+                              suspended
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        {u.role === 'inspector' ? (
+                          u.onboarding?.isCompleted ? (
+                            <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">Done</span>
+                          ) : (
+                            <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">Pending</span>
+                          )
+                        ) : null}
                       </td>
                       <td className="px-5 py-3.5 text-slate-500 capitalize">{u.provider}</td>
                       <td className="px-5 py-3.5 text-slate-500">
                         {new Date(u.createdAt).toLocaleDateString()}
                       </td>
                       <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <button
                             disabled={isSelf}
                             onClick={() => { setRoleModal(u); setNewRole(u.role); setRoleError(''); }}
@@ -210,6 +351,14 @@ export default function SuperAdminDashboard() {
                           >
                             Change Role
                           </button>
+                          {u.provider === 'local' && (
+                            <button
+                              onClick={() => handleResetPassword(u)}
+                              className="px-3 py-1.5 text-xs font-semibold text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+                            >
+                              Reset Password
+                            </button>
+                          )}
                           <button
                             disabled={isSelf}
                             onClick={() => handleDelete(u)}
@@ -217,14 +366,23 @@ export default function SuperAdminDashboard() {
                           >
                             Delete
                           </button>
+                          <button
+                            disabled={isSelf}
+                            onClick={() => handleToggleStatus(u)}
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${isSuspended ? 'text-green-700 border-green-200 hover:bg-green-50' : 'text-orange-600 border-orange-200 hover:bg-orange-50'}`}
+                          >
+                            {isSuspended ? 'Unsuspend' : 'Suspend'}
+                          </button>
                         </div>
                       </td>
                     </tr>
                   );
                 })}
-                {users.length === 0 && !loading && (
+                {filteredUsers.length === 0 && !loading && (
                   <tr>
-                    <td colSpan={6} className="px-5 py-10 text-center text-slate-400">No users found</td>
+                    <td colSpan={7} className="px-5 py-10 text-center text-slate-400">
+                      {isFiltering ? 'No users match your filters' : 'No users found'}
+                    </td>
                   </tr>
                 )}
               </tbody>

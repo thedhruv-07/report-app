@@ -76,6 +76,10 @@ const login = async (req, res) => {
       });
     }
 
+    if (user.isActive === false) {
+      return res.status(403).json({ error: "Your account has been suspended. Contact your administrator." });
+    }
+
     const isValid = await UserModel.verifyPassword(password, user.password);
     if (!isValid) {
       return res.status(401).json({ error: "Invalid email or password" });

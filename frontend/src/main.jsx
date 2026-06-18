@@ -21,7 +21,6 @@ import {
   Settings,
   Notifications,
   Login,
-  Signup,
   ForgotPassword,
   ResetPassword,
   RouteFallback,
@@ -40,7 +39,7 @@ createRoot(document.getElementById('root')).render(
           <Routes>
             {/* Public auth routes */}
             <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
+            <Route path="/signup" element={<Navigate to="/login" replace />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
 

@@ -14,7 +14,7 @@ mongoose.connect(MONGO_URI, {
     console.log("🟢 Connected to MongoDB");
     const server = app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
-    });
+    }); 
 
     // Initialize Socket.io
     const { initSocket } = require("./socket");

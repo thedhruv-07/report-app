@@ -42,6 +42,10 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: null,
   },
+  isActive: {
+    type: Boolean,
+    default: true,
+  },
   onboarding: {
     isCompleted:        { type: Boolean, default: false },
     manualRead:         { type: Boolean, default: false },
