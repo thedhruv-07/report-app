@@ -181,12 +181,22 @@ const googleAuth = async (req, res) => {
       return res.status(400).json({ error: "Google account missing email or name" });
     }
 
-    const user = await UserModel.findOrCreateGoogleUser({ name, email, googleId, picture });
+    let user = await UserModel.findByEmail(email);
+    if (!user) {
+      return res.status(403).json({ error: "Account creation is restricted to administrators. Contact your administrator to set up your account." });
+    }
+
+    if (!user.googleId) {
+      user.googleId = googleId;
+      user.provider = "google";
+      await user.save();
+    }
+
     const token = generateToken(user);
 
     res.json({
       message: "Google authentication successful",
-      user: { id: user.id, name: user.name, email: user.email, picture, role: user.role },
+      user: { id: user._id.toString(), name: user.name, email: user.email, picture, role: user.role },
       token,
     });
   } catch (error) {
