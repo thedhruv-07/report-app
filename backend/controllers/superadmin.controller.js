@@ -43,6 +43,7 @@ const createUser = async (req, res) => {
     const hashed = await bcrypt.hash(password, 10);
     const user = new User({ name: name.trim(), email, password: hashed, role, provider: "local" });
     await user.save();
+    console.log(`[superadmin] Created user: ${user.email} (role: ${user.role}) by ${req.user.email}`);
 
     res.status(201).json({
       message: "User created successfully",
@@ -69,6 +70,7 @@ const updateRole = async (req, res) => {
       { new: true, select: "_id name email role" }
     );
     if (!user) return res.status(404).json({ error: "User not found" });
+    console.log(`[superadmin] Role updated: ${user.email} → ${role} by ${req.user.email}`);
 
     res.json({
       message: "Role updated",
@@ -84,12 +86,13 @@ const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (id === req.user.id) {
+    if (id.toString() === req.user.id.toString()) {
       return res.status(400).json({ error: "You cannot delete your own account" });
     }
 
     const user = await User.findByIdAndDelete(id);
     if (!user) return res.status(404).json({ error: "User not found" });
+    console.log(`[superadmin] Deleted user: ${user.email} by ${req.user.email}`);
 
     res.json({ message: "User deleted successfully" });
   } catch (err) {
