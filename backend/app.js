@@ -124,6 +124,10 @@ app.use('/api/inspector/onboarding', onboardingRoutes);
 const adminRoutes = require('./routes/admin.routes');
 app.use('/api/admin', adminRoutes);
 
+// Superadmin Routes
+const superadminRoutes = require('./routes/superadmin.routes');
+app.use('/api/superadmin', superadminRoutes);
+
 // Inspector Routes
 const inspectorRoutes = require("./routes/inspector.routes");
 app.use("/api/inspector", inspectorRoutes);
