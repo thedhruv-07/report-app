@@ -20,6 +20,7 @@ export const ResetPassword = lazy(() => import('../pages/auth/ResetPassword.jsx'
 export const InspectionNoticesList = lazy(() => import('../dashboards/admin/pages/InspectionNoticesList.jsx'))
 export const InspectionNoticeForm = lazy(() => import('../dashboards/admin/pages/InspectionNoticeForm.jsx'))
 export const AdminReportQueue = lazy(() => import('../dashboards/admin/pages/AdminReportQueue.jsx'))
+export const SuperAdminDashboard = lazy(() => import('../dashboards/superadmin/SuperAdminDashboard.jsx'))
 
 export const RouteFallback = () => (
   <div style={{ minHeight: '40vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6b7280' }}>

@@ -28,6 +28,7 @@ import {
   InspectionNoticesList,
   InspectionNoticeForm,
   AdminReportQueue,
+  SuperAdminDashboard,
 } from './routes/appRoutes'
 
 createRoot(document.getElementById('root')).render(
@@ -82,6 +83,11 @@ createRoot(document.getElementById('root')).render(
                     <Route path="/dashboard/during-production" element={<DuringProductionInspection />} />
                   </Route>
                 </Route>
+              </Route>
+
+              {/* Superadmin — standalone page, no shared Navbar */}
+              <Route element={<ProtectedRoute allowedRoles={['superadmin']} />}>
+                <Route path="/dashboard/superadmin" element={<SuperAdminDashboard />} />
               </Route>
             </Route>
 

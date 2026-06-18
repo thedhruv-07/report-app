@@ -12,6 +12,10 @@ export default function DashboardHome() {
 
   if (!user) return <Navigate to="/login" replace />;
 
+  if (user.role === 'superadmin') {
+    return <Navigate to="/dashboard/superadmin" replace />;
+  }
+
   if (user.role === 'manager') {
     return <Navigate to="/dashboard/manager" replace />;
   }
