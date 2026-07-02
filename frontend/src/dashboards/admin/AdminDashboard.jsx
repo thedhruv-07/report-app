@@ -11,7 +11,6 @@ import { useReportQueue } from '../manager/hooks/useReportQueue';
 // Modular Sub-components
 import SummaryCards from './components/SummaryCards';
 import BookingsQueue from './components/BookingsQueue';
-import InspectorDirectory from './components/InspectorDirectory';
 import DeliveryConfirmationModal from './components/DeliveryConfirmationModal';
 import NotificationPanel from './components/NotificationPanel';
 import NotificationManager from './components/NotificationManager';
@@ -313,11 +312,6 @@ export default function AdminDashboard() {
             bookingInboxError={bookingInboxError}
             onAssignClick={openReviewModal}
             onPrepareNotice={handlePrepareNotice}
-          />
-
-          {/* Inspector Performance Cards */}
-          <InspectorDirectory
-            activeView={activeView}
           />
 
           {activeView === 'notifications' && <NotificationManager />}

@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { useNotifications } from '../../../context/NotificationContext';
-import { LayoutDashboard, ClipboardList, Users, Bell, Mail, LogOut, FileText } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, Bell, Mail, LogOut, FileText } from 'lucide-react';
 
 export default function AdminNavbar({ activeView, stats = { readyToDeliver: 0, pendingReports: 0 }, setActiveView }) {
   const { logout, user } = useAuth();
@@ -100,14 +100,6 @@ export default function AdminNavbar({ activeView, stats = { readyToDeliver: 0, p
         >
           <ClipboardList className="w-4 h-4 shrink-0" />
           <span>Inspection Notices</span>
-        </button>
-
-        <button
-          onClick={() => handleNav("inspectors", "/dashboard/admin")}
-          className={navItemClass(activeView === "inspectors" && location.pathname === '/dashboard/admin')}
-        >
-          <Users className="w-4 h-4 shrink-0" />
-          <span>Inspectors</span>
         </button>
 
         <button
