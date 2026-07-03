@@ -35,6 +35,9 @@ export const ENDPOINTS = {
     TASK_BY_ID: (id) => `${API_BASE_URL}/api/inspector/tasks/${id}`,
     ACCEPT_TASK: (id) => `${API_BASE_URL}/api/inspector/tasks/${id}/accept`,
     SECTION_SKIP: (id) => `${API_BASE_URL}/api/inspector/tasks/${id}/section-skip`,
+    CONTACT_TM: `${API_BASE_URL}/api/inspector/contact-technical-manager`,
+    HELP_REQUESTS: `${API_BASE_URL}/api/inspector/help-requests`,
+    REPLY_HELP_REQUEST: (id) => `${API_BASE_URL}/api/inspector/help-requests/${id}/reply`,
     NOTIFICATIONS: `${API_BASE_URL}/api/inspector/notifications`,
     READ_NOTIFICATION: (id) => `${API_BASE_URL}/api/inspector/notifications/${id}/read`,
     READ_ALL_NOTIFICATIONS: `${API_BASE_URL}/api/inspector/notifications/read-all`,
@@ -46,6 +49,8 @@ export const ENDPOINTS = {
     SUBMIT_FEEDBACK: (id) => `${API_BASE_URL}/api/manager/reports/${id}/correction`,
     FINALIZE: (id) => `${API_BASE_URL}/api/manager/reports/${id}/finalize`,
     ADD_REMARK: (id) => `${API_BASE_URL}/api/manager/reports/${id}/remarks`,
+    HELP_REQUESTS: `${API_BASE_URL}/api/manager/help-requests`,
+    REPLY_HELP_REQUEST: (id) => `${API_BASE_URL}/api/manager/help-requests/${id}/reply`,
   },
   ONBOARDING: {
     STATUS:         `${API_BASE_URL}/api/inspector/onboarding/status`,

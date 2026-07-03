@@ -49,7 +49,7 @@ All routes protected by `authMiddleware + roleCheck(['superadmin'])`.
 Returns `{ users: [...] }`.
 
 **POST /users**  
-Body: `{ name, email, password, role }`.  
+Body: `{ name, email, password, role }`. 
 Validation:
 - All four fields required.
 - `role` must be in `["inspector", "manager", "admin", "operator", "superadmin"]`.

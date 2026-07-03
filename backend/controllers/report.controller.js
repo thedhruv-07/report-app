@@ -256,7 +256,7 @@ const generateReport = async (req, res) => {
 
       if (req.query.notify === "true") {
         try {
-          getIO().to("manager_room").emit("new_report_submitted", {
+          getIO().to(["manager_room", "admin_room"]).emit("new_report_submitted", {
             reportId: report._id,
             inspectorName,
             client: data.client || "",
@@ -271,7 +271,7 @@ const generateReport = async (req, res) => {
       // Enqueue email alerts (non-blocking)
       try {
         const { enqueueEmail } = require('../services/email.queue');
-        const { renderTemplate } = require('../services/email.service');
+        const { renderTemplate, formatEmailDate } = require('../services/email.service');
 
         const recipients = new Set();
         // Admin list via env (comma separated) or fallback to SMTP_USER
@@ -288,7 +288,7 @@ const generateReport = async (req, res) => {
           inspectorName: data.auditorName || req.user?.name || 'Inspector',
           factory: data.factory || data.client || '',
           inspectionDate: data.inspectionDate || '',
-          submittedAt: new Date().toISOString(),
+          submittedAt: formatEmailDate(new Date()),
           summary: (data.inspectorOpinion || '').slice(0, 400),
           viewUrl
         });
@@ -504,7 +504,7 @@ const generateReport = async (req, res) => {
           properties: {
             page: {
               margin: {
-                top: convertInchesToTwip(1.1),
+                top: convertInchesToTwip(1.3),
                 right: convertInchesToTwip(0.6),
                 bottom: convertInchesToTwip(0.8),
                 left: convertInchesToTwip(0.6),

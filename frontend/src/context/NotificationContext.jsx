@@ -4,7 +4,15 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { io } from "socket.io-client";
 import { ENDPOINTS, API_BASE_URL } from "../config/api";
 import { useAuth } from "./AuthContext";
-import { Bell, X } from "lucide-react";
+import { Bell, X, CheckCircle, AlertTriangle, XCircle, Info } from "lucide-react";
+
+const BANNER_ICONS = { success: CheckCircle, warning: AlertTriangle, urgent: XCircle, info: Info };
+const BANNER_STYLES = {
+  success: { accent: '#10b981', iconBg: '#d1fae5', iconColor: '#059669' },
+  warning: { accent: '#f59e0b', iconBg: '#fef3c7', iconColor: '#b45309' },
+  urgent:  { accent: '#ef4444', iconBg: '#fee2e2', iconColor: '#dc2626' },
+  info:    { accent: '#3b82f6', iconBg: '#dbeafe', iconColor: '#2563eb' },
+};
 
 const NotificationContext = createContext(null);
 
@@ -93,16 +101,47 @@ export function NotificationProvider({ children }) {
     return () => clearInterval(poll);
   }, [user, token, fetchNotifications]);
 
-  // Socket: join user room and refresh on new_notification event
+  // Socket: join user room (+ role room) and refresh on notification/system events
   useEffect(() => {
     if (!user || !token) return;
     const socket = io(API_BASE_URL, { transports: ['websocket', 'polling'], auth: { token } });
     socket.on('connect', () => {
       socket.emit('join', `user_${user.id || user._id}`);
+      if (user.role === 'admin') socket.emit('join', 'admin_room');
+      if (user.role === 'manager') socket.emit('join', 'manager_room');
     });
     socket.on('new_notification', () => {
       fetchNotifications();
     });
+    socket.on('new_system_notification', () => {
+      fetchNotifications();
+    });
+
+    const pushBanner = (title, message, type = 'info') => {
+      const bannerId = Math.random().toString(36).slice(2, 11);
+      setActiveBanners(prev => [...prev, { bannerId, title, message, type }]);
+      setTimeout(() => {
+        setActiveBanners(prev => prev.filter(b => b.bannerId !== bannerId));
+      }, 5000);
+    };
+
+    socket.on('new_report_submitted', (data) => {
+      pushBanner(
+        'New Report Submitted',
+        `${data.inspectorName || 'An inspector'} submitted a ${data.reportType || 'report'}${data.client ? ` for ${data.client}` : ''}.`,
+        'info'
+      );
+    });
+    socket.on('report_status_changed', (data) => {
+      const status = (data.status || '').toLowerCase();
+      const type = status.includes('approve') ? 'success' : status.includes('revision') || status.includes('reject') ? 'warning' : 'info';
+      pushBanner(
+        'Report Status Changed',
+        `Report ${(data.reportId?.toString() || '').slice(-6)} is now "${data.status}".`,
+        type
+      );
+    });
+
     return () => socket.disconnect();
   }, [user, token, fetchNotifications]);
 
@@ -173,33 +212,37 @@ export function NotificationProvider({ children }) {
               to   { transform: translateY(-120%);  opacity: 0; }
             }
           `}</style>
-          {activeBanners.map(banner => (
-            <div key={banner.bannerId} style={{
-              display: 'flex', alignItems: 'flex-start', gap: '12px',
-              padding: '14px 18px',
-              borderRadius: '14px',
-              background: '#1e1b4b',
-              boxShadow: '0 12px 40px rgba(0,0,0,0.3), 0 2px 10px rgba(99,102,241,0.25)',
-              color: '#fff',
-              minWidth: '320px',
-              maxWidth: '460px',
-              pointerEvents: 'auto',
-              animation: 'notif-drop-in 0.45s cubic-bezier(0.22,1,0.36,1) both',
-              borderBottom: '3px solid #6366f1',
-            }}>
-              <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'rgba(99,102,241,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Bell size={16} style={{ color: '#818cf8' }} />
+          {activeBanners.map(banner => {
+            const style = BANNER_STYLES[banner.type] || BANNER_STYLES.info;
+            const Icon = BANNER_ICONS[banner.type] || Bell;
+            return (
+              <div key={banner.bannerId} style={{
+                display: 'flex', alignItems: 'flex-start', gap: '12px',
+                padding: '14px 18px',
+                borderRadius: '14px',
+                background: '#ffffff',
+                boxShadow: '0 12px 32px rgba(15,23,42,0.16), 0 2px 8px rgba(15,23,42,0.08)',
+                color: '#0f172a',
+                minWidth: '340px',
+                maxWidth: '460px',
+                pointerEvents: 'auto',
+                animation: 'notif-drop-in 0.45s cubic-bezier(0.22,1,0.36,1) both',
+                borderLeft: `4px solid ${style.accent}`,
+              }}>
+                <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: style.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Icon size={17} style={{ color: style.iconColor }} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#0f172a', lineHeight: '1.3' }}>{banner.title || 'New Notification'}</p>
+                  <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#64748b', lineHeight: '1.5' }}>{banner.message}</p>
+                </div>
+                <button onClick={() => removeBanner(banner.bannerId)}
+                  style={{ background: '#f1f5f9', border: 'none', cursor: 'pointer', color: '#64748b', padding: '4px 7px', borderRadius: '6px', flexShrink: 0, lineHeight: 1, marginTop: '2px' }}>
+                  <X size={14} />
+                </button>
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#e0e7ff', lineHeight: '1.3' }}>{banner.title || 'New Notification'}</p>
-                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#a5b4fc', lineHeight: '1.5' }}>{banner.message}</p>
-              </div>
-              <button onClick={() => removeBanner(banner.bannerId)}
-                style={{ background: 'rgba(255,255,255,0.08)', border: 'none', cursor: 'pointer', color: '#a5b4fc', padding: '4px 7px', borderRadius: '6px', flexShrink: 0, lineHeight: 1, marginTop: '2px' }}>
-                <X size={14} />
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </NotificationContext.Provider>

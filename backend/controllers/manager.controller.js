@@ -146,8 +146,8 @@ exports.updateStatus = async (req, res) => {
       } catch (e) { console.warn('[updateStatus] Task update failed:', e.message); }
     }
 
-    // Emit real-time update to manager room only
-    getIO().to("manager_room").emit("report_status_changed", {
+    // Emit real-time update to manager + admin rooms
+    getIO().to(["manager_room", "admin_room"]).emit("report_status_changed", {
       reportId: report._id,
       status: report.operationStatus
     });
@@ -229,8 +229,8 @@ exports.requestCorrection = async (req, res) => {
       }
     } catch (e) { console.warn('[requestCorrection] Notification creation failed:', e.message); }
 
-    // Emit real-time update to manager room only
-    getIO().to("manager_room").emit("report_status_changed", {
+    // Emit real-time update to manager + admin rooms
+    getIO().to(["manager_room", "admin_room"]).emit("report_status_changed", {
       reportId: report._id,
       status: report.operationStatus,
       revisionRound: report.revisionRound
@@ -301,8 +301,8 @@ exports.finalizeReport = async (req, res) => {
       }
     } catch (e) { console.warn('[finalizeReport] Notification creation failed:', e.message); }
 
-    // Emit real-time update to manager room only
-    getIO().to("manager_room").emit("report_status_changed", {
+    // Emit real-time update to manager + admin rooms
+    getIO().to(["manager_room", "admin_room"]).emit("report_status_changed", {
       reportId: report._id,
       status: report.operationStatus
     });

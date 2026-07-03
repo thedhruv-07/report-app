@@ -119,17 +119,11 @@ const getTransporter = async () => {
   return cachedTransporter;
 };
 
-let _logoDataUri = null;
-const getLogoDataUri = () => {
-  if (_logoDataUri !== null) return _logoDataUri;
-  const logoPath = path.resolve(__dirname, '..', '..', 'frontend', 'public', 'company-logo.png');
-  if (fs.existsSync(logoPath)) {
-    const b64 = fs.readFileSync(logoPath).toString('base64');
-    _logoDataUri = `data:image/png;base64,${b64}`;
-  } else {
-    _logoDataUri = '';
-  }
-  return _logoDataUri;
+const formatEmailDate = (value) => {
+  if (!value) return '';
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
 const renderTemplate = (name, vars = {}) => {
@@ -139,10 +133,18 @@ const renderTemplate = (name, vars = {}) => {
     templateCache[name] = fs.readFileSync(filePath, 'utf8');
   }
   let html = templateCache[name];
-  // Brevo API: skip base64 (pushes past Gmail 102KB clip) — use hosted public URL instead.
-  const logoDataUri = process.env.BREVO_API_KEY ? '' : getLogoDataUri();
-  const backendBase = (process.env.BACKEND_URL || '').replace(/\/$/, '');
-  const frontendBase = (process.env.FRONTEND_URL || 'https://absolute-veritas.netlify.app').replace(/\/$/, '');
+  // Gmail doesn't reliably render base64 data-URI images (and it clips large emails at 102KB) —
+  // always use a hosted public URL for the logo instead, regardless of send path.
+  const logoDataUri = '';
+  const isLocalUrl = (url) => !url || /^https?:\/\/(localhost|127\.0\.0\.1)/i.test(url);
+  const PUBLIC_FRONTEND_URL = 'https://absolute-veritas.netlify.app';
+  const rawBackendBase = (process.env.BACKEND_URL || '').replace(/\/$/, '');
+  const rawFrontendBase = (process.env.FRONTEND_URL || PUBLIC_FRONTEND_URL).replace(/\/$/, '');
+  // Email images are fetched by Gmail's own servers, not the recipient's browser — a localhost
+  // URL (the usual FRONTEND_URL/BACKEND_URL value in local dev) is unreachable from there, so
+  // always fall back to the public production URL for the logo specifically.
+  const backendBase = isLocalUrl(rawBackendBase) ? '' : rawBackendBase;
+  const frontendBase = isLocalUrl(rawFrontendBase) ? PUBLIC_FRONTEND_URL : rawFrontendBase;
   const logoSrc = logoDataUri
     || (backendBase ? `${backendBase}/assets/company-logo.png` : `${frontendBase}/company-logo.png`);
   const logoHtml = `<img src="${logoSrc}" alt="Absolute Veritas" style="height:44px;display:block;margin:0 auto;" />`;
@@ -151,7 +153,20 @@ const renderTemplate = (name, vars = {}) => {
     const re = new RegExp(`{{\\s*${k}\\s*}}`, 'g');
     html = html.replace(re, allVars[k] == null ? '' : String(allVars[k]));
   });
-  return html;
+  // Force light rendering — without this, Gmail's dark mode auto-inverts colors and
+  // washes the white card out to a mismatched grey-on-grey look.
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="color-scheme" content="light" />
+<meta name="supported-color-schemes" content="light" />
+</head>
+<body style="margin:0;padding:0;background:#f8fafc;">
+${html}
+</body>
+</html>`;
 };
 
 const sendImmediateEmail = async ({ to, subject, html, text, attachments = [], from } = {}) => {
@@ -324,4 +339,4 @@ const sendResetEmail = async (to, resetToken) => {
   });
 };
 
-module.exports = { sendResetEmail, sendImmediateEmail, renderTemplate };
+module.exports = { sendResetEmail, sendImmediateEmail, renderTemplate, formatEmailDate };

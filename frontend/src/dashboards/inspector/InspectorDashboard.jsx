@@ -22,6 +22,7 @@ import {
 
 const TaskGrid = lazy(() => import('./components/TaskGrid'));
 const TaskDetailsModal = lazy(() => import('./components/TaskDetailsModal'));
+const MessagesPanel = lazy(() => import('./components/MessagesPanel'));
 
 const STATUS_FILTERS = [
   { label: "All",                  value: "All" },
@@ -289,6 +290,10 @@ export default function Dashboard() {
             );
           })}
         </div>
+
+        <Suspense fallback={null}>
+          <MessagesPanel />
+        </Suspense>
 
         <Suspense fallback={<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="bg-white rounded-2xl border border-slate-200 overflow-hidden animate-pulse"><div className="h-1 bg-slate-100" /><div className="p-5 space-y-4"><div className="flex justify-between"><div className="h-5 bg-slate-100 rounded-lg w-12" /><div className="h-5 bg-slate-100 rounded-lg w-24" /></div><div className="h-5 bg-slate-100 rounded w-3/4" /><div className="space-y-2"><div className="h-4 bg-slate-100 rounded w-full" /><div className="h-4 bg-slate-100 rounded w-5/6" /><div className="h-4 bg-slate-100 rounded w-1/2" /></div></div><div className="px-5 py-3 border-t border-slate-100 bg-slate-50 flex justify-between"><div className="h-4 bg-slate-100 rounded w-12" /><div className="h-4 bg-slate-100 rounded w-20" /></div></div>)}</div>}>
           <TaskGrid

@@ -10,6 +10,13 @@
  */
 
 const InspectionNotice = require('../models/InspectionNotice');
+const wasabiService = require('./wasabiService');
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 // Map Booking/webhook inspection types → InspectionNotice service type enum
 const BOOKING_TYPE_TO_SERVICE = {
@@ -49,6 +56,59 @@ const uniqueNoticeId = async () => {
   }
   return `PN-${Date.now()}`;
 };
+
+/**
+ * Pulls client-uploaded booking documents from booking-app-react and copies
+ * them into notice.attachments.clientFiles (our own Wasabi bucket, not the
+ * booking app's local-disk URLs). Never throws — every failure mode degrades
+ * to "notice created with zero or partial attachments".
+ */
+async function syncBookingAttachments(notice, booking) {
+  if (!booking.onlineBookingId || !process.env.BOOKING_API_URL || !process.env.BOOKING_API_SECRET) {
+    return; // no online booking, or service auth not configured — skip silently
+  }
+
+  let files;
+  try {
+    const res = await fetch(
+      `${process.env.BOOKING_API_URL}/api/upload/booking/${booking.onlineBookingId}/service`,
+      { headers: { 'x-api-secret': process.env.BOOKING_API_SECRET } }
+    );
+    if (!res.ok) {
+      console.warn(`[bookingToNotice] attachment list fetch returned ${res.status}`);
+      return;
+    }
+    files = await res.json();
+  } catch (err) {
+    console.warn('[bookingToNotice] attachment list fetch failed:', err.message);
+    return;
+  }
+
+  for (const file of files) {
+    try {
+      const fileRes = await fetch(file.url);
+      if (!fileRes.ok) {
+        console.warn(`[bookingToNotice] could not download ${file.name}: ${fileRes.status}`);
+        continue;
+      }
+      const buffer = Buffer.from(await fileRes.arrayBuffer());
+      const { url } = await wasabiService.uploadFile({
+        buffer,
+        originalname: file.name,
+        mimetype: file.type,
+      });
+      notice.attachments.clientFiles.push({
+        fileName: file.name,
+        size: formatFileSize(file.size),
+        uploadDate: file.createdAt,
+        url,
+      });
+    } catch (err) {
+      console.warn(`[bookingToNotice] failed to sync attachment ${file.name}:`, err.message);
+      // continue to next file — one bad file must not block the rest
+    }
+  }
+}
 
 /**
  * Main function. Creates a draft InspectionNotice from a Booking document.
@@ -183,6 +243,8 @@ async function createDraftNoticeFromBooking(booking, adminId) {
       inspectors:     [],
     },
   });
+
+  await syncBookingAttachments(notice, booking);
 
   await notice.save();
   console.log(`[bookingToNotice] Created draft notice ${notice.noticeId} for booking ${bookingRef} (${booking.clientName})`);

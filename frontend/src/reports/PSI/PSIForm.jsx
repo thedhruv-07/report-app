@@ -7,6 +7,7 @@ import { ReportMetaContext } from '../../context/ReportMetaContext';
 import { readImagePreview } from '../../utils/fileUtils';
 import { useAuth } from '../../context/AuthContext';
 import PrefillToast from '../shared/components/PrefillToast';
+import ContactTechnicalManagerButton from '../../components/shared/ContactTechnicalManagerButton';
 
 const GeneralInfo = lazy(() => import('./components/SectionA_Summary'));
 const InspectionSummaryTable = lazy(() => import('./components/InspectionSummaryTable'));
@@ -1155,6 +1156,11 @@ function App() {
                   Auto-saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               )}
+              <ContactTechnicalManagerButton
+                reportType="Pre-Shipment Inspection"
+                sectionLabel={stepNavItems.find(i => i.id === step)?.label}
+                taskId={taskId}
+              />
               <span style={{ fontSize: "11px", color: colors.textMuted, fontWeight: 500 }}>Step {step} of 14</span>
             </div>
           </div>

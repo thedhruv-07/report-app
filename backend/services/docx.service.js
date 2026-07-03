@@ -37,6 +37,8 @@ const san = (v) => sanitizeDocxText(asVal(v));
 
 const { LOGO_PATH, PACKAGE_ICON_PATH } = require("../config/config");
 
+const SECTION_HEADER_MARGINS = { top: 40, bottom: 40, left: 100, right: 100 };
+
 async function createConclusionTable(data, isCls = false) {
   const legend = [
     { label: "PASSED ", desc: ": Conform to Client's Requirement" },
@@ -63,7 +65,7 @@ async function createConclusionTable(data, isCls = false) {
     return new Table({
       width: { size: 100, type: "pct" },
       rows: [
-        new TableRow({ children: [new TableCell({ columnSpan: 1, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "IV. CONCLUSION", bold: true, size: 22, color: "1F4E79", font: "Arial" })] })] })] }),
+        new TableRow({ children: [new TableCell({ columnSpan: 1, shading: { fill: "E8E8E8" }, borders: tableBorders(), margins: SECTION_HEADER_MARGINS, children: [new Paragraph({ children: [new TextRun({ text: "IV. CONCLUSION", bold: true, size: 22, color: "1F4E79", font: "Arial" })] })] })] }),
         new TableRow({
           children: [
             new TableCell({
@@ -80,7 +82,7 @@ async function createConclusionTable(data, isCls = false) {
                     })
                   ],
                   alignment: "left",
-                  spacing: { before: 30, after: 30 }
+                  spacing: { before: 40, after: 40 }
                 })
               ]
             })
@@ -106,7 +108,7 @@ async function createConclusionTable(data, isCls = false) {
 
   // PSI Conclusion: Full Table with Signatures/Photos
   const conclRows = [
-    new TableRow({ children: [new TableCell({ columnSpan: 2, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "IV. CONCLUSION", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+    new TableRow({ children: [new TableCell({ columnSpan: 2, shading: { fill: "E8E8E8" }, borders: tableBorders(), margins: SECTION_HEADER_MARGINS, children: [new Paragraph({ children: [new TextRun({ text: "IV. CONCLUSION", bold: true, size: 22, color: "1F4E79" })] })] })] }),
     new TableRow({
       children: [
         new TableCell({
@@ -203,7 +205,7 @@ async function createRemarksTable(data) {
 
     const rows = [
       // Main Header
-      new TableRow({ children: [new TableCell({ columnSpan: 2, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "III. REMARKS", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+      new TableRow({ children: [new TableCell({ columnSpan: 2, shading: { fill: "E8E8E8" }, borders: tableBorders(), margins: SECTION_HEADER_MARGINS, children: [new Paragraph({ children: [new TextRun({ text: "III. REMARKS", bold: true, size: 22, color: "1F4E79" })] })] })] }),
 
       // Problem Remarks Category
       new TableRow({ children: [new TableCell({ columnSpan: 2, shading: { fill: "D9D9D9" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Problem Remarks:", bold: true, size: 18 })] })] })] }),
@@ -247,7 +249,7 @@ async function createRemarksTable(data) {
 
   // Legacy PSI Remarks Table
   const psiRemarksRows = [
-    new TableRow({ children: [new TableCell({ columnSpan: 4, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "III. REMARKS", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+    new TableRow({ children: [new TableCell({ columnSpan: 4, shading: { fill: "E8E8E8" }, borders: tableBorders(), margins: SECTION_HEADER_MARGINS, children: [new Paragraph({ children: [new TextRun({ text: "III. REMARKS", bold: true, size: 22, color: "1F4E79" })] })] })] }),
     new TableRow({
       children: [
         new TableCell({ width: { size: 5, type: "pct" }, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [] })] }),
@@ -434,7 +436,7 @@ function createHeaderTable(data) {
     rows: [
       new TableRow({
         children: [
-          new TableCell({ width: { size: 30, type: "pct" }, verticalMerge: VerticalMergeType.RESTART, borders: { top: { style: BorderStyle.SINGLE, size: 12 }, bottom: { style: BorderStyle.SINGLE, size: 12 }, left: { style: BorderStyle.SINGLE, size: 12 }, right: { style: BorderStyle.SINGLE, size: 12 } }, children: [logoRun ? new Paragraph({ children: [logoRun], alignment: "center" }) : new Paragraph({ children: [new TextRun("")] })], verticalAlign: "center" }),
+          new TableCell({ width: { size: 30, type: "pct" }, verticalMerge: VerticalMergeType.RESTART, borders: { top: { style: BorderStyle.SINGLE, size: 12 }, bottom: { style: BorderStyle.SINGLE, size: 12 }, left: { style: BorderStyle.SINGLE, size: 12 }, right: { style: BorderStyle.SINGLE, size: 12 } }, margins: HEADER_CELL_MARGINS, children: [logoRun ? new Paragraph({ children: [logoRun], alignment: "center" }) : new Paragraph({ children: [new TextRun("")] })], verticalAlign: "center" }),
           createHeaderLabelCell("Client Name (abbr.):"),
           createHeaderValueCell(asVal(header.client)),
           createHeaderLabelCell("Conclusion", { align: "center", bold: true }),
@@ -448,6 +450,7 @@ function createHeaderTable(data) {
           new TableCell({
             verticalMerge: VerticalMergeType.RESTART,
             borders: { top: { style: BorderStyle.SINGLE, size: 12 }, bottom: { style: BorderStyle.SINGLE, size: 12 }, left: { style: BorderStyle.SINGLE, size: 12 }, right: { style: BorderStyle.SINGLE, size: 12 } },
+            margins: HEADER_CELL_MARGINS,
             children: [new Paragraph({ children: [new TextRun({ text: san(header.conclusion), bold: true, size: 40, color: asVal(header.conclusion).toUpperCase().includes("PASS") ? "008000" : "FF0000" })], alignment: "center" })],
             verticalAlign: "center",
           }),
@@ -465,10 +468,13 @@ function createHeaderTable(data) {
   });
 }
 
+const HEADER_CELL_MARGINS = { top: 60, bottom: 60, left: 120, right: 120 };
+
 function createHeaderLabelCell(text, opts = {}) {
   return new TableCell({
     borders: { top: { style: BorderStyle.SINGLE, size: 6 }, bottom: { style: BorderStyle.SINGLE, size: 6 }, left: { style: BorderStyle.SINGLE, size: 6 }, right: { style: BorderStyle.SINGLE, size: 6 } },
     shading: { fill: "F2F2F2" },
+    margins: HEADER_CELL_MARGINS,
     children: [new Paragraph({ children: [new TextRun({ text, bold: true, size: 18, ...opts })], alignment: opts.align || "left" })],
   });
 }
@@ -476,6 +482,7 @@ function createHeaderLabelCell(text, opts = {}) {
 function createHeaderValueCell(text) {
   return new TableCell({
     borders: { top: { style: BorderStyle.SINGLE, size: 6 }, bottom: { style: BorderStyle.SINGLE, size: 6 }, left: { style: BorderStyle.SINGLE, size: 6 }, right: { style: BorderStyle.SINGLE, size: 6 } },
+    margins: HEADER_CELL_MARGINS,
     children: [new Paragraph({ children: [new TextRun({ text: sanitizeDocxText(text), bold: true, size: 18 })] })],
   });
 }
@@ -520,7 +527,7 @@ async function createReportContent(data, uploadedFiles) {
           children: [new Paragraph({
             children: [new TextRun({ text: serviceTitle, bold: true, size: 28, color: "1F4E79", font: "Arial" })],
             alignment: "center",
-            spacing: { before: 40, after: 40 }
+            spacing: { before: 80, after: 80 }
           })]
         })
       ]
@@ -535,7 +542,7 @@ async function createReportContent(data, uploadedFiles) {
           children: [new Paragraph({
             children: [new TextRun({ text: "I. GENERAL INFORMATION", bold: true, size: 22, color: "1F4E79", font: "Arial" })],
             alignment: "left",
-            spacing: { before: 30, after: 30 }
+            spacing: { before: 40, after: 40 }
           })]
         })
       ]
@@ -543,8 +550,8 @@ async function createReportContent(data, uploadedFiles) {
     // First Data Row with Photo (verticalMerge)
     new TableRow({
       children: [
-        createQtyCell(generalData[0][0], { bold: true, align: "left", shaded: true, width: { size: 25, type: "pct" }, spacing: { before: 20, after: 20 } }),
-        createQtyCell(blankIfEmpty(generalData[0][1]), { align: "left", width: { size: 35, type: "pct" }, spacing: { before: 20, after: 20 } }),
+        createQtyCell(generalData[0][0], { bold: true, align: "left", shaded: true, width: { size: 25, type: "pct" } }),
+        createQtyCell(blankIfEmpty(generalData[0][1]), { align: "left", width: { size: 35, type: "pct" } }),
         new TableCell({
           verticalMerge: VerticalMergeType.RESTART,
           width: { size: 40, type: "pct" },
@@ -558,8 +565,8 @@ async function createReportContent(data, uploadedFiles) {
     ...generalData.slice(1).map(([label, val]) =>
       new TableRow({
         children: [
-          createQtyCell(label, { bold: true, align: "left", shaded: true, width: { size: 25, type: "pct" }, spacing: { before: 20, after: 20 } }),
-          createQtyCell(blankIfEmpty(val), { align: "left", width: { size: 35, type: "pct" }, spacing: { before: 20, after: 20 } }),
+          createQtyCell(label, { bold: true, align: "left", shaded: true, width: { size: 25, type: "pct" } }),
+          createQtyCell(blankIfEmpty(val), { align: "left", width: { size: 35, type: "pct" } }),
           new TableCell({
             verticalMerge: VerticalMergeType.CONTINUE,
             borders: tableBorders(),
@@ -570,7 +577,7 @@ async function createReportContent(data, uploadedFiles) {
     )
   ];
   children.push(new Table({ width: { size: 100, type: "pct" }, rows: infoRows }));
-  children.push(new Paragraph({ children: [], spacing: { before: 40, after: 40 } }));
+  children.push(new Paragraph({ children: [], spacing: { before: 160, after: 280 } }));
 
   // II. INSPECTION SUMMARY
   const isCls = data.serviceType?.toLowerCase() === "cls";
@@ -683,7 +690,7 @@ async function createReportContent(data, uploadedFiles) {
     ];
 
     summaryRows = [
-      new TableRow({ children: [new TableCell({ columnSpan: 5, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "II. INSPECTION SUMMARY", bold: true, size: 22, color: "1F4E79", font: "Arial" })] })] })] }),
+      new TableRow({ children: [new TableCell({ columnSpan: 5, shading: { fill: "F2F2F2" }, borders: tableBorders(), margins: SECTION_HEADER_MARGINS, children: [new Paragraph({ children: [new TextRun({ text: "II. INSPECTION SUMMARY", bold: true, size: 22, color: "1F4E79", font: "Arial" })] })] })] }),
       new TableRow({
         children: [
           createQtyCell("", { shading: { fill: "E9ECEF" }, width: { size: 30, type: "pct" } }),
@@ -730,7 +737,7 @@ async function createReportContent(data, uploadedFiles) {
             children: [
               new Paragraph({
                 children: [new TextRun({ text: "II. INSPECTION SUMMARY", bold: true, size: 22, color: "1F4E79", font: "Arial" })],
-                spacing: { before: 30, after: 30 }
+                spacing: { before: 40, after: 40 }
               })
             ]
           })
@@ -888,7 +895,7 @@ async function createReportContent(data, uploadedFiles) {
     ];
 
     summaryRows = [
-      new TableRow({ children: [new TableCell({ columnSpan: 5, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "II. INSPECTION SUMMARY", bold: true, size: 22, color: "1F4E79", font: "Arial" })] })] })] }),
+      new TableRow({ children: [new TableCell({ columnSpan: 5, shading: { fill: "F2F2F2" }, borders: tableBorders(), margins: SECTION_HEADER_MARGINS, children: [new Paragraph({ children: [new TextRun({ text: "II. INSPECTION SUMMARY", bold: true, size: 22, color: "1F4E79", font: "Arial" })] })] })] }),
       new TableRow({
         children: [
           createQtyCell("", { shading: { fill: "E9ECEF" }, width: { size: 30, type: "pct" } }),
@@ -913,7 +920,7 @@ async function createReportContent(data, uploadedFiles) {
     ];
   }
   children.push(new Table({ width: { size: 100, type: "pct" }, rows: summaryRows }));
-  children.push(new Paragraph({ children: [], spacing: { before: 40, after: 40 } }));
+  children.push(new Paragraph({ children: [], spacing: { before: 160, after: 280 } }));
 
   // III. REMARKS (For CLS, it goes here)
   if (isCls) {
@@ -926,13 +933,13 @@ async function createReportContent(data, uploadedFiles) {
     children.push(await createConclusionTable(data, true));
     children.push(new Paragraph({ children: [new PageBreak()] }));
     children.push(createHighFidelityQuantityTable(data));
-    children.push(new Paragraph({ children: [], spacing: { before: 20, after: 20 } }));
+    children.push(new Paragraph({ children: [], spacing: { before: 140, after: 200 } }));
     children.push(createProductConformityTable(data));
-    children.push(new Paragraph({ children: [], spacing: { before: 20, after: 20 } }));
+    children.push(new Paragraph({ children: [], spacing: { before: 140, after: 200 } }));
     children.push(createCLSPackingTable(data));
-    children.push(new Paragraph({ children: [], spacing: { before: 20, after: 20 } }));
+    children.push(new Paragraph({ children: [], spacing: { before: 140, after: 200 } }));
     children.push(...createCLSLoadingProcessTable(data));
-    children.push(new Paragraph({ children: [], spacing: { before: 20, after: 20 } }));
+    children.push(new Paragraph({ children: [], spacing: { before: 140, after: 200 } }));
     children.push(...createCLSClientRequirementTable(data));
     children.push(...(await createCLSFinalPhotosSection(data)));
   } else {
@@ -1085,11 +1092,11 @@ async function createReportContent(data, uploadedFiles) {
       })
     ];
     children.push(new Table({ width: { size: 100, type: "pct" }, rows: wmGridRows }));
-    children.push(new Paragraph({ children: [], spacing: { before: 40, after: 40 } }));
+    children.push(new Paragraph({ children: [], spacing: { before: 160, after: 280 } }));
 
     // For PSI, Remarks goes right after Workmanship Summary
     children.push(...(await createRemarksTable(data)));
-    children.push(new Paragraph({ children: [], spacing: { before: 40, after: 40 } }));
+    children.push(new Paragraph({ children: [], spacing: { before: 160, after: 280 } }));
   }
 
   if (!isCls) {
@@ -1122,7 +1129,7 @@ async function createReportContent(data, uploadedFiles) {
     // A. QUANTITY (Matched to tiered header SS)
     const items = Array.isArray(data.items) ? data.items : [];
     const qRows = [
-      new TableRow({ children: [new TableCell({ columnSpan: 10, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "A. QUANTITY", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+      new TableRow({ children: [new TableCell({ columnSpan: 10, shading: { fill: "E8E8E8" }, borders: tableBorders(), margins: SECTION_HEADER_MARGINS, children: [new Paragraph({ children: [new TextRun({ text: "A. QUANTITY", bold: true, size: 22, color: "1F4E79" })] })] })] }),
       new TableRow({
         children: [
           createQtyCell("Quantity", { bold: true, align: "left", colSpan: 8 }),
@@ -1211,7 +1218,7 @@ async function createReportContent(data, uploadedFiles) {
     ];
     children.push(new Table({ width: { size: 100, type: "pct" }, rows: qRows }));
     // Standardizing gap after Section A table
-    children.push(new Paragraph({ children: [], spacing: { after: 60 } }));
+    children.push(new Paragraph({ children: [], spacing: { after: 360 } }));
   }
 
 
@@ -1220,7 +1227,7 @@ async function createReportContent(data, uploadedFiles) {
     const wmRes = data.workmanshipResult || "Passed";
     const bRows = [
       // Header
-      new TableRow({ children: [new TableCell({ columnSpan: 7, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "B. WORKMANSHIP", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+      new TableRow({ children: [new TableCell({ columnSpan: 7, shading: { fill: "E8E8E8" }, borders: tableBorders(), margins: SECTION_HEADER_MARGINS, children: [new Paragraph({ children: [new TextRun({ text: "B. WORKMANSHIP", bold: true, size: 22, color: "1F4E79" })] })] })] }),
 
       // Tiered Header Row 1
       new TableRow({
@@ -1420,7 +1427,7 @@ async function createReportContent(data, uploadedFiles) {
     }
 
     children.push(new Table({ width: { size: 100, type: "pct" }, rows: bRows }));
-    children.push(new Paragraph({ children: [], spacing: { after: 60 } }));
+    children.push(new Paragraph({ children: [], spacing: { after: 360 } }));
     children.push(new Paragraph({ children: [new PageBreak()] }));
   }
 
@@ -1428,7 +1435,7 @@ async function createReportContent(data, uploadedFiles) {
     // C. ON-SITE TESTS (Separated table with exact colors)
     const osResult = asVal(data.onSiteTestResult);
     const osRows = [
-      new TableRow({ children: [new TableCell({ columnSpan: 5, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "C. ON-SITE TESTS", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+      new TableRow({ children: [new TableCell({ columnSpan: 5, shading: { fill: "E8E8E8" }, borders: tableBorders(), margins: SECTION_HEADER_MARGINS, children: [new Paragraph({ children: [new TextRun({ text: "C. ON-SITE TESTS", bold: true, size: 22, color: "1F4E79" })] })] })] }),
       new TableRow({
         children: [
           createQtyCell(""),
@@ -1455,7 +1462,7 @@ async function createReportContent(data, uploadedFiles) {
       new TableRow({ children: [createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(asVal(data.onSiteTestRemark), { colSpan: 4, align: "left" })] })
     ];
     children.push(new Table({ width: { size: 100, type: "pct" }, rows: osRows }));
-    children.push(new Paragraph({ children: [], spacing: { after: 60 } })); // Separator gap
+    children.push(new Paragraph({ children: [], spacing: { after: 360 } })); // Separator gap
 
 
     // D. DIMENSIONS / PRODUCT SPECIFICATION
@@ -1463,7 +1470,7 @@ async function createReportContent(data, uploadedFiles) {
       // DPI path: render dimensionsTable array from dpiSchema
       const dpiProdRes = data.productResult || "Pending";
       const dpiSpecRows = [
-        new TableRow({ children: [new TableCell({ columnSpan: 6, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "D. PRODUCT SPECIFICATION", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+        new TableRow({ children: [new TableCell({ columnSpan: 6, shading: { fill: "E8E8E8" }, borders: tableBorders(), margins: SECTION_HEADER_MARGINS, children: [new Paragraph({ children: [new TextRun({ text: "D. PRODUCT SPECIFICATION", bold: true, size: 22, color: "1F4E79" })] })] })] }),
         new TableRow({ children: [createQtyCell("Item No.:", { bold: true, shaded: true, align: "left" }), createQtyCell(data._dpiDimensionsItemNo || "-", { colSpan: 5, bold: true })] }),
         ...(data._dpiDimensionsGroupName ? [
           new TableRow({ children: [new TableCell({ columnSpan: 6, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: data._dpiDimensionsGroupName, bold: true })] })] })] })
@@ -1492,12 +1499,12 @@ async function createReportContent(data, uploadedFiles) {
         new TableRow({ children: [createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(asVal(data.productRemark), { colSpan: 5, align: "left" })] }),
       ];
       children.push(new Table({ width: { size: 100, type: "pct" }, rows: dpiSpecRows }));
-      children.push(new Paragraph({ children: [], spacing: { after: 60 } }));
+      children.push(new Paragraph({ children: [], spacing: { after: 360 } }));
     } else {
       // PSI path: existing flat-key rendering
       const prodRes = asVal(data.productResult);
       const specItems = [
-        new TableRow({ children: [new TableCell({ columnSpan: 6, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "D. PRODUCT SPECIFICATION", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+        new TableRow({ children: [new TableCell({ columnSpan: 6, shading: { fill: "E8E8E8" }, borders: tableBorders(), margins: SECTION_HEADER_MARGINS, children: [new Paragraph({ children: [new TextRun({ text: "D. PRODUCT SPECIFICATION", bold: true, size: 22, color: "1F4E79" })] })] })] }),
         new TableRow({
           children: [
             createQtyCell(""),
@@ -1540,7 +1547,7 @@ async function createReportContent(data, uploadedFiles) {
         new TableRow({ children: [createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(asVal(data.productRemark), { colSpan: 5, align: "left" })] })
       ];
       children.push(new Table({ width: { size: 100, type: "pct" }, rows: specItems }));
-      children.push(new Paragraph({ children: [], spacing: { after: 60 } }));
+      children.push(new Paragraph({ children: [], spacing: { after: 360 } }));
     }
 
 
@@ -1554,7 +1561,7 @@ async function createReportContent(data, uploadedFiles) {
 
     const eRows = [
       // Header
-      new TableRow({ children: [new TableCell({ columnSpan: 9, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "E. PACKING", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+      new TableRow({ children: [new TableCell({ columnSpan: 9, shading: { fill: "E8E8E8" }, borders: tableBorders(), margins: SECTION_HEADER_MARGINS, children: [new Paragraph({ children: [new TextRun({ text: "E. PACKING", bold: true, size: 22, color: "1F4E79" })] })] })] }),
       // Logo & Subtitle
       new TableRow({
         children: [
@@ -1629,14 +1636,14 @@ async function createReportContent(data, uploadedFiles) {
       new TableRow({ children: [createQtyCell("Remark:", { bold: true, colSpan: 2, align: "left" }), createQtyCell(data.packing_remark || "No packing", { colSpan: 7, align: "left" })] })
     ];
     children.push(new Table({ width: { size: 100, type: "pct" }, rows: eRows }));
-    children.push(new Paragraph({ children: [], spacing: { after: 60 } }));
+    children.push(new Paragraph({ children: [], spacing: { after: 360 } }));
 
 
     // F. MARKING & LABELING (Detailed Implementation)
     const markResFinal = data.marking_result_final || "Pending";
     const fRows = [
       // Header
-      new TableRow({ children: [new TableCell({ columnSpan: 3, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "F. MARKING & LABELING", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+      new TableRow({ children: [new TableCell({ columnSpan: 3, shading: { fill: "E8E8E8" }, borders: tableBorders(), margins: SECTION_HEADER_MARGINS, children: [new Paragraph({ children: [new TextRun({ text: "F. MARKING & LABELING", bold: true, size: 22, color: "1F4E79" })] })] })] }),
       // Sub-header
       new TableRow({ children: [new TableCell({ columnSpan: 3, shading: { fill: "F2F2F2" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "Barcode/Labeling/Printing", bold: true })] })] })] }),
       // Column Headers
@@ -1703,7 +1710,7 @@ async function createReportContent(data, uploadedFiles) {
       new TableRow({ children: [createQtyCell("Remark:", { colSpan: 2, align: "left" }), createQtyCell(data.marking_remark || "No shipping mark, only rated label", { colSpan: 1, align: "left" })] })
     ];
     children.push(new Table({ width: { size: 100, type: "pct" }, rows: fRows }));
-    children.push(new Paragraph({ children: [], spacing: { after: 60 } }));
+    children.push(new Paragraph({ children: [], spacing: { after: 360 } }));
 
 
     // G. PRODUCTION LINE CHECKING (DPI only)
@@ -1718,7 +1725,7 @@ async function createReportContent(data, uploadedFiles) {
       }, 0);
 
       const plRows = [
-        new TableRow({ children: [new TableCell({ columnSpan: 5, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "G. PRODUCTION LINE CHECKING", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+        new TableRow({ children: [new TableCell({ columnSpan: 5, shading: { fill: "E8E8E8" }, borders: tableBorders(), margins: SECTION_HEADER_MARGINS, children: [new Paragraph({ children: [new TextRun({ text: "G. PRODUCTION LINE CHECKING", bold: true, size: 22, color: "1F4E79" })] })] })] }),
         new TableRow({ children: [new TableCell({ columnSpan: 5, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: `Fixed Sample size: ${plSampleSize} pieces`, bold: true })] })] })] }),
         new TableRow({
           children: [
@@ -1751,7 +1758,7 @@ async function createReportContent(data, uploadedFiles) {
         new TableRow({ children: [createQtyCell("Remark:", { bold: true, shaded: true, align: "left" }), createQtyCell(plRemark || "-", { colSpan: 4, align: "left" })] }),
       ];
       children.push(new Table({ width: { size: 100, type: "pct" }, rows: plRows }));
-      children.push(new Paragraph({ children: [], spacing: { after: 60 } }));
+      children.push(new Paragraph({ children: [], spacing: { after: 360 } }));
     }
 
 
@@ -1796,7 +1803,7 @@ async function createReportContent(data, uploadedFiles) {
       })
     ];
     children.push(new Table({ width: { size: 100, type: "pct" }, rows: gRows }));
-    children.push(new Paragraph({ children: [], spacing: { after: 60 } }));
+    children.push(new Paragraph({ children: [], spacing: { after: 360 } }));
 
 
     // I. PRODUCTION SCHEDULE (DPI only)
@@ -1811,7 +1818,7 @@ async function createReportContent(data, uploadedFiles) {
         ["Estimated Date When Goods Finished & Packed", data.psEstimatedFinishDate || "NA"],
       ];
       const psRows = [
-        new TableRow({ children: [new TableCell({ columnSpan: 2, shading: { fill: "E8E8E8" }, borders: tableBorders(), children: [new Paragraph({ children: [new TextRun({ text: "I. PRODUCTION SCHEDULE", bold: true, size: 22, color: "1F4E79" })] })] })] }),
+        new TableRow({ children: [new TableCell({ columnSpan: 2, shading: { fill: "E8E8E8" }, borders: tableBorders(), margins: SECTION_HEADER_MARGINS, children: [new Paragraph({ children: [new TextRun({ text: "I. PRODUCTION SCHEDULE", bold: true, size: 22, color: "1F4E79" })] })] })] }),
         ...psFields.map(([label, val]) => new TableRow({
           children: [
             createQtyCell(label, { bold: true, shaded: true, align: "left", width: { size: 50, type: "pct" } }),
@@ -1820,7 +1827,7 @@ async function createReportContent(data, uploadedFiles) {
         })),
       ];
       children.push(new Table({ width: { size: 100, type: "pct" }, rows: psRows }));
-      children.push(new Paragraph({ children: [], spacing: { after: 60 } }));
+      children.push(new Paragraph({ children: [], spacing: { after: 360 } }));
     }
 
 
@@ -1888,7 +1895,7 @@ async function createReportContent(data, uploadedFiles) {
         }
 
         children.push(new Table({ width: { size: 100, type: "pct" }, rows: groupRows }));
-        children.push(new Paragraph({ children: [], spacing: { after: 30 } })); // Tiny spacer between groups
+        children.push(new Paragraph({ children: [], spacing: { after: 90 } })); // Spacer between groups
       }
     }
   }
@@ -2832,7 +2839,7 @@ function createCLSClientRequirementTable(data) {
         })
       ]
     }),
-    new Paragraph({ children: [], spacing: { before: 30 } }),
+    new Paragraph({ children: [], spacing: { before: 90 } }),
   ];
 
   return children;
@@ -2912,7 +2919,7 @@ async function createCLSFinalPhotosSection(data) {
 
 function createEndOfReportSection() {
   return [
-    new Paragraph({ children: [], spacing: { before: 80 } }),
+    new Paragraph({ children: [], spacing: { before: 200 } }),
     new Table({
       width: { size: 100, type: "pct" },
       rows: [
@@ -2937,11 +2944,11 @@ function createEndOfReportSection() {
         })
       ]
     }),
-    new Paragraph({ children: [], spacing: { before: 60 } }),
+    new Paragraph({ children: [], spacing: { before: 150 } }),
     new Paragraph({
       children: [new TextRun({ text: "Important Note:", bold: true, size: 24, color: "1F4E79" })],
       alignment: "left",
-      spacing: { after: 60 }
+      spacing: { after: 360 }
     }),
     ...[
       "1. THIS REPORT REFLECTS ABSOLUTE VERITAS FINDINGS AT THE TIME AND PLACE OF INSPECTION.",

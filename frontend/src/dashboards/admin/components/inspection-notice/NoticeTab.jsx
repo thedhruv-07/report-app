@@ -1,7 +1,50 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import SectionCard from './SectionCard';
-import { Plus, X, ExternalLink, Calculator } from 'lucide-react';
+import { Plus, X, ExternalLink, Calculator, Download } from 'lucide-react';
 import { calculateAQL } from '../../../../utils/aqlCalculator';
+import { ENDPOINTS } from '../../../../config/api';
+
+const AttachmentBox = ({ title, files, type, onUpload, onDelete, disabled, inputId }) => (
+  <div className="border border-slate-200 rounded-xl p-4">
+    <div className="flex items-center justify-between mb-3">
+      <h4 className="font-bold text-slate-700 text-sm">{title}</h4>
+      <div>
+        <input id={inputId} type="file" className="hidden" disabled={disabled} onChange={e => onUpload(e, type)} />
+        <label
+          htmlFor={disabled ? undefined : inputId}
+          title={disabled ? 'Save as draft first' : undefined}
+          className={`px-4 py-2 border rounded-lg text-xs font-bold inline-flex items-center gap-1.5 ${
+            disabled ? 'border-slate-200 text-slate-300 cursor-not-allowed' : 'border-[#6C47FF] text-[#6C47FF] hover:bg-purple-50 cursor-pointer'
+          }`}
+        >
+          <Plus className="w-3.5 h-3.5" /> Upload File
+        </label>
+      </div>
+    </div>
+    {files.length === 0 ? (
+      <div className="text-center p-6 border-2 border-dashed border-slate-200 rounded-lg text-slate-400 text-sm">
+        <p>No {title.toLowerCase()} uploaded.</p>
+      </div>
+    ) : (
+      <div className="divide-y divide-slate-100 border border-slate-200 rounded-lg overflow-hidden">
+        {files.map(f => (
+          <div key={f._id} className="flex items-center justify-between px-3 py-2 text-sm gap-2">
+            <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-[#6C47FF] hover:underline truncate">{f.fileName}</a>
+            <span className="text-slate-400 text-xs shrink-0">{f.size}</span>
+            <button onClick={() => onDelete(f._id, type)} className="text-rose-500 hover:bg-rose-50 p-1 rounded shrink-0"><X className="w-4 h-4" /></button>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+);
+
+const openFactoryAddressOnMap = (address) => {
+  if (!address) return;
+  navigator.clipboard?.writeText(address).catch(() => {});
+  const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+  window.open(url, '_blank', 'noopener,noreferrer');
+};
 
 // Reusable component for the table-style layout
 const TableRow = ({ label, children }) => (
@@ -17,8 +60,9 @@ const TableRow = ({ label, children }) => (
   </div>
 );
 
-export default function NoticeTab({ formData, updateSection, updateRootField, inspectorOptions = [] }) {
+export default function NoticeTab({ formData, updateSection, updateRootField, inspectorOptions = [], token, recordId }) {
   const basicInfo = formData.basicInfo || {};
+  const attachments = formData.attachments || { clientFiles: [], supplierFiles: [] };
   const teamAssignment = formData.teamAssignment || { cs: {}, cse: {}, previewManager: {}, scheduler: {}, inspectors: [] };
   const productInfo = formData.productInfo || { products: [] };
   const aql = formData.aql || { inspectionStandard: {}, acceptedQuantity: {} };
@@ -60,6 +104,21 @@ export default function NoticeTab({ formData, updateSection, updateRootField, in
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.productInfo?.totalQuantity, aql.samplingLevel, aql.inspectionStandard?.critical, aql.inspectionStandard?.major, aql.inspectionStandard?.minor]);
 
+  // Recent Inspection Records: derived, read-only, fetched fresh whenever the factory name settles
+  const [recentFactoryRecords, setRecentFactoryRecords] = useState([]);
+  useEffect(() => {
+    if (!recordId || !factoryInfo.factoryName) {
+      setRecentFactoryRecords([]);
+      return;
+    }
+    fetch(`${ENDPOINTS.BASE_URL}/api/inspection-notices/${recordId}/recent-by-factory`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => setRecentFactoryRecords(data.records || []))
+      .catch(() => setRecentFactoryRecords([]));
+  }, [recordId, factoryInfo.factoryName, token]);
+
   // Helpers to safely update arrays.
   // When arrayName is empty, the target is a root-level array (e.g. onSiteTests),
   // so we use updateRootField instead of updateSection to avoid corrupting the array.
@@ -91,6 +150,61 @@ export default function NoticeTab({ formData, updateSection, updateRootField, in
       currentArray[index] = { ...currentArray[index], [field]: value };
       updateSection(section, { [arrayName]: currentArray });
     }
+  };
+
+  const handleAttachmentUpload = async (e, type) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !recordId) return;
+    const body = new FormData();
+    body.append('file', file);
+    body.append('type', type);
+    try {
+      const res = await fetch(`${ENDPOINTS.BASE_URL}/api/inspection-notices/${recordId}/attachments`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        updateSection('attachments', data.notice.attachments);
+      }
+    } catch (err) {
+      console.error('Error uploading attachment:', err);
+    }
+  };
+
+  const handleAttachmentDelete = async (fileId, type) => {
+    if (!recordId) return;
+    try {
+      const res = await fetch(`${ENDPOINTS.BASE_URL}/api/inspection-notices/${recordId}/attachments/${fileId}?type=${type}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        updateSection('attachments', data.notice.attachments);
+      }
+    } catch (err) {
+      console.error('Error deleting attachment:', err);
+    }
+  };
+
+  const downloadOnSiteTestsCSV = () => {
+    const header = ['Description', 'Method', 'Criteria', 'Sample Size', 'Include'];
+    const rows = onSiteTests.map(t => [t.description || '', t.method || '', t.criteria || '', t.sampleSize || '', t.include ? 'Yes' : 'No']);
+    const csvContent = [header, ...rows]
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `on-site-tests-${formData.noticeId || 'notice'}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -503,7 +617,16 @@ export default function NoticeTab({ formData, updateSection, updateRootField, in
       </SectionCard>
 
       {/* SECTION 8: Inspection Information */}
-      <SectionCard title="SECTION 8: Inspection Information" badge={!inspectionInfo.technicalManagerReviewed ? <span className="bg-rose-500 text-white px-2 py-0.5 rounded-full text-[10px] font-bold">⚠ Not Examined by Technical Manager</span> : null}>
+      <SectionCard title="SECTION 8: Inspection Information" badge={
+        <div className="flex items-center gap-2">
+          {(inspectionInfo.onlineWI && inspectionInfo.reportTemplate && inspectionInfo.onlineCustomerClaimForm) && (
+            <span className="bg-emerald-500 text-white px-2 py-0.5 rounded-full text-[10px] font-bold">Information Complete</span>
+          )}
+          {!inspectionInfo.technicalManagerReviewed && (
+            <span className="bg-rose-500 text-white px-2 py-0.5 rounded-full text-[10px] font-bold">⚠ Not Examined by Technical Manager</span>
+          )}
+        </div>
+      }>
         <div className="border border-slate-200 rounded-xl overflow-hidden">
           <TableRow label="Online WI">
             <div className="flex gap-2">
@@ -526,20 +649,24 @@ export default function NoticeTab({ formData, updateSection, updateRootField, in
       {/* SECTION 9: Attachments */}
       <SectionCard title="SECTION 9: Attachments">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="border border-slate-200 rounded-xl p-4">
-            <h4 className="font-bold text-slate-700 mb-3 text-sm">Client Files</h4>
-            <div className="text-center p-6 border-2 border-dashed border-slate-200 rounded-lg text-slate-400 text-sm">
-              <p>No client files uploaded.</p>
-              <button className="mt-3 px-4 py-2 border border-[#6C47FF] text-[#6C47FF] rounded-lg text-xs font-bold hover:bg-purple-50">Upload File</button>
-            </div>
-          </div>
-          <div className="border border-slate-200 rounded-xl p-4">
-            <h4 className="font-bold text-slate-700 mb-3 text-sm">Supplier Files</h4>
-            <div className="text-center p-6 border-2 border-dashed border-slate-200 rounded-lg text-slate-400 text-sm">
-              <p>No supplier files uploaded.</p>
-              <button className="mt-3 px-4 py-2 border border-[#6C47FF] text-[#6C47FF] rounded-lg text-xs font-bold hover:bg-purple-50">Upload File</button>
-            </div>
-          </div>
+          <AttachmentBox
+            title="Client Files"
+            files={attachments.clientFiles || []}
+            type="client"
+            onUpload={handleAttachmentUpload}
+            onDelete={handleAttachmentDelete}
+            disabled={!recordId}
+            inputId="attachment-upload-client"
+          />
+          <AttachmentBox
+            title="Supplier Files"
+            files={attachments.supplierFiles || []}
+            type="supplier"
+            onUpload={handleAttachmentUpload}
+            onDelete={handleAttachmentDelete}
+            disabled={!recordId}
+            inputId="attachment-upload-supplier"
+          />
         </div>
       </SectionCard>
 
@@ -560,6 +687,14 @@ export default function NoticeTab({ formData, updateSection, updateRootField, in
 
       {/* SECTION 11: On-Site Tests */}
       <SectionCard title="SECTION 11: On-Site Tests">
+        <div className="flex justify-end mb-3">
+          <button
+            onClick={downloadOnSiteTestsCSV}
+            className="text-slate-600 hover:bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors"
+          >
+            <Download className="w-3.5 h-3.5" /> Download
+          </button>
+        </div>
         <div className="border border-slate-200 rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
@@ -648,6 +783,45 @@ export default function NoticeTab({ formData, updateSection, updateRootField, in
           <TableRow label="Supplier Name"><input className={inputClass} value={supplierInfo.supplierName || ''} onChange={e => updateSection('supplierInfo', { supplierName: e.target.value })} /></TableRow>
           <TableRow label="English Name"><input className={inputClass} value={supplierInfo.englishName || ''} onChange={e => updateSection('supplierInfo', { englishName: e.target.value })} /></TableRow>
         </div>
+
+        <div className="mt-6 border border-slate-200 rounded-xl overflow-hidden">
+          <div className="bg-slate-50 px-4 py-2 font-bold text-slate-700 border-b border-slate-200 uppercase text-[11px] tracking-wider">Supplier Status Feedback</div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="bg-white border-b border-slate-200 text-slate-500 text-[11px]">
+                  <th className="px-4 py-2">Content</th>
+                  <th className="px-4 py-2 w-48">Label</th>
+                  <th className="px-4 py-2 w-32">Submit Date</th>
+                  <th className="px-4 py-2 w-10"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {(supplierInfo.statusEntries || []).map((entry, idx) => (
+                  <tr key={idx}>
+                    <td className="px-4 py-2"><input className={inputClass} value={entry.content || ''} onChange={e => updateArrayItem('supplierInfo', 'statusEntries', idx, 'content', e.target.value)} /></td>
+                    <td className="px-4 py-2"><input className={inputClass} value={entry.label || ''} onChange={e => updateArrayItem('supplierInfo', 'statusEntries', idx, 'label', e.target.value)} /></td>
+                    <td className="px-4 py-2 text-slate-500 text-xs">{entry.submitDate ? new Date(entry.submitDate).toLocaleDateString() : ''}</td>
+                    <td className="px-4 py-2 text-right">
+                      <button onClick={() => removeArrayItem('supplierInfo', 'statusEntries', idx)} className="text-rose-500 hover:bg-rose-50 p-1 rounded"><X className="w-4 h-4" /></button>
+                    </td>
+                  </tr>
+                ))}
+                {(supplierInfo.statusEntries || []).length === 0 && (
+                  <tr><td colSpan={4} className="px-4 py-6 text-center text-slate-400 text-sm">No data yet.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="p-3 bg-white border-t border-slate-200">
+            <button
+              onClick={() => addArrayItem('supplierInfo', 'statusEntries', { content: '', label: '', submitDate: new Date().toISOString() })}
+              className="text-[#6C47FF] hover:bg-purple-50 px-3 py-1.5 rounded text-sm font-bold flex items-center gap-1 transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Fill In Feedback
+            </button>
+          </div>
+        </div>
       </SectionCard>
 
       {/* SECTION 14: Factory Information */}
@@ -655,8 +829,21 @@ export default function NoticeTab({ formData, updateSection, updateRootField, in
         <div className="border border-slate-200 rounded-xl overflow-hidden">
           <TableRow label="Factory Name"><input className={inputClass} value={factoryInfo.factoryName || ''} onChange={e => updateSection('factoryInfo', { factoryName: e.target.value })} /></TableRow>
           <TableRow label="English Name"><input className={inputClass} value={factoryInfo.englishName || ''} onChange={e => updateSection('factoryInfo', { englishName: e.target.value })} /></TableRow>
-          <TableRow label="Address"><input className={inputClass} value={factoryInfo.address || ''} onChange={e => updateSection('factoryInfo', { address: e.target.value })} /></TableRow>
+          <TableRow label="Address">
+            <div className="flex gap-2">
+              <input className={inputClass} value={factoryInfo.address || ''} onChange={e => updateSection('factoryInfo', { address: e.target.value })} />
+              <button
+                type="button"
+                onClick={() => openFactoryAddressOnMap(factoryInfo.address)}
+                title="Copy address and open in Google Maps"
+                className="px-3 bg-slate-100 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-200 shrink-0 flex items-center"
+              >
+                <ExternalLink className="w-4 h-4" />
+              </button>
+            </div>
+          </TableRow>
           <TableRow label="Main Contact Person"><input className={inputClass} value={factoryInfo.mainContactPerson || ''} onChange={e => updateSection('factoryInfo', { mainContactPerson: e.target.value })} /></TableRow>
+          <TableRow label="Other Contact Persons"><input className={inputClass} value={factoryInfo.otherContactPersons || ''} onChange={e => updateSection('factoryInfo', { otherContactPersons: e.target.value })} /></TableRow>
           <TableRow label="Phone"><input className={inputClass} value={factoryInfo.phone || ''} onChange={e => updateSection('factoryInfo', { phone: e.target.value })} /></TableRow>
           <TableRow label="Mobile"><input className={inputClass} value={factoryInfo.mobile || ''} onChange={e => updateSection('factoryInfo', { mobile: e.target.value })} /></TableRow>
           <TableRow label="Fax"><input className={inputClass} value={factoryInfo.fax || ''} onChange={e => updateSection('factoryInfo', { fax: e.target.value })} /></TableRow>
@@ -668,20 +855,103 @@ export default function NoticeTab({ formData, updateSection, updateRootField, in
           <TableRow label="Notes on Factory Disagreements"><textarea className={inputClass} rows={2} value={factoryInfo.notesOnFactoryDisagreements || ''} onChange={e => updateSection('factoryInfo', { notesOnFactoryDisagreements: e.target.value })} /></TableRow>
           <TableRow label="Inspection Notes"><textarea className={inputClass} rows={2} value={factoryInfo.inspectionNotes || ''} onChange={e => updateSection('factoryInfo', { inspectionNotes: e.target.value })} /></TableRow>
         </div>
+
+        <div className="mt-6 border border-slate-200 rounded-xl overflow-hidden">
+          <div className="bg-slate-50 px-4 py-2 font-bold text-slate-700 border-b border-slate-200 uppercase text-[11px] tracking-wider">Factory Abnormal Status</div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="bg-white border-b border-slate-200 text-slate-500 text-[11px]">
+                  <th className="px-4 py-2">Content</th>
+                  <th className="px-4 py-2 w-48">Label</th>
+                  <th className="px-4 py-2 w-32">Submit Date</th>
+                  <th className="px-4 py-2 w-10"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {(factoryInfo.abnormalStatusEntries || []).map((entry, idx) => (
+                  <tr key={idx}>
+                    <td className="px-4 py-2"><input className={inputClass} value={entry.content || ''} onChange={e => updateArrayItem('factoryInfo', 'abnormalStatusEntries', idx, 'content', e.target.value)} /></td>
+                    <td className="px-4 py-2"><input className={inputClass} value={entry.label || ''} onChange={e => updateArrayItem('factoryInfo', 'abnormalStatusEntries', idx, 'label', e.target.value)} /></td>
+                    <td className="px-4 py-2 text-slate-500 text-xs">{entry.submitDate ? new Date(entry.submitDate).toLocaleDateString() : ''}</td>
+                    <td className="px-4 py-2 text-right">
+                      <button onClick={() => removeArrayItem('factoryInfo', 'abnormalStatusEntries', idx)} className="text-rose-500 hover:bg-rose-50 p-1 rounded"><X className="w-4 h-4" /></button>
+                    </td>
+                  </tr>
+                ))}
+                {(factoryInfo.abnormalStatusEntries || []).length === 0 && (
+                  <tr><td colSpan={4} className="px-4 py-6 text-center text-slate-400 text-sm">No data yet.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="p-3 bg-white border-t border-slate-200">
+            <button
+              onClick={() => addArrayItem('factoryInfo', 'abnormalStatusEntries', { content: '', label: '', submitDate: new Date().toISOString() })}
+              className="text-[#6C47FF] hover:bg-purple-50 px-3 py-1.5 rounded text-sm font-bold flex items-center gap-1 transition-colors"
+            >
+              <Plus className="w-4 h-4" /> I Provide Factory Abnormal Status
+            </button>
+          </div>
+        </div>
       </SectionCard>
 
       {/* SECTION 15: Recent Inspection Records */}
       <SectionCard title="SECTION 15: Recent Inspection Records">
-        <div className="text-sm text-slate-500 bg-slate-50 p-4 rounded-xl border border-slate-200">
-          No recent inspection records available for this factory.
-        </div>
+        {recentFactoryRecords.length > 0 ? (
+          <div className="border border-slate-200 rounded-xl overflow-hidden">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
+                  <th className="px-4 py-3">Inspection Date</th>
+                  <th className="px-4 py-3">Inspector</th>
+                  <th className="px-4 py-3">Notice ID</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {recentFactoryRecords.map((r, idx) => (
+                  <tr key={idx}>
+                    <td className="px-4 py-3">{r.inspectionDate ? new Date(r.inspectionDate).toLocaleDateString() : '—'}</td>
+                    <td className="px-4 py-3">{r.inspectorName}</td>
+                    <td className="px-4 py-3 text-slate-500">{r.noticeId}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-sm text-slate-500 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            No recent inspection records available for this factory.
+          </div>
+        )}
       </SectionCard>
 
       {/* SECTION 16: Instructional Letters Reading Record */}
       <SectionCard title="SECTION 16: Instructional Letters Reading Record">
-        <div className="text-sm text-slate-500 bg-slate-50 p-4 rounded-xl border border-slate-200">
-          No reading records logged yet.
-        </div>
+        {(formData.readingRecords || []).length > 0 ? (
+          <div className="border border-slate-200 rounded-xl overflow-hidden">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
+                  <th className="px-4 py-3">Viewed By</th>
+                  <th className="px-4 py-3">Time Viewed</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {formData.readingRecords.map((r, idx) => (
+                  <tr key={idx}>
+                    <td className="px-4 py-3">{r.inspectorName || '—'}</td>
+                    <td className="px-4 py-3">{r.timeViewed ? new Date(r.timeViewed).toLocaleString() : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-sm text-slate-500 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            No reading records logged yet.
+          </div>
+        )}
       </SectionCard>
 
     </div>

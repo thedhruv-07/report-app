@@ -5,6 +5,18 @@ import { AuthProvider } from './context/AuthContext'
 import { NotificationProvider } from './context/NotificationContext'
 import './index.css'
 
+// A stale tab can hold references to chunk hashes from a previous deploy.
+// When a lazy import 404s because that build no longer exists, reload once
+// to pick up the current build instead of leaving the user on a dead page.
+window.addEventListener('vite:preloadError', () => {
+  const key = 'chunkReloadedAt'
+  const last = Number(sessionStorage.getItem(key) || 0)
+  if (Date.now() - last > 10000) {
+    sessionStorage.setItem(key, String(Date.now()))
+    window.location.reload()
+  }
+})
+
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import DashboardLayout from './components/layout/DashboardLayout'
 import OnboardingGuard from './components/auth/OnboardingGuard'

@@ -11,7 +11,8 @@ import {
   AlertTriangle,
   Clock,
   ArrowLeft,
-  ChevronRight
+  ChevronRight,
+  MessageCircle
 } from 'lucide-react';
 import ToastList from '../../../components/shared/ToastList';
 
@@ -31,7 +32,6 @@ export default function ManagerChrome({
   activeReportId,
   pendingCount,
   unreadCount,
-  systemUnreadCount,
   notificationsPanelOpen,
   notifications,
   toasts,
@@ -107,6 +107,18 @@ export default function ManagerChrome({
             </button>
 
             <button
+              onClick={() => { setActiveView('help-requests'); setActiveReportId(null); }}
+              className={`px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200 ${
+                activeView === 'help-requests' ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <MessageCircle className="w-4 h-4 shrink-0" />
+                <span>Help Requests</span>
+              </div>
+            </button>
+
+            <button
               onClick={() => { setActiveView('notifications'); setActiveReportId(null); }}
               className={`px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200 ${
                 activeView === 'notifications' ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
@@ -140,20 +152,6 @@ export default function ManagerChrome({
         )}
 
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => setNotificationsPanelOpen(!notificationsPanelOpen)}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl relative transition-all duration-200"
-          >
-            <Bell className="w-5 h-5" />
-            {systemUnreadCount > 0 && (
-              <span className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-rose-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold px-1">
-                {systemUnreadCount > 9 ? "9+" : systemUnreadCount}
-              </span>
-            )}
-          </button>
-
-          <div className="h-6 w-px bg-slate-200 hidden sm:block" />
-
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ background: '#6C47FF' }}>
               {getInitials(currentUser?.name, currentUser?.role)}

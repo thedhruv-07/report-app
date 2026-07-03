@@ -171,7 +171,7 @@ router.post('/:id/assign', roleCheck(['admin', 'manager']), async (req, res) => 
           headers['x-api-secret'] = process.env.BOOKING_API_SECRET;
         }
         const response = await fetch(
-          process.env.BOOKING_API_URL + '/api/bookings/' + booking.onlineBookingId + '/report-data',
+          process.env.BOOKING_API_URL + '/api/bookings/' + booking.onlineBookingId + '/report-data/service',
           { headers }
         );
         if (response.ok) {

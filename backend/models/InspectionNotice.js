@@ -163,6 +163,7 @@ const InspectionNoticeSchema = new mongoose.Schema({
     englishName: String,
     address: String,
     mainContactPerson: String,
+    otherContactPersons: String,
     phone: String,
     mobile: String,
     fax: String,

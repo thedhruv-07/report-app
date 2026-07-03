@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import ContactTechnicalManagerButton from '../../components/shared/ContactTechnicalManagerButton';
 import { ENDPOINTS } from "../../config/api";
 import { colors } from "../../styles";
 import { faSchema } from "../../shared/faSchema";
@@ -773,7 +774,14 @@ export default function FactoryAudit() {
             <span style={{ fontSize: "11px", color: colors.textMuted }}>›</span>
             <span style={{ fontSize: "12px", fontWeight: "700", color: colors.header }}>Factory Audit</span>
           </div>
-          <span style={{ fontSize: "11px", color: colors.textMuted, fontWeight: 500 }}>Step {step} of {steps.length}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <ContactTechnicalManagerButton
+              reportType="Factory Audit"
+              sectionLabel={currentStep?.label}
+              taskId={taskId}
+            />
+            <span style={{ fontSize: "11px", color: colors.textMuted, fontWeight: 500 }}>Step {step} of {steps.length}</span>
+          </div>
         </div>
         <div style={{ overflowX: "auto", padding: "3px 12px 6px", display: "flex", gap: "4px", scrollbarWidth: "none" }}>
           {steps.map(s => (

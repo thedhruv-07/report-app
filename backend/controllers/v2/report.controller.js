@@ -77,7 +77,7 @@ const updateReport = async (req, res) => {
     try {
       await report.populate('createdBy', 'name email');
       const { enqueueEmail } = require('../../services/email.queue');
-      const { renderTemplate } = require('../../services/email.service');
+      const { renderTemplate, formatEmailDate } = require('../../services/email.service');
       const recipients = new Set();
       if (report.createdBy && report.createdBy.email) recipients.add(report.createdBy.email);
       const adminList = (process.env.NOTIFICATION_ADMIN_EMAILS || process.env.SMTP_USER || '').split(',').map(s=>s.trim()).filter(Boolean);
@@ -87,8 +87,8 @@ const updateReport = async (req, res) => {
         reportId: report._id,
         inspectorName: report.createdBy?.name || 'Inspector',
         factory: report.title || '',
-        inspectionDate: new Date().toISOString(),
-        submittedAt: new Date().toISOString(),
+        inspectionDate: formatEmailDate(new Date()),
+        submittedAt: formatEmailDate(new Date()),
         summary: 'A report was updated.',
         viewUrl
       });

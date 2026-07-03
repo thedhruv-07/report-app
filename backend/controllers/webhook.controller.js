@@ -309,7 +309,7 @@ const handleBookingWebhook = async (req, res) => {
 
     try {
       const io = getIO();
-      io.to("manager_room").emit("new_system_notification", {
+      io.to(["manager_room", "admin_room"]).emit("new_system_notification", {
         id: notification._id.toString(),
         title: notification.title,
         message: notification.message,

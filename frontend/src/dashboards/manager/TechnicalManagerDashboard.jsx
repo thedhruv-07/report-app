@@ -56,6 +56,7 @@ const QueueView = lazy(() => import('./components/QueueView'));
 const ReviewContentPane = lazy(() => import('./components/ReviewContentPane'));
 const ReviewActionsSidebar = lazy(() => import('./components/ReviewActionsSidebar'));
 const ManagerChrome = lazy(() => import('./components/ManagerChrome'));
+const HelpRequestsPanel = lazy(() => import('./components/HelpRequestsPanel'));
 
 export default function TechnicalManagerDashboard() {
   const navigate = useNavigate();
@@ -679,6 +680,13 @@ export default function TechnicalManagerDashboard() {
                   getDaysSinceSubmission={getDaysSinceSubmission}
                 />
               </div>
+            </Suspense>
+          )}
+
+          {/* VIEW: HELP REQUESTS */}
+          {activeView === "help-requests" && !activeReportId && (
+            <Suspense fallback={<div className="max-w-3xl mx-auto px-6 py-8"><div className="h-96 bg-white border border-slate-200 rounded-3xl animate-pulse" /></div>}>
+              <HelpRequestsPanel />
             </Suspense>
           )}
 

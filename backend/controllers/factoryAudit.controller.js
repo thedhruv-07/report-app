@@ -10,7 +10,7 @@ const notifyStaff = require("../utils/notifyStaff");
 
 const emitReportSubmitted = (report, user) => {
   try {
-    getIO().to("manager_room").emit("new_report_submitted", {
+    getIO().to(["manager_room", "admin_room"]).emit("new_report_submitted", {
       reportId: report._id,
       inspectorName: user?.name || "Inspector",
       client: report.generalInfo?.client || "",
@@ -55,7 +55,7 @@ exports.createReport = async (req, res) => {
     // Enqueue email alert for submitted FA
     try {
       const { enqueueEmail } = require('../services/email.queue');
-      const { renderTemplate } = require('../services/email.service');
+      const { renderTemplate, formatEmailDate } = require('../services/email.service');
       const adminList = (process.env.NOTIFICATION_ADMIN_EMAILS || process.env.SMTP_USER || '').split(',').map(s=>s.trim()).filter(Boolean);
       const recipients = new Set(adminList);
       if (req.user && req.user.email) recipients.add(req.user.email);
@@ -64,8 +64,8 @@ exports.createReport = async (req, res) => {
         reportId: report._id,
         inspectorName: req.user?.name || 'Inspector',
         factory: report.generalInfo?.client || '',
-        inspectionDate: report.submittedAt || new Date().toISOString(),
-        submittedAt: new Date().toISOString(),
+        inspectionDate: formatEmailDate(report.submittedAt || new Date()),
+        submittedAt: formatEmailDate(new Date()),
         summary: report.title || '' ,
         viewUrl
       });
@@ -138,7 +138,7 @@ exports.submitForReview = async (req, res) => {
 
     try {
       const { enqueueEmail } = require('../services/email.queue');
-      const { renderTemplate } = require('../services/email.service');
+      const { renderTemplate, formatEmailDate } = require('../services/email.service');
       const adminList = (process.env.NOTIFICATION_ADMIN_EMAILS || process.env.SMTP_USER || '').split(',').map(s=>s.trim()).filter(Boolean);
       const recipients = new Set(adminList);
       if (req.user && req.user.email) recipients.add(req.user.email);
@@ -147,8 +147,8 @@ exports.submitForReview = async (req, res) => {
         reportId: report._id,
         inspectorName: req.user?.name || 'Inspector',
         factory: report.generalInfo?.client || '',
-        inspectionDate: report.submittedAt || new Date().toISOString(),
-        submittedAt: new Date().toISOString(),
+        inspectionDate: formatEmailDate(report.submittedAt || new Date()),
+        submittedAt: formatEmailDate(new Date()),
         summary: report.title || '' ,
         viewUrl
       });
@@ -222,7 +222,7 @@ exports.updateReport = async (req, res) => {
     try {
       await report.populate('userId', 'name email');
       const { enqueueEmail } = require('../services/email.queue');
-      const { renderTemplate } = require('../services/email.service');
+      const { renderTemplate, formatEmailDate } = require('../services/email.service');
       const recipients = new Set();
       if (report.userId && report.userId.email) recipients.add(report.userId.email);
       const adminList = (process.env.NOTIFICATION_ADMIN_EMAILS || process.env.SMTP_USER || '').split(',').map(s=>s.trim()).filter(Boolean);
@@ -232,8 +232,8 @@ exports.updateReport = async (req, res) => {
         reportId: report._id,
         inspectorName: report.userId?.name || 'Inspector',
         factory: report.generalInfo?.client || '',
-        inspectionDate: report.updatedAt || new Date().toISOString(),
-        submittedAt: new Date().toISOString(),
+        inspectionDate: formatEmailDate(report.updatedAt || new Date()),
+        submittedAt: formatEmailDate(new Date()),
         summary: 'A report update was saved.',
         viewUrl
       });

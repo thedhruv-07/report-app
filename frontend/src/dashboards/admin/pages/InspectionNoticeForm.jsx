@@ -111,6 +111,7 @@ export default function InspectionNoticeForm() {
       englishName: '',
       address: '',
       mainContactPerson: '',
+      otherContactPersons: '',
       phone: '',
       mobile: '',
       fax: '',
@@ -308,20 +309,24 @@ export default function InspectionNoticeForm() {
       <main className="flex-1 overflow-y-auto p-8 relative">
         <div className="max-w-6xl mx-auto space-y-6">
           {activeTab === 'Notice' && (
-            <NoticeTab 
-              formData={formData} 
+            <NoticeTab
+              formData={formData}
               updateSection={updateSection}
               updateRootField={updateRootField}
               inspectorOptions={inspectorOptions}
+              token={token}
+              recordId={id}
             />
           )}
           {activeTab === 'Expense' && (
             <ExpenseTab />
           )}
           {activeTab === 'Report (Online)' && (
-            <ReportTab 
+            <ReportTab
               formData={formData}
               updateSection={updateSection}
+              token={token}
+              recordId={id}
             />
           )}
         </div>

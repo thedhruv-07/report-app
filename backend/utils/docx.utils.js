@@ -23,7 +23,7 @@ const createQtyCell = (text, options = {}) => {
     fontSize = 20,
     width,
     verticalAlign = VerticalAlign.CENTER,
-    spacing = { before: 40, after: 40 },
+    spacing = { before: 20, after: 20 },
     font = "Calibri"
   } = options;
 
@@ -47,7 +47,7 @@ const createQtyCell = (text, options = {}) => {
     children: [new Paragraph(paragraphOptions)],
     borders: tableBorders(),
     verticalAlign,
-    margins: { top: 80, bottom: 80, left: 120, right: 120 },
+    margins: { top: 40, bottom: 40, left: 100, right: 100 },
   };
 
   if (width) {
