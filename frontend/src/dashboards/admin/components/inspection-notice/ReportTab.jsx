@@ -139,7 +139,8 @@ export default function ReportTab({ formData, updateSection, token, recordId }) 
 
   const addTimeClockRecord = () => {
     const current = executionInfo.timeClockRecords || [];
-    updateSection('reportExecutionInfo', { timeClockRecords: [...current, { inspector: '', date: '', arrivalTimeFactory: '', arrivalLocation: '', arrivalDistance: '', departureTime: '', leaveLocation: '', leaveDistance: '' }] });
+    const defaultDate = basicInfo.inspectionDateFrom ? basicInfo.inspectionDateFrom.split('T')[0] : '';
+    updateSection('reportExecutionInfo', { timeClockRecords: [...current, { inspector: '', date: defaultDate, arrivalTimeFactory: '', arrivalLocation: '', arrivalDistance: '', departureTime: '', leaveLocation: '', leaveDistance: '' }] });
   };
   const updateTimeClockRecord = (idx, field, value) => {
     const current = [...(executionInfo.timeClockRecords || [])];
@@ -152,7 +153,8 @@ export default function ReportTab({ formData, updateSection, token, recordId }) 
 
   const addInspectionDate = () => {
     const current = executionInfo.inspectionDates || [];
-    updateSection('reportExecutionInfo', { inspectionDates: [...current, { date: '', departureOffice: '', arrivalFactory: '', departureFactory: '' }] });
+    const defaultDate = basicInfo.inspectionDateFrom ? basicInfo.inspectionDateFrom.split('T')[0] : '';
+    updateSection('reportExecutionInfo', { inspectionDates: [...current, { date: defaultDate, departureOffice: '', arrivalFactory: '', departureFactory: '' }] });
   };
   const updateInspectionDate = (idx, field, value) => {
     const current = [...(executionInfo.inspectionDates || [])];

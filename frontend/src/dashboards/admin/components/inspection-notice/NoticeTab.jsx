@@ -373,7 +373,12 @@ export default function NoticeTab({ formData, updateSection, updateRootField, in
           </div>
           <div className="p-3 bg-white border-t border-slate-200">
             <button 
-              onClick={() => addArrayItem('teamAssignment', 'inspectors', { name: '', dateFrom: '', dateTo: '', mobile: '', manDays: 1, role: 'Member' })}
+              onClick={() => addArrayItem('teamAssignment', 'inspectors', {
+                name: '',
+                dateFrom: basicInfo.inspectionDateFrom ? basicInfo.inspectionDateFrom.split('T')[0] : '',
+                dateTo: basicInfo.inspectionDateTo ? basicInfo.inspectionDateTo.split('T')[0] : '',
+                mobile: '', manDays: 1, role: 'Member'
+              })}
               className="text-[#6C47FF] hover:bg-purple-50 px-3 py-1.5 rounded text-sm font-bold flex items-center gap-1 transition-colors"
             >
               <Plus className="w-4 h-4" /> Add Inspector
@@ -489,11 +494,17 @@ export default function NoticeTab({ formData, updateSection, updateRootField, in
               </div>
               <div>
                 <div className="text-[10px] text-slate-500 uppercase font-bold mb-1">Major</div>
-                <input type="number" min="0" step="0.1" className={inputClass} value={aql.inspectionStandard?.major === 0 ? '' : (aql.inspectionStandard?.major ?? '')} onChange={e => updateSection('aql', { inspectionStandard: { ...aql.inspectionStandard, major: e.target.value === '' ? 0 : Number(e.target.value) } })} />
+                <select className={inputClass} value={aql.inspectionStandard?.major || ''} onChange={e => updateSection('aql', { inspectionStandard: { ...aql.inspectionStandard, major: e.target.value === '' ? 0 : Number(e.target.value) } })}>
+                  <option value="">— Select —</option>
+                  <option value={0.065}>0.065</option><option value={0.10}>0.10</option><option value={0.15}>0.15</option><option value={0.25}>0.25</option><option value={0.40}>0.40</option><option value={0.65}>0.65</option><option value={1.0}>1.0</option><option value={1.5}>1.5</option><option value={2.5}>2.5</option><option value={4.0}>4.0</option><option value={6.5}>6.5</option><option value={10}>10</option>
+                </select>
               </div>
               <div>
                 <div className="text-[10px] text-slate-500 uppercase font-bold mb-1">Minor</div>
-                <input type="number" min="0" step="0.1" className={inputClass} value={aql.inspectionStandard?.minor === 0 ? '' : (aql.inspectionStandard?.minor ?? '')} onChange={e => updateSection('aql', { inspectionStandard: { ...aql.inspectionStandard, minor: e.target.value === '' ? 0 : Number(e.target.value) } })} />
+                <select className={inputClass} value={aql.inspectionStandard?.minor || ''} onChange={e => updateSection('aql', { inspectionStandard: { ...aql.inspectionStandard, minor: e.target.value === '' ? 0 : Number(e.target.value) } })}>
+                  <option value="">— Select —</option>
+                  <option value={0.065}>0.065</option><option value={0.10}>0.10</option><option value={0.15}>0.15</option><option value={0.25}>0.25</option><option value={0.40}>0.40</option><option value={0.65}>0.65</option><option value={1.0}>1.0</option><option value={1.5}>1.5</option><option value={2.5}>2.5</option><option value={4.0}>4.0</option><option value={6.5}>6.5</option><option value={10}>10</option>
+                </select>
               </div>
             </div>
           </TableRow>
