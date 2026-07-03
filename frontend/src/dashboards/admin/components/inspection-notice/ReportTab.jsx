@@ -64,6 +64,7 @@ export default function ReportTab({ formData, updateSection, token, recordId }) 
   const productInfo = formData.productInfo || {};
   const basicInfo = formData.basicInfo || {};
   const aql = formData.aql || { inspectionStandard: {}, acceptedQuantity: {} };
+  const assignedInspectors = formData.teamAssignment?.inspectors || [];
 
   const inputClass = "w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#6C47FF] focus:border-transparent outline-none";
   const labelClass = "block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1";
@@ -140,7 +141,8 @@ export default function ReportTab({ formData, updateSection, token, recordId }) 
   const addTimeClockRecord = () => {
     const current = executionInfo.timeClockRecords || [];
     const defaultDate = basicInfo.inspectionDateFrom ? basicInfo.inspectionDateFrom.split('T')[0] : '';
-    updateSection('reportExecutionInfo', { timeClockRecords: [...current, { inspector: '', date: defaultDate, arrivalTimeFactory: '', arrivalLocation: '', arrivalDistance: '', departureTime: '', leaveLocation: '', leaveDistance: '' }] });
+    const defaultInspector = assignedInspectors[0]?.name || '';
+    updateSection('reportExecutionInfo', { timeClockRecords: [...current, { inspector: defaultInspector, date: defaultDate, arrivalTimeFactory: '', arrivalLocation: '', arrivalDistance: '', departureTime: '', leaveLocation: '', leaveDistance: '' }] });
   };
   const updateTimeClockRecord = (idx, field, value) => {
     const current = [...(executionInfo.timeClockRecords || [])];
@@ -384,7 +386,21 @@ export default function ReportTab({ formData, updateSection, token, recordId }) 
               <tbody className="divide-y divide-slate-100">
                 {(executionInfo.timeClockRecords || []).map((r, idx) => (
                   <tr key={idx}>
-                    <td className="px-4 py-2"><input className={inputClass} value={r.inspector || ''} onChange={e => updateTimeClockRecord(idx, 'inspector', e.target.value)} /></td>
+                    <td className="px-4 py-2">
+                      {assignedInspectors.length > 0 ? (
+                        <select className={inputClass} value={r.inspector || ''} onChange={e => updateTimeClockRecord(idx, 'inspector', e.target.value)}>
+                          <option value="">— Select —</option>
+                          {assignedInspectors.map(ins => (
+                            <option key={ins.inspectorId || ins.name} value={ins.name}>{ins.name}</option>
+                          ))}
+                          {r.inspector && !assignedInspectors.some(ins => ins.name === r.inspector) && (
+                            <option value={r.inspector}>{r.inspector}</option>
+                          )}
+                        </select>
+                      ) : (
+                        <input className={inputClass} value={r.inspector || ''} onChange={e => updateTimeClockRecord(idx, 'inspector', e.target.value)} />
+                      )}
+                    </td>
                     <td className="px-4 py-2"><input type="date" className={inputClass} value={r.date ? r.date.split('T')[0] : ''} onChange={e => updateTimeClockRecord(idx, 'date', e.target.value)} /></td>
                     <td className="px-4 py-2"><input className={inputClass} value={r.arrivalTimeFactory || ''} onChange={e => updateTimeClockRecord(idx, 'arrivalTimeFactory', e.target.value)} /></td>
                     <td className="px-4 py-2"><input className={inputClass} value={r.arrivalLocation || ''} onChange={e => updateTimeClockRecord(idx, 'arrivalLocation', e.target.value)} /></td>
