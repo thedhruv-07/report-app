@@ -120,7 +120,7 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
                 <span style={{ fontWeight: "bold" }}>Critical: </span>
                 {lockedAql ? lockedVal(form.aqlCriticalWM || "Not Allowed") : txtIn("aqlCriticalWM", form.aqlCriticalWM || "Not Allowed", "65%")}
               </td>
-              <td style={cellSt}>{numIn("acceptedCritical", form.acceptedCritical || "0")}</td>
+              <td style={cellSt}>{lockedAql ? lockedVal(form.acceptedCritical || "0") : numIn("acceptedCritical", form.acceptedCritical || "0")}</td>
               <td style={cellSt}>{numIn("totalFoundCritical", form.totalFoundCritical || "0")}</td>
               <td style={{ ...cellSt, padding: "4px" }}>
                 <select name="result1WM" value={form.result1WM || ""} onChange={handleChange}
@@ -141,7 +141,7 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
                 <span style={{ fontWeight: "bold" }}>Major: </span>
                 {lockedAql ? lockedVal(form.aqlMajorWM || "1.5") : txtIn("aqlMajorWM", form.aqlMajorWM || "1.5", "65%")}
               </td>
-              <td style={cellSt}>{numIn("acceptedMajor", form.acceptedMajor || "0")}</td>
+              <td style={cellSt}>{lockedAql ? lockedVal(form.acceptedMajor || "0") : numIn("acceptedMajor", form.acceptedMajor || "0")}</td>
               <td style={cellSt}>{numIn("totalFoundMajor", form.totalFoundMajor || "0")}</td>
               <td style={{ ...cellSt, padding: "4px" }}>
                 <select name="result2WM" value={form.result2WM || ""} onChange={handleChange}
@@ -162,7 +162,7 @@ export default function WorkmanshipDefects({ form, handleChange, onPrev, onNext,
                 <span style={{ fontWeight: "bold" }}>Minor: </span>
                 {lockedAql ? lockedVal(form.aqlMinorWM || "4.0") : txtIn("aqlMinorWM", form.aqlMinorWM || "4.0", "65%")}
               </td>
-              <td style={cellSt}>{numIn("acceptedMinor", form.acceptedMinor || "0")}</td>
+              <td style={cellSt}>{lockedAql ? lockedVal(form.acceptedMinor || "0") : numIn("acceptedMinor", form.acceptedMinor || "0")}</td>
               <td style={cellSt}>{numIn("totalFoundMinor", form.totalFoundMinor || "0")}</td>
               <td style={{ ...cellSt, padding: "4px" }}>
                 <select name="result3WM" value={form.result3WM || ""} onChange={handleChange}

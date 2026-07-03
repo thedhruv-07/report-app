@@ -162,9 +162,24 @@ export default function InspectionSummaryTable({ form, handleChange, onPrev, onN
                 : <TextInput name={row.name} value={form[row.name]} onChange={handleChange} placeholder="—" />
               }
             </div>
-            <div style={{ paddingRight: "4px" }}><TextInput name={row.c}    value={form[row.c]}    onChange={handleChange} placeholder="—" /></div>
-            <div style={{ paddingRight: "4px" }}><TextInput name={row.m}    value={form[row.m]}    onChange={handleChange} placeholder="—" /></div>
-            <div><TextInput name={row.mi} value={form[row.mi]} onChange={handleChange} placeholder="—" /></div>
+            <div style={{ paddingRight: "4px" }}>
+              {row.c && row.aql && lockedAql
+                ? <LockedValue value={form[row.c]} label={`${row.label} Critical`} />
+                : <TextInput name={row.c} value={form[row.c]} onChange={handleChange} placeholder="—" />
+              }
+            </div>
+            <div style={{ paddingRight: "4px" }}>
+              {row.m && row.aql && lockedAql
+                ? <LockedValue value={form[row.m]} label={`${row.label} Major`} />
+                : <TextInput name={row.m} value={form[row.m]} onChange={handleChange} placeholder="—" />
+              }
+            </div>
+            <div>
+              {row.mi && row.aql && lockedAql
+                ? <LockedValue value={form[row.mi]} label={`${row.label} Minor`} />
+                : <TextInput name={row.mi} value={form[row.mi]} onChange={handleChange} placeholder="—" />
+              }
+            </div>
           </div>
         ))}
 
