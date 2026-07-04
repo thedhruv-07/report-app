@@ -4,6 +4,10 @@ const { MEMORY_PATH, GROQ_API_KEY } = require("../config/config");
 
 const groq = GROQ_API_KEY ? new Groq({ apiKey: GROQ_API_KEY }) : null;
 
+const MAX_EXTRACT_TEXT_LENGTH = 20000;
+const MAX_EXTRACTED_PRODUCTS = 300;
+const VALID_PRODUCT_UNITS = ['pcs', 'sets', 'pairs', 'kg'];
+
 // In-memory cache for learning to avoid blocking sync file I/O
 let localMemoryCache = [];
 try {
@@ -255,11 +259,149 @@ const analyzeIndividualPhotos = async (imageObjects) => {
   }
 };
 
+/**
+ * Extracts a structured product/packing list from raw document text using Groq.
+ * Returns one row per SIZE/line-item (not per subtotal) — a style with multiple
+ * sizes produces multiple rows, each with its own quantity.
+ */
+const extractProductsFromText = async (rawText) => {
+  try {
+    if (!groq || !rawText || !rawText.trim()) return [];
+
+    const truncated = rawText.slice(0, MAX_EXTRACT_TEXT_LENGTH);
+
+    const prompt = `You are extracting a product/packing list table from a purchase order or product specification document for a factory inspection company.
+
+Below is the raw text of the document. It may describe several styles/items, each with one or more sizes, and each size has its own quantity.
+
+Return ONLY a JSON array (no prose, no markdown fences, no explanation). Each element must be an object with exactly these keys:
+- "orderNo": string — an order/PO number if one is explicitly mentioned for that line, otherwise ""
+- "productName": string — a short name/description of the style (e.g. combine type + fabric/material), reused for every size under that style
+- "itemNo": string — the size/dimension or item code for that specific line (e.g. "10.5 x 16 x 10.5")
+- "quantity": number — the quantity for THIS specific size/line, not a subtotal
+- "unit": string — one of "pcs", "sets", "pairs", "kg" (default "pcs" if not specified)
+
+Critical rule: each size/dimension line has its OWN quantity — treat every "<size> <number>" line under a style as a separate output row with that exact number as its quantity. Do NOT output the "Subtotal" line as a row, and do NOT sum sizes together into one row — the subtotal is only provided for you to sanity-check that the quantities you extract for that style add up to it, not something to output itself. Sum all the quantities you extract exactly as given in the source text — do not round, estimate, or invent values.
+
+If a style has multiple sizes, output one array element per size — do not collapse them into a single subtotal row.
+
+Document text:
+"""
+${truncated}
+"""`;
+
+    const completion = await groq.chat.completions.create({
+      messages: [
+        { role: "system", content: "You are a precise data-extraction assistant. You only ever respond with a single valid JSON array and nothing else." },
+        { role: "user", content: prompt }
+      ],
+      model: "llama-3.3-70b-versatile",
+      max_tokens: 4000,
+      temperature: 0,
+    });
+
+    const raw = completion.choices[0]?.message?.content?.trim() || "";
+    const cleaned = raw.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+
+    let parsed;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch (parseErr) {
+      console.error("extractProductsFromText: failed to parse AI response as JSON:", parseErr.message);
+      return [];
+    }
+
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .map(row => ({
+        orderNo: typeof row.orderNo === 'string' ? row.orderNo : '',
+        productName: typeof row.productName === 'string' ? row.productName.trim() : '',
+        itemNo: typeof row.itemNo === 'string' ? row.itemNo : '',
+        quantity: Number(row.quantity) || 0,
+        unit: VALID_PRODUCT_UNITS.includes(row.unit) ? row.unit : 'pcs',
+      }))
+      .filter(row => row.productName && row.quantity > 0)
+      .slice(0, MAX_EXTRACTED_PRODUCTS);
+  } catch (error) {
+    console.error("extractProductsFromText error:", error);
+    return [];
+  }
+};
+
+const VALID_SAMPLE_STATUSES = ['Available', 'Returned', 'Consumed', 'Damaged'];
+
+/**
+ * Extracts a structured customer-samples list from raw document text using Groq.
+ * Returns one row per sample/item entry found in the source document.
+ */
+const extractSamplesFromText = async (rawText) => {
+  try {
+    if (!groq || !rawText || !rawText.trim()) return [];
+
+    const truncated = rawText.slice(0, MAX_EXTRACT_TEXT_LENGTH);
+
+    const prompt = `You are extracting a customer samples log from a document for a factory inspection company. Customer samples are reference items (e.g. approved fabric swatches, color standards, physical prototypes) that the client provided for comparison during inspection.
+
+Return ONLY a JSON array (no prose, no markdown fences, no explanation). Each element must be an object with exactly these keys:
+- "serialNo": string — a serial/reference number for the sample if mentioned, otherwise ""
+- "itemNo": string — an item/SKU code if mentioned, otherwise ""
+- "name": string — a short name/description of the sample (e.g. "Approved fabric swatch - Linen")
+- "quantity": number — how many of this sample were provided (default 1 if not stated)
+- "storageLocation": string — where the sample is stored/kept, if mentioned, otherwise ""
+- "status": string — one of "Available", "Returned", "Consumed", "Damaged" (default "Available" if not specified)
+
+Document text:
+"""
+${truncated}
+"""`;
+
+    const completion = await groq.chat.completions.create({
+      messages: [
+        { role: "system", content: "You are a precise data-extraction assistant. You only ever respond with a single valid JSON array and nothing else." },
+        { role: "user", content: prompt }
+      ],
+      model: "llama-3.3-70b-versatile",
+      max_tokens: 4000,
+      temperature: 0,
+    });
+
+    const raw = completion.choices[0]?.message?.content?.trim() || "";
+    const cleaned = raw.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+
+    let parsed;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch (parseErr) {
+      console.error("extractSamplesFromText: failed to parse AI response as JSON:", parseErr.message);
+      return [];
+    }
+
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .map(row => ({
+        serialNo: typeof row.serialNo === 'string' ? row.serialNo : '',
+        itemNo: typeof row.itemNo === 'string' ? row.itemNo : '',
+        name: typeof row.name === 'string' ? row.name.trim() : '',
+        quantity: Number(row.quantity) || 1,
+        storageLocation: typeof row.storageLocation === 'string' ? row.storageLocation : '',
+        status: VALID_SAMPLE_STATUSES.includes(row.status) ? row.status : 'Available',
+      }))
+      .filter(row => row.name)
+      .slice(0, MAX_EXTRACTED_PRODUCTS);
+  } catch (error) {
+    console.error("extractSamplesFromText error:", error);
+    return [];
+  }
+};
 
 module.exports = {
   learnFromReport,
   getAISuggestion,
   analyzeVision,
   analyzeIndividualPhotos,
+  extractProductsFromText,
+  extractSamplesFromText,
 };
 
