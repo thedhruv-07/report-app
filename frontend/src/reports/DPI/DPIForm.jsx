@@ -36,15 +36,52 @@ export default function DuringProductionInspection() {
   const { token } = useAuth();
   const location = useLocation();
   const taskId = location.state?.task?._id ?? null;
+  const prefillData = location.state?.task?.prefillData ?? null;
 
   const [step, setStep] = useState(() => {
     const saved = localStorage.getItem("dpiStep");
     return saved ? parseInt(saved) : 1;
   });
 
+  // Prefill is applied once inside the initializer (same pattern as
+  // FactoryAuditForm) — carries the assigned notice's client/factory/product
+  // info and, critically, its inspection number, so the submitted report
+  // keeps the SAME number as the notice instead of minting a new one.
   const [form, setForm] = useState(() => {
-    return safeJsonParse(localStorage.getItem("dpiForm"), {});
+    const saved = safeJsonParse(localStorage.getItem("dpiForm"), {});
+    if (!prefillData) return saved;
+    const factoryAddress = [
+      prefillData.factory?.address,
+      prefillData.factory?.city,
+      prefillData.factory?.country,
+    ].filter(Boolean).join(', ');
+    return {
+      ...saved,
+      client:             prefillData.client?.name                                      || saved.client,
+      supplier:           prefillData.factory?.name                                     || saved.supplier,
+      factory:            prefillData.factory?.name                                     || saved.factory,
+      inspectionLocation: factoryAddress                                                || saved.inspectionLocation,
+      inspectionDate:     prefillData.inspectionDate?.slice(0, 10)                      || saved.inspectionDate,
+      productName:        prefillData.product?.name || prefillData.product?.description || saved.productName,
+      po:                 prefillData.product?.poNumber                                 || saved.po,
+      inspectionNo:       prefillData.inspectionNumber                                  || saved.inspectionNo,
+    };
   });
+
+  // No assigned notice to carry a number over from — reserve the next
+  // sequential inspection number for display (peek only, doesn't consume it;
+  // the backend mints the real one at submit time).
+  useEffect(() => {
+    if (prefillData?.inspectionNumber || form.inspectionNo || !token) return;
+    fetch(`${ENDPOINTS.BASE_URL}/api/inspection-notices/next-id`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.noticeId) setForm(prev => (prev.inspectionNo ? prev : { ...prev, inspectionNo: data.noticeId }));
+      })
+      .catch(() => {});
+  }, [prefillData, token]);
 
   const [showSaveToast, setShowSaveToast] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -80,101 +117,6 @@ export default function DuringProductionInspection() {
     setStep(1);
     setForm({});
     setReportDownloaded(false);
-  };
-
-  const fillDemoData = () => {
-    const demoPhoto = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==";
-    
-    const demoData = {
-      // General Info
-      servicePerformed: "During Production Inspection",
-      client: "Global Sourcing Ltd.",
-      supplier: "Quality Manufacturing Co.",
-      factory: "Shenzhen Industrial Park",
-      productName: "Ergonomic Office Chair Model X1",
-      po: "PO-2024-001",
-      itemNo: "CH-001, CH-002",
-      destinationCountry: "Germany",
-      inspectionDate: new Date().toISOString().split('T')[0],
-      inspectionLocation: "Factory Floor A",
-      referenceSample: "Provided by Client",
-      generalPhoto: demoPhoto,
-      generalPhotoMeta: { fileName: "demo_product.png", originalSize: 1024, compressedSize: 512 },
-
-      // Inspection Summary
-      summaryQuantity: "Passed",
-      summaryWorkmanship: "Passed",
-      summaryOnSiteTests: "Passed",
-      summaryDimensions: "Passed",
-      summaryPacking: "Passed",
-      summaryMarkingLabeling: "Passed",
-      summaryProductConformity: "Passed",
-      summaryClientRequirement: "Passed",
-      summaryProductionSchedule: "Production is on schedule. 80% completed.",
-
-      // Workmanship Summary
-      wmOrderQuantity: "1000 Sets",
-      wmAvailableQuantity: "800 Sets",
-      wmSampleSize: "80 Sets",
-      wmResult: "Passed",
-
-      // Conclusion
-      conclusion: "PASSED",
-      inspectorName: "John Doe",
-      reportReviewer: "Alice Smith",
-
-      // Tables
-      quantityTable: [
-        { po: "PO-2024-001", item: "CH-001", orderQty: "500", qtyPerCarton: "1", cartons: "500", packed: "400", unpacked: "100", unfinished: "0", sampleSizePacked: "40", sampleSizeUnpacked: "10" }
-      ],
-      workmanshipDefectTable: [
-        { itemName: "PD-6225-1", sampleSize: "80", description: "Scratches - minor", critical: "0", major: "0", minor: "2" },
-        { itemName: "PD-6225-1", sampleSize: "80", description: "Local shine", critical: "0", major: "0", minor: "1" }
-      ],
-      onSiteTestsTable: [
-        { srNo: "1", description: "Function Test", method: "Load 100kg", sampleSize: "5", resultReading: "All Passed" }
-      ],
-      dimensionsTable: [
-        { parameter: "Seat Height", clientSpec: "45-55cm", refSample: "50cm", sample1: "50.5cm", sample2: "49.8cm", sample3: "50.2cm" }
-      ],
-      // Backwards-compatible alias for new product specification naming
-      productSpecificationTable: [
-        { parameter: "Seat Height", clientSpec: "45-55cm", refSample: "50cm", sample1: "50.5cm", sample2: "49.8cm", sample3: "50.2cm" }
-      ],
-      packingTable: [
-        { itemNo: "CH-001", qtyPerCartonMarking: "1", qtyPerCartonActual: "1", cartonSizeMarking: "60x60x40", cartonSizeActual: "60x60x40", grossWeightMarking: "15kg", grossWeightActual: "15.2kg" }
-      ],
-      markingTable: [
-        { name: "Shipping Mark", location: "Two Sides", result: "Correct" }
-      ],
-      productionLineTable: [
-        { process: "Welding", samplingSize: "32", styleColor: "Black", problems: "None", number: "32" }
-      ],
-      clientRequirementTable: [
-        { requirement: "Special Logo Tag", result: "Verified" }
-      ],
-
-      // Production Schedule
-      psLinesAvailable: "4",
-      psWorkersPerLine: "15",
-      psOutputRatePerLine: "50",
-      psMaxOutputPerDay: "200",
-      psEstimatedPSIDate: "2024-06-15",
-
-      // Photos
-      defectPhotos: [
-        { id: Date.now(), preview: demoPhoto, label: "Minor scratch example" }
-      ],
-      productionLinePhotos: [
-        { id: Date.now() + 1, preview: demoPhoto, label: "Assembly line overview" }
-      ],
-      remarkPhotos: [
-        { id: Date.now() + 2, preview: demoPhoto, label: "Reference sample comparison" }
-      ]
-    };
-
-    setForm(demoData);
-    alert("Demo data filled successfully!");
   };
 
   const handleChange = useCallback((e) => {
@@ -413,9 +355,6 @@ export default function DuringProductionInspection() {
 
         {/* Compact action buttons */}
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginBottom: "12px", flexWrap: "wrap" }}>
-          <button onClick={fillDemoData} style={{ padding: "7px 12px", background: colors.success, color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "600", boxShadow: "0 2px 6px rgba(16,185,129,0.2)" }}>
-            ✨ Quick Fill
-          </button>
           <button onClick={handleSaveDraft} style={{ padding: "7px 12px", background: colors.warning, color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "600", boxShadow: "0 2px 6px rgba(245,158,11,0.2)" }}>
             💾 Save Draft
           </button>

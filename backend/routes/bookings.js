@@ -64,12 +64,12 @@ router.get('/', roleCheck(['admin', 'manager']), async (req, res) => {
 
     // Fetch related notices for these bookings
     const bookingIds = bookings.map(b => b._id);
-    const notices = await InspectionNotice.find({ sourceBookingId: { $in: bookingIds } }).select('_id sourceBookingId').lean();
-    
+    const notices = await InspectionNotice.find({ sourceBookingId: { $in: bookingIds } }).select('noticeId sourceBookingId').lean();
+
     // Map them
     const noticeMap = {};
     notices.forEach(n => {
-      if (n.sourceBookingId) noticeMap[String(n.sourceBookingId)] = String(n._id);
+      if (n.sourceBookingId) noticeMap[String(n.sourceBookingId)] = n.noticeId;
     });
 
     const responseBookings = bookings.map(b => {

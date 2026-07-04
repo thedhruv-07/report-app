@@ -176,7 +176,7 @@ export default function InspectionNoticesList() {
                       return (
                         <tr 
                           key={notice._id} 
-                          onClick={() => navigate(`/admin/inspection-notices/${notice._id}`)} 
+                          onClick={() => navigate(`/admin/inspection-notices/${notice.noticeId}`)} 
                           className="hover:bg-slate-50 transition-colors group cursor-pointer"
                         >
                           <td className="px-6 py-4">
@@ -214,7 +214,7 @@ export default function InspectionNoticesList() {
                           </td>
                           <td className="px-6 py-4 text-right">
                             <button
-                              onClick={(e) => { e.stopPropagation(); navigate(`/admin/inspection-notices/${notice._id}`); }}
+                              onClick={(e) => { e.stopPropagation(); navigate(`/admin/inspection-notices/${notice.noticeId}`); }}
                               className="inline-flex items-center gap-2 bg-[#F4F5F7] border border-slate-200 hover:bg-slate-100 text-slate-700 px-4 py-2 rounded-lg font-bold text-xs shadow-sm transition-all cursor-pointer ml-auto"
                             >
                               {inspectors.length > 0 ? (

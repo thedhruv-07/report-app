@@ -151,8 +151,6 @@ const hasMeaningfulValue = (value) => {
   return true;
 };
 
-const getTodayIsoDate = () => new Date().toISOString().slice(0, 10);
-
 // ISO 2859-1 AQL sample size lookup (Normal Inspection Level II as baseline)
 const AQL_TABLE = [
   { max: 8, size: 2 },
@@ -182,68 +180,6 @@ const calcAqlSampleSize = (totalQty, inspectionLevel) => {
   else if (lvl.includes('III')) idx = Math.min(AQL_TABLE.length - 1, idx + 1);
   return AQL_TABLE[idx].size;
 };
-
-const buildQuickFillData = () => ({
-  servicePerformed: "Pre-Shipment Inspection",
-  client: "FRIN",
-  supplier: "JUFENG",
-  factory: "JUFENG",
-  productName: "Nut Forming Machine & Moulds",
-  po: "PO-QUICK-001",
-  itemNo: "30B nut forming machine (Model: 30B-6S-40)",
-  country: "India",
-  inspectionDate: getTodayIsoDate(),
-  inspectionLocation: "Jiangsu (CHINA)",
-  referenceSample: "Yes",
-  quantity: "Passed",
-  workmanship: "Passed",
-  onSiteTests: "Passed",
-  dimensions: "Passed",
-  packingResult: "Passed",
-  marking_result_final: "Passed",
-  client_requirement_result: "Passed",
-  quantityResult: "Passed",
-  quantityRemark: "Quantity verified against packing list.",
-  selectedCartonsCount: "2",
-  cartonNo1: "A-01",
-  cartonNo2: "A-02",
-  inspectionStandardWM: "ANSI/ASQ Z1.4 (ISO 2859-1)",
-  samplingPlanWM: "Fixed Sample Size",
-  inspectionLevelWM: "Level II",
-  sampleSizeWM: "5 Sets",
-  aqlCriticalWM: "Not Allowed",
-  aqlMajorWM: "2.5",
-  aqlMinorWM: "4.0",
-  acceptedCritical: "0",
-  acceptedMajor: "0",
-  acceptedMinor: "0",
-  totalFoundCritical: "0",
-  totalFoundMajor: "0",
-  totalFoundMinor: "0",
-  workmanshipResult: "Passed",
-  workmanshipRemark: "No critical workmanship issues observed.",
-  onSiteTestResult: "Passed",
-  onSiteTestRemark: "Function and safety checks passed.",
-  conclusion: "PASSED",
-  factoryComments: "Production and packing conditions were acceptable during inspection.",
-  remarks: ["", "", "", "", "", "", "", "", ""],
-  recommendationText: "Continue to maintain current quality controls for mass production.",
-});
-
-const buildQuickFillItems = () => [
-  {
-    po: "PO-QUICK-001",
-    itemName: "30B nut forming machine (Model: 30B-6S-40)",
-    orderQty: "10",
-    qtyPerCarton: "1",
-    cartons: "10",
-    packedBreakdown: "10",
-    unpackedBreakdown: "0",
-    unfinishedBreakdown: "0",
-    sampleSizePacked: "5",
-    sampleSizeUnpacked: "0",
-  },
-];
 
 function App() {
   useBackendKeepAlive();
@@ -327,6 +263,21 @@ function App() {
   const prefillData = location.state?.task?.prefillData ?? null;
   const taskId = location.state?.task?._id ?? null;
   const taskClientCode = location.state?.task?.clientCode ?? null;
+
+  // No assigned notice/booking to carry a number over from — reserve the next
+  // sequential one for display (peek only, doesn't consume it; the backend
+  // mints the real one at submit time).
+  useEffect(() => {
+    if (prefillData?.inspectionNumber || form.inspectionNumber || !token) return;
+    fetch(`${ENDPOINTS.BASE_URL}/api/inspection-notices/next-id`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.noticeId) setForm(prev => (prev.inspectionNumber ? prev : { ...prev, inspectionNumber: data.noticeId }));
+      })
+      .catch(() => {});
+  }, [prefillData, token]);
 
   // Persist the locked-AQL flag so it survives page refresh
   const [aqlLocked, setAqlLocked] = useState(() => {
@@ -892,20 +843,6 @@ function App() {
     setAqlLocked(false);
   };
 
-  const quickFillForm = () => {
-    const shouldProceed = window.confirm(
-      "Apply quick-fill template data? This will overwrite current text fields but keep uploaded photos."
-    );
-    if (!shouldProceed) return;
-
-    const quickData = buildQuickFillData();
-    setForm((prev) => ({
-      ...prev,
-      ...quickData,
-    }));
-    setItems(buildQuickFillItems());
-  };
-
   const applySavedSuggestion = () => {
     if (!savedSuggestion || typeof savedSuggestion !== "object") return;
 
@@ -1233,12 +1170,6 @@ function App() {
                 marginBottom: "12px",
                 flexWrap: "wrap"
               }}>
-                <button
-                  onClick={quickFillForm}
-                  style={{ padding: "7px 12px", background: colors.success, color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "600", boxShadow: "0 2px 6px rgba(16,185,129,0.2)" }}
-                >
-                  ⚡ Quick Fill
-                </button>
                 <button
                   onClick={handleSaveDraft}
                   style={{ padding: "7px 12px", background: colors.warning, color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "600", boxShadow: "0 2px 6px rgba(245,158,11,0.2)" }}

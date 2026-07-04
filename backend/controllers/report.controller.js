@@ -3,6 +3,7 @@ const { Document, Packer, Header, Paragraph, TextRun, PageNumber, Footer, conver
 const { createHeaderTable, createReportContent } = require("../services/docx.service");
 const { learnFromReport } = require("../services/ai.service");
 const { enrichReportHeaderData, normalizePayload } = require("../utils/parser.utils");
+const { claimInspectionNumber } = require("../utils/noticeId");
 const mongoose = require("mongoose");
 const { getIO } = require("../socket");
 const notifyStaff = require("../utils/notifyStaff");
@@ -33,7 +34,8 @@ const generateReport = async (req, res) => {
     }
 
     const data = enrichReportHeaderData(rawData);
-    
+    data.reportHeader.inspectionNumber = await claimInspectionNumber(data.reportHeader.inspectionNumber);
+
     let dbReportId = null;
     let userId = null;
     let reportV2 = null;

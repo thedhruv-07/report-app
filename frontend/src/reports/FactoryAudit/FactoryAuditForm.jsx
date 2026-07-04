@@ -80,6 +80,7 @@ export default function FactoryAudit() {
       email:          prefillData.contact?.email            || base.email,
       phone:          prefillData.contact?.phone            || base.phone,
       auditDate:      prefillData.inspectionDate?.slice(0, 10) || base.auditDate,
+      inspectionNo:   prefillData.inspectionNumber           || base.inspectionNo,
     };
   });
 
@@ -90,6 +91,21 @@ export default function FactoryAudit() {
   const [isPhotoProcessing, setIsPhotoProcessing] = useState(false);
   const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
   const [reportId, setReportId] = useState(() => localStorage.getItem("faReportId") || "");
+
+  // No assigned notice/booking to carry a number over from — reserve the next
+  // sequential one for display (peek only, doesn't consume it; the backend
+  // mints the real one at submit time).
+  useEffect(() => {
+    if (prefillData?.inspectionNumber || form.inspectionNo || !token) return;
+    fetch(`${ENDPOINTS.BASE_URL}/api/inspection-notices/next-id`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.noticeId) setForm(prev => (prev.inspectionNo ? prev : { ...prev, inspectionNo: data.noticeId }));
+      })
+      .catch(() => {});
+  }, [prefillData, token]);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -118,178 +134,6 @@ export default function FactoryAudit() {
     } catch {
       alert("Failed to save draft locally.");
     }
-  };
-
-  const autofillDemoData = () => {
-    setForm({
-      // Part 1: General Info & Profile
-      client: "FRIN",
-      supplier: "Global Manufacturing Solutions Ltd.",
-      factory: "Main Unit - Shenzhen High-Tech Park",
-      factoryAddress: "Plot 45, Industrial Zone 3, Shenzhen, China",
-      supplierAddress: "Room 1201, Commerce Tower, Hong Kong",
-      contactPerson: "Mr. Zhang Wei",
-      email: "zhang.wei@globalmfg.com",
-      phone: "+86 755 8888 9999",
-      auditDate: new Date().toISOString().split('T')[0],
-      auditorName: "John Smith",
-      generalPhoto: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==",
-
-      dateOfFoundation: "2005-06-12",
-      legalStatus: "Foreign Invested",
-      actualLocation: "Covers 15,000 sqm across two wings (A & B) in the primary industrial cluster.",
-      locationBusinessLicense: " Shenzhen High-Tech Park, Wing A",
-      locationExportLicense: "Shenzhen High-Tech Park, Wing A",
-      locationBankInfo: "HSBC Main Branch, Hong Kong",
-      area: "150,000",
-      numberOfStaff: 450,
-      corporateRepresentative: "Li Xiaofeng",
-      mainProducts: "Electronic components, Power Adapters, and PCBA assemblies.",
-      mainMarket: "USA (40%), Europe (35%), SE Asia (25%)",
-      businessLicenseInfo: "9144030077559231XP / USD 5,000,000",
-      turnover2018: "12,500,000",
-      turnover2019: "14,200,000",
-      turnover2020: "13,800,000",
-      turnoverTrend: "Increase",
-
-      telephoneSets: "25",
-      faxMachines: "5",
-      computers: "120",
-      emailDomain: "@globalmfg.com",
-
-      productsMarkets: [
-        { productType: "AC/DC Adapters", customerName: "Sony", marketLocation: "Japan", monthlyQty: "50,000" },
-        { productType: "USB Chargers", customerName: "Samsung", marketLocation: "Global", monthlyQty: "100,000" }
-      ],
-      recommendations: [
-        { companyName: "TechCorp", country: "USA", contact: "Alice Rogers", products: "Chargers", details: "Direct supplier since 2015" }
-      ],
-      part1Score: 9,
-
-      // Part 2: Org Charts
-      part2Score: 8,
-
-      // Part 3: Production Capacity
-      productionProcess: [
-        { operationName: "SMT Assembly", machineName: "Yamaha YS24", machineCount: 4, workersNumber: 8, outputPerHour: 1200, dailyCapacity: 28800 },
-        { operationName: "Reflow Soldering", machineName: "Heller 1809", machineCount: 2, workersNumber: 2, outputPerHour: 1200, dailyCapacity: 28800 }
-      ],
-      runningProduction: "Yes",
-      outputCheckComments: "Production line 3 was observed running at 95% efficiency during audit.",
-      processLines: "4 SMT Lines, 6 Manual Assembly Lines",
-      startTime: "08:00 AM",
-      finishedTime: "05:00 PM",
-      totalTime: "9 Hours",
-      finishedProductsStart: 500,
-      finishedProductsEnd: 4200,
-      outputPieces: 3700,
-      rawMaterialCapacityFactory: "15 days stock",
-      rawMaterialCapacityAuditor: "Verified 12-15 days stock on floor",
-      weeklyCapacityFactory: "250,000 units",
-      weeklyCapacityAuditor: "Approx 220,000 units based on current setup",
-      bottleneckAuditorCheck: "Component testing phase (manual)",
-      bottleneckComments: "Suggested automated AOI for testing bottleneck.",
-      part3Score: 8,
-
-      // Part 4: Machinery
-      machineryConditions: [
-        { machineName: "Injection Molding Machine", count: 12, comments: "Model: Nissei NEX 110, Condition: Good", picture: "" },
-        { machineName: "CNC Milling Machine", count: 5, comments: "Model: Fanuc Robodrill, Condition: Excellent", picture: "" }
-      ],
-      part4Score: 9,
-
-      // Part 5: QA/QC System
-      iso9001Status: "Yes",
-      iso9001Comment: "ISO 9001:2015 certified, valid until 2026.",
-      internalQAManualStatus: "Yes",
-      internalQAManualComment: "Comprehensive QA manual reviewed annually.",
-      othersStatus: "No",
-      othersComment: "N/A",
-      qaStaffStatus: "Yes",
-      qaStaffComment: "QA Manager: 1, QA Engineers: 4, QC Inspectors: 15",
-      listCertificates: "ISO 9001, ISO 14001, OHSAS 18001, UL, CE",
-      howOftenUpdated: "Monthly review",
-      lastInspectionDate: "2024-03-15",
-      qcStaffCount: 20,
-      isOnlineQC: "Yes",
-      onlineQCManualAvailable: "Yes",
-      onlineQCTestingEquipment: "LCR Meters, Oscilloscopes, Spectrum Analyzers",
-      onlineQCRecordsAvailable: "Yes",
-      isFinalQC: "Yes",
-      finalQCManualAvailable: "Yes",
-      finalQCTestingEquipment: "Chroma Burn-in System, Hi-Pot Testers",
-      finalQCRecordsAvailable: "Yes",
-      finalQCLastResults: "Passed",
-      isIncomingQC: "Yes",
-      incomingQCManualAvailable: "Yes",
-      incomingQCTestingEquipment: "Digital Calipers, X-Ray Fluorescence (XRF) for RoHS",
-      incomingQCRecordsAvailable: "Yes",
-      part5Score: 9,
-
-      // Photos and missing fields
-      buildingOfficePhotos: [{ preview: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==", label: "Front Office" }],
-      orgChartPhotos: [{ preview: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==", label: "Org Chart 2024" }],
-      productionWorkflowPhotos: [{ preview: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==", label: "Main SMT Workflow" }],
-      dailyOutputPhotos: [{ preview: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==", label: "Daily Output Log" }],
-      qaqcOffice: [{ preview: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==" }],
-      onlineQCRecord1: [{ preview: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==" }],
-      rawMaterialQCRecord1: [{ preview: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==" }],
-      wastewaterPhoto1: [{ preview: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==" }],
-
-      // Part 6: R&D
-      rdSpecificStaffCount: 15,
-      rdSpecificFacilities: "Dedicated Lab with 3D printers, PCB prototyping machines, and Thermal chambers.",
-      sampleProductionProcess: "Requirement Analysis -> Schematic Design -> Prototype -> Testing -> Client Approval",
-      rdRecord: "Yes",
-      approvalSampleLeadTime: "14 days",
-      part6Score: 9,
-
-      // Part 7: Environment & Safety
-      iso14000Status: "Yes",
-      iso14000Comment: "ISO 14001:2015 certified since 2018.",
-      internalEnvStatus: "Yes",
-      internalEnvComment: "Managed by the EHS (Environment, Health, and Safety) department.",
-      envPolicyStatus: "Yes",
-      envPolicyDescription: "Commitment to waste reduction and energy efficiency.",
-      envListCertificates: "ISO 14001, Green Partner Certificate",
-      wastewaterStaffInCharge: "Mr. David Wong (EHS Lead)",
-      envControlRecordsStatus: "Yes",
-      envUpdateFrequency: "Yes",
-      envItemChecked: "Industrial wastewater, Noise levels, Air filtration",
-      envLastControlDate: "2024-04-10",
-      envFindings: "All parameters within national permissible limits.",
-      envStandard: "GB 8978-1996 Class I",
-      preventiveActions: [
-        { actionDescription: "Upgrade of air scrubbing system in soldering wing." },
-        { actionDescription: "Biannual hearing tests for workers in high-noise zones." }
-      ],
-      envPhotos: [
-        { caption: "Drinking Water Station - Level 2", photo: "" },
-        { caption: "Fire Extinguisher & Emergency Kit - Zone B", photo: "" },
-        { caption: "Wastewater Treatment Plant Overview", photo: "" }
-      ],
-      part7Score: 9,
-
-      // Global Remarks & Suggestions
-      generalOverviewRemarks: [
-        "The factory demonstrated a high level of technical competence and organizational structure.",
-        "Production capacity is well-managed with professional SMT lines.",
-        "Quality control systems are robust with detailed records for incoming and final stages.",
-        "Environmental compliance is taken seriously with ISO 14001 certification and active EHS monitoring."
-      ],
-      clientSpecialRemarks: ["Please ensure the new SMT line is prioritized for the Q4 order."],
-      suggestions: [
-        "Suggest increasing the frequency of internal EHS audits to monthly.",
-        "Recommend adding more automated optical inspection (AOI) machines to reduce manual testing bottleneck.",
-        "Suggested to implement a digital inventory management system for better raw material tracking."
-      ],
-      auditOverview: {
-        totalScore: 85,
-        percentage: 85,
-        grade: "B"
-      },
-    });
-    alert("Full Demo Data Loaded!");
   };
 
   useEffect(() => {
@@ -805,7 +649,6 @@ export default function FactoryAudit() {
         <div style={{ width: "100%", maxWidth: "1400px", margin: "0 auto" }}>
           {/* Compact action buttons */}
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginBottom: "12px", flexWrap: "wrap" }}>
-            <button onClick={autofillDemoData} style={{ padding: "7px 12px", background: colors.success, color: "#fff", border: "none", borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "12px", boxShadow: "0 2px 6px rgba(16,185,129,0.2)" }}>⚡ Quick Fill</button>
             <button onClick={handleSaveDraft} style={{ padding: "7px 12px", background: colors.warning, color: "#fff", border: "none", borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "12px", boxShadow: "0 2px 6px rgba(245,158,11,0.2)" }}>💾 Save Draft</button>
           </div>
           

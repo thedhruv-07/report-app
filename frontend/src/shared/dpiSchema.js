@@ -8,6 +8,7 @@ export const dpiSchema = {
   // ─── SECTION I: GENERAL INFORMATION ─────────────────────────────────────────
   generalInfo: [
     { name: "servicePerformed", label: "Service Performed", type: "text", defaultValue: "During Production Inspection" },
+    { name: "inspectionNo", label: "Inspection No.", type: "text", placeholder: "e.g., AV202607040001" },
     { name: "client", label: "Client", type: "text", placeholder: "e.g., FRIN" },
     { name: "supplier", label: "Supplier", type: "text", placeholder: "Enter supplier name" },
     { name: "factory", label: "Factory", type: "text", placeholder: "Enter factory name" },

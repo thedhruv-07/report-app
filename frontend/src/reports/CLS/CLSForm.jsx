@@ -53,6 +53,7 @@ export default function ContainerLoading() {
       inspectionDate: prefillData.inspectionDate?.slice(0, 10)                       || prev.inspectionDate,
       productName:    prefillData.product?.name || prefillData.product?.description  || prev.productName,
       orderQuantity:  String(prefillData.product?.quantity ?? prev.orderQuantity ?? ''),
+      inspectionNo:   prefillData.inspectionNumber                                   || prev.inspectionNo,
     }));
   }, [prefillData]); // run when prefillData changes
 
@@ -65,6 +66,21 @@ export default function ContainerLoading() {
     const savedForm = localStorage.getItem("clsForm");
     return safeJsonParse(savedForm, {});
   });
+
+  // No assigned notice/booking to carry a number over from — reserve the next
+  // sequential one for display (peek only, doesn't consume it; the backend
+  // mints the real one at submit time).
+  useEffect(() => {
+    if (prefillData?.inspectionNumber || form.inspectionNo || !token) return;
+    fetch(`${ENDPOINTS.BASE_URL}/api/inspection-notices/next-id`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.noticeId) setForm(prev => (prev.inspectionNo ? prev : { ...prev, inspectionNo: data.noticeId }));
+      })
+      .catch(() => {});
+  }, [prefillData, token]);
 
   const [showSaveToast, setShowSaveToast] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -98,94 +114,6 @@ export default function ContainerLoading() {
     } catch {
       alert("Failed to save draft locally.");
     }
-  };
-
-  const autofillDemoData = () => {
-    setForm({
-      servicePerformed: "Container Loading Supervision (CLS)",
-      client: "Global Logistics Inc.",
-      supplier: "M/S R. Food Industries",
-      factory: "M/S North Star, Noida",
-      productName: "Frozen Buffalo HQ",
-      po: "1500012973",
-      itemNo: "Topside, Silverside, Thick Flank",
-      destinationCountry: "Gabon",
-      inspectionDate: "2020-12-30",
-      location: "New Delhi, India",
-      referenceSample: "None",
-      
-      quantity: "Passed",
-      productConformity: "Passed",
-      packing: "Passed",
-      loadingProcess: "Passed",
-      clientRequirement: "Passed",
-
-      quantityTable: [
-        { id: "1", item: "Solar Panel 400W", orderQuantity: 500, loadedQuantity: 500 },
-        { id: "2", item: "Inverter 5kW", orderQuantity: 100, loadedQuantity: 100 }
-      ],
-
-      problemRemarks: [
-        "Temperature of 12 inspected samples out of 12 were found temperature higher than -18 degree Celsius. Please refer to below pictures for more detail.",
-        "For item Topside, Out of 3 inspected samples 2 cartons were found with packing damage. Please refer to below pictures for more detail."
-      ],
-      generalRemarks: [
-        "The weighing scale and IR Gun provided by factory was with valid calibration label."
-      ],
-      sampleCollection: "No Sample-Inspector didn't collected any sample from Factory.",
-
-      // Section D - Loading Process
-      containerNo: "MSKU1234567",
-      containerType: "40' HC REEFER",
-      sealNo: "987654",
-      avSealNo: "AV1234567",
-      cargoBreakdown: "2500 Cartons of Frozen Meat",
-      shelter: "Covered Area",
-      weather: "Sunny, 28°C",
-      loadingStartTime: "09:00 AM",
-      loadingEndTime: "04:30 PM",
-
-      // Checklists
-      containerCheck: [
-        { id: "holes", result: "Yes", finding: "No holes found" },
-        { id: "doors", result: "Yes", finding: "Working smoothly" },
-        { id: "clean", result: "Yes", finding: "Clean and dry" },
-        { id: "watertight", result: "Yes", finding: "Tested with light" },
-        { id: "protrusions", result: "Yes", finding: "None" },
-        { id: "floor", result: "Yes", finding: "Solid" },
-        { id: "odour", result: "Yes", finding: "No smell" },
-        { id: "markings", result: "Yes", finding: "Valid CSC plate" }
-      ],
-      loadingCheck: [
-        { id: "evenWeight", result: "Yes", finding: "Balanced loading" },
-        { id: "method", result: "Yes", finding: "Manual and Forklift" },
-        { id: "layers", result: "Yes", finding: "4 Layers" },
-        { id: "noDamaged", result: "Yes", finding: "All cartons intact" },
-        { id: "properStowage", result: "Yes", finding: "Tightly packed" },
-        { id: "ventilation", result: "Yes", finding: "Maintained" },
-        { id: "tempMonitor", result: "Yes", finding: "-18C maintained" },
-        { id: "loadingAreaClean", result: "Yes", finding: "Cleaned before loading" },
-        { id: "protection", result: "Yes", finding: "Shelter used" }
-      ],
-      containerSealing: [
-        { id: "correctSeal", result: "Yes", finding: "Verified against docs" },
-        { id: "properlyFixed", result: "Yes", finding: "Checked manually" },
-        { id: "sealIntegrity", result: "Yes", finding: "Intact" },
-        { id: "photoTaken", result: "Yes", finding: "Documented" }
-      ],
-
-      remarks_loading: "All pallets were securely positioned.",
-      
-      clientRequirementTable: [
-        { requirement: "Temperature check of products", result: "22°C - Acceptable" },
-        { requirement: "Check for moisture in cartons", result: "None found" }
-      ],
-      client_requirement_result: "Passed",
-      client_requirement_remark: "Standard temperature and moisture levels maintained.",
-      
-      conclusion: "PASSED"
-    });
-    alert("Demo data has been filled!");
   };
 
   const clearFormAfterDownload = () => {
@@ -420,9 +348,6 @@ export default function ContainerLoading() {
         
         {/* Compact action buttons */}
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginBottom: "12px", flexWrap: "wrap" }}>
-          <button onClick={autofillDemoData} style={{ padding: "7px 12px", background: colors.success, color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "600", boxShadow: "0 2px 6px rgba(16,185,129,0.2)" }}>
-            ⚡ Quick Fill
-          </button>
           <button onClick={handleSaveDraft} style={{ padding: "7px 12px", background: colors.warning, color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "600", boxShadow: "0 2px 6px rgba(245,158,11,0.2)" }}>
             💾 Save Draft
           </button>

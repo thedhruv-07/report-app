@@ -1,5 +1,6 @@
   const FactoryAudit = require("../models/factoryAudit.model");
 const mongoose = require("mongoose");
+const { claimInspectionNumber } = require("../utils/noticeId");
 const { Document, Packer, Header, Paragraph, TextRun, PageNumber, Footer, Table, TableRow, TableCell, WidthType, BorderStyle, AlignmentType } = require("docx");
 const sharp = require('sharp');
 const { createFAContent, createFAHeaderTable } = require("../services/faDocx.service");
@@ -26,8 +27,15 @@ const emitReportSubmitted = (report, user) => {
 exports.createReport = async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
+    const body = { ...req.body };
+    if (body.generalInfo) {
+      body.generalInfo = {
+        ...body.generalInfo,
+        inspectionNo: await claimInspectionNumber(body.generalInfo.inspectionNo),
+      };
+    }
     const report = new FactoryAudit({
-      ...req.body,
+      ...body,
       userId,
       operationStatus: "submitted",
       submittedAt: new Date()
@@ -100,8 +108,15 @@ exports.submitForReview = async (req, res) => {
 
     if (!report) {
       // First submission — create the record
+      const fallbackData = { ...(formData || {}) };
+      if (fallbackData.generalInfo) {
+        fallbackData.generalInfo = {
+          ...fallbackData.generalInfo,
+          inspectionNo: await claimInspectionNumber(fallbackData.generalInfo.inspectionNo),
+        };
+      }
       report = new FactoryAudit({
-        ...(formData || {}),
+        ...fallbackData,
         userId,
         operationStatus: "submitted",
         submittedAt: new Date(),
