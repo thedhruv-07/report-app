@@ -11,6 +11,7 @@
 
 const InspectionNotice = require('../models/InspectionNotice');
 const wasabiService = require('./wasabiService');
+const { uniqueNoticeId } = require('../utils/noticeId');
 
 function formatFileSize(bytes) {
   if (bytes < 1024) return `${bytes} B`;
@@ -34,27 +35,6 @@ const normalizeServiceType = (raw = '') => {
   if (s.includes('factory')) return 'Factory Audit';
   if (s.includes('during') || s.includes('dpi') || s.includes('production')) return 'During Production Inspection';
   return 'Pre-Shipment Inspection'; // default
-};
-
-/**
- * Generate a unique notice ID like PN-A3F2B1
- */
-const generateNoticeId = () => {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  const rand = Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-  return `PN-${rand}`;
-};
-
-/**
- * Ensure notice ID is unique (retry up to 5 times)
- */
-const uniqueNoticeId = async () => {
-  for (let i = 0; i < 5; i++) {
-    const id = generateNoticeId();
-    const exists = await InspectionNotice.findOne({ noticeId: id }).lean();
-    if (!exists) return id;
-  }
-  return `PN-${Date.now()}`;
 };
 
 /**
@@ -194,7 +174,8 @@ async function createDraftNoticeFromBooking(booking, adminId) {
       phone:         '',
       mobile:        '',
       fax:           '',
-      workingTime:   'AM: 9:00 - PM: 6:00',
+      workingTimeStart: '09:00',
+      workingTimeEnd:   '18:00',
     },
 
     aql: {

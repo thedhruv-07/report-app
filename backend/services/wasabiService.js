@@ -107,7 +107,9 @@ class WasabiService {
     // Otherwise return as is
     try {
       const url = new URL(input);
-      const pathParts = url.pathname.split("/");
+      // url.pathname is percent-encoded (e.g. spaces become %20), but the real
+      // S3 key has the literal characters — decode before matching against it.
+      const pathParts = url.pathname.split("/").map(decodeURIComponent);
       // Usually /bucket-name/key or /key depending on path style
       // For Wasabi with path style, it's /bucket/key
       if (pathParts[1] === this.bucket) {

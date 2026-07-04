@@ -24,17 +24,20 @@ export default function InspectionNoticeForm() {
   
   // Entire form state matching the Mongoose Model
   const [formData, setFormData] = useState({
-    noticeId: `PN${Date.now()}`,
+    noticeId: '',
     status: 'draft',
     basicInfo: {
       serviceType: 'Pre-Shipment Inspection',
+      serviceTypeOther: '',
       sameDayReport: false,
       onlineReport: false,
+      offlineReport: false,
       inspectionDateFrom: '',
       inspectionDateTo: '',
       inspectionLocation: '',
       customerName: '',
       productCategory: '',
+      productCategoryOther: '',
       attentiveOrder: false,
       csSatisfactionBonus: false,
     },
@@ -84,10 +87,10 @@ export default function InspectionNoticeForm() {
       technicalManagerReviewed: false,
       generalWorkInstructions: [],
       operationalWorkInstructions: [],
-      onlineWI: '',
-      reportTemplate: '',
+      onlineWI: null,
+      reportTemplate: [],
       customerClaimForm: '',
-      onlineCustomerClaimForm: '',
+      onlineCustomerClaimForm: null,
       clientGeneralMaterials: ''
     },
     attachments: { clientFiles: [], supplierFiles: [] },
@@ -110,6 +113,7 @@ export default function InspectionNoticeForm() {
       factoryName: '',
       englishName: '',
       address: '',
+      googleMapsLink: '',
       mainContactPerson: '',
       otherContactPersons: '',
       phone: '',
@@ -118,7 +122,8 @@ export default function InspectionNoticeForm() {
       equipmentInstruments: '',
       communicationEquipment: '',
       inspectionEnvironment: '',
-      workingTime: 'AM: 9:00 - PM: 6:00',
+      workingTimeStart: '09:00',
+      workingTimeEnd: '18:00',
       transportationRoute: '',
       accommodationNearFactory: '',
       notesOnFactoryDisagreements: '',
@@ -126,7 +131,7 @@ export default function InspectionNoticeForm() {
       abnormalStatusEntries: []
     },
     recentRecords: [],
-    readingRecords: [],
+    submissionRecords: [],
     reportExecutionInfo: {
       timeClockRecords: [],
       inspectionDates: [],
@@ -172,6 +177,18 @@ export default function InspectionNoticeForm() {
       })
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
+    } else if (token) {
+      // Reserve the next sequential inspection number (AV + date + 4-digit counter)
+      fetch(`${ENDPOINTS.BASE_URL}/api/inspection-notices/next-id`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.noticeId) {
+          setFormData(prev => ({ ...prev, noticeId: data.noticeId }));
+        }
+      })
+      .catch(err => console.error(err));
     }
   }, [id, isNew, token]);
 
@@ -184,12 +201,12 @@ export default function InspectionNoticeForm() {
       .catch(() => {});
   }, [token]);
 
-  const handleSave = async (submitStatus = 'draft') => {
+  const handleSave = async (submitStatus = 'draft', isSubmitAction = false) => {
     setSaving(true);
     const method = isNew ? 'POST' : 'PUT';
     const url = isNew ? `${ENDPOINTS.BASE_URL}/api/inspection-notices` : `${ENDPOINTS.BASE_URL}/api/inspection-notices/${id}`;
-    
-    const payload = { ...formData, status: submitStatus };
+
+    const payload = { ...formData, status: submitStatus, isSubmitAction };
 
     try {
       const res = await fetch(url, {
@@ -203,7 +220,7 @@ export default function InspectionNoticeForm() {
       if (res.ok) {
         const data = await res.json();
         if (isNew && data.notice) {
-          navigate(`/admin/inspection-notices/${data.notice._id}`);
+          navigate(`/admin/inspection-notices/${data.notice.noticeId}`);
         } else {
           const prov = data.provisioned;
           const provMsg = prov
@@ -277,8 +294,8 @@ export default function InspectionNoticeForm() {
             <Save className="w-4 h-4" />
             Save Draft
           </button>
-          <button 
-            onClick={() => handleSave(formData.teamAssignment.inspectors.length > 0 ? 'scheduled' : 'draft')}
+          <button
+            onClick={() => handleSave(formData.teamAssignment.inspectors.length > 0 ? 'scheduled' : 'draft', true)}
             disabled={saving}
             className="flex items-center gap-2 px-5 py-2 bg-[#6C47FF] hover:bg-purple-700 text-white rounded-lg font-bold text-sm shadow-sm transition-all"
           >

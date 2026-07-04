@@ -11,6 +11,12 @@ router.use(authMiddleware);
 // For now, following standard practice for an Admin Dashboard feature
 router.post("/", roleCheck(["admin", "manager"]), inspectionNoticeController.createNotice);
 router.get("/", inspectionNoticeController.getNotices); // Allow all authenticated (or restrict to admin/manager/inspector)
+// Any authenticated role may peek the next number (inspectors need it for PSI/CLS/DPI/Factory Audit forms too)
+router.get("/next-id", inspectionNoticeController.getNextNoticeId);
+router.post("/extract-products", roleCheck(["admin", "manager"]), upload.single('file'), inspectionNoticeController.extractProducts);
+router.post("/extract-samples", roleCheck(["admin", "manager"]), upload.single('file'), inspectionNoticeController.extractSamples);
+router.post("/upload-document", roleCheck(["admin", "manager"]), upload.single('file'), inspectionNoticeController.uploadDocumentLink);
+router.post("/resolve-document-url", roleCheck(["admin", "manager"]), inspectionNoticeController.resolveDocumentUrl);
 router.get("/:id", inspectionNoticeController.getNoticeById);
 router.get("/:id/recent-by-factory", inspectionNoticeController.getRecentByFactory);
 router.put("/:id", roleCheck(["admin", "manager"]), inspectionNoticeController.updateNotice);

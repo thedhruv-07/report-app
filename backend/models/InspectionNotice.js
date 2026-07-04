@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const InspectionNoticeSchema = new mongoose.Schema({
   // Basic info
-  noticeId: { type: String, required: true, unique: true }, // e.g., PN-A3F2B1
+  noticeId: { type: String, required: true, unique: true }, // e.g., AV202607043841
   status: { type: String, enum: ['draft', 'scheduled', 'in_progress', 'completed', 'cancelled'], default: 'draft' },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   sourceBookingId: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking', default: null }, // auto-created from booking
@@ -10,14 +10,17 @@ const InspectionNoticeSchema = new mongoose.Schema({
 
   // SECTION 1: Basic Information
   basicInfo: {
-    serviceType: { type: String, enum: ['Pre-Shipment Inspection', 'Container Loading Supervision', 'Factory Audit', 'During Production Inspection'] },
+    serviceType: { type: String, enum: ['Pre-Shipment Inspection', 'Container Loading Supervision', 'Factory Audit', 'During Production Inspection', 'Others'] },
+    serviceTypeOther: { type: String, default: '' }, // free-text description when serviceType is "Others"
     sameDayReport: { type: Boolean, default: false },
     onlineReport: { type: Boolean, default: false },
+    offlineReport: { type: Boolean, default: false },
     inspectionDateFrom: { type: Date },
     inspectionDateTo: { type: Date },
     inspectionLocation: { type: String },
     customerName: { type: String },
     productCategory: { type: String },
+    productCategoryOther: { type: String, default: '' }, // free-text description when productCategory is "Others"
     attentiveOrder: { type: Boolean, default: false },
     csSatisfactionBonus: { type: Boolean, default: false },
     externalBookingRef: { type: String, default: '' }, // booking website reference ID
@@ -32,6 +35,7 @@ const InspectionNoticeSchema = new mongoose.Schema({
     inspectors: [{
       inspectorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
       name: String,
+      email: { type: String, default: '' }, // used to notify third-party inspectors with no platform account
       dateFrom: Date,
       dateTo: Date,
       mobile: String,
@@ -112,10 +116,10 @@ const InspectionNoticeSchema = new mongoose.Schema({
     technicalManagerReviewed: { type: Boolean, default: false },
     generalWorkInstructions: [{ type: String }],
     operationalWorkInstructions: [{ type: String }],
-    onlineWI: { type: String },
-    reportTemplate: { type: String },
+    onlineWI: { fileName: String, url: String },
+    reportTemplate: [{ fileName: String, uploadDate: Date, url: String }],
     customerClaimForm: { type: String },
-    onlineCustomerClaimForm: { type: String },
+    onlineCustomerClaimForm: { fileName: String, url: String },
     clientGeneralMaterials: { type: String }
   },
 
@@ -162,6 +166,7 @@ const InspectionNoticeSchema = new mongoose.Schema({
     factoryName: String,
     englishName: String,
     address: String,
+    googleMapsLink: String,
     mainContactPerson: String,
     otherContactPersons: String,
     phone: String,
@@ -170,7 +175,8 @@ const InspectionNoticeSchema = new mongoose.Schema({
     equipmentInstruments: String,
     communicationEquipment: String,
     inspectionEnvironment: String,
-    workingTime: String,
+    workingTimeStart: String,
+    workingTimeEnd: String,
     transportationRoute: String,
     accommodationNearFactory: String,
     notesOnFactoryDisagreements: String,
@@ -184,10 +190,11 @@ const InspectionNoticeSchema = new mongoose.Schema({
     inspectorName: String
   }],
 
-  // SECTION 16: Instructional Letters Reading Record
-  readingRecords: [{
-    inspectorName: String,
-    timeViewed: Date
+  // SECTION 16: Instructional Letters Reading Record — logs each time the
+  // notice is actually submitted (status set to 'scheduled'), not page views.
+  submissionRecords: [{
+    submittedBy: String,
+    timeSubmitted: Date
   }],
 
   // REPORT (ONLINE) TAB

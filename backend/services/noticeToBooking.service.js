@@ -16,6 +16,8 @@ const Task = require('../models/task.model');
 const Notification = require('../models/notification.model');
 const SystemNotification = require('../models/systemNotification.model');
 const { generateClientCode } = require('../utils/clientCode');
+const { enqueueEmail } = require('./email.queue');
+const { renderTemplate, formatEmailDate } = require('./email.service');
 
 // Map Inspection Notice service types → Booking.inspectionType enum
 const SERVICE_TYPE_TO_BOOKING = {
@@ -65,7 +67,7 @@ function buildPrefillData(notice) {
       contact: fi.mainContactPerson || '',
       phone:   fi.phone || '',
       mobile:  fi.mobile || '',
-      workingTime: fi.workingTime || '',
+      workingTime: (fi.workingTimeStart && fi.workingTimeEnd) ? `${fi.workingTimeStart} - ${fi.workingTimeEnd}` : '',
       environment: fi.inspectionEnvironment || '',
     },
     inspectionDate: bi.inspectionDateFrom || null,
@@ -166,7 +168,7 @@ async function provisionFromNotice(notice, adminId) {
 
   const clientCode = notice.clientCode || generateClientCode(
     bi.customerName || '',
-    bi.inspectionLocation || ''
+    pi.destination || bi.inspectionLocation || ''
   );
 
   const createdBookings = [];
@@ -254,6 +256,30 @@ async function provisionFromNotice(notice, adminId) {
         .lean();
       if (all.length > 10) {
         await Notification.deleteMany({ _id: { $in: all.slice(10).map(n => n._id) } });
+      }
+    } else if (inspector.email) {
+      // Third-party inspector with no platform account — the only way to reach
+      // them is a direct email, since they can't receive an in-app Notification/Task.
+      try {
+        const html = renderTemplate('third-party-inspector-assigned.html', {
+          inspectorName: inspector.name || 'Inspector',
+          noticeId: notice.noticeId || '',
+          serviceType: bi.serviceType || 'Inspection',
+          clientName: bi.customerName || 'Unknown Client',
+          factoryName: fi.factoryName || fi.englishName || 'N/A',
+          factoryAddress: fi.address || 'N/A',
+          scheduledDate: formatEmailDate(bi.inspectionDateFrom || new Date()),
+          role: inspector.role || 'Member',
+        });
+        await enqueueEmail({
+          reportId: booking._id,
+          recipient: inspector.email,
+          subject: `[NEW ASSIGNMENT] ${bi.serviceType || 'Inspection'} — ${bi.customerName || 'Client'}`,
+          type: 'third_party_inspector_assigned',
+          html,
+        });
+      } catch (err) {
+        console.warn('[noticeToBooking] Failed to email third-party inspector:', err.message);
       }
     }
   }
