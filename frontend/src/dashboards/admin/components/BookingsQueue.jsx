@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  ClipboardList, Send, CheckCircle, Search, ChevronDown, Filter, Mail, ArrowRight, UserPlus, Plus
+  ClipboardList, Send, CheckCircle, Search, ChevronDown, Filter, Mail, ArrowRight, UserPlus, Plus, FileEdit
 } from 'lucide-react';
 
 export default function BookingsQueue({
@@ -238,8 +238,11 @@ export default function BookingsQueue({
                               onClick={(e) => { e.stopPropagation(); onPrepareNotice?.(booking); }}
                               className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-sm transition-all cursor-pointer ml-auto"
                             >
-                              <ClipboardList className="w-4 h-4" />
-                              Prepare Notice
+                              {booking.linkedNoticeId ? (
+                                <><FileEdit className="w-4 h-4" /> Edit Notice</>
+                              ) : (
+                                <><ClipboardList className="w-4 h-4" /> Prepare Notice</>
+                              )}
                             </button>
                           ) : booking.status === 'Ready to Deliver' ? (
                             <button 
@@ -258,8 +261,11 @@ export default function BookingsQueue({
                               onClick={(e) => { e.stopPropagation(); onPrepareNotice?.(booking); }}
                               className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-sm transition-all cursor-pointer ml-auto"
                             >
-                              <ClipboardList className="w-4 h-4" />
-                              Prepare Notice
+                              {booking.linkedNoticeId ? (
+                                <><FileEdit className="w-4 h-4" /> Edit Notice</>
+                              ) : (
+                                <><ClipboardList className="w-4 h-4" /> Prepare Notice</>
+                              )}
                             </button>
                           )}
                         </td>

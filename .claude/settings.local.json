@@ -21,7 +21,20 @@
       "Bash(dir frontend/public/)",
       "Bash(npx kill-port *)",
       "Bash(npm run *)",
-      "Bash(curl -s http://localhost:5000/)"
+      "Bash(curl -s http://localhost:5000/)",
+      "Bash(mkdir -p backend/assets)",
+      "Bash(cp frontend/public/company-logo.png backend/assets/company-logo.png)",
+      "Bash(git rm *)",
+      "Bash(xargs grep -l \"sendTestEmail\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Projects\\\\report-app-main\\\\frontend\\\\src\\\\dashboards\\\\admin\" -Directory -ErrorAction SilentlyContinue)",
+      "Bash(Get-ChildItem *)",
+      "Bash(curl -s -X POST http://localhost:5000/api/auth/signup -H \"Content-Type: application/json\" -d '{\"name\":\"Test\",\"email\":\"t@t.com\",\"password\":\"123456\"}')",
+      "Bash(curl -s http://localhost:5000/api/auth/signup -X POST -H \"Content-Type: application/json\" -d '{\"name\":\"Test\",\"email\":\"t@t.com\",\"password\":\"123456\"}')",
+      "Bash(curl -s -w \"\\\\nHTTP Status: %{http_code}\\\\n\" -X POST http://localhost:5000/api/auth/signup -H \"Content-Type: application/json\" -d '{\"name\":\"Test\",\"email\":\"t@t.com\",\"password\":\"123456\"}')",
+      "PowerShell(New-Item *)",
+      "Bash(npx eslint *)",
+      "Bash(npm install *)",
+      "Bash(echo \"exit code: $?\")"
     ]
   }
 }
