@@ -45,7 +45,7 @@ const getTasks = async (req, res) => {
         { reportSubmittedAt: { $gt: cutoff } },      // submitted, still within the 72h window
         { reportSubmittedAt: null },                 // legacy data safety net — never hide if we don't know when it was submitted
       ],
-    }).sort({ scheduledDate: 1 });
+    }).sort({ scheduledDate: -1 });
     res.json({ tasks });
   } catch (err) {
     res.status(500).json({ error: "Server error", detail: err.message });
