@@ -1,4 +1,5 @@
 const InspectionNotice = require("../models/InspectionNotice");
+const Expense = require("../models/expense.model");
 const { provisionFromNotice } = require("../services/noticeToBooking.service");
 const { generateClientCode } = require("../utils/clientCode");
 const wasabiService = require("../services/wasabiService");
@@ -134,8 +135,6 @@ exports.resolveDocumentUrl = async (req, res) => {
 exports.getNoticeExpenses = async (req, res) => {
   try {
     const { id } = req.params;
-    const Expense = require('../models/expense.model');
-    const wasabiService = require('../services/wasabiService');
 
     const expenses = await Expense.find({ noticeId: id }).populate('inspectorId', 'name email');
 
