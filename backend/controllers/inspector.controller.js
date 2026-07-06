@@ -3,6 +3,7 @@ const Notification = require('../models/notification.model');
 const notifyStaff = require('../utils/notifyStaff');
 const InspectionNotice = require('../models/InspectionNotice');
 const wasabiService = require('../services/wasabiService');
+const Expense = require('../models/expense.model');
 
 const NOTICE_SUMMARY_FIELDS = 'basicInfo teamAssignment productInfo aql inspectionRequirements specialClientRequirements customerSamples inspectionInfo attachments inspectionTools onSiteTests defectClassifications supplierInfo factoryInfo noticeId';
 
@@ -181,6 +182,64 @@ const submitNoticeQuery = async (req, res) => {
   }
 };
 
+const getTaskExpense = async (req, res) => {
+  try {
+    const userId = req.user.id || req.user._id;
+    const task = await Task.findOne({ _id: req.params.taskId, assignedInspectorId: userId });
+    if (!task) return res.status(404).json({ error: "Task not found" });
+
+    const expense = await Expense.findOne({ taskId: task._id });
+    res.json({ expense: expense || { taskId: task._id, files: [], remarks: '' } });
+  } catch (err) {
+    res.status(500).json({ error: "Server error", detail: err.message });
+  }
+};
+
+const uploadTaskExpenseFile = async (req, res) => {
+  try {
+    const userId = req.user.id || req.user._id;
+    const task = await Task.findOne({ _id: req.params.taskId, assignedInspectorId: userId });
+    if (!task) return res.status(404).json({ error: "Task not found" });
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+    const { url } = await wasabiService.uploadFile(req.file);
+    const entry = { fileName: req.file.originalname, url, uploadedAt: new Date() };
+
+    const expense = await Expense.findOneAndUpdate(
+      { taskId: task._id },
+      {
+        $push: { files: entry },
+        $setOnInsert: { taskId: task._id, inspectorId: userId, noticeId: task.prefillData?.noticeId || null },
+      },
+      { new: true, upsert: true }
+    );
+    res.json({ expense });
+  } catch (err) {
+    res.status(500).json({ error: "Server error", detail: err.message });
+  }
+};
+
+const updateTaskExpenseRemarks = async (req, res) => {
+  try {
+    const userId = req.user.id || req.user._id;
+    const { remarks } = req.body;
+    const task = await Task.findOne({ _id: req.params.taskId, assignedInspectorId: userId });
+    if (!task) return res.status(404).json({ error: "Task not found" });
+
+    const expense = await Expense.findOneAndUpdate(
+      { taskId: task._id },
+      {
+        remarks: remarks || '',
+        $setOnInsert: { taskId: task._id, inspectorId: userId, noticeId: task.prefillData?.noticeId || null },
+      },
+      { new: true, upsert: true }
+    );
+    res.json({ expense });
+  } catch (err) {
+    res.status(500).json({ error: "Server error", detail: err.message });
+  }
+};
+
 const acceptTask = async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
@@ -280,6 +339,9 @@ module.exports = {
   getTaskById,
   getTaskNotice,
   submitNoticeQuery,
+  getTaskExpense,
+  uploadTaskExpenseFile,
+  updateTaskExpenseRemarks,
   acceptTask,
   addSectionSkipReason,
   getNotifications,
