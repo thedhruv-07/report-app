@@ -36,6 +36,7 @@ export default function TaskWorkspace() {
     fetch(ENDPOINTS.INSPECTOR.TASK_BY_ID(taskId), { headers: { Authorization: `Bearer ${token}` } })
       .then(res => res.json())
       .then(data => { if (data.task) setTask(data.task); })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [task, taskId, token]);
 
