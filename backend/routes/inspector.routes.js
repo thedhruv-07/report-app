@@ -14,6 +14,7 @@ router.get("/dashboard/summary", inspectorController.getSummary);
 
 // Tasks
 router.get("/tasks", inspectorController.getTasks);
+router.get("/tasks/archived-count", inspectorController.getArchivedCount);
 router.get("/tasks/:taskId", inspectorController.getTaskById);
 router.post("/tasks/:taskId/accept", inspectorController.acceptTask);
 router.patch("/tasks/:taskId/section-skip", inspectorController.addSectionSkipReason);

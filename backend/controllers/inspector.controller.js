@@ -31,11 +31,61 @@ const getSummary = async (req, res) => {
   }
 };
 
+const ARCHIVABLE_STATUSES = ['Report Submitted', 'Under Review', 'Finalized'];
+const ARCHIVE_WINDOW_MS = 72 * 60 * 60 * 1000;
+
 const getTasks = async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
-    const tasks = await Task.find({ assignedInspectorId: userId }).sort({ scheduledDate: 1 });
+    const cutoff = new Date(Date.now() - ARCHIVE_WINDOW_MS);
+    const tasks = await Task.find({
+      assignedInspectorId: userId,
+      $or: [
+        { status: { $nin: ARCHIVABLE_STATUSES } },  // not yet submitted, or Correction Requested — always visible
+        { reportSubmittedAt: { $gt: cutoff } },      // submitted, still within the 72h window
+        { reportSubmittedAt: null },                 // legacy data safety net — never hide if we don't know when it was submitted
+      ],
+    }).sort({ scheduledDate: 1 });
     res.json({ tasks });
+  } catch (err) {
+    res.status(500).json({ error: "Server error", detail: err.message });
+  }
+};
+
+const getArchivedCount = async (req, res) => {
+  try {
+    const userId = req.user.id || req.user._id;
+    const { month, year, date } = req.query;
+
+    let start, end;
+    if (date) {
+      start = new Date(`${date}T00:00:00.000Z`);
+      end = new Date(`${date}T23:59:59.999Z`);
+      if (!isNaN(start.getTime()) && start.toISOString().slice(0, 10) !== date) {
+        return res.status(400).json({ error: 'Provide either date, or month and year' });
+      }
+    } else if (month && year) {
+      const monthNum = Number(month);
+      if (!Number.isInteger(monthNum) || monthNum < 1 || monthNum > 12) {
+        return res.status(400).json({ error: 'Provide either date, or month and year' });
+      }
+      start = new Date(Date.UTC(Number(year), monthNum - 1, 1));
+      end = new Date(Date.UTC(Number(year), monthNum, 0, 23, 59, 59, 999));
+    } else {
+      return res.status(400).json({ error: 'Provide either date, or month and year' });
+    }
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return res.status(400).json({ error: 'Provide either date, or month and year' });
+    }
+
+    const count = await Task.countDocuments({
+      assignedInspectorId: userId,
+      status: { $in: ['Report Submitted', 'Under Review', 'Finalized', 'Correction Requested'] },
+      reportSubmittedAt: { $gte: start, $lte: end },
+    });
+
+    res.json({ count });
   } catch (err) {
     res.status(500).json({ error: "Server error", detail: err.message });
   }
@@ -147,6 +197,7 @@ const addSectionSkipReason = async (req, res) => {
 module.exports = {
   getSummary,
   getTasks,
+  getArchivedCount,
   getTaskById,
   acceptTask,
   addSectionSkipReason,
