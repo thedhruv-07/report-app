@@ -774,7 +774,20 @@ export default function NoticeTab({ formData, updateSection, updateRootField, in
 
   return (
     <div className="space-y-6">
-      
+
+      {(formData.inspectorQueries || []).length > 0 && (
+        <SectionCard title="Inspector Queries" defaultOpen={true}>
+          <div className="space-y-2">
+            {[...formData.inspectorQueries].reverse().map((q, idx) => (
+              <div key={idx} className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5">
+                <p className="text-sm text-slate-700">{q.message}</p>
+                <p className="text-[11px] text-slate-500 mt-1">{q.inspectorName} · {new Date(q.raisedAt).toLocaleString()}</p>
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+      )}
+
       {/* SECTION 1: Basic Information */}
       <SectionCard title="SECTION 1: Basic Information">
         <div className="border border-slate-200 rounded-xl overflow-hidden">
@@ -1698,6 +1711,7 @@ export default function NoticeTab({ formData, updateSection, updateRootField, in
               </button>
             </div>
           </TableRow>
+          <TableRow label="Landmark"><input className={inputClass} placeholder="e.g. Opposite XYZ Petrol Pump" value={factoryInfo.landmark || ''} onChange={e => updateSection('factoryInfo', { landmark: e.target.value })} /></TableRow>
           <TableRow label="Main Contact Person"><input className={inputClass} value={factoryInfo.mainContactPerson || ''} onChange={e => updateSection('factoryInfo', { mainContactPerson: e.target.value })} /></TableRow>
           <TableRow label="Other Contact Persons"><input className={inputClass} value={factoryInfo.otherContactPersons || ''} onChange={e => updateSection('factoryInfo', { otherContactPersons: e.target.value })} /></TableRow>
           <TableRow label="Phone"><input className={inputClass} value={factoryInfo.phone || ''} onChange={e => updateSection('factoryInfo', { phone: e.target.value })} /></TableRow>

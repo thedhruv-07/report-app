@@ -5,7 +5,7 @@ const InspectionNotice = require('../models/InspectionNotice');
 const wasabiService = require('../services/wasabiService');
 const Expense = require('../models/expense.model');
 
-const NOTICE_SUMMARY_FIELDS = 'basicInfo teamAssignment productInfo aql inspectionRequirements specialClientRequirements customerSamples inspectionInfo attachments inspectionTools onSiteTests defectClassifications supplierInfo factoryInfo noticeId';
+const NOTICE_SUMMARY_FIELDS = 'basicInfo teamAssignment productInfo aql inspectionRequirements specialClientRequirements customerSamples inspectionInfo attachments inspectionTools onSiteTests defectClassifications supplierInfo factoryInfo noticeId clientCode';
 
 async function resolveNoticeDocUrls(notice) {
   const resolve = async (entry) => {
@@ -276,6 +276,7 @@ const acceptTask = async (req, res) => {
       message: `${inspectorName} accepted the ${typeLabel} task for ${clientLabel}.`,
       type: 'info',
       priority: 2,
+      relatedTaskId: task._id,
       emailSubject: `[TASK ACCEPTED] ${inspectorName} accepted ${typeLabel} — ${clientLabel}`,
       templateName: 'task-accepted.html',
       templateVars: {

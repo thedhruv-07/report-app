@@ -336,7 +336,7 @@ export default function InspectionNoticeForm() {
             />
           )}
           {activeTab === 'Expense' && (
-            <ExpenseTab />
+            <ExpenseTab recordId={id} token={token} />
           )}
           {activeTab === 'Report (Online)' && (
             <ReportTab
