@@ -1,6 +1,40 @@
 const Task = require('../models/task.model');
 const Notification = require('../models/notification.model');
 const notifyStaff = require('../utils/notifyStaff');
+const InspectionNotice = require('../models/InspectionNotice');
+const wasabiService = require('../services/wasabiService');
+
+const NOTICE_SUMMARY_FIELDS = 'basicInfo teamAssignment productInfo aql inspectionRequirements specialClientRequirements customerSamples inspectionInfo attachments inspectionTools onSiteTests defectClassifications supplierInfo factoryInfo noticeId';
+
+async function resolveNoticeDocUrls(notice) {
+  const resolve = async (entry) => {
+    if (!entry || !entry.url) return entry;
+    try {
+      const key = wasabiService.extractKey(entry.url);
+      const signedUrl = await wasabiService.getSignedUrl(key);
+      return { ...entry, url: signedUrl };
+    } catch {
+      return entry;
+    }
+  };
+
+  const info = notice.inspectionInfo || {};
+  const att = notice.attachments || {};
+
+  const [onlineWI, onlineCustomerClaimForm, reportTemplate, clientFiles, supplierFiles] = await Promise.all([
+    resolve(info.onlineWI),
+    resolve(info.onlineCustomerClaimForm),
+    Promise.all((info.reportTemplate || []).map(resolve)),
+    Promise.all((att.clientFiles || []).map(resolve)),
+    Promise.all((att.supplierFiles || []).map(resolve)),
+  ]);
+
+  return {
+    ...notice.toObject(),
+    inspectionInfo: { ...info, onlineWI, onlineCustomerClaimForm, reportTemplate },
+    attachments: { ...att, clientFiles, supplierFiles },
+  };
+}
 
 const getSummary = async (req, res) => {
   try {
@@ -97,6 +131,50 @@ const getTaskById = async (req, res) => {
     const task = await Task.findOne({ _id: req.params.taskId, assignedInspectorId: userId });
     if (!task) return res.status(404).json({ error: "Task not found" });
     res.json({ task });
+  } catch (err) {
+    res.status(500).json({ error: "Server error", detail: err.message });
+  }
+};
+
+const getTaskNotice = async (req, res) => {
+  try {
+    const userId = req.user.id || req.user._id;
+    const task = await Task.findOne({ _id: req.params.taskId, assignedInspectorId: userId });
+    if (!task) return res.status(404).json({ error: "Task not found" });
+
+    const noticeId = task.prefillData?.noticeId;
+    if (!noticeId) return res.json({ notice: null });
+
+    const notice = await InspectionNotice.findOne({ noticeId }).select(NOTICE_SUMMARY_FIELDS + ' inspectorQueries');
+    if (!notice) return res.json({ notice: null });
+
+    const resolved = await resolveNoticeDocUrls(notice);
+    res.json({ notice: resolved });
+  } catch (err) {
+    res.status(500).json({ error: "Server error", detail: err.message });
+  }
+};
+
+const submitNoticeQuery = async (req, res) => {
+  try {
+    const userId = req.user.id || req.user._id;
+    const { message } = req.body;
+    if (!message || !message.trim()) return res.status(400).json({ error: "message is required" });
+
+    const task = await Task.findOne({ _id: req.params.taskId, assignedInspectorId: userId });
+    if (!task) return res.status(404).json({ error: "Task not found" });
+
+    const noticeId = task.prefillData?.noticeId;
+    if (!noticeId) return res.status(400).json({ error: "This task has no linked notice" });
+
+    const notice = await InspectionNotice.findOneAndUpdate(
+      { noticeId },
+      { $push: { inspectorQueries: { inspectorId: userId, inspectorName: req.user.name, message: message.trim(), raisedAt: new Date() } } },
+      { new: true }
+    ).select('inspectorQueries');
+    if (!notice) return res.status(404).json({ error: "Notice not found" });
+
+    res.json({ inspectorQueries: notice.inspectorQueries });
   } catch (err) {
     res.status(500).json({ error: "Server error", detail: err.message });
   }
@@ -199,6 +277,8 @@ module.exports = {
   getTasks,
   getArchivedCount,
   getTaskById,
+  getTaskNotice,
+  submitNoticeQuery,
   acceptTask,
   addSectionSkipReason,
   getNotifications,
