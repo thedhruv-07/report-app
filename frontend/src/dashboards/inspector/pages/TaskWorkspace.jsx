@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from '../../../context/AuthContext';
 import { ENDPOINTS } from '../../../config/api';
@@ -6,6 +6,11 @@ import { clearFormStorage } from '../../../shared/services';
 import { ChevronLeft, FileText, Receipt, ClipboardList } from "lucide-react";
 import NoticeSummary from '../components/NoticeSummary';
 import ExpensePanel from '../components/ExpensePanel';
+
+const PSIForm = lazy(() => import('../../../reports/PSI/PSIForm.jsx'));
+const CLSForm = lazy(() => import('../../../reports/CLS/CLSForm.jsx'));
+const FactoryAuditForm = lazy(() => import('../../../reports/FactoryAudit/FactoryAuditForm.jsx'));
+const DPIForm = lazy(() => import('../../../reports/DPI/DPIForm.jsx'));
 
 const TABS = [
   { key: 'notice', label: 'Notice', icon: ClipboardList },
@@ -19,6 +24,13 @@ const INSPECTION_ROUTES = {
   'Factory Audit': '/dashboard/factory-audit',
   'DPI': '/dashboard/during-production',
   'Social Audit': '/dashboard/social-audit',
+};
+
+const REPORT_FORM_COMPONENTS = {
+  'PSI': PSIForm,
+  'CLS': CLSForm,
+  'Factory Audit': FactoryAuditForm,
+  'DPI': DPIForm,
 };
 
 export default function TaskWorkspace() {
@@ -42,14 +54,18 @@ export default function TaskWorkspace() {
 
   const handleOpenReport = () => {
     if (!task) return;
-    const savedTaskId = localStorage.getItem('inspectionTaskId');
-    if (savedTaskId !== task._id) {
-      clearFormStorage(INSPECTION_ROUTES[task.inspectionType] || '/dashboard/pre-shipment');
-    }
     navigate(INSPECTION_ROUTES[task.inspectionType] || '/dashboard/pre-shipment', { state: { task } });
   };
 
-  const statusLabel = useMemo(() => task?.status === 'Accepted' ? 'Awaiting Report' : task?.status, [task]);
+  useEffect(() => {
+    if (!task) return;
+    const savedTaskId = localStorage.getItem('inspectionTaskId');
+    if (savedTaskId && savedTaskId !== task._id) {
+      clearFormStorage(INSPECTION_ROUTES[task.inspectionType] || '/dashboard/pre-shipment');
+    }
+  }, [task]);
+
+  const ReportFormComponent = task ? REPORT_FORM_COMPONENTS[task.inspectionType] : null;
 
   if (loading) {
     return <div className="p-8 text-sm text-slate-500">Loading task…</div>;
@@ -75,20 +91,14 @@ export default function TaskWorkspace() {
         >
           <ChevronLeft className="w-3.5 h-3.5" /> Back to Dashboard
         </button>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-base font-bold text-slate-900">{task.clientName}</h1>
-            <p className="text-xs text-slate-500">{task.factoryName} · {task.inspectionType} · {statusLabel}</p>
-          </div>
-        </div>
 
-        <div className="flex gap-6 mt-4 border-b border-slate-200 -mb-4">
+        <div className="flex gap-6 border-b border-slate-200 -mb-4">
           {TABS.map(tab => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.key}
-                onClick={() => tab.key === 'report' ? handleOpenReport() : setActiveTab(tab.key)}
+                onClick={() => setActiveTab(tab.key)}
                 className={`pb-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-1.5 ${
                   activeTab === tab.key ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}
@@ -101,10 +111,25 @@ export default function TaskWorkspace() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6">
-        {activeTab === 'notice' && <NoticeSummary taskId={task._id} />}
-        {activeTab === 'expense' && <ExpensePanel taskId={task._id} />}
-      </div>
+      {activeTab === 'report' ? (
+        <div className="flex-1 overflow-hidden">
+          {ReportFormComponent ? (
+            <Suspense fallback={<div className="p-8 text-sm text-slate-500">Loading report…</div>}>
+              <ReportFormComponent />
+            </Suspense>
+          ) : (
+            <div className="p-8">
+              <p className="text-sm text-slate-500 mb-3">Report editor not available for this inspection type.</p>
+              <button onClick={handleOpenReport} className="text-sm font-semibold text-blue-600">Open in new page</button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto p-6">
+          {activeTab === 'notice' && <NoticeSummary taskId={task._id} />}
+          {activeTab === 'expense' && <ExpensePanel taskId={task._id} />}
+        </div>
+      )}
     </div>
   );
 }
