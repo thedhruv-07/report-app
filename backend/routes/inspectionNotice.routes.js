@@ -19,6 +19,7 @@ router.post("/upload-document", roleCheck(["admin", "manager"]), upload.single('
 router.post("/resolve-document-url", roleCheck(["admin", "manager"]), inspectionNoticeController.resolveDocumentUrl);
 router.get("/:id", inspectionNoticeController.getNoticeById);
 router.get("/:id/recent-by-factory", inspectionNoticeController.getRecentByFactory);
+router.get("/:id/expenses", roleCheck(["admin", "manager"]), inspectionNoticeController.getNoticeExpenses);
 router.put("/:id", roleCheck(["admin", "manager"]), inspectionNoticeController.updateNotice);
 router.delete("/:id", roleCheck(["admin"]), inspectionNoticeController.deleteNotice);
 router.patch("/:id/status", roleCheck(["admin", "manager"]), inspectionNoticeController.updateStatus);

@@ -131,6 +131,38 @@ exports.resolveDocumentUrl = async (req, res) => {
   }
 };
 
+exports.getNoticeExpenses = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const Expense = require('../models/expense.model');
+    const wasabiService = require('../services/wasabiService');
+
+    const expenses = await Expense.find({ noticeId: id }).populate('inspectorId', 'name email');
+
+    const resolved = await Promise.all(expenses.map(async (exp) => {
+      const files = await Promise.all((exp.files || []).map(async (f) => {
+        try {
+          const key = wasabiService.extractKey(f.url);
+          const signedUrl = await wasabiService.getSignedUrl(key);
+          return { ...f.toObject(), url: signedUrl };
+        } catch (err) {
+          // Same reasoning as resolveNoticeDocUrls in Task 3 — the bucket has
+          // public-read blocked account-wide, so an unsigned fallback URL is
+          // guaranteed to 403. Null it out instead of handing back a dead link.
+          console.error('[getNoticeExpenses] Failed to resolve signed URL:', err.message);
+          return { ...f.toObject(), url: null };
+        }
+      }));
+      return { ...exp.toObject(), files };
+    }));
+
+    res.json({ expenses: resolved });
+  } catch (error) {
+    console.error("Error fetching notice expenses:", error);
+    res.status(500).json({ error: "Failed to fetch expenses" });
+  }
+};
+
 exports.createNotice = async (req, res) => {
   try {
     let { noticeId } = req.body;
