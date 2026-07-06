@@ -34,7 +34,21 @@
       "PowerShell(New-Item *)",
       "Bash(npx eslint *)",
       "Bash(npm install *)",
-      "Bash(echo \"exit code: $?\")"
+      "Bash(echo \"exit code: $?\")",
+      "Bash(find docs/superpowers/plans -iname \"*archival*\")",
+      "Bash(ls docs/superpowers/plans)",
+      "Bash(curl *)",
+      "Bash(awk -F= '{print length\\($2\\)}')",
+      "Bash(git status *)",
+      "Bash(ls .env*)",
+      "Bash(grep -c \"JWT_SECRET\\\\|MONGO_URI\\\\|^PORT\" .env)",
+      "Bash(grep -n \"getArchivedCount\\\\|archived\" backend/routes/inspector*.js)",
+      "Bash(grep -rn \"reportSubmittedAt\" backend/models/*.js backend/models/**/*.js)",
+      "Bash(npx vite *)",
+      "Bash(echo \"EXIT:$?\")",
+      "Skill(run)",
+      "Bash(command -v chromium-cli)",
+      "Bash(npx --no-install chromium-cli --version)"
     ]
   }
 }

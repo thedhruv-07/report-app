@@ -69,6 +69,12 @@ export default function Dashboard() {
   const [selectedTask, setSelectedTask] = useState(null);
   const [acceptingTaskId, setAcceptingTaskId] = useState(null);
 
+  const [archiveMonthYear, setArchiveMonthYear] = useState(""); // "YYYY-MM" from <input type="month">
+  const [archiveDate, setArchiveDate] = useState("");           // "YYYY-MM-DD" from <input type="date">
+  const [archiveResult, setArchiveResult] = useState(null);     // number | null
+  const [archiveLoading, setArchiveLoading] = useState(false);
+  const [archiveError, setArchiveError] = useState(null);
+
   const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
@@ -120,6 +126,33 @@ export default function Dashboard() {
       console.error("Accept task error:", err);
     } finally {
       setAcceptingTaskId(null);
+    }
+  };
+
+  const handleArchiveSearch = async () => {
+    if (!archiveMonthYear && !archiveDate) return;
+    setArchiveLoading(true);
+    setArchiveError(null);
+    setArchiveResult(null);
+    try {
+      const params = new URLSearchParams();
+      if (archiveDate) {
+        params.set('date', archiveDate);
+      } else {
+        const [year, month] = archiveMonthYear.split('-');
+        params.set('year', year);
+        params.set('month', String(Number(month)));
+      }
+      const res = await fetch(`${ENDPOINTS.INSPECTOR.ARCHIVED_COUNT}?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Search failed');
+      const data = await res.json();
+      setArchiveResult(data.count);
+    } catch {
+      setArchiveError('Could not fetch archived report count.');
+    } finally {
+      setArchiveLoading(false);
     }
   };
 
@@ -289,6 +322,40 @@ export default function Dashboard() {
               </button>
             );
           })}
+        </div>
+
+        {/* Archived Reports count-search — reports older than 72h no longer appear in the grid above;
+            this looks up how many were submitted in a given period without exposing their details. */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+          <h3 className="text-sm font-bold text-slate-700 shrink-0">Search Archived Reports</h3>
+          <input
+            type="month"
+            value={archiveMonthYear}
+            onChange={(e) => { setArchiveMonthYear(e.target.value); setArchiveDate(""); setArchiveResult(null); setArchiveError(null); }}
+            aria-label="Search by month"
+            className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm"
+          />
+          <span className="text-xs text-slate-400">or</span>
+          <input
+            type="date"
+            value={archiveDate}
+            onChange={(e) => { setArchiveDate(e.target.value); setArchiveMonthYear(""); setArchiveResult(null); setArchiveError(null); }}
+            aria-label="Search by date"
+            className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm"
+          />
+          <button
+            onClick={handleArchiveSearch}
+            disabled={archiveLoading || (!archiveMonthYear && !archiveDate)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-sm font-semibold disabled:opacity-50"
+          >
+            {archiveLoading ? 'Searching…' : 'Search'}
+          </button>
+          {archiveError && <span className="text-sm text-red-600">{archiveError}</span>}
+          {archiveResult !== null && !archiveError && (
+            <span className="text-sm text-slate-700">
+              <strong className="text-blue-600">{archiveResult}</strong> report{archiveResult !== 1 ? 's' : ''} submitted in this period
+            </span>
+          )}
         </div>
 
         <Suspense fallback={null}>

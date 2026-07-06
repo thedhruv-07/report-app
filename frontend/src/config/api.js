@@ -32,6 +32,7 @@ export const ENDPOINTS = {
   INSPECTOR: {
     SUMMARY: `${API_BASE_URL}/api/inspector/dashboard/summary`,
     TASKS: `${API_BASE_URL}/api/inspector/tasks`,
+    ARCHIVED_COUNT: `${API_BASE_URL}/api/inspector/tasks/archived-count`,
     TASK_BY_ID: (id) => `${API_BASE_URL}/api/inspector/tasks/${id}`,
     ACCEPT_TASK: (id) => `${API_BASE_URL}/api/inspector/tasks/${id}/accept`,
     SECTION_SKIP: (id) => `${API_BASE_URL}/api/inspector/tasks/${id}/section-skip`,
