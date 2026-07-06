@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { useAuth } from '../../context/AuthContext';
 import { ENDPOINTS } from '../../config/api';
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { clearFormStorage } from '../../shared/services';
 import {
   ClipboardList,
   Clock,
@@ -102,12 +101,19 @@ export default function Dashboard() {
     if (taskId && tasks.length > 0 && !loading) {
       const taskToOpen = tasks.find(t => t._id === taskId);
       if (taskToOpen) {
-        setSelectedTask(taskToOpen);
-        // Remove param from URL without refreshing so it doesn't re-open on close
         setSearchParams({}, { replace: true });
+        handleSelectTask(taskToOpen);
       }
     }
   }, [searchParams, tasks, loading, setSearchParams]);
+
+  const handleSelectTask = (task) => {
+    if (task.status === 'Pending Acceptance') {
+      setSelectedTask(task);
+    } else {
+      navigate(`/dashboard/inspector/task/${task._id}`, { state: { task } });
+    }
+  };
 
   const handleAcceptTask = async (taskId) => {
     try {
@@ -154,25 +160,6 @@ export default function Dashboard() {
     } finally {
       setArchiveLoading(false);
     }
-  };
-
-  const getInspectionRoute = (type) => ({
-    'PSI': '/dashboard/pre-shipment',
-    'CLS': '/dashboard/container-loading',
-    'Factory Audit': '/dashboard/factory-audit',
-    'DPI': '/dashboard/during-production',
-    'Social Audit': '/dashboard/social-audit',
-  })[type] || '/dashboard/pre-shipment';
-
-  const handleStartReport = (task) => {
-    // Only wipe storage if the inspector is switching to a DIFFERENT task.
-    // If they click "Start Report" for the same task they were already working on,
-    // preserve their progress (step, form data, photos, etc.).
-    const savedTaskId = localStorage.getItem('inspectionTaskId');
-    if (savedTaskId !== task._id) {
-      clearFormStorage(getInspectionRoute(task.inspectionType));
-    }
-    navigate(getInspectionRoute(task.inspectionType), { state: { task } });
   };
 
   const filteredTasks = tasks.filter(task => {
@@ -370,7 +357,7 @@ export default function Dashboard() {
             statusFilter={statusFilter}
             getStatusConfig={getStatusConfig}
             getDisplayStatus={getDisplayStatus}
-            onSelectTask={setSelectedTask}
+            onSelectTask={handleSelectTask}
             onClearFilters={handleClearFilters}
           />
         </Suspense>
@@ -382,7 +369,6 @@ export default function Dashboard() {
           acceptingTaskId={acceptingTaskId}
           onClose={() => setSelectedTask(null)}
           onAcceptTask={handleAcceptTask}
-          onStartReport={handleStartReport}
           getStatusConfig={getStatusConfig}
           getDisplayStatus={getDisplayStatus}
         />

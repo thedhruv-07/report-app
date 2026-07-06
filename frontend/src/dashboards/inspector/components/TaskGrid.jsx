@@ -92,7 +92,7 @@ export default function TaskGrid({
                   #{task._id.slice(-6).toUpperCase()}
                 </span>
                 <span className="text-sm font-semibold text-blue-600 flex items-center gap-0.5 group-hover:gap-1.5 transition-all duration-150">
-                  {task.status === 'Pending Acceptance' ? 'Review & Accept' : task.status === 'Accepted' ? 'Start Report' : 'View Details'}
+                  {task.status === 'Pending Acceptance' ? 'Review & Accept' : 'Open'}
                   <ChevronRight className="w-3.5 h-3.5" />
                 </span>
               </div>

@@ -5,7 +5,6 @@ export default function TaskDetailsModal({
   acceptingTaskId,
   onClose,
   onAcceptTask,
-  onStartReport,
   getStatusConfig,
   getDisplayStatus
 }) {
@@ -76,88 +75,22 @@ export default function TaskDetailsModal({
             </div>
           )}
 
-          {selectedTask.status === 'Correction Requested' && selectedTask.correctionFeedback && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-1.5">
-                <AlertCircle className="w-4 h-4 text-red-600" />
-                <p className="text-sm font-bold text-red-800">Correction Requested by TM</p>
-              </div>
-              <p className="text-sm text-red-700 leading-relaxed">{selectedTask.correctionFeedback}</p>
-            </div>
-          )}
         </div>
 
         <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 rounded-b-3xl flex justify-end gap-3">
-          {selectedTask.status === 'Pending Acceptance' && (
-            <>
-              <button onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
-                Close
-              </button>
-              <button
-                onClick={() => onAcceptTask(selectedTask._id)}
-                disabled={acceptingTaskId === selectedTask._id}
-                className="px-6 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md shadow-blue-100 transition-all disabled:opacity-70 flex items-center gap-2"
-              >
-                {acceptingTaskId === selectedTask._id
-                  ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  : <CheckCircle className="w-4 h-4" />}
-                Accept Inspection
-              </button>
-            </>
-          )}
-
-          {selectedTask.status === 'Accepted' && (
-            <>
-              <button onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
-                Close
-              </button>
-              <button
-                onClick={() => onStartReport(selectedTask)}
-                className="px-6 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md shadow-blue-100 transition-all flex items-center gap-2"
-              >
-                <FileText className="w-4 h-4" />
-                Start Report
-              </button>
-            </>
-          )}
-
-          {(selectedTask.status === 'Report Submitted' || selectedTask.status === 'Under Review') && (
-            <>
-              <p className="flex-1 text-sm text-slate-500 flex items-center">
-                Report submitted. Awaiting Technical Manager review.
-              </p>
-              <button onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
-                Close
-              </button>
-            </>
-          )}
-
-          {selectedTask.status === 'Correction Requested' && (
-            <>
-              <button onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
-                Close
-              </button>
-              <button
-                onClick={() => onStartReport(selectedTask)}
-                className="px-6 py-2.5 text-sm font-bold text-white bg-red-700 hover:bg-red-800 rounded-xl shadow-md shadow-red-100 transition-all flex items-center gap-2"
-              >
-                <FileText className="w-4 h-4" />
-                Edit Report
-              </button>
-            </>
-          )}
-
-          {selectedTask.status === 'Finalized' && (
-            <>
-              <p className="flex-1 text-sm text-emerald-600 flex items-center gap-1.5 font-medium">
-                <CheckCircle className="w-4 h-4" />
-                Report approved and finalized.
-              </p>
-              <button onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
-                Close
-              </button>
-            </>
-          )}
+          <button onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
+            Close
+          </button>
+          <button
+            onClick={() => onAcceptTask(selectedTask._id)}
+            disabled={acceptingTaskId === selectedTask._id}
+            className="px-6 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md shadow-blue-100 transition-all disabled:opacity-70 flex items-center gap-2"
+          >
+            {acceptingTaskId === selectedTask._id
+              ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              : <CheckCircle className="w-4 h-4" />}
+            Accept Inspection
+          </button>
         </div>
       </div>
     </div>
