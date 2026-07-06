@@ -1,6 +1,7 @@
 import { lazy } from 'react'
 
 export const Dashboard = lazy(() => import('../dashboards/inspector/InspectorDashboard.jsx'))
+export const TaskWorkspace = lazy(() => import('../dashboards/inspector/pages/TaskWorkspace.jsx'))
 export const InspectorOnboarding = lazy(() => import('../dashboards/inspector/onboarding/InspectorOnboarding.jsx'))
 export const TechnicalManagerDashboard = lazy(() => import('../dashboards/manager/TechnicalManagerDashboard.jsx'))
 export const AdminDashboard = lazy(() => import('../dashboards/admin/AdminDashboard.jsx'))

@@ -22,6 +22,7 @@ import DashboardLayout from './components/layout/DashboardLayout'
 import OnboardingGuard from './components/auth/OnboardingGuard'
 import {
   Dashboard,
+  TaskWorkspace,
   InspectorOnboarding,
   TechnicalManagerDashboard,
   AdminDashboard,
@@ -79,9 +80,10 @@ createRoot(document.getElementById('root')).render(
                   {/* All other inspector pages gated behind OnboardingGuard */}
                   <Route element={<OnboardingGuard />}>
                     <Route path="/dashboard/inspector" element={<Dashboard />} />
+                    <Route path="/dashboard/inspector/task/:taskId" element={<TaskWorkspace />} />
                   </Route>
                 </Route>
-                
+
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/notifications" element={<Notifications />} />
 
