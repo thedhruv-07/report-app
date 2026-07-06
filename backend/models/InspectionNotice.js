@@ -197,6 +197,15 @@ const InspectionNoticeSchema = new mongoose.Schema({
     timeSubmitted: Date
   }],
 
+  // Queries/remarks an assigned inspector raises against this notice from
+  // their Task Workspace's Notice tab. One-way — CS sees these, no reply flow.
+  inspectorQueries: [{
+    inspectorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    inspectorName: String,
+    message: String,
+    createdAt: { type: Date, default: Date.now },
+  }],
+
   // REPORT (ONLINE) TAB
   // SECTION 17: Inspection Execution Info
   reportExecutionInfo: {
