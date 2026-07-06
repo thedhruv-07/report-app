@@ -182,6 +182,21 @@ const submitNoticeQuery = async (req, res) => {
   }
 };
 
+async function resolveExpenseFileUrls(expense) {
+  const plain = expense.toObject ? expense.toObject() : expense;
+  const files = await Promise.all((plain.files || []).map(async (f) => {
+    try {
+      const key = wasabiService.extractKey(f.url);
+      const signedUrl = await wasabiService.getSignedUrl(key);
+      return { ...f, url: signedUrl };
+    } catch (err) {
+      console.error('[resolveExpenseFileUrls] Failed to resolve signed URL:', err.message);
+      return { ...f, url: null };
+    }
+  }));
+  return { ...plain, files };
+}
+
 const getTaskExpense = async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
@@ -189,7 +204,8 @@ const getTaskExpense = async (req, res) => {
     if (!task) return res.status(404).json({ error: "Task not found" });
 
     const expense = await Expense.findOne({ taskId: task._id });
-    res.json({ expense: expense || { taskId: task._id, files: [], remarks: '' } });
+    const resolved = await resolveExpenseFileUrls(expense || { taskId: task._id, files: [], remarks: '' });
+    res.json({ expense: resolved });
   } catch (err) {
     res.status(500).json({ error: "Server error", detail: err.message });
   }
@@ -213,7 +229,8 @@ const uploadTaskExpenseFile = async (req, res) => {
       },
       { new: true, upsert: true }
     );
-    res.json({ expense });
+    const resolved = await resolveExpenseFileUrls(expense);
+    res.json({ expense: resolved });
   } catch (err) {
     res.status(500).json({ error: "Server error", detail: err.message });
   }
@@ -234,7 +251,8 @@ const updateTaskExpenseRemarks = async (req, res) => {
       },
       { new: true, upsert: true }
     );
-    res.json({ expense });
+    const resolved = await resolveExpenseFileUrls(expense);
+    res.json({ expense: resolved });
   } catch (err) {
     res.status(500).json({ error: "Server error", detail: err.message });
   }
