@@ -37,40 +37,51 @@ const DocLink = ({ label, doc }) => (
 export default function NoticeSummary({ taskId }) {
   const { token } = useAuth();
   const [notice, setNotice] = useState(undefined); // undefined = loading, null = no notice
+  const [loadError, setLoadError] = useState(false);
   const [queries, setQueries] = useState([]);
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState(false);
 
   useEffect(() => {
     fetch(ENDPOINTS.INSPECTOR.TASK_NOTICE(taskId), { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('Request failed');
+        return res.json();
+      })
       .then(data => {
         setNotice(data.notice || null);
         setQueries(data.notice?.inspectorQueries || []);
       })
-      .catch(() => setNotice(null));
+      .catch(() => setLoadError(true));
   }, [taskId, token]);
 
   const handleSendQuery = async () => {
     if (!message.trim()) return;
     setSending(true);
+    setSendError(false);
     try {
       const res = await fetch(ENDPOINTS.INSPECTOR.TASK_NOTICE_QUERY(taskId), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ message: message.trim() }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        setQueries(data.inspectorQueries || []);
-        setMessage('');
-      }
+      if (!res.ok) throw new Error('Request failed');
+      const data = await res.json();
+      setQueries(data.inspectorQueries || []);
+      setMessage('');
+    } catch {
+      setSendError(true);
     } finally {
       setSending(false);
     }
   };
 
-  if (notice === undefined) return <div className="text-sm text-slate-500">Loading notice…</div>;
+  if (notice === undefined && !loadError) return <div className="text-sm text-slate-500">Loading notice…</div>;
+
+  if (loadError) {
+    return <div className="text-sm text-red-600">Couldn't load the notice for this task. Try refreshing the page.</div>;
+  }
 
   if (notice === null) {
     return <div className="text-sm text-slate-500">No notice on file for this task.</div>;
@@ -340,6 +351,7 @@ export default function NoticeSummary({ taskId }) {
           >
             <Send className="w-3.5 h-3.5" /> {sending ? 'Sending…' : 'Send'}
           </button>
+          {sendError && <p className="text-xs text-red-600">Couldn't send your query. Please try again.</p>}
           {queries.length > 0 && (
             <div className="mt-3 space-y-2">
               {[...queries].reverse().map((q, idx) => (
