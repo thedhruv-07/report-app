@@ -203,7 +203,7 @@ const InspectionNoticeSchema = new mongoose.Schema({
     inspectorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     inspectorName: String,
     message: String,
-    createdAt: { type: Date, default: Date.now },
+    raisedAt: { type: Date, default: Date.now },
   }],
 
   // REPORT (ONLINE) TAB
