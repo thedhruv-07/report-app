@@ -11,8 +11,8 @@ import ToastList from '../../../components/shared/ToastList';
 const mapStatusToBackend = (status) => {
   if (status === 'Pending Review') return 'submitted';
   if (status === 'In Review') return 'under_review';
-  if (status === 'Correction Requested (Round 1)' || status === 'Correction Requested (Round 2)') return 'revision_required';
-  if (status === 'Finalized') return 'approved';
+  if (status === 'Rejected (Round 1)' || status === 'Rejected (Round 2)') return 'revision_required';
+  if (status === 'Approved') return 'approved';
   return 'all';
 };
 
@@ -47,8 +47,8 @@ export default function AdminReportQueue() {
     status:
       r.status === 'submitted'         ? 'Pending Review' :
       r.status === 'under_review'      ? 'In Review' :
-      r.status === 'revision_required' ? `Correction Requested (Round ${r.revisionRound})` :
-      r.status === 'approved'          ? 'Finalized' : r.status,
+      r.status === 'revision_required' ? `Rejected (Round ${r.revisionRound})` :
+      r.status === 'approved'          ? 'Approved' : r.status,
     revisionRound: r.revisionRound,
     assignedTMName: r.assignedTMName,
     reviewedByName: r.reviewedByName,
@@ -85,9 +85,10 @@ export default function AdminReportQueue() {
     addToast(`Report assigned to ${updatedReport.assignedTMName}.`, 'success');
   };
 
-  // "Open Report" navigates to TM dashboard instead of opening inline review
-  const handleOpenReport = () => {
-    navigate('/dashboard/manager');
+  // "Open Report" navigates to the TM dashboard instead of opening inline
+  // review, deep-linking to the specific report so it opens automatically.
+  const handleOpenReport = (reportId) => {
+    navigate(reportId ? `/dashboard/manager?report=${reportId}` : '/dashboard/manager');
   };
 
   return (

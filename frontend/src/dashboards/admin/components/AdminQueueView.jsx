@@ -18,8 +18,8 @@ const formatDate = (dateStr) => {
 const getStatusBadgeStyle = (status) => {
   if (status === 'Pending Review') return { background: '#FEF3C7', color: '#92400E' };
   if (status === 'In Review' || status === 'Under Review') return { background: '#DBEAFE', color: '#1E40AF' };
-  if (status?.includes('Correction')) return { background: '#FEE2E2', color: '#991B1B' };
-  if (status === 'Finalized' || status === 'Approved') return { background: '#D1FAE5', color: '#065F46' };
+  if (status?.includes('Rejected')) return { background: '#FEE2E2', color: '#991B1B' };
+  if (status === 'Approved') return { background: '#D1FAE5', color: '#065F46' };
   return { background: '#F3F4F6', color: '#374151' };
 };
 
@@ -59,7 +59,7 @@ function AdminQueueView({
         </button>
       );
     }
-    if (report.status === 'Finalized') {
+    if (report.status === 'Approved') {
       return (
         <button
           onClick={() => handleOpenReport(report.id)}
@@ -82,7 +82,7 @@ function AdminQueueView({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 animate-in fade-in duration-300 space-y-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+    <div className="px-6 py-8 animate-in fade-in duration-300 space-y-6" style={{ fontFamily: 'Inter, sans-serif' }}>
 
       {/* Page Header */}
       <div className="flex items-center justify-between">
@@ -130,9 +130,9 @@ function AdminQueueView({
               <option value="All">All Statuses</option>
               <option value="Pending Review">Pending Review</option>
               <option value="In Review">In Review</option>
-              <option value="Correction Requested (Round 1)">Correction Requested (Round 1)</option>
-              <option value="Correction Requested (Round 2)">Correction Requested (Round 2)</option>
-              <option value="Finalized">Finalized</option>
+              <option value="Rejected (Round 1)">Rejected (Round 1)</option>
+              <option value="Rejected (Round 2)">Rejected (Round 2)</option>
+              <option value="Approved">Approved</option>
             </select>
           </div>
 
