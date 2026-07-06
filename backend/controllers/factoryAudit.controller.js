@@ -130,7 +130,7 @@ exports.submitForReview = async (req, res) => {
     if (taskId) {
       try {
         const Task = require('../models/task.model');
-        await Task.findByIdAndUpdate(taskId, { status: 'Report Submitted', reportId: report._id });
+        await Task.findByIdAndUpdate(taskId, { status: 'Report Submitted', reportId: report._id, reportSubmittedAt: new Date() });
       } catch (e) { console.warn('[faSubmitForReview] Task link failed:', e.message); }
     }
 

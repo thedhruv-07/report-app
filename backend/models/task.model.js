@@ -16,6 +16,7 @@ const taskSchema = new mongoose.Schema({
   clientCode: { type: String, default: '' },
   prefillData: { type: mongoose.Schema.Types.Mixed, default: null },
   reportId: { type: mongoose.Schema.Types.ObjectId, ref: 'Report' },
+  reportSubmittedAt: { type: Date, default: null },
   correctionFeedback: { type: String },
   bookingId: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking', default: null },
   sectionSkipReasons: [{

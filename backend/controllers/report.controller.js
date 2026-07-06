@@ -231,6 +231,7 @@ const generateReport = async (req, res) => {
           await Task.findByIdAndUpdate(data.taskId, {
             status: 'Report Submitted',
             reportId: report._id,
+            reportSubmittedAt: new Date(),
           });
         } catch (e) {
           console.warn('[generateReport] Task link failed:', e.message);
