@@ -47,7 +47,7 @@ export default function TaskDetailsModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
             <div>
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Client</p>
-              <p className="text-base font-semibold text-slate-900">{selectedTask.clientName}</p>
+              <p className="text-base font-semibold text-slate-900">{selectedTask.clientCode || 'Client'}</p>
             </div>
             <div>
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Scheduled Date</p>

@@ -165,7 +165,7 @@ export default function Dashboard() {
   const filteredTasks = tasks.filter(task => {
     const q = searchTerm.toLowerCase();
     const matchesSearch = !q ||
-      task.clientName.toLowerCase().includes(q) ||
+      (task.clientCode || '').toLowerCase().includes(q) ||
       task.factoryName.toLowerCase().includes(q) ||
       task.factoryAddress.toLowerCase().includes(q);
     const matchesStatus = statusFilter === "All" ||
