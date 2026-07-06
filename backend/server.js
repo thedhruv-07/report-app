@@ -20,6 +20,9 @@ mongoose.connect(MONGO_URI, {
     const { initSocket } = require("./socket");
     initSocket(server);
 
+    // Start periodic cleanup of stale inspector/TM chat threads (3+ days inactive)
+    require("./services/helpRequestCleanup.service");
+
     // Increase timeout for large file processing
     server.timeout = 300000; 
     server.keepAliveTimeout = 300000;
