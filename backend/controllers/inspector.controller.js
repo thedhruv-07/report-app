@@ -13,8 +13,9 @@ async function resolveNoticeDocUrls(notice) {
       const key = wasabiService.extractKey(entry.url);
       const signedUrl = await wasabiService.getSignedUrl(key);
       return { ...entry, url: signedUrl };
-    } catch {
-      return entry;
+    } catch (err) {
+      console.error('[getTaskNotice] Failed to resolve signed URL:', err.message);
+      return { ...entry, url: null };
     }
   };
 
