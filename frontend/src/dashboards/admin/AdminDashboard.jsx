@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import { ENDPOINTS } from '../../config/api';
@@ -12,10 +11,10 @@ import { useReportQueue } from '../manager/hooks/useReportQueue';
 import SummaryCards from './components/SummaryCards';
 import BookingsQueue from './components/BookingsQueue';
 import DeliveryConfirmationModal from './components/DeliveryConfirmationModal';
+import ClientIssueModal from './components/ClientIssueModal';
 import NotificationPanel from './components/NotificationPanel';
 import NotificationManager from './components/NotificationManager';
 import EmailMonitoringPanel from './components/EmailMonitoringPanel';
-import BookingReviewModal from './components/BookingReviewModal';
 import AdminNavbar from './components/AdminNavbar';
 import ToastList from '../../components/shared/ToastList';
 import useToast from '../../hooks/useToast';
@@ -23,14 +22,11 @@ import useToast from '../../hooks/useToast';
 export default function AdminDashboard() {
   const { logout, token } = useAuth();
   const { bellNotifications, unreadCount: notifUnreadCount, markAllAsRead: markAllNotifRead, fetchNotifications } = useNotifications();
-  const navigate = useNavigate();
 
   const { reports: queueReports, loading: queueLoading, error: queueError } = useReportQueue();
   const [bookingInbox, setBookingInbox] = useState([]);
   const [bookingInboxLoading, setBookingInboxLoading] = useState(false);
   const [bookingInboxError, setBookingInboxError] = useState(null);
-  const [inspectors, setInspectors] = useState([]);
-  const [reviewModalBooking, setReviewModalBooking] = useState(null);
 
   // Load and preserve active view across browser refreshes
   const [activeView, setActiveView] = useState(() => {
@@ -64,25 +60,10 @@ export default function AdminDashboard() {
     }
   }, [token]);
 
-  const fetchInspectors = useCallback(async () => {
-    if (!token) return;
-    try {
-      const response = await fetch(ENDPOINTS.ADMIN.INSPECTORS, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error('Failed to load inspectors');
-      const data = await response.json();
-      setInspectors(data.inspectors || []);
-    } catch (error) {
-      console.error('Failed to load inspectors:', error);
-    }
-  }, [token]);
-
   useEffect(() => {
     if (!token) return;
     fetchBookingInbox();
-    fetchInspectors();
-  }, [token, fetchBookingInbox, fetchInspectors]);
+  }, [token, fetchBookingInbox]);
 
   // Filters State for Bookings View
   const [searchTerm, setSearchTerm] = useState('');
@@ -91,6 +72,7 @@ export default function AdminDashboard() {
 
   // Modals
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
+  const [clientIssueModalOpen, setClientIssueModalOpen] = useState(false);
   const [activeBooking, setActiveBooking] = useState(null);
   const [deliveryOverrides, setDeliveryOverrides] = useState({});
 
@@ -260,14 +242,36 @@ export default function AdminDashboard() {
     setActiveBooking(null);
   };
 
-  const openReviewModal = (booking) => setReviewModalBooking(booking);
+  const handleReportClientIssue = async (comment) => {
+    if (!activeBooking) return;
 
-  const handlePrepareNotice = (booking) => {
-    if (booking.linkedNoticeId) {
-      navigate(`/admin/inspection-notices/${booking.linkedNoticeId}`);
-    } else {
-      navigate(`/admin/inspection-notices/new?sourceBookingId=${booking.id}`);
+    try {
+      const response = await fetch(ENDPOINTS.MANAGER.SUBMIT_FEEDBACK(activeBooking.id), {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token || ''}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ section: 'Client Feedback (Post-Delivery)', comment, priority: 'critical' })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send report back to inspector');
+      }
+
+      setDeliveryOverrides(prev => ({
+        ...prev,
+        [activeBooking.id]: { status: 'Correction Requested' }
+      }));
+
+      addToast('Sent back to the inspector for correction.', 'success');
+    } catch (err) {
+      addToast(err.message || 'Failed to report client issue.', 'error');
+      return;
     }
+
+    setClientIssueModalOpen(false);
+    setActiveBooking(null);
   };
 
   return (
@@ -296,6 +300,7 @@ export default function AdminDashboard() {
             setActiveView={setActiveView}
             setActiveBooking={setActiveBooking}
             setDeliveryModalOpen={setDeliveryModalOpen}
+            setClientIssueModalOpen={setClientIssueModalOpen}
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
             statusFilter={statusFilter}
@@ -310,8 +315,6 @@ export default function AdminDashboard() {
             error={queueError}
             bookingInboxLoading={bookingInboxLoading}
             bookingInboxError={bookingInboxError}
-            onAssignClick={openReviewModal}
-            onPrepareNotice={handlePrepareNotice}
           />
 
           {activeView === 'notifications' && <NotificationManager />}
@@ -331,24 +334,18 @@ export default function AdminDashboard() {
       </div>
 
       {/* Confirmation delivery Modal */}
-      <DeliveryConfirmationModal 
+      <DeliveryConfirmationModal
         deliveryModalOpen={deliveryModalOpen}
         setDeliveryModalOpen={setDeliveryModalOpen}
         activeBooking={activeBooking}
         handleDeliverReport={handleDeliverReport}
       />
 
-      <BookingReviewModal
-        booking={reviewModalBooking}
-        inspectors={inspectors}
-        token={token}
-        onClose={() => setReviewModalBooking(null)}
-        onSaved={async () => {
-          const fresh = await fetchBookingInbox();
-          const updated = fresh.find(b => b.id === reviewModalBooking?.id);
-          if (updated) setReviewModalBooking(updated);
-        }}
-        onAssigned={() => { fetchBookingInbox(); fetchNotifications?.(); addToast('Booking assigned to inspector.', 'success'); }}
+      <ClientIssueModal
+        clientIssueModalOpen={clientIssueModalOpen}
+        setClientIssueModalOpen={setClientIssueModalOpen}
+        activeBooking={activeBooking}
+        handleReportClientIssue={handleReportClientIssue}
       />
 
     <ToastList toasts={toasts} onDismiss={dismissToast} />

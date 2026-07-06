@@ -1,7 +1,13 @@
 import React from 'react';
 import {
-  ClipboardList, Send, CheckCircle, Search, ChevronDown, Filter, Mail, ArrowRight, UserPlus, Plus, FileEdit
+  Send, CheckCircle, Search, ChevronDown, Filter, Mail, ArrowRight, UserPlus, Plus, AlertTriangle
 } from 'lucide-react';
+
+// Raw Mongo ObjectIds (both our own Booking._id and the external IRMS
+// onlineBookingId) aren't meaningful to a human — show a short reference
+// instead, matching the "#XXXXXX" convention used elsewhere in this app
+// (e.g. TaskGrid.jsx), with the full value still available via the tooltip.
+const shortRef = (id) => (id ? `#${String(id).slice(-6).toUpperCase()}` : '');
 
 export default function BookingsQueue({
   deliveryBookings,
@@ -10,6 +16,7 @@ export default function BookingsQueue({
   setActiveView,
   setActiveBooking,
   setDeliveryModalOpen,
+  setClientIssueModalOpen,
   searchTerm,
   setSearchTerm,
   statusFilter,
@@ -24,8 +31,6 @@ export default function BookingsQueue({
   error,
   bookingInboxLoading,
   bookingInboxError,
-  onAssignClick,
-  onPrepareNotice,
 }) {
   const statusStylesFor = (status) => STATUS_COLORS[status] || STATUS_COLORS.new || {
     bg: 'bg-slate-100',
@@ -99,13 +104,22 @@ export default function BookingsQueue({
                       </td>
                       <td className="px-6 py-4 text-slate-600 font-mono text-xs">{booking.reportId}</td>
                       <td className="px-6 py-4 text-right">
-                        <button 
-                          onClick={() => { setActiveBooking(booking); setDeliveryModalOpen(true); }}
-                          className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-sm shadow-emerald-200 transition-all animate-pulse hover:animate-none flex items-center gap-2 ml-auto cursor-pointer"
-                        >
-                          <Mail className="w-4 h-4" />
-                          Send to Client
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => { setActiveBooking(booking); setClientIssueModalOpen(true); }}
+                            className="bg-white border border-amber-200 text-amber-600 hover:bg-amber-50 px-3 py-2 rounded-lg font-bold text-xs shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+                          >
+                            <AlertTriangle className="w-4 h-4" />
+                            Client Issue
+                          </button>
+                          <button
+                            onClick={() => { setActiveBooking(booking); setDeliveryModalOpen(true); }}
+                            className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-sm shadow-emerald-200 transition-all animate-pulse hover:animate-none flex items-center gap-2 cursor-pointer"
+                          >
+                            <Mail className="w-4 h-4" />
+                            Send to Client
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -168,25 +182,24 @@ export default function BookingsQueue({
                     <th className="px-6 py-4">Type</th>
                     <th className="px-6 py-4">Inspector</th>
                     <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {bookingInboxLoading ? (
                     <tr>
-                      <td colSpan="6" className="px-6 py-20 text-center text-slate-500">
+                      <td colSpan="5" className="px-6 py-20 text-center text-slate-500">
                         Loading bookings…
                       </td>
                     </tr>
                   ) : bookingInboxError ? (
                     <tr>
-                      <td colSpan="6" className="px-6 py-20 text-center text-rose-500">
+                      <td colSpan="5" className="px-6 py-20 text-center text-rose-500">
                         {bookingInboxError}
                       </td>
                     </tr>
                   ) : filteredBookings.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="px-6 py-20 text-center">
+                      <td colSpan="5" className="px-6 py-20 text-center">
                         <Filter className="w-12 h-12 text-slate-300 mx-auto mb-4" />
                         <h3 className="text-lg font-bold text-slate-700">No bookings match your filters</h3>
                         <p className="text-slate-500 text-sm mt-1">Try adjusting your search term or dropdown selections.</p>
@@ -200,9 +213,9 @@ export default function BookingsQueue({
                     </tr>
                   ) : (
                     filteredBookings.map(booking => (
-                      <tr key={booking.id} onClick={() => onAssignClick?.(booking)} className="hover:bg-slate-50 transition-colors group cursor-pointer">
+                      <tr key={booking.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-6 py-4">
-                          <p className="font-extrabold text-slate-800">{booking.id}</p>
+                          <p className="font-extrabold text-slate-800" title={booking.id}>{shortRef(booking.id)}</p>
                           <p className="text-[11px] text-slate-500 mt-0.5">{booking.createdDate}</p>
                         </td>
                         <td className="px-6 py-4">
@@ -214,7 +227,9 @@ export default function BookingsQueue({
                               </span>
                             )}
                           </div>
-                          <p className="text-[11px] text-slate-500 mt-0.5 font-mono">{booking.poNumber}</p>
+                          {booking.poNumber && (
+                            <p className="text-[11px] text-slate-500 mt-0.5 font-mono" title={booking.poNumber}>{shortRef(booking.poNumber)}</p>
+                          )}
                         </td>
                         <td className="px-6 py-4">
                           <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full text-[11px] font-bold">{booking.inspectionType}</span>
@@ -231,43 +246,6 @@ export default function BookingsQueue({
                           <span className={`px-3 py-1 rounded-full text-xs font-bold border ${statusStylesFor(booking.status).bg} ${statusStylesFor(booking.status).text} ${statusStylesFor(booking.status).border}`}>
                             {booking.status}
                           </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          {booking.status === 'new' || booking.status === 'assigned' || booking.status === 'viewed' || booking.status === 'accepted' ? (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); onPrepareNotice?.(booking); }}
-                              className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-sm transition-all cursor-pointer ml-auto"
-                            >
-                              {booking.linkedNoticeId ? (
-                                <><FileEdit className="w-4 h-4" /> Edit Notice</>
-                              ) : (
-                                <><ClipboardList className="w-4 h-4" /> Prepare Notice</>
-                              )}
-                            </button>
-                          ) : booking.status === 'Ready to Deliver' ? (
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); setActiveBooking(booking); setDeliveryModalOpen(true); }}
-                              className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-sm shadow-emerald-200 transition-all animate-pulse hover:animate-none flex items-center gap-2 ml-auto cursor-pointer"
-                            >
-                              <Mail className="w-4 h-4" />
-                              Send Report
-                            </button>
-                          ) : booking.status === 'Delivered' ? (
-                            <span className="text-teal-600 font-semibold text-xs flex items-center gap-1 justify-end">
-                              <CheckCircle className="w-4 h-4" /> Delivered {booking.deliveredDate}
-                            </span>
-                          ) : (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); onPrepareNotice?.(booking); }}
-                              className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-sm transition-all cursor-pointer ml-auto"
-                            >
-                              {booking.linkedNoticeId ? (
-                                <><FileEdit className="w-4 h-4" /> Edit Notice</>
-                              ) : (
-                                <><ClipboardList className="w-4 h-4" /> Prepare Notice</>
-                              )}
-                            </button>
-                          )}
                         </td>
                       </tr>
                     ))
