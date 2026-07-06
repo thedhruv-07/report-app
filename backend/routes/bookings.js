@@ -233,7 +233,7 @@ router.post('/:id/assign', roleCheck(['admin', 'manager']), async (req, res) => 
       onSiteTests: booking.onSiteTests?.length ? booking.onSiteTests : [],
     };
 
-    await Task.create({
+    const task = await Task.create({
       assignedInspectorId,
       clientName: booking.clientName || 'Unknown Client',
       factoryName: booking.factoryName || 'TBD',
@@ -252,7 +252,8 @@ router.post('/:id/assign', roleCheck(['admin', 'manager']), async (req, res) => 
       inspectorId: assignedInspectorId,
       title: 'New Inspection Assignment',
       type: 'task_assigned',
-      message: 'You have been assigned a new inspection task for ' + booking.clientName,
+      message: 'You have been assigned a new inspection task for ' + (booking.clientCode || 'a client'),
+      relatedTaskId: task._id,
       relatedBookingId: booking._id,
       isRead: false,
     });
@@ -266,11 +267,13 @@ router.post('/:id/assign', roleCheck(['admin', 'manager']), async (req, res) => 
     // SystemNotification so the bell count reflects this assignment
     await SystemNotification.create({
       title: 'New Inspection Assignment',
-      message: `You have been assigned a new ${booking.inspectionType || 'inspection'} task for ${booking.clientName}.`,
+      message: `You have been assigned a new ${booking.inspectionType || 'inspection'} task for ${booking.clientCode || 'a client'}.`,
       type: 'info',
       priority: 2,
       targetRoles: [],
       targetUsers: [assignedInspectorId],
+      relatedTaskId: task._id,
+      relatedBookingId: booking._id,
       isActive: true,
     });
 

@@ -234,18 +234,21 @@ async function provisionFromNotice(notice, adminId) {
         inspectorId,
         title:   'New Inspection Assignment',
         type:    'task_assigned',
-        message: `You have been assigned a ${bi.serviceType || 'inspection'} for ${bi.customerName || 'a client'}.`,
+        message: `You have been assigned a ${bi.serviceType || 'inspection'} for ${clientCode || 'a client'}.`,
+        relatedTaskId: task._id,
         relatedBookingId: booking._id,
         isRead: false,
       });
 
       await SystemNotification.create({
         title:   'New Inspection Assignment',
-        message: `Notice ${notice.noticeId || ''}: ${bi.serviceType || 'Inspection'} for ${bi.customerName || 'client'}.`,
+        message: `Notice ${notice.noticeId || ''}: ${bi.serviceType || 'Inspection'} for ${clientCode || 'client'}.`,
         type:    'info',
         priority: 2,
         targetRoles: [],
         targetUsers: [inspectorId],
+        relatedTaskId: task._id,
+        relatedBookingId: booking._id,
         isActive: true,
       });
 

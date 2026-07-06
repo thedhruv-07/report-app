@@ -1,6 +1,8 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bell, X } from 'lucide-react';
 import { timeAgo } from '../../../utils/timeAgo';
+import { useNotifications } from '../../../context/NotificationContext';
 
 export default function NotificationPanel({
   notificationsPanelOpen,
@@ -9,6 +11,18 @@ export default function NotificationPanel({
   unreadCount,
   handleMarkAllRead
 }) {
+  const navigate = useNavigate();
+  const { markAsRead } = useNotifications();
+
+  const handleNotificationClick = (notif) => {
+    markAsRead(notif._id);
+    setNotificationsPanelOpen(false);
+    if (notif.relatedReportId) {
+      navigate('/admin/report-queue');
+    } else if (notif.relatedBookingId || notif.relatedTaskId) {
+      navigate('/dashboard/admin');
+    }
+  };
   return (
     <>
       {/* Sliding Alerts Drawer */}
@@ -33,9 +47,13 @@ export default function NotificationPanel({
             <p className="text-center text-slate-500 text-sm py-8">No notifications</p>
           ) : (
             notifications.map(notif => (
-              <div key={notif._id} className={`p-4 rounded-xl border text-sm leading-relaxed transition-all ${
-                notif.isRead ? 'bg-white border-slate-200 opacity-60' : 'bg-indigo-50/50 border-indigo-100 font-medium shadow-sm'
-              }`}>
+              <div
+                key={notif._id}
+                onClick={() => handleNotificationClick(notif)}
+                className={`p-4 rounded-xl border text-sm leading-relaxed transition-all cursor-pointer hover:border-indigo-200 ${
+                  notif.isRead ? 'bg-white border-slate-200 opacity-60' : 'bg-indigo-50/50 border-indigo-100 font-medium shadow-sm'
+                }`}
+              >
                 <div className="flex items-start gap-3">
                   <span className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${notif.isRead ? 'bg-slate-300' : 'bg-indigo-500'}`}></span>
                   <div>

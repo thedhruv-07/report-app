@@ -1,6 +1,7 @@
 const { Report } = require("../models/report.model");
 const FactoryAudit = require("../models/factoryAudit.model");
 const { getIO } = require("../socket");
+const { generateClientCode } = require("../utils/clientCode");
 
 // Helper to fetch all reports (standard + factory audit) and normalize them
 const getAllReports = async (query = {}) => {
@@ -181,6 +182,7 @@ exports.requestCorrection = async (req, res) => {
     await report.save();
 
     // Push correction status + feedback summary to inspector's Task, creating one if absent
+    let correctionTaskId = null;
     try {
       const Task = require('../models/task.model');
       const feedbackSummary = report.correctionFeedback
@@ -191,24 +193,30 @@ exports.requestCorrection = async (req, res) => {
         { status: 'Correction Requested', correctionFeedback: feedbackSummary },
         { new: true }
       );
-      if (!updated && report.userId?._id) {
+      if (updated) {
+        correctionTaskId = updated._id;
+      } else if (report.userId?._id) {
         const gi = report.generalInfo || {};
         const t = (report.title || '').toLowerCase();
         const inspType = t.includes('cls') || t.includes('container') ? 'CLS'
           : t.includes('dpi') || t.includes('during') ? 'DPI'
           : t.includes('factory') ? 'Factory Audit'
           : 'PSI';
-        await Task.create({
+        const clientNameForTask = gi.client || report.title || 'Inspection Report';
+        const locationForTask = gi.inspectionLocation || gi.location || gi.factoryAddress || '';
+        const created = await Task.create({
           assignedInspectorId: report.userId._id,
-          clientName:     gi.client      || report.title || 'Inspection Report',
+          clientName:     clientNameForTask,
+          clientCode:     generateClientCode(clientNameForTask, locationForTask),
           factoryName:    gi.supplier    || gi.factory   || 'Unknown Factory',
-          factoryAddress: gi.inspectionLocation || gi.location || gi.factoryAddress || 'Unknown Location',
+          factoryAddress: locationForTask || 'Unknown Location',
           inspectionType: inspType,
           scheduledDate:  report.submittedAt || new Date(),
           status:         'Correction Requested',
           reportId:       report._id,
           correctionFeedback: feedbackSummary,
         });
+        correctionTaskId = created._id;
       }
     } catch (e) { console.warn('[requestCorrection] Task update failed:', e.message); }
 
@@ -223,6 +231,7 @@ exports.requestCorrection = async (req, res) => {
           type: 'warning',
           priority: 2,
           targetUsers: [inspectorId],
+          relatedTaskId: correctionTaskId,
           createdBy: req.user.id,
         });
         getIO().to(`user_${inspectorId}`).emit('new_notification');
@@ -279,9 +288,11 @@ exports.finalizeReport = async (req, res) => {
     await report.save();
 
     // Push Finalized status to inspector's Task
+    let finalizedTaskId = null;
     try {
       const Task = require('../models/task.model');
-      await Task.findOneAndUpdate({ reportId: report._id }, { status: 'Finalized' });
+      const updated = await Task.findOneAndUpdate({ reportId: report._id }, { status: 'Finalized' }, { new: true });
+      finalizedTaskId = updated?._id || null;
     } catch (e) { console.warn('[finalizeReport] Task update failed:', e.message); }
 
     // Create in-app notification for the inspector
@@ -295,6 +306,7 @@ exports.finalizeReport = async (req, res) => {
           type: 'success',
           priority: 3,
           targetUsers: [inspectorId],
+          relatedTaskId: finalizedTaskId,
           createdBy: req.user.id,
         });
         getIO().to(`user_${inspectorId}`).emit('new_notification');

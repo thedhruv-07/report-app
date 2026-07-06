@@ -247,6 +247,8 @@ const generateReport = async (req, res) => {
         message: `${inspectorName} submitted a ${reportType} report for ${clientLabel}.`,
         type: 'info',
         priority: 2,
+        relatedReportId: report._id,
+        relatedTaskId: data.taskId || null,
         emailSubject: `[REPORT SUBMITTED] ${reportType} — ${clientLabel}`,
         templateName: 'report-submitted-staff.html',
         templateVars: {

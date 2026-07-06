@@ -1,10 +1,24 @@
 // frontend/src/context/NotificationContext.jsx
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 import { ENDPOINTS, API_BASE_URL } from "../config/api";
 import { useAuth } from "./AuthContext";
 import { Bell, X, CheckCircle, AlertTriangle, XCircle, Info } from "lucide-react";
+
+const DASHBOARD_ROUTE_BY_ROLE = {
+  admin: '/dashboard/admin',
+  manager: '/dashboard/manager',
+  inspector: '/dashboard/inspector',
+};
+
+function bannerLinkFor(banner, role) {
+  if (banner.relatedTaskId && role === 'inspector') return `/dashboard/inspector?task=${banner.relatedTaskId}`;
+  if (banner.relatedReportId) return role === 'manager' ? `/dashboard/manager?report=${banner.relatedReportId}` : '/admin/report-queue';
+  if (banner.relatedBookingId || banner.relatedTaskId) return DASHBOARD_ROUTE_BY_ROLE[role] || '/dashboard';
+  return null;
+}
 
 const BANNER_ICONS = { success: CheckCircle, warning: AlertTriangle, urgent: XCircle, info: Info };
 const BANNER_STYLES = {
@@ -18,6 +32,7 @@ const NotificationContext = createContext(null);
 
 export function NotificationProvider({ children }) {
   const { user, token } = useAuth();
+  const navigate = useNavigate();
   const [popupNotifications, setPopupNotifications] = useState([]);
   const [bellNotifications, setBellNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -198,37 +213,45 @@ export function NotificationProvider({ children }) {
     }}>
       {children}
       
-      {/* Global Notification Banners — slide-down from top, auto-dismiss */}
+      {/* Global Notification Banners — slide in from the right, auto-dismiss */}
       {activeBanners.length > 0 && (
-        <div style={{ position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 10000, display: 'flex', flexDirection: 'column', gap: '10px', pointerEvents: 'none', alignItems: 'center' }}>
+        <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 10000, display: 'flex', flexDirection: 'column', gap: '10px', pointerEvents: 'none', alignItems: 'flex-end' }}>
           <style>{`
-            @keyframes notif-drop-in {
-              0%   { transform: translateY(-120%); opacity: 0; }
-              60%  { transform: translateY(6px);   opacity: 1; }
-              100% { transform: translateY(0);      opacity: 1; }
+            @keyframes notif-slide-in {
+              0%   { transform: translateX(120%); opacity: 0; }
+              100% { transform: translateX(0);     opacity: 1; }
             }
-            @keyframes notif-drop-out {
-              from { transform: translateY(0);      opacity: 1; }
-              to   { transform: translateY(-120%);  opacity: 0; }
+            @keyframes notif-slide-out {
+              from { transform: translateX(0);     opacity: 1; }
+              to   { transform: translateX(120%);  opacity: 0; }
             }
           `}</style>
           {activeBanners.map(banner => {
             const style = BANNER_STYLES[banner.type] || BANNER_STYLES.info;
             const Icon = BANNER_ICONS[banner.type] || Bell;
+            const link = bannerLinkFor(banner, user?.role);
             return (
-              <div key={banner.bannerId} style={{
-                display: 'flex', alignItems: 'flex-start', gap: '12px',
-                padding: '14px 18px',
-                borderRadius: '14px',
-                background: '#ffffff',
-                boxShadow: '0 12px 32px rgba(15,23,42,0.16), 0 2px 8px rgba(15,23,42,0.08)',
-                color: '#0f172a',
-                minWidth: '340px',
-                maxWidth: '460px',
-                pointerEvents: 'auto',
-                animation: 'notif-drop-in 0.45s cubic-bezier(0.22,1,0.36,1) both',
-                borderLeft: `4px solid ${style.accent}`,
-              }}>
+              <div
+                key={banner.bannerId}
+                onClick={() => {
+                  if (banner._id) markAsRead(banner._id);
+                  if (link) navigate(link);
+                  removeBanner(banner.bannerId);
+                }}
+                style={{
+                  display: 'flex', alignItems: 'flex-start', gap: '12px',
+                  padding: '14px 18px',
+                  borderRadius: '14px',
+                  background: '#ffffff',
+                  boxShadow: '0 12px 32px rgba(15,23,42,0.16), 0 2px 8px rgba(15,23,42,0.08)',
+                  color: '#0f172a',
+                  minWidth: '340px',
+                  maxWidth: '460px',
+                  pointerEvents: 'auto',
+                  cursor: link ? 'pointer' : 'default',
+                  animation: 'notif-slide-in 0.4s cubic-bezier(0.22,1,0.36,1) both',
+                  borderLeft: `4px solid ${style.accent}`,
+                }}>
                 <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: style.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <Icon size={17} style={{ color: style.iconColor }} />
                 </div>
@@ -236,7 +259,7 @@ export function NotificationProvider({ children }) {
                   <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#0f172a', lineHeight: '1.3' }}>{banner.title || 'New Notification'}</p>
                   <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#64748b', lineHeight: '1.5' }}>{banner.message}</p>
                 </div>
-                <button onClick={() => removeBanner(banner.bannerId)}
+                <button onClick={(e) => { e.stopPropagation(); removeBanner(banner.bannerId); }}
                   style={{ background: '#f1f5f9', border: 'none', cursor: 'pointer', color: '#64748b', padding: '4px 7px', borderRadius: '6px', flexShrink: 0, lineHeight: 1, marginTop: '2px' }}>
                   <X size={14} />
                 </button>

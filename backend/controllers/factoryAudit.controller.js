@@ -50,6 +50,7 @@ exports.createReport = async (req, res) => {
       message: `${inspectorName} submitted a Factory Audit report for ${clientLabel}.`,
       type: 'info',
       priority: 2,
+      relatedReportId: report._id,
       emailSubject: `[REPORT SUBMITTED] Factory Audit — ${clientLabel}`,
       templateName: 'report-submitted-staff.html',
       templateVars: {
@@ -141,6 +142,8 @@ exports.submitForReview = async (req, res) => {
       message: `${_inspectorName} submitted a Factory Audit report for ${_clientLabel}.`,
       type: 'info',
       priority: 2,
+      relatedReportId: report._id,
+      relatedTaskId: taskId || null,
       emailSubject: `[REPORT SUBMITTED] Factory Audit — ${_clientLabel}`,
       templateName: 'report-submitted-staff.html',
       templateVars: {

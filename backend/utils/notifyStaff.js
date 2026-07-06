@@ -5,13 +5,16 @@ const { renderTemplate } = require('../services/email.service');
 
 const DASHBOARD_URL = (process.env.FRONTEND_URL || 'https://absolute-veritas.netlify.app') + '/dashboard';
 
-const notifyStaff = async ({ title, message, type = 'info', priority = 2, emailSubject, templateName, templateVars = {} }) => {
+const notifyStaff = async ({ title, message, type = 'info', priority = 2, emailSubject, templateName, templateVars = {}, relatedTaskId = null, relatedBookingId = null, relatedReportId = null }) => {
   await SystemNotification.create({
     title,
     message,
     type,
     priority,
     targetRoles: ['admin', 'manager'],
+    relatedTaskId,
+    relatedBookingId,
+    relatedReportId,
     isActive: true,
   });
 
