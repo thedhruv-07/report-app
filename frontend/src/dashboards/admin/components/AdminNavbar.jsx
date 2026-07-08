@@ -4,7 +4,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { useNotifications } from '../../../context/NotificationContext';
 import { LayoutDashboard, ClipboardList, Bell, Mail, LogOut, FileText } from 'lucide-react';
 
-export default function AdminNavbar({ activeView, stats = { readyToDeliver: 0, pendingReports: 0 }, setActiveView }) {
+export default function AdminNavbar({ activeView, stats = { readyToDeliver: 0, pendingReports: 0, pendingQueries: 0 }, setActiveView }) {
   const { logout, user } = useAuth();
   const { unreadCount: notifUnreadCount } = useNotifications();
   const navigate = useNavigate();
@@ -100,6 +100,13 @@ export default function AdminNavbar({ activeView, stats = { readyToDeliver: 0, p
         >
           <ClipboardList className="w-4 h-4 shrink-0" />
           <span>Inspection Notices</span>
+          {(stats.pendingQueries || 0) > 0 && (
+            <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+              isInspectionNoticesActive ? 'bg-indigo-600 text-white' : 'bg-amber-500 text-white'
+            }`}>
+              {stats.pendingQueries}
+            </span>
+          )}
         </button>
 
         <button

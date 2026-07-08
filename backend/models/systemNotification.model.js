@@ -23,6 +23,7 @@ const systemNotificationSchema = new mongoose.Schema({
   relatedTaskId: { type: mongoose.Schema.Types.ObjectId, ref: "Task", default: null },
   relatedBookingId: { type: mongoose.Schema.Types.ObjectId, ref: "Booking", default: null },
   relatedReportId: { type: mongoose.Schema.Types.ObjectId, default: null },
+  relatedNoticeId: { type: String, default: null },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
   expiresAt: { type: Date, default: null },
   isActive: { type: Boolean, default: true },

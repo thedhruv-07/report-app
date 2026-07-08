@@ -7,6 +7,11 @@ const Expense = require('../models/expense.model');
 
 const NOTICE_SUMMARY_FIELDS = 'basicInfo teamAssignment productInfo aql inspectionRequirements specialClientRequirements customerSamples inspectionInfo attachments inspectionTools onSiteTests defectClassifications supplierInfo factoryInfo noticeId clientCode';
 
+// Task URLs/params use the human-readable AV-format taskNumber, not the raw
+// Mongo _id — but older links (notification relatedTaskId, etc.) may still
+// carry the ObjectId, so accept either.
+const taskIdFilter = (taskId) => /^[0-9a-fA-F]{24}$/.test(taskId) ? { _id: taskId } : { taskNumber: taskId };
+
 async function resolveNoticeDocUrls(notice) {
   const resolve = async (entry) => {
     if (!entry || !entry.url) return entry;
@@ -130,7 +135,7 @@ const getArchivedCount = async (req, res) => {
 const getTaskById = async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
-    const task = await Task.findOne({ _id: req.params.taskId, assignedInspectorId: userId });
+    const task = await Task.findOne({ ...taskIdFilter(req.params.taskId), assignedInspectorId: userId });
     if (!task) return res.status(404).json({ error: "Task not found" });
     res.json({ task });
   } catch (err) {
@@ -141,7 +146,7 @@ const getTaskById = async (req, res) => {
 const getTaskNotice = async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
-    const task = await Task.findOne({ _id: req.params.taskId, assignedInspectorId: userId });
+    const task = await Task.findOne({ ...taskIdFilter(req.params.taskId), assignedInspectorId: userId });
     if (!task) return res.status(404).json({ error: "Task not found" });
 
     const noticeId = task.prefillData?.noticeId;
@@ -163,7 +168,7 @@ const submitNoticeQuery = async (req, res) => {
     const { message } = req.body;
     if (!message || !message.trim()) return res.status(400).json({ error: "message is required" });
 
-    const task = await Task.findOne({ _id: req.params.taskId, assignedInspectorId: userId });
+    const task = await Task.findOne({ ...taskIdFilter(req.params.taskId), assignedInspectorId: userId });
     if (!task) return res.status(404).json({ error: "Task not found" });
 
     const noticeId = task.prefillData?.noticeId;
@@ -175,6 +180,22 @@ const submitNoticeQuery = async (req, res) => {
       { new: true }
     ).select('inspectorQueries');
     if (!notice) return res.status(404).json({ error: "Notice not found" });
+
+    const inspectorName = req.user?.name || 'An inspector';
+    const trimmedMessage = message.trim();
+    notifyStaff({
+      title: 'Inspector Query on Notice',
+      message: `${inspectorName} raised a query on notice ${noticeId}: "${trimmedMessage.slice(0, 150)}"`,
+      type: 'warning',
+      priority: 2,
+      relatedNoticeId: noticeId,
+      emailSubject: `[QUERY] ${inspectorName} raised a query on ${noticeId}`,
+      templateName: 'system-alert.html',
+      templateVars: {
+        title: 'Inspector Query Raised',
+        message: `${inspectorName} raised a query on notice <strong>${noticeId}</strong>:<br/><br/>"${trimmedMessage}"`,
+      },
+    }).catch(e => console.warn('[submitNoticeQuery] notifyStaff failed:', e.message));
 
     res.json({ inspectorQueries: notice.inspectorQueries });
   } catch (err) {
@@ -200,7 +221,7 @@ async function resolveExpenseFileUrls(expense) {
 const getTaskExpense = async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
-    const task = await Task.findOne({ _id: req.params.taskId, assignedInspectorId: userId });
+    const task = await Task.findOne({ ...taskIdFilter(req.params.taskId), assignedInspectorId: userId });
     if (!task) return res.status(404).json({ error: "Task not found" });
 
     const expense = await Expense.findOne({ taskId: task._id });
@@ -214,7 +235,7 @@ const getTaskExpense = async (req, res) => {
 const uploadTaskExpenseFile = async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
-    const task = await Task.findOne({ _id: req.params.taskId, assignedInspectorId: userId });
+    const task = await Task.findOne({ ...taskIdFilter(req.params.taskId), assignedInspectorId: userId });
     if (!task) return res.status(404).json({ error: "Task not found" });
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
@@ -240,7 +261,7 @@ const updateTaskExpenseRemarks = async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
     const { remarks } = req.body;
-    const task = await Task.findOne({ _id: req.params.taskId, assignedInspectorId: userId });
+    const task = await Task.findOne({ ...taskIdFilter(req.params.taskId), assignedInspectorId: userId });
     if (!task) return res.status(404).json({ error: "Task not found" });
 
     const expense = await Expense.findOneAndUpdate(
@@ -262,7 +283,7 @@ const acceptTask = async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
     const task = await Task.findOneAndUpdate(
-      { _id: req.params.taskId, assignedInspectorId: userId, status: 'Pending Acceptance' },
+      { ...taskIdFilter(req.params.taskId), assignedInspectorId: userId, status: 'Pending Acceptance' },
       { status: 'Accepted' },
       { new: true }
     );
@@ -335,7 +356,7 @@ const addSectionSkipReason = async (req, res) => {
     const { step, stepLabel, reason, missingFields } = req.body;
     if (!step || !reason) return res.status(400).json({ error: 'step and reason are required' });
 
-    const task = await Task.findOne({ _id: req.params.taskId, assignedInspectorId: req.user.id });
+    const task = await Task.findOne({ ...taskIdFilter(req.params.taskId), assignedInspectorId: req.user.id });
     if (!task) return res.status(404).json({ error: 'Task not found' });
 
     // Replace existing entry for this step if re-submitted, otherwise push

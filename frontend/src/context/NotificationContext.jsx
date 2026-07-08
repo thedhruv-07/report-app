@@ -16,6 +16,7 @@ const DASHBOARD_ROUTE_BY_ROLE = {
 function bannerLinkFor(banner, role) {
   if (banner.relatedTaskId && role === 'inspector') return `/dashboard/inspector?task=${banner.relatedTaskId}`;
   if (banner.relatedReportId) return role === 'manager' ? `/dashboard/manager?report=${banner.relatedReportId}` : '/admin/report-queue';
+  if (banner.relatedNoticeId) return `/admin/inspection-notices/${banner.relatedNoticeId}`;
   if (banner.relatedBookingId || banner.relatedTaskId) return DASHBOARD_ROUTE_BY_ROLE[role] || '/dashboard';
   return null;
 }
@@ -212,18 +213,14 @@ export function NotificationProvider({ children }) {
       fetchNotifications
     }}>
       {children}
-      
-      {/* Global Notification Banners — slide in from the right, auto-dismiss */}
+
+      {/* Global Notification Banners — slide in from the right at the top, auto-dismiss */}
       {activeBanners.length > 0 && (
-        <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 10000, display: 'flex', flexDirection: 'column', gap: '10px', pointerEvents: 'none', alignItems: 'flex-end' }}>
+        <div style={{ position: 'fixed', top: '20px', left: 0, right: 0, zIndex: 10000, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', pointerEvents: 'none' }}>
           <style>{`
             @keyframes notif-slide-in {
               0%   { transform: translateX(120%); opacity: 0; }
               100% { transform: translateX(0);     opacity: 1; }
-            }
-            @keyframes notif-slide-out {
-              from { transform: translateX(0);     opacity: 1; }
-              to   { transform: translateX(120%);  opacity: 0; }
             }
           `}</style>
           {activeBanners.map(banner => {
@@ -239,29 +236,32 @@ export function NotificationProvider({ children }) {
                   removeBanner(banner.bannerId);
                 }}
                 style={{
-                  display: 'flex', alignItems: 'flex-start', gap: '12px',
-                  padding: '14px 18px',
-                  borderRadius: '14px',
+                  display: 'flex', alignItems: 'center', gap: '12px',
+                  padding: '10px 16px',
+                  borderRadius: '12px',
                   background: '#ffffff',
-                  boxShadow: '0 12px 32px rgba(15,23,42,0.16), 0 2px 8px rgba(15,23,42,0.08)',
+                  boxShadow: '0 16px 40px rgba(15,23,42,0.2), 0 4px 12px rgba(15,23,42,0.1)',
                   color: '#0f172a',
-                  minWidth: '340px',
-                  maxWidth: '460px',
+                  width: '100%',
+                  maxWidth: '900px',
                   pointerEvents: 'auto',
                   cursor: link ? 'pointer' : 'default',
                   animation: 'notif-slide-in 0.4s cubic-bezier(0.22,1,0.36,1) both',
                   borderLeft: `4px solid ${style.accent}`,
                 }}>
-                <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: style.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Icon size={17} style={{ color: style.iconColor }} />
+                <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: style.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Icon size={15} style={{ color: style.iconColor }} />
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#0f172a', lineHeight: '1.3' }}>{banner.title || 'New Notification'}</p>
-                  <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#64748b', lineHeight: '1.5' }}>{banner.message}</p>
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
+                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: '#0f172a', lineHeight: '1.3', flexShrink: 0 }}>{banner.title || 'New Notification'}</p>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#64748b', lineHeight: '1.4', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{banner.message}</p>
+                  {link && (
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: style.accent, flexShrink: 0 }}>Click to view →</span>
+                  )}
                 </div>
                 <button onClick={(e) => { e.stopPropagation(); removeBanner(banner.bannerId); }}
-                  style={{ background: '#f1f5f9', border: 'none', cursor: 'pointer', color: '#64748b', padding: '4px 7px', borderRadius: '6px', flexShrink: 0, lineHeight: 1, marginTop: '2px' }}>
-                  <X size={14} />
+                  style={{ background: '#f1f5f9', border: 'none', cursor: 'pointer', color: '#64748b', padding: '4px 6px', borderRadius: '6px', flexShrink: 0, lineHeight: 1 }}>
+                  <X size={13} />
                 </button>
               </div>
             );

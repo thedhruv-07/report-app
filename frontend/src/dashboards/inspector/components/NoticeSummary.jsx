@@ -359,6 +359,12 @@ export default function NoticeSummary({ taskId }) {
                 <div key={idx} className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
                   <p className="text-sm text-slate-700">{q.message}</p>
                   <p className="text-[10px] text-slate-400 mt-1">{new Date(q.raisedAt).toLocaleString()}</p>
+                  {q.reply && (
+                    <div className="mt-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
+                      <p className="text-sm text-slate-700">{q.reply}</p>
+                      <p className="text-[10px] text-slate-400 mt-1">{q.repliedBy} · {new Date(q.repliedAt).toLocaleString()}</p>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

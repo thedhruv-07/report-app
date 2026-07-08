@@ -2,10 +2,11 @@
 const SystemNotification = require('../models/systemNotification.model');
 const { User } = require('../models/user.model');
 const { renderTemplate } = require('../services/email.service');
+const { getIO } = require('../socket');
 
 const DASHBOARD_URL = (process.env.FRONTEND_URL || 'https://absolute-veritas.netlify.app') + '/dashboard';
 
-const notifyStaff = async ({ title, message, type = 'info', priority = 2, emailSubject, templateName, templateVars = {}, relatedTaskId = null, relatedBookingId = null, relatedReportId = null }) => {
+const notifyStaff = async ({ title, message, type = 'info', priority = 2, emailSubject, templateName, templateVars = {}, relatedTaskId = null, relatedBookingId = null, relatedReportId = null, relatedNoticeId = null }) => {
   await SystemNotification.create({
     title,
     message,
@@ -15,8 +16,15 @@ const notifyStaff = async ({ title, message, type = 'info', priority = 2, emailS
     relatedTaskId,
     relatedBookingId,
     relatedReportId,
+    relatedNoticeId,
     isActive: true,
   });
+
+  try {
+    getIO().to(['admin_room', 'manager_room']).emit('new_system_notification');
+  } catch (e) {
+    console.warn('[notifyStaff] socket emit failed:', e.message);
+  }
 
   try {
     const { enqueueEmail } = require('../services/email.queue');

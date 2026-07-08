@@ -58,8 +58,8 @@ export default function InspectionNoticesList() {
 
   const filteredNotices = useMemo(() => {
     return notices.filter(n => {
-      const matchesSearch = 
-        (n.noticeId || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+      const matchesSearch =
+        (n.noticeId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (n.basicInfo?.customerName || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'All' || n.status === statusFilter;
       const matchesType = typeFilter === 'All' || n.basicInfo?.serviceType === typeFilter;
@@ -67,9 +67,15 @@ export default function InspectionNoticesList() {
     });
   }, [notices, searchTerm, statusFilter, typeFilter]);
 
+  const pendingQueryCountOf = (notice) => (notice.inspectorQueries || []).filter(q => !q.reply).length;
+  const totalPendingQueries = useMemo(
+    () => notices.reduce((sum, n) => sum + pendingQueryCountOf(n), 0),
+    [notices]
+  );
+
   return (
     <div className="h-screen w-full flex flex-col bg-[#f8fafc] text-slate-800 antialiased overflow-hidden font-sans">
-      <AdminNavbar />
+      <AdminNavbar stats={{ pendingQueries: totalPendingQueries }} />
       
       <main className="flex-1 overflow-y-auto p-8 relative flex flex-col">
         <div className="space-y-6 animate-in fade-in duration-300 h-full flex flex-col">
@@ -180,7 +186,14 @@ export default function InspectionNoticesList() {
                           className="hover:bg-slate-50 transition-colors group cursor-pointer"
                         >
                           <td className="px-6 py-4">
-                            <p className="font-extrabold text-slate-800">{notice.noticeId}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-extrabold text-slate-800">{notice.noticeId}</p>
+                              {pendingQueryCountOf(notice) > 0 && (
+                                <span className="inline-flex items-center bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap">
+                                  {pendingQueryCountOf(notice)} msg{pendingQueryCountOf(notice) > 1 ? 's' : ''}
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="px-6 py-4">
                             <p className="font-bold text-slate-700">{notice.basicInfo?.customerName || 'N/A'}</p>

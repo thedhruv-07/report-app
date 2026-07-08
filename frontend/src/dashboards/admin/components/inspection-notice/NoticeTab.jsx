@@ -445,6 +445,10 @@ export default function NoticeTab({ formData, updateSection, updateRootField, in
   const inputClass = "w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#6C47FF] focus:border-transparent outline-none";
   const labelClass = "block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1";
 
+  const [replyDrafts, setReplyDrafts] = useState({});
+  const [replySending, setReplySending] = useState({});
+  const [replyError, setReplyError] = useState({});
+
   // Auto-calculate Total Quantity whenever products array changes
   useEffect(() => {
     const sum = (formData.productInfo?.products || []).reduce((acc, p) => acc + (Number(p.quantity) || 0), 0);
@@ -772,16 +776,69 @@ export default function NoticeTab({ formData, updateSection, updateRootField, in
     URL.revokeObjectURL(url);
   };
 
+  const handleSendReply = async (queryId) => {
+    const text = (replyDrafts[queryId] || '').trim();
+    if (!text || !recordId) return;
+    setReplySending(prev => ({ ...prev, [queryId]: true }));
+    setReplyError(prev => ({ ...prev, [queryId]: null }));
+    try {
+      const res = await fetch(`${ENDPOINTS.BASE_URL}/api/inspection-notices/${recordId}/queries/${queryId}/reply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ reply: text }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send reply');
+      updateRootField('inspectorQueries', data.inspectorQueries);
+      setReplyDrafts(prev => ({ ...prev, [queryId]: '' }));
+    } catch (err) {
+      setReplyError(prev => ({ ...prev, [queryId]: err.message }));
+    } finally {
+      setReplySending(prev => ({ ...prev, [queryId]: false }));
+    }
+  };
+
   return (
     <div className="space-y-6">
 
       {(formData.inspectorQueries || []).length > 0 && (
         <SectionCard title="Inspector Queries" defaultOpen={true}>
-          <div className="space-y-2">
-            {[...formData.inspectorQueries].reverse().map((q, idx) => (
-              <div key={idx} className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5">
+          <div className="space-y-3">
+            {[...formData.inspectorQueries].reverse().map((q) => (
+              <div key={q._id} className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5">
                 <p className="text-sm text-slate-700">{q.message}</p>
                 <p className="text-[11px] text-slate-500 mt-1">{q.inspectorName} · {new Date(q.raisedAt).toLocaleString()}</p>
+
+                {q.reply ? (
+                  <div className="mt-2.5 bg-white border border-slate-200 rounded-lg px-3 py-2">
+                    <p className="text-sm text-slate-700">{q.reply}</p>
+                    <p className="text-[11px] text-slate-400 mt-1">Replied by {q.repliedBy} · {new Date(q.repliedAt).toLocaleString()}</p>
+                  </div>
+                ) : (
+                  <div className="mt-2.5">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={replyDrafts[q._id] || ''}
+                        onChange={e => setReplyDrafts(prev => ({ ...prev, [q._id]: e.target.value }))}
+                        onKeyDown={e => { if (e.key === 'Enter') handleSendReply(q._id); }}
+                        placeholder="Type a reply…"
+                        disabled={replySending[q._id]}
+                        className="flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-[#6C47FF] focus:border-transparent outline-none disabled:opacity-60"
+                      />
+                      <button
+                        onClick={() => handleSendReply(q._id)}
+                        disabled={replySending[q._id] || !(replyDrafts[q._id] || '').trim()}
+                        className="px-4 py-1.5 bg-[#6C47FF] text-white rounded-lg text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#5538E0] transition-colors"
+                      >
+                        {replySending[q._id] ? 'Sending…' : 'Reply'}
+                      </button>
+                    </div>
+                    {replyError[q._id] && (
+                      <p className="text-[11px] text-rose-600 mt-1">{replyError[q._id]}</p>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>

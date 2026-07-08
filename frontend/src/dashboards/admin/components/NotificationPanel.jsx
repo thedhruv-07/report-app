@@ -19,6 +19,8 @@ export default function NotificationPanel({
     setNotificationsPanelOpen(false);
     if (notif.relatedReportId) {
       navigate('/admin/report-queue');
+    } else if (notif.relatedNoticeId) {
+      navigate(`/admin/inspection-notices/${notif.relatedNoticeId}`);
     } else if (notif.relatedBookingId || notif.relatedTaskId) {
       navigate('/dashboard/admin');
     }

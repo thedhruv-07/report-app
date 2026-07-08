@@ -1,11 +1,15 @@
 const InspectionNotice = require("../models/InspectionNotice");
 const Expense = require("../models/expense.model");
+const Task = require("../models/task.model");
+const Notification = require("../models/notification.model");
+const SystemNotification = require("../models/systemNotification.model");
 const { provisionFromNotice } = require("../services/noticeToBooking.service");
 const { generateClientCode } = require("../utils/clientCode");
 const wasabiService = require("../services/wasabiService");
 const { uniqueNoticeId, peekNextNoticeId } = require("../utils/noticeId");
 const { extractTextFromDocument } = require("../utils/documentText.util");
 const { extractProductsFromText, extractSamplesFromText } = require("../services/ai.service");
+const { getIO } = require("../socket");
 
 function formatFileSize(bytes) {
   if (bytes < 1024) return `${bytes} B`;
@@ -159,6 +163,74 @@ exports.getNoticeExpenses = async (req, res) => {
   } catch (error) {
     console.error("Error fetching notice expenses:", error);
     res.status(500).json({ error: "Failed to fetch expenses" });
+  }
+};
+
+exports.replyToQuery = async (req, res) => {
+  try {
+    const { id, queryId } = req.params;
+    const { reply } = req.body;
+    if (!reply || !reply.trim()) return res.status(400).json({ error: "reply is required" });
+
+    const repliedBy = req.user?.name || 'CS Team';
+    const repliedAt = new Date();
+
+    // Scoped positional update instead of load+save — some existing notices
+    // have unrelated corrupted fields (e.g. inspectionInfo.reportTemplate
+    // stored as a string) that fail full-document validation on .save().
+    const notice = await InspectionNotice.findOneAndUpdate(
+      { noticeId: id, 'inspectorQueries._id': queryId },
+      { $set: {
+        'inspectorQueries.$.reply': reply.trim(),
+        'inspectorQueries.$.repliedBy': repliedBy,
+        'inspectorQueries.$.repliedAt': repliedAt,
+      } },
+      { new: true, runValidators: false }
+    ).select('inspectorQueries');
+
+    if (!notice) return res.status(404).json({ error: "Notice or query not found" });
+
+    const query = notice.inspectorQueries.id(queryId);
+
+    if (query.inspectorId) {
+      try {
+        const task = await Task.findOne({
+          assignedInspectorId: query.inspectorId,
+          'prefillData.noticeId': id,
+        }).sort({ createdAt: -1 });
+
+        await Notification.create({
+          inspectorId: query.inspectorId,
+          title: 'CS Replied to Your Query',
+          type: 'system',
+          message: `CS replied to your query on notice ${id}: "${query.reply.slice(0, 150)}"`,
+          relatedTaskId: task?._id || null,
+          isRead: false,
+        });
+
+        // The inspector's actual bell/banner (Navbar.jsx + NotificationContext)
+        // reads SystemNotification, not the Notification model above — that
+        // write alone would be invisible in the UI.
+        await SystemNotification.create({
+          title: 'CS Replied to Your Query',
+          message: `CS replied to your query on notice ${id}: "${query.reply.slice(0, 150)}"`,
+          type: 'info',
+          priority: 2,
+          targetUsers: [query.inspectorId],
+          relatedTaskId: task?._id || null,
+          isActive: true,
+        });
+
+        getIO().to(`user_${query.inspectorId}`).emit('new_system_notification');
+      } catch (e) {
+        console.warn('[replyToQuery] Failed to notify inspector:', e.message);
+      }
+    }
+
+    res.json({ inspectorQueries: notice.inspectorQueries });
+  } catch (error) {
+    console.error("Error replying to query:", error);
+    res.status(500).json({ error: "Failed to send reply" });
   }
 };
 

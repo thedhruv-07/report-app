@@ -1,10 +1,23 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCircle } from 'lucide-react';
 import { useNotifications } from '../../../context/NotificationContext';
 import { timeAgo } from '../../../utils/timeAgo';
 
 export default function NotificationManager() {
   const { bellNotifications, markAsRead, markAllAsRead, unreadCount } = useNotifications();
+  const navigate = useNavigate();
+
+  const handleNotificationClick = (notif) => {
+    if (!notif.isRead) markAsRead(notif._id);
+    if (notif.relatedReportId) {
+      navigate('/admin/report-queue');
+    } else if (notif.relatedNoticeId) {
+      navigate(`/admin/inspection-notices/${notif.relatedNoticeId}`);
+    } else if (notif.relatedBookingId || notif.relatedTaskId) {
+      navigate('/dashboard/admin');
+    }
+  };
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -39,10 +52,10 @@ export default function NotificationManager() {
             {bellNotifications.map(notif => (
               <div 
                 key={notif._id} 
-                className={`p-5 flex gap-4 transition-colors ${
+                className={`p-5 flex gap-4 transition-colors cursor-pointer ${
                   notif.isRead ? 'bg-white hover:bg-slate-50' : 'bg-indigo-50/50 hover:bg-indigo-50/80'
                 }`}
-                onClick={() => !notif.isRead && markAsRead(notif._id)}
+                onClick={() => handleNotificationClick(notif)}
               >
                 <div className="shrink-0 mt-1">
                   <div className={`w-2.5 h-2.5 rounded-full ${notif.isRead ? 'bg-slate-300' : 'bg-indigo-500 shadow-sm'}`} />
