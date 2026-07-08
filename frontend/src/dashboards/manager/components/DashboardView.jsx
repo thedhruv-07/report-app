@@ -41,7 +41,7 @@ function DashboardView({ pendingCount, animatedStats, reports, setActiveView, ha
     .slice(0, 5);
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 animate-in fade-in duration-300 space-y-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+    <div className="px-6 py-8 animate-in fade-in duration-300 space-y-6" style={{ fontFamily: 'Inter, sans-serif' }}>
 
       {/* SECTION 1 — Welcome Header */}
       <div className="flex items-center justify-between">

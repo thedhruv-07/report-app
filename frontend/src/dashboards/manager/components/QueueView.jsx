@@ -40,7 +40,7 @@ function QueueView({ queueFilters, setQueueFilters, uniqueInspectors, filteredRe
     setQueueFilters({ type: 'All', status: 'All', inspector: 'All', fromDate: '', toDate: '' });
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 animate-in fade-in duration-300 space-y-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+    <div className="px-6 py-8 animate-in fade-in duration-300 space-y-6" style={{ fontFamily: 'Inter, sans-serif' }}>
 
       {/* PART 2 — Page Header */}
       <div className="flex items-center justify-between">
