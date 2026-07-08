@@ -1,4 +1,5 @@
 const { ReportV2 } = require("../../models/v2/report.model");
+const { getReportDisplayId } = require("../../utils/reportDisplayId");
 
 // Create a new report
 const createReport = async (req, res) => {
@@ -83,8 +84,9 @@ const updateReport = async (req, res) => {
       const adminList = (process.env.NOTIFICATION_ADMIN_EMAILS || process.env.SMTP_USER || '').split(',').map(s=>s.trim()).filter(Boolean);
       adminList.forEach(e => recipients.add(e));
       const viewUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reports/${report._id}`;
+      const displayId = getReportDisplayId(report);
       const html = renderTemplate('report-submitted.html', {
-        reportId: report._id,
+        reportId: displayId,
         inspectorName: report.createdBy?.name || 'Inspector',
         factory: report.title || '',
         inspectionDate: formatEmailDate(new Date()),
@@ -93,7 +95,7 @@ const updateReport = async (req, res) => {
         viewUrl
       });
       for (const r of Array.from(recipients)) {
-        await enqueueEmail({ reportId: report._id, recipient: r, subject: `[UPDATED] Report #${report._id} Updated`, type: 'report_updated', html });
+        await enqueueEmail({ reportId: report._id, recipient: r, subject: `[UPDATED] Report #${displayId} Updated`, type: 'report_updated', html });
       }
     } catch (err) {
       console.warn('Failed to enqueue V2 report updated emails:', err && err.message ? err.message : err);

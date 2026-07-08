@@ -7,6 +7,7 @@ const { claimInspectionNumber } = require("../utils/noticeId");
 const mongoose = require("mongoose");
 const { getIO } = require("../socket");
 const notifyStaff = require("../utils/notifyStaff");
+const { getReportDisplayId } = require("../utils/reportDisplayId");
 
 // Import Mongoose Models
 const { Report } = require("../models/report.model");
@@ -288,8 +289,9 @@ const generateReport = async (req, res) => {
         if (data.clientEmail) recipients.add(data.clientEmail);
 
         const viewUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reports/${report._id}`;
+        const displayId = getReportDisplayId(report);
         const html = renderTemplate('report-submitted.html', {
-          reportId: report._id,
+          reportId: displayId,
           inspectorName: data.auditorName || req.user?.name || 'Inspector',
           factory: data.factory || data.client || '',
           inspectionDate: data.inspectionDate || '',
@@ -300,7 +302,7 @@ const generateReport = async (req, res) => {
 
         for (const r of Array.from(recipients)) {
           if (!r) continue;
-          enqueueEmail({ reportId: report._id, recipient: r, subject: `[NEW REPORT] Inspection Report Submitted - #${report._id}`, type: 'report_submitted', html, metadata: { priority: data.priority || 'normal' } });
+          enqueueEmail({ reportId: report._id, recipient: r, subject: `[NEW REPORT] Inspection Report Submitted - #${displayId}`, type: 'report_submitted', html, metadata: { priority: data.priority || 'normal' } });
         }
       } catch (e) {
         console.warn('Failed to enqueue report-submitted emails:', e && e.message ? e.message : e);
@@ -317,8 +319,9 @@ const generateReport = async (req, res) => {
             adminList.forEach(e=>recipients.add(e));
             if (req.user && req.user.email) recipients.add(req.user.email);
             const viewUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reports/${report._id}`;
-            const htmlCritical = renderTemplate('critical-alert.html', { reportId: report._id, severity: 'Critical', issueSummary: (data.inspectorOpinion || '').slice(0,400), viewUrl });
-            for (const r of Array.from(recipients)) enqueueEmail({ reportId: report._id, recipient: r, subject: `[URGENT] Critical Inspection Issue Detected - #${report._id}`, type: 'critical_alert', html: htmlCritical, metadata: { priority: 'high' } });
+            const criticalDisplayId = getReportDisplayId(report);
+            const htmlCritical = renderTemplate('critical-alert.html', { reportId: criticalDisplayId, severity: 'Critical', issueSummary: (data.inspectorOpinion || '').slice(0,400), viewUrl });
+            for (const r of Array.from(recipients)) enqueueEmail({ reportId: report._id, recipient: r, subject: `[URGENT] Critical Inspection Issue Detected - #${criticalDisplayId}`, type: 'critical_alert', html: htmlCritical, metadata: { priority: 'high' } });
           }
         } catch (err) {
           console.warn('Failed to enqueue critical alert emails:', err && err.message ? err.message : err);
@@ -754,7 +757,7 @@ const getAdminQueue = async (req, res) => {
       })),
       ...factoryAudits.map(fa => ({
         id: fa._id,
-        reportId: `FA-${fa._id.toString().slice(-6).toUpperCase()}`,
+        reportId: fa.generalInfo?.inspectionNo || `FA-${fa._id.toString().slice(-6).toUpperCase()}`,
         clientName: fa.generalInfo?.client || 'Unknown Client',
         inspectionType: fa.title || 'Factory Audit',
         inspectorName: fa.userId?.name || 'Unknown Inspector',

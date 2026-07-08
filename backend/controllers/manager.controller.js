@@ -2,6 +2,7 @@ const { Report } = require("../models/report.model");
 const FactoryAudit = require("../models/factoryAudit.model");
 const { getIO } = require("../socket");
 const { generateClientCode } = require("../utils/clientCode");
+const { getReportDisplayId } = require("../utils/reportDisplayId");
 
 // Helper to fetch all reports (standard + factory audit) and normalize them
 const getAllReports = async (query = {}) => {
@@ -31,7 +32,7 @@ const getAllReports = async (query = {}) => {
 
   const normalizedFactoryAudits = factoryAudits.map(fa => ({
     id: fa._id,
-    reportId: `FA-${fa._id.toString().slice(-6).toUpperCase()}`,
+    reportId: fa.generalInfo?.inspectionNo || `FA-${fa._id.toString().slice(-6).toUpperCase()}`,
     clientName: fa.generalInfo?.client || "Unknown Client",
     inspectionType: fa.title || "Factory Audit",
     inspectorName: fa.userId?.name || "Unknown Inspector",
@@ -254,14 +255,15 @@ exports.requestCorrection = async (req, res) => {
       const adminList = (process.env.NOTIFICATION_ADMIN_EMAILS || process.env.SMTP_USER || '').split(',').map(s=>s.trim()).filter(Boolean);
       adminList.forEach(e=>recipients.add(e));
       const resubmitUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard/inspector`;
+      const rejectedDisplayId = getReportDisplayId(report);
       const html = renderTemplate('report-rejected.html', {
-        reportId: report._id,
+        reportId: rejectedDisplayId,
         rejectedBy: req.user?.name || 'Reviewer',
         rejectedAt: new Date().toISOString(),
         reason: (comment || ''),
         resubmitUrl,
       });
-      for (const r of Array.from(recipients)) enqueueEmail({ reportId: report._id, recipient: r, subject: `[ACTION REQUIRED] Report #${report._id} Rejected`, type: 'report_rejected', html });
+      for (const r of Array.from(recipients)) enqueueEmail({ reportId: report._id, recipient: r, subject: `[ACTION REQUIRED] Report #${rejectedDisplayId} Rejected`, type: 'report_rejected', html });
     } catch (err) {
       console.warn('Failed to enqueue rejection emails:', err && err.message ? err.message : err);
     }
@@ -302,7 +304,7 @@ exports.finalizeReport = async (req, res) => {
       if (inspectorId) {
         await SystemNotification.create({
           title: 'Your Report Has Been Approved',
-          message: `Report #${report._id} has been reviewed and approved by ${req.user?.name || 'the reviewer'}.`,
+          message: `Report #${getReportDisplayId(report)} has been reviewed and approved by ${req.user?.name || 'the reviewer'}.`,
           type: 'success',
           priority: 3,
           targetUsers: [inspectorId],
@@ -328,14 +330,15 @@ exports.finalizeReport = async (req, res) => {
       const adminList = (process.env.NOTIFICATION_ADMIN_EMAILS || process.env.SMTP_USER || '').split(',').map(s=>s.trim()).filter(Boolean);
       adminList.forEach(e=>recipients.add(e));
       const downloadUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reports/${report._id}`;
+      const approvedDisplayId = getReportDisplayId(report);
       const html = renderTemplate('report-approved.html', {
-        reportId: report._id,
+        reportId: approvedDisplayId,
         approvedBy: req.user?.name || 'Reviewer',
         approvedAt: new Date().toISOString(),
         finalRemarks: report.finalRemarks || '',
         downloadUrl
       });
-      for (const r of Array.from(recipients)) enqueueEmail({ reportId: report._id, recipient: r, subject: `[APPROVED] Report #${report._id} Approved Successfully`, type: 'report_approved', html });
+      for (const r of Array.from(recipients)) enqueueEmail({ reportId: report._id, recipient: r, subject: `[APPROVED] Report #${approvedDisplayId} Approved Successfully`, type: 'report_approved', html });
     } catch (err) {
       console.warn('Failed to enqueue approval emails:', err && err.message ? err.message : err);
     }
@@ -379,8 +382,9 @@ exports.deliverReport = async (req, res) => {
       const adminList = (process.env.NOTIFICATION_ADMIN_EMAILS || process.env.SMTP_USER || '').split(',').map(s=>s.trim()).filter(Boolean);
       adminList.forEach(e=>recipients.add(e));
       const viewUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reports/${report._id}`;
-      const html = renderTemplate('delivery-completed.html', { reportId: report._id, deliveredAt: report.delivery.deliveredAt, deliveredTo: deliveredTo || '', viewUrl });
-      for (const r of Array.from(recipients)) enqueueEmail({ reportId: report._id, recipient: r, subject: `[DELIVERED] Report #${report._id} Delivered Successfully`, type: 'delivery_completed', html });
+      const deliveredDisplayId = getReportDisplayId(report);
+      const html = renderTemplate('delivery-completed.html', { reportId: deliveredDisplayId, deliveredAt: report.delivery.deliveredAt, deliveredTo: deliveredTo || '', viewUrl });
+      for (const r of Array.from(recipients)) enqueueEmail({ reportId: report._id, recipient: r, subject: `[DELIVERED] Report #${deliveredDisplayId} Delivered Successfully`, type: 'delivery_completed', html });
     } catch (err) {
       console.warn('Failed to enqueue delivery emails:', err && err.message ? err.message : err);
     }
