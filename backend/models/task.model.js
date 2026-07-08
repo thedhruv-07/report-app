@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 
 const taskSchema = new mongoose.Schema({
+  taskNumber: { type: String, unique: true, sparse: true },
   assignedInspectorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   clientName: { type: String, required: true },
   factoryName: { type: String, required: true },

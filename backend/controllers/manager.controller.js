@@ -3,6 +3,7 @@ const FactoryAudit = require("../models/factoryAudit.model");
 const { getIO } = require("../socket");
 const { generateClientCode } = require("../utils/clientCode");
 const { getReportDisplayId } = require("../utils/reportDisplayId");
+const { uniqueTaskNumber } = require("../utils/noticeId");
 
 // Helper to fetch all reports (standard + factory audit) and normalize them
 const getAllReports = async (query = {}) => {
@@ -206,6 +207,7 @@ exports.requestCorrection = async (req, res) => {
         const clientNameForTask = gi.client || report.title || 'Inspection Report';
         const locationForTask = gi.inspectionLocation || gi.location || gi.factoryAddress || '';
         const created = await Task.create({
+          taskNumber: await uniqueTaskNumber(),
           assignedInspectorId: report.userId._id,
           clientName:     clientNameForTask,
           clientCode:     generateClientCode(clientNameForTask, locationForTask),

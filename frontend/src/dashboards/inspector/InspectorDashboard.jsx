@@ -111,7 +111,7 @@ export default function Dashboard() {
     if (task.status === 'Pending Acceptance') {
       setSelectedTask(task);
     } else {
-      navigate(`/dashboard/inspector/task/${task._id}`, { state: { task } });
+      navigate(`/dashboard/inspector/task/${task.taskNumber || task._id}`, { state: { task } });
     }
   };
 

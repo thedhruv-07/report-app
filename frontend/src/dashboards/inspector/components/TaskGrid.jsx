@@ -83,7 +83,7 @@ export default function TaskGrid({
 
               <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/80 flex items-center justify-between">
                 <span className="text-[11px] text-slate-400 font-mono font-semibold">
-                  #{task._id.slice(-6).toUpperCase()}
+                  {task.taskNumber || `#${task._id.slice(-6).toUpperCase()}`}
                 </span>
                 <span className="text-sm font-semibold text-blue-600 flex items-center gap-0.5 group-hover:gap-1.5 transition-all duration-150">
                   {task.status === 'Pending Acceptance' ? 'Review & Accept' : 'Open'}

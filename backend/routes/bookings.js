@@ -10,6 +10,7 @@ const { sendImmediateEmail, renderTemplate } = require('../services/email.servic
 const { createDraftNoticeFromBooking } = require('../services/bookingToNotice.service');
 const InspectionNotice = require('../models/InspectionNotice');
 const { generateClientCode } = require('../utils/clientCode');
+const { uniqueTaskNumber } = require('../utils/noticeId');
 
 // Maps Booking.inspectionType values to Task.inspectionType enum values
 const toTaskInspectionType = (type = '') => {
@@ -234,6 +235,7 @@ router.post('/:id/assign', roleCheck(['admin', 'manager']), async (req, res) => 
     };
 
     const task = await Task.create({
+      taskNumber: await uniqueTaskNumber(),
       assignedInspectorId,
       clientName: booking.clientName || 'Unknown Client',
       factoryName: booking.factoryName || 'TBD',

@@ -16,6 +16,7 @@ const Task = require('../models/task.model');
 const Notification = require('../models/notification.model');
 const SystemNotification = require('../models/systemNotification.model');
 const { generateClientCode } = require('../utils/clientCode');
+const { uniqueTaskNumber } = require('../utils/noticeId');
 const { enqueueEmail } = require('./email.queue');
 const { renderTemplate, formatEmailDate } = require('./email.service');
 
@@ -216,6 +217,7 @@ async function provisionFromNotice(notice, adminId) {
     // ── 2. Create Task (only if we have a real user ObjectId) ────────────────
     if (inspectorId) {
       const task = await Task.create({
+        taskNumber: await uniqueTaskNumber(),
         assignedInspectorId: inspectorId,
         clientName:    bi.customerName || 'Unknown Client',
         factoryName:   fi.factoryName || fi.englishName || 'TBD',

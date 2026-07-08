@@ -23,7 +23,7 @@ export default function TaskDetailsModal({
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-900 leading-tight">Task Details</h3>
-              <p className="text-xs text-slate-400 font-mono">#{selectedTask._id.slice(-6).toUpperCase()}</p>
+              <p className="text-xs text-slate-400 font-mono">{selectedTask.taskNumber || `#${selectedTask._id.slice(-6).toUpperCase()}`}</p>
             </div>
           </div>
           <button

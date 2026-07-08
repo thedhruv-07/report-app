@@ -60,4 +60,17 @@ async function claimInspectionNumber(candidate) {
   return uniqueNoticeId();
 }
 
-module.exports = { peekNextNoticeId, uniqueNoticeId, claimInspectionNumber };
+// Tasks get their own AV-format number from a separate counter — sharing the
+// notice counter would burn notice sequence numbers every time a task is
+// created without a notice actually being created, making notice numbers
+// jump ahead of the real notice count.
+async function uniqueTaskNumber() {
+  const counter = await Counter.findOneAndUpdate(
+    { _id: "taskId" },
+    { $inc: { seq: 1 } },
+    { upsert: true, new: true }
+  );
+  return formatId(todayStamp(), counter.seq);
+}
+
+module.exports = { peekNextNoticeId, uniqueNoticeId, claimInspectionNumber, uniqueTaskNumber };
