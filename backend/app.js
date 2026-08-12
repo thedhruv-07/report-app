@@ -55,6 +55,7 @@ const allowedOrigins = [
   "http://localhost:4174",
   "https://absolute-veritas.netlify.app",
   "https://report-app-lac.vercel.app",
+  "https://mis.absoluteveritas.com",
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
