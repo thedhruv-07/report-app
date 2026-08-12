@@ -59,9 +59,11 @@ const allowedOrigins = [
 ].filter(Boolean);
 
 
+const vercelPreviewPattern = /^https:\/\/report-app-[\w-]+\.vercel\.app$/;
+
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(origin) || vercelPreviewPattern.test(origin)) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
